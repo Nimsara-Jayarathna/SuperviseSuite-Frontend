@@ -1,5 +1,8 @@
 export const tokenStorage = {
   getToken: () => null as string | null,
-  setToken: (_token: string) => undefined,
+  setToken: (token: string) => {
+    void token;
+    return undefined;
+  },
   clearToken: () => undefined,
 };
