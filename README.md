@@ -52,6 +52,14 @@ Before commit/PR, run:
 
 This command checks formatting, linting, and type safety. If formatting fails, run `npm run format` and rerun `npm run verify`.
 
+## Contributing / Workflow
+
+For branching rules, PR expectations, and local verification steps, see `CONTRIBUTING.md`.
+
+## Future: CI
+
+CI is intentionally not configured yet. In a later phase, automated pipelines will enforce the same local checks (format, lint, typecheck, and verification) currently documented for developers.
+
 ## Package Manager Standard
 
 - Use `npm` only.

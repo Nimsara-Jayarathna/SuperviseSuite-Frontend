@@ -1,41 +1,65 @@
 # Contributing
 
-## Package Manager and Node
+## Branching Model
 
-- Always use `npm` (do not use Yarn or pnpm).
-- Use Node 20 LTS (see `.nvmrc`).
-- After pulling changes, run `npm ci` to install exact locked dependencies.
+- `main`: stable/demo-ready branch, pull requests only.
+- `dev`: integration branch, pull requests preferred with lighter review rules.
+- Create feature branches from `dev` (or from `main` if `dev` does not exist).
+- Do not push directly to `main`.
+- Use Squash merge (recommended) to keep history clean.
 
-## Dependency Changes
+## Branch Naming Convention
 
-- Add runtime dependencies with `npm install <package>`.
-- Add development dependencies with `npm install -D <package>`.
-- Commit both `package.json` and `package-lock.json` for any dependency change.
+Use:
 
-## Branch Naming
+- `<type>/<short-title>`
 
-Use one of these prefixes:
+Allowed types:
 
-- `feat/<short-description>`
-- `fix/<short-description>`
-- `chore/<short-description>`
-- `docs/<short-description>`
+- `feat`
+- `fix`
+- `chore`
+- `docs`
+- `refactor`
+- `test`
 
-## Pull Request Checklist
+Examples:
 
-- [ ] Branch name follows convention.
-- [ ] Placeholder-only scope is preserved unless explicitly expanded.
-- [ ] `npm ci` was run after syncing latest changes.
-- [ ] `npm run verify` passes before opening PR.
-- [ ] `npm run lint` passes.
-- [ ] `npm run typecheck` passes.
-- [ ] `npm run build` passes.
-- [ ] `.env` was not committed.
-- [ ] Updated docs if structure changes.
+- `feat/project-crud`
+- `fix/login-redirect`
+- `docs/error-handling-contract`
+- `chore/update-gitignore`
 
-## Local Verification Gate
+## Commit Message Convention
 
-Before commit/PR, run `npm run verify`.
+Use:
 
-- `verify` runs `format:check`, `lint`, and `typecheck`.
-- If formatting check fails, run `npm run format`, then rerun `npm run verify`.
+- `feat: ...`
+- `fix: ...`
+- `chore: ...`
+- `docs: ...`
+- `refactor: ...`
+- `test: ...`
+
+Keep messages short and meaningful.
+
+## Local Verification
+
+- Before PR, run `npm run verify`.
+- `verify` should run: `format:check`, `lint`, and `typecheck`.
+
+## Artifacts Never to Commit
+
+- `node_modules/`
+- `dist/`
+- `target/`
+- `.env` (use `.env.example` when needed)
+- IDE files:
+  - `.idea/`
+  - `.vscode/`
+
+## PR Expectations
+
+- Keep pull requests small and focused (single purpose).
+- Require at least 1 approval before merge (aligned with branch protection settings).
+- Clearly describe what changed and how it was tested locally.
