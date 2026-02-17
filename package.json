@@ -3,12 +3,16 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "npm run typecheck && vite build",
     "preview": "vite preview",
-    "lint": "eslint . --ext .ts,.tsx --max-warnings 0",
-    "format": "prettier --write ."
+    "lint": "eslint src --ext .ts,.tsx --max-warnings 0",
+    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,cjs,mjs,css,md,json}\" \"prompts/**/*.md\" \"*.{md,json,ts,tsx,cjs,mjs}\"",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "react": "^18.3.1",

@@ -1,5 +1,17 @@
 # Contributing
 
+## Package Manager and Node
+
+- Always use `npm` (do not use Yarn or pnpm).
+- Use Node 20 LTS (see `.nvmrc`).
+- After pulling changes, run `npm ci` to install exact locked dependencies.
+
+## Dependency Changes
+
+- Add runtime dependencies with `npm install <package>`.
+- Add development dependencies with `npm install -D <package>`.
+- Commit both `package.json` and `package-lock.json` for any dependency change.
+
 ## Branch Naming
 
 Use one of these prefixes:
@@ -13,7 +25,10 @@ Use one of these prefixes:
 
 - [ ] Branch name follows convention.
 - [ ] Placeholder-only scope is preserved unless explicitly expanded.
+- [ ] `npm ci` was run after syncing latest changes.
 - [ ] `npm run lint` passes.
+- [ ] `npm run typecheck` passes.
 - [ ] `npm run build` passes.
+- [ ] `.env` was not committed.
 - [ ] Updated docs if structure changes.
 - [ ] Stored prompts in `/prompts` if AI was used.
