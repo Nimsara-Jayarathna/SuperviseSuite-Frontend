@@ -12,7 +12,9 @@
     "preview": "vite preview",
     "lint": "eslint src --ext .ts,.tsx --max-warnings 0",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,cjs,mjs,css,md,json}\" \"prompts/**/*.md\" \"*.{md,json,ts,tsx,cjs,mjs}\"",
-    "typecheck": "tsc --noEmit"
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,cjs,mjs,css,md,json}\" \"prompts/**/*.md\" \"*.{md,json,ts,tsx,cjs,mjs}\"",
+    "typecheck": "tsc --noEmit",
+    "verify": "npm run format:check && npm run lint && npm run typecheck"
   },
   "dependencies": {
     "react": "^18.3.1",

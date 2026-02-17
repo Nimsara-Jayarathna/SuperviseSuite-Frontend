@@ -30,15 +30,27 @@ Default example:
 - `npm run preview` - Preview production build.
 - `npm run lint` - Run ESLint across `src` and fail on errors.
 - `npm run format` - Format project files with Prettier.
+- `npm run format:check` - Check formatting and fail if files are not formatted.
 - `npm run typecheck` - Run TypeScript checks with no emit.
+- `npm run verify` - Run `format:check`, `lint`, and `typecheck` in sequence.
 
 ### Common Commands
 
 - `npm run lint`
 - `npm run format`
+- `npm run format:check`
 - `npm run typecheck`
+- `npm run verify`
 - `npm run build`
 - `npm run preview`
+
+## Pre-PR Verification
+
+Before commit/PR, run:
+
+`npm run verify`
+
+This command checks formatting, linting, and type safety. If formatting fails, run `npm run format` and rerun `npm run verify`.
 
 ## Package Manager Standard
 

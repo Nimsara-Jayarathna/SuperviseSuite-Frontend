@@ -26,9 +26,17 @@ Use one of these prefixes:
 - [ ] Branch name follows convention.
 - [ ] Placeholder-only scope is preserved unless explicitly expanded.
 - [ ] `npm ci` was run after syncing latest changes.
+- [ ] `npm run verify` passes before opening PR.
 - [ ] `npm run lint` passes.
 - [ ] `npm run typecheck` passes.
 - [ ] `npm run build` passes.
 - [ ] `.env` was not committed.
 - [ ] Updated docs if structure changes.
 - [ ] Stored prompts in `/prompts` if AI was used.
+
+## Local Verification Gate
+
+Before commit/PR, run `npm run verify`.
+
+- `verify` runs `format:check`, `lint`, and `typecheck`.
+- If formatting check fails, run `npm run format`, then rerun `npm run verify`.
