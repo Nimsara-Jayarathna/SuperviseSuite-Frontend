@@ -32,7 +32,6 @@ Use one of these prefixes:
 - [ ] `npm run build` passes.
 - [ ] `.env` was not committed.
 - [ ] Updated docs if structure changes.
-- [ ] Stored prompts in `/prompts` if AI was used.
 
 ## Local Verification Gate
 

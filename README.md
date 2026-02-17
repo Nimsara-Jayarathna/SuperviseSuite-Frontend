@@ -67,7 +67,6 @@ This command checks formatting, linting, and type safety. If formatting fails, r
 - `src/lib` - Placeholder utility modules.
 - `src/styles` - Global styles.
 - `src/types` - Shared types.
-- `prompts` - Prompt history for reproducibility.
 
 ## Note
 
