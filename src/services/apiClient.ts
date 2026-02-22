@@ -22,13 +22,11 @@ export function isApiException(error: unknown): error is ApiException {
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const token = tokenStorage.getToken();
 
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    ...(init.headers as Record<string, string>),
-  };
-
+  // Use Headers to safely normalise any init.headers format (object, Headers instance, or tuples).
+  const headers = new Headers(init.headers);
+  headers.set('Content-Type', 'application/json');
   if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+    headers.set('Authorization', `Bearer ${token}`);
   }
 
   let response: Response;
@@ -50,11 +48,27 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     throw new ApiException(networkError);
   }
 
+  // 204 No Content — no body to parse, return undefined as the empty payload.
+  if (response.status === 204) {
+    return undefined as unknown as T;
+  }
+
   const body: ApiResponse<T> = await response.json();
 
   if (!response.ok) {
-    // The backend always returns a structured ApiError on non-2xx responses.
-    throw new ApiException(body.error!);
+    // Use the structured ApiError from the backend, or fall back to a synthetic one.
+    throw new ApiException(
+      body.error ?? {
+        timestamp: new Date().toISOString(),
+        status: response.status,
+        error: response.statusText,
+        code: 'INTERNAL_ERROR',
+        message: 'An unexpected error occurred.',
+        path,
+        traceId: null,
+        details: [],
+      },
+    );
   }
 
   return body.data;

@@ -33,8 +33,8 @@ export function ErrorState({ error, onRetry }: ErrorStateProps) {
 
       {error.code === 'VALIDATION_ERROR' && error.details.length > 0 && (
         <ul className="mt-2 list-inside list-disc space-y-0.5">
-          {error.details.map((detail) => (
-            <li key={detail.field}>
+          {error.details.map((detail, index) => (
+            <li key={`${detail.field}-${index}`}>
               <span className="font-medium">{detail.field}:</span> {detail.issue}
             </li>
           ))}
