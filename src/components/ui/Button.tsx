@@ -12,12 +12,12 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 const VARIANT_CLASSES: Record<ButtonVariant, string> = {
   default:
     'rounded-md border border-border bg-background px-4 py-2 font-medium text-foreground hover:bg-muted transition-colors',
-  hero: 'rounded-lg bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90 transition-opacity',
+  hero: 'rounded-lg bg-primary px-6 py-2.5 font-semibold text-primary-foreground hover:opacity-90 transition-opacity',
   'hero-outline':
-    'rounded-lg border border-border bg-background px-6 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors',
-  nav: 'rounded-md px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors bg-transparent',
+    'rounded-lg border border-border bg-background px-6 py-2.5 font-semibold text-foreground hover:bg-muted transition-colors',
+  nav: 'rounded-md px-3 py-1.5 text-muted-foreground hover:text-foreground transition-colors bg-transparent',
   'nav-primary':
-    'rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:opacity-90 transition-opacity',
+    'rounded-md bg-primary px-3 py-1.5 font-medium text-primary-foreground hover:opacity-90 transition-opacity',
 };
 
 const SIZE_CLASSES: Record<ButtonSize, string> = {
@@ -26,8 +26,18 @@ const SIZE_CLASSES: Record<ButtonSize, string> = {
   lg: 'text-base',
 };
 
-export function Button({ variant = 'default', size = 'md', className, ...props }: ButtonProps) {
+export function Button({
+  variant = 'default',
+  size = 'md',
+  className,
+  type = 'button',
+  ...props
+}: ButtonProps) {
   return (
-    <button className={cn(VARIANT_CLASSES[variant], SIZE_CLASSES[size], className)} {...props} />
+    <button
+      type={type}
+      className={cn(VARIANT_CLASSES[variant], SIZE_CLASSES[size], className)}
+      {...props}
+    />
   );
 }
