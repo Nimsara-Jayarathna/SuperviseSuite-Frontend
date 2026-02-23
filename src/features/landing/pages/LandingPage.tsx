@@ -4,7 +4,7 @@ import { HeroSection } from '../components/HeroSection';
 import { LandingNav } from '../components/LandingNav';
 
 export function LandingPage() {
-  // TODO: wire to router once routing is set up
+  // TODO: replace stubs with auth modal open / route navigation (feat/auth-forms)
   const handleLogin = () => {};
   const handleRegister = () => {};
   const handleStudentPortal = () => {};
