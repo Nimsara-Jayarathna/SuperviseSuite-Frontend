@@ -1,16 +1,7 @@
-import { Link, useSearchParams } from 'react-router-dom';
-import type { UserRole } from '../types';
+import { Link } from 'react-router-dom';
 import { RegisterForm } from '../components/RegisterForm';
 
-const VALID_ROLES: UserRole[] = ['STUDENT', 'SUPERVISOR'];
-
 export function RegisterPage() {
-  const [searchParams] = useSearchParams();
-
-  // Pre-select role when navigating from CTA buttons (e.g. /register?role=STUDENT)
-  const roleParam = searchParams.get('role')?.toUpperCase() as UserRole | undefined;
-  const initialRole = roleParam && VALID_ROLES.includes(roleParam) ? roleParam : undefined;
-
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-white px-4 py-12">
       {/* Background gradient orbs */}
@@ -33,10 +24,8 @@ export function RegisterPage() {
           </p>
         </div>
 
-        {/* Form card */}
-        <div className="rounded-2xl bg-white p-8 shadow-xl ring-1 ring-border">
-          <RegisterForm initialRole={initialRole} />
-        </div>
+        {/* Form */}
+        <RegisterForm />
 
         {/* Footer */}
         <p className="mt-8 text-center text-xs text-muted-foreground">

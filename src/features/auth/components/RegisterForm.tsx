@@ -1,9 +1,7 @@
 import { useState } from 'react';
-import { cn } from '@/lib/cn';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { useAuth } from '../hooks/useAuth';
-import type { UserRole } from '../types';
 
 type FieldErrors = {
   firstName?: string;
@@ -11,7 +9,6 @@ type FieldErrors = {
   email?: string;
   password?: string;
   confirmPassword?: string;
-  role?: string;
 };
 
 /** Validates fields client-side. Returns an error map — empty means valid. */
@@ -21,7 +18,6 @@ function validate(
   email: string,
   password: string,
   confirmPassword: string,
-  role: UserRole | '',
 ): FieldErrors {
   const errors: FieldErrors = {};
   if (!firstName.trim()) errors.firstName = 'First name is required.';
@@ -32,16 +28,14 @@ function validate(
   else if (password.length < 8) errors.password = 'Password must be at least 8 characters.';
   if (!confirmPassword) errors.confirmPassword = 'Please confirm your password.';
   else if (password !== confirmPassword) errors.confirmPassword = 'Passwords do not match.';
-  if (!role) errors.role = 'Please select a role.';
   return errors;
 }
 
 type RegisterFormProps = {
-  initialRole?: UserRole;
   onSuccess?: () => void;
 };
 
-export function RegisterForm({ initialRole, onSuccess }: RegisterFormProps) {
+export function RegisterForm({ onSuccess }: RegisterFormProps) {
   const { register, isLoading, error, clearError } = useAuth();
 
   const [firstName, setFirstName] = useState('');
@@ -49,7 +43,6 @@ export function RegisterForm({ initialRole, onSuccess }: RegisterFormProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [role, setRole] = useState<UserRole | ''>(initialRole ?? '');
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
   // Map backend field-level errors from ApiError.details
@@ -71,14 +64,15 @@ export function RegisterForm({ initialRole, onSuccess }: RegisterFormProps) {
     e.preventDefault();
     clearError();
 
-    const errors = validate(firstName, lastName, email, password, confirmPassword, role);
+    const errors = validate(firstName, lastName, email, password, confirmPassword);
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
       return;
     }
     setFieldErrors({});
 
-    await register({ firstName, lastName, email, password, role: role as UserRole });
+    // Role is always STUDENT — supervisor accounts are created by admins only
+    await register({ firstName, lastName, email, password, role: 'STUDENT' });
     onSuccess?.();
   }
 
@@ -192,29 +186,6 @@ export function RegisterForm({ initialRole, onSuccess }: RegisterFormProps) {
         {fieldErrors.confirmPassword && (
           <p className="text-xs text-red-500">{fieldErrors.confirmPassword}</p>
         )}
-      </div>
-
-      {/* Role selector */}
-      <div className="flex flex-col gap-2">
-        <span className="text-sm font-medium text-foreground">I am a…</span>
-        <div className="flex gap-3">
-          {(['STUDENT', 'SUPERVISOR'] as UserRole[]).map((r) => (
-            <button
-              key={r}
-              type="button"
-              onClick={() => setRole(r)}
-              className={cn(
-                'flex-1 rounded-lg border px-4 py-3 text-sm font-medium transition-colors',
-                role === r
-                  ? 'border-primary bg-primary/10 text-primary'
-                  : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground',
-              )}
-            >
-              {r === 'STUDENT' ? 'Student' : 'Supervisor'}
-            </button>
-          ))}
-        </div>
-        {fieldErrors.role && <p className="text-xs text-red-500">{fieldErrors.role}</p>}
       </div>
 
       <Button type="submit" variant="hero" size="lg" disabled={isLoading} className="mt-1 w-full">

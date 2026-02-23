@@ -14,8 +14,8 @@ export function LandingPage() {
         onRegister={() => navigate('/register')}
       />
       <HeroSection
-        onStudentPortal={() => navigate('/register?role=STUDENT')}
-        onSupervisorAccess={() => navigate('/register?role=SUPERVISOR')}
+        onStudentPortal={() => navigate('/register')}
+        onSupervisorAccess={() => navigate('/login')}
       />
       <FeaturesSection />
     </PublicLayout>

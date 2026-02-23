@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '@/lib/cn';
-import type { UserRole } from '../types';
 import { LoginForm } from './LoginForm';
 import { RegisterForm } from './RegisterForm';
 
@@ -11,11 +10,9 @@ type AuthModalProps = {
   isOpen: boolean;
   onClose: () => void;
   initialTab?: AuthTab;
-  /** Pre-selects a role on the register tab — passed from CTA buttons */
-  initialRole?: UserRole;
 };
 
-export function AuthModal({ isOpen, onClose, initialTab = 'login', initialRole }: AuthModalProps) {
+export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalProps) {
   const [activeTab, setActiveTab] = useState<AuthTab>(initialTab);
   const dialogRef = useRef<HTMLDivElement>(null);
 
@@ -103,7 +100,7 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login', initialRole }
         {activeTab === 'login' ? (
           <LoginForm onSuccess={onClose} />
         ) : (
-          <RegisterForm initialRole={initialRole} onSuccess={onClose} />
+          <RegisterForm onSuccess={onClose} />
         )}
       </div>
     </div>,
