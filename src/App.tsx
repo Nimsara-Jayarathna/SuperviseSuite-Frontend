@@ -1,5 +1,10 @@
-import { LandingPage } from '@/features/landing/pages/LandingPage';
+import { AppProviders } from '@/app/providers/AppProviders';
+import { AppRoutes } from '@/app/routes/routes';
 
 export default function App() {
-  return <LandingPage />;
+  return (
+    <AppProviders>
+      <AppRoutes />
+    </AppProviders>
+  );
 }
