@@ -18,14 +18,14 @@ LandingPage
     └── FeatureCard     — icon badge + title + description
 ```
 
-## Stubs / Pending Wiring
+## Wired Handlers
 
-The following handlers in `LandingPage` are empty stubs to be replaced in `feat/auth-forms`:
+The following handlers in `LandingPage` navigate to the auth pages:
 
-- `handleLogin` → open auth modal (login tab)
-- `handleRegister` → open auth modal (register tab)
-- `handleStudentPortal` → navigate to student dashboard or trigger login
-- `handleSupervisorAccess` → navigate to supervisor dashboard or trigger login
+- `onLogin` → `/login`
+- `onRegister` → `/register`
+- `onStudentPortal` → `/register`
+- `onSupervisorAccess` → `/login`
 
 ## Shared Infrastructure Added by This Feature
 
