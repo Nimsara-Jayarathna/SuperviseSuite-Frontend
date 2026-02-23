@@ -24,10 +24,8 @@ export function LoginPage() {
           </p>
         </div>
 
-        {/* Form card */}
-        <div className="rounded-2xl bg-white p-8 shadow-xl ring-1 ring-border">
-          <LoginForm />
-        </div>
+        {/* Form */}
+        <LoginForm />
 
         {/* Footer */}
         <p className="mt-8 text-center text-xs text-muted-foreground">Need help? Contact support.</p>

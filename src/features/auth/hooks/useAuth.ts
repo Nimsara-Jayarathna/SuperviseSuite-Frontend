@@ -21,8 +21,9 @@ type AuthState = {
 export function useAuth() {
   const navigate = useNavigate();
 
+  // Rehydrate user from storage so auth state survives page reloads
   const [state, setState] = useState<AuthState>({
-    user: null,
+    user: tokenStorage.getUser() as AuthUser | null,
     isLoading: false,
     error: null,
   });
@@ -37,6 +38,7 @@ export function useAuth() {
       const res = await authApi.login(body);
       tokenStorage.setAccessToken(res.accessToken);
       tokenStorage.setRefreshToken(res.refreshToken);
+      tokenStorage.setUser(res.user);
       setUser(res.user);
       navigate(ROLE_HOME[res.user.role] ?? '/');
     } catch (err) {
@@ -50,6 +52,7 @@ export function useAuth() {
       const res = await authApi.register(body);
       tokenStorage.setAccessToken(res.accessToken);
       tokenStorage.setRefreshToken(res.refreshToken);
+      tokenStorage.setUser(res.user);
       setUser(res.user);
       navigate(ROLE_HOME[res.user.role] ?? '/');
     } catch (err) {
