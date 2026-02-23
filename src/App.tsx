@@ -1,3 +1,10 @@
+import { AppProviders } from '@/app/providers/AppProviders';
+import { AppRoutes } from '@/app/routes/routes';
+
 export default function App() {
-  return <div className="p-6 text-lg">SuperviseSuite Frontend Scaffold</div>;
+  return (
+    <AppProviders>
+      <AppRoutes />
+    </AppProviders>
+  );
 }
