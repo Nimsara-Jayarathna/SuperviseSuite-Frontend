@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { LogoMark } from '@/components/brand/Logo';
 import { RegisterForm } from '../components/RegisterForm';
 
 export function RegisterPage() {
@@ -12,9 +13,9 @@ export function RegisterPage() {
       <div className="relative z-10 w-full max-w-md">
         {/* Logo */}
         <div className="mb-6 flex flex-col items-center gap-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary shadow-md">
-            <span className="text-sm font-bold text-primary-foreground">SS</span>
-          </div>
+          <Link to="/" aria-label="Go to home">
+            <LogoMark size={52} className="transition-opacity hover:opacity-80" />
+          </Link>
           <h1 className="text-xl font-bold text-foreground">Get started today!</h1>
           <p className="text-sm text-muted-foreground">
             Already have an account?{' '}
