@@ -1,15 +1,15 @@
 import { Navigate, Outlet } from 'react-router-dom';
 import { tokenStorage } from '@/services/tokenStorage';
 
-/** Route to redirect to after login, keyed by role */
+// Role → home route mapping, shared across all guards.
 const ROLE_HOME: Record<string, string> = {
   SUPERVISOR: '/supervisor/dashboard',
   STUDENT: '/student/projects',
 };
 
 /**
- * Redirects unauthenticated visitors to /login.
- * Wrap any route that requires a logged-in user.
+ * Blocks unauthenticated users — redirects to /login.
+ * Use for any route that requires a valid session.
  */
 export function RequireAuth() {
   const token = tokenStorage.getAccessToken();
@@ -18,8 +18,9 @@ export function RequireAuth() {
 }
 
 /**
- * Redirects to / if the authenticated user doesn't have the required role.
- * Also redirects to /login if not authenticated at all.
+ * Blocks users without the required role.
+ * Security note: this is a UI-only guard — the backend must also enforce
+ * role-based access on every protected API endpoint.
  */
 export function RequireRole({ role }: { role: string }) {
   const user = tokenStorage.getUser();
@@ -29,8 +30,8 @@ export function RequireRole({ role }: { role: string }) {
 }
 
 /**
- * Redirects already-authenticated users away from guest-only pages
- * (e.g. /login, /register) to their role home.
+ * Blocks authenticated users from guest-only pages (/login, /register).
+ * Redirects them to their role home instead.
  */
 export function RequireGuest() {
   const user = tokenStorage.getUser();

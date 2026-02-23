@@ -11,7 +11,7 @@ type FieldErrors = {
   confirmPassword?: string;
 };
 
-/** Validates fields client-side. Returns an error map — empty means valid. */
+/** Client-side validation — returns an error map; empty object means valid. */
 function validate(
   firstName: string,
   lastName: string,
@@ -45,14 +45,14 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
-  // Map backend field-level errors from ApiError.details
+  // Map backend field-level errors onto individual fields.
   const backendFieldErrors = error?.details.reduce<FieldErrors>((acc, d) => {
     const key = d.field as keyof FieldErrors;
     acc[key] = d.issue;
     return acc;
   }, {});
 
-  // General error — conflict (duplicate email) or any non-validation error
+  // Show a general banner for conflict (duplicate email) or any non-field error.
   const generalError =
     error && error.code !== 'VALIDATION_ERROR'
       ? error.code === 'CONFLICT'
@@ -71,7 +71,7 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
     }
     setFieldErrors({});
 
-    // Role is always STUDENT — supervisor accounts are created by admins only
+    // Supervisor accounts are created by admins — public registration is STUDENT only.
     await register({ firstName, lastName, email, password, role: 'STUDENT' });
     onSuccess?.();
   }

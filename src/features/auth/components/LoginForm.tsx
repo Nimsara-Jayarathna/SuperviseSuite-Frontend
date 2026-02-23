@@ -5,7 +5,7 @@ import { useAuth } from '../hooks/useAuth';
 
 type FieldErrors = { email?: string; password?: string };
 
-/** Validates fields client-side. Returns an error map — empty means valid. */
+/** Client-side validation — returns an error map; empty object means valid. */
 function validate(email: string, password: string): FieldErrors {
   const errors: FieldErrors = {};
   if (!email) errors.email = 'Email is required.';
@@ -26,13 +26,13 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
   const [password, setPassword] = useState('');
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
-  // Map backend field-level errors from ApiError.details
+  // Map backend field-level errors onto individual fields.
   const backendFieldErrors = error?.details.reduce<FieldErrors>((acc, d) => {
     if (d.field === 'email' || d.field === 'password') acc[d.field] = d.issue;
     return acc;
   }, {});
 
-  // General error — show when not a field-level validation error
+  // Show a general banner only for non-field-level errors.
   const generalError =
     error && error.code !== 'VALIDATION_ERROR' ? error.message : null;
 

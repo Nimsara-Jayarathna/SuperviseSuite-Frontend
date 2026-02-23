@@ -6,7 +6,7 @@ import type { ApiError } from '@/types';
 import { authApi } from '../api/authApi';
 import type { AuthUser, LoginRequest, RegisterRequest } from '../types';
 
-/** Route to redirect to after a successful login/register, keyed by role */
+/** Role → home route mapping, used after a successful login/register. */
 const ROLE_HOME: Record<string, string> = {
   SUPERVISOR: '/supervisor/dashboard',
   STUDENT: '/student/projects',
@@ -21,7 +21,7 @@ type AuthState = {
 export function useAuth() {
   const navigate = useNavigate();
 
-  // Rehydrate user from storage so auth state survives page reloads
+  // Rehydrate user from localStorage so auth state survives page reloads.
   const [state, setState] = useState<AuthState>({
     user: tokenStorage.getUser() as AuthUser | null,
     isLoading: false,
@@ -31,6 +31,24 @@ export function useAuth() {
   const setLoading = () => setState((s) => ({ ...s, isLoading: true, error: null }));
   const setError = (error: ApiError) => setState((s) => ({ ...s, isLoading: false, error }));
   const setUser = (user: AuthUser) => setState({ user, isLoading: false, error: null });
+
+  // Generic fallback for unexpected errors (e.g. network timeout).
+  // Without this, isLoading would stay true indefinitely.
+  const setUnexpectedError = () =>
+    setState((s) => ({
+      ...s,
+      isLoading: false,
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: 'Something went wrong. Please try again.',
+        details: [],
+        timestamp: new Date().toISOString(),
+        status: 0,
+        error: 'Unexpected Error',
+        path: '',
+        traceId: null,
+      } satisfies ApiError,
+    }));
 
   async function login(body: LoginRequest): Promise<void> {
     setLoading();
@@ -43,6 +61,7 @@ export function useAuth() {
       navigate(ROLE_HOME[res.user.role] ?? '/');
     } catch (err) {
       if (isApiException(err)) setError(err.apiError);
+      else setUnexpectedError();
     }
   }
 
@@ -57,6 +76,7 @@ export function useAuth() {
       navigate(ROLE_HOME[res.user.role] ?? '/');
     } catch (err) {
       if (isApiException(err)) setError(err.apiError);
+      else setUnexpectedError();
     }
   }
 

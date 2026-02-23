@@ -5,7 +5,7 @@ import { LoginForm } from '../components/LoginForm';
 export function LoginPage() {
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-white px-4 py-12">
-      {/* Background gradient orbs — matches the soft pink/blue corner glow */}
+      {/* Soft gradient orbs in top corners */}
       <div className="pointer-events-none absolute -left-32 -top-32 h-96 w-96 rounded-full bg-pink-200/50 blur-3xl" />
       <div className="pointer-events-none absolute -right-32 -top-32 h-96 w-96 rounded-full bg-primary/20 blur-3xl" />
 
