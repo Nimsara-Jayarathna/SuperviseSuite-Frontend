@@ -20,7 +20,7 @@ export function isApiException(error: unknown): error is ApiException {
 
 /** Attaches the Bearer token, calls fetch, and maps failures to `ApiException`. */
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const token = tokenStorage.getToken();
+  const token = tokenStorage.getAccessToken();
 
   // Use Headers to safely normalise any init.headers format (object, Headers instance, or tuples).
   const headers = new Headers(init.headers);
