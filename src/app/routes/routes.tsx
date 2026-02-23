@@ -1,7 +1,7 @@
 import { LoginPage, RegisterPage } from '@/features/auth';
 import { LandingPage } from '@/features/landing';
 import { Route, Routes } from 'react-router-dom';
-import { RequireGuest, RequireRole } from './route-guards';
+import { RequireRole } from './route-guards';
 
 // ---------------------------------------------------------------------------
 // Placeholder pages — replace with real feature pages as they are built
@@ -30,11 +30,9 @@ export function AppRoutes() {
       {/* Public */}
       <Route path="/" element={<LandingPage />} />
 
-      {/* Guest-only — redirect authenticated users to their home */}
-      <Route element={<RequireGuest />}>
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-      </Route>
+      {/* /login and /register are always accessible */}
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
 
       {/* Student-only */}
       <Route element={<RequireRole role="STUDENT" />}>
