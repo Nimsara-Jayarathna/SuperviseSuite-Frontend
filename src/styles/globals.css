@@ -9,8 +9,31 @@
     Arial,
     'Apple Color Emoji',
     'Segoe UI Emoji';
+
+  --nav-height: 64px;
+
+  /* Design tokens */
+  --background: 0 0% 100%;
+  --foreground: 222 47% 11%;
+  --border: 214 32% 91%;
+  --muted: 210 40% 96%;
+  --muted-foreground: 215 16% 47%;
+  --card: 0 0% 100%;
+  --primary: 239 84% 67%;
+  --primary-foreground: 0 0% 100%;
 }
 
 body {
   margin: 0;
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+
+@layer utilities {
+  .gradient-text {
+    background: linear-gradient(135deg, #6366f1 0%, #818cf8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
 }

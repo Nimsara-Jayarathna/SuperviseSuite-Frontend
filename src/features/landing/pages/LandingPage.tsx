@@ -1,15 +1,23 @@
 import { PublicLayout } from '@/app/layout/PublicLayout';
+import { FeaturesSection } from '../components/FeaturesSection';
 import { HeroSection } from '../components/HeroSection';
 import { LandingNav } from '../components/LandingNav';
 
 export function LandingPage() {
+  // TODO: wire to router once routing is set up
+  const handleLogin = () => {};
+  const handleRegister = () => {};
+  const handleStudentPortal = () => {};
+  const handleSupervisorAccess = () => {};
+
   return (
     <PublicLayout>
-      <div className="flex min-h-screen flex-col bg-slate-50">
-        <LandingNav />
-        <HeroSection />
-        <hr className="border-gray-200" />
-      </div>
+      <LandingNav onLogin={handleLogin} onRegister={handleRegister} />
+      <HeroSection
+        onStudentPortal={handleStudentPortal}
+        onSupervisorAccess={handleSupervisorAccess}
+      />
+      <FeaturesSection />
     </PublicLayout>
   );
 }

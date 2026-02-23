@@ -1,31 +1,33 @@
 import { Button } from '@/components/ui/Button';
 
-export function HeroSection() {
+type HeroSectionProps = {
+  onStudentPortal: () => void;
+  onSupervisorAccess: () => void;
+};
+
+export function HeroSection({ onStudentPortal, onSupervisorAccess }: HeroSectionProps) {
   return (
-    <div className="flex flex-1 items-center justify-center px-4 py-20">
-      <div className="flex max-w-2xl flex-col items-center text-center">
-        <span className="mb-6 rounded-full border border-gray-300 bg-white px-4 py-1 text-xs text-gray-500">
+    <section className="flex min-h-screen flex-col items-center justify-center px-6 pt-[var(--nav-height)]">
+      <div className="mx-auto max-w-3xl text-center">
+        <div className="mb-4 inline-flex items-center rounded-full border border-border bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
           Now in Public Beta
-        </span>
-
-        <h1 className="text-5xl font-bold leading-tight tracking-tight text-gray-900">
-          Streamline Your <span className="text-indigo-500">Research Supervision.</span>
+        </div>
+        <h1 className="mb-6 text-5xl font-bold leading-tight tracking-tight text-foreground sm:text-6xl">
+          Streamline Your <span className="gradient-text">Research Supervision.</span>
         </h1>
-
-        <p className="mt-6 max-w-md text-base leading-relaxed text-gray-500">
+        <p className="mx-auto mb-10 max-w-xl text-lg leading-relaxed text-muted-foreground">
           The all-in-one dashboard connecting Supervisors and Students. Track GitHub commits, manage
           meeting minutes, and sync directly with Jira.
         </p>
-
-        <div className="mt-10 flex items-center gap-4">
-          <Button className="rounded-md bg-indigo-500 px-6 py-2.5 text-sm font-semibold text-white hover:bg-indigo-600">
+        <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+          <Button variant="hero" size="lg" onClick={onStudentPortal}>
             Student Portal
           </Button>
-          <Button className="rounded-md border border-gray-300 bg-white px-6 py-2.5 text-sm font-semibold text-gray-800 hover:bg-gray-50">
+          <Button variant="hero-outline" size="lg" onClick={onSupervisorAccess}>
             Supervisor Access
           </Button>
         </div>
       </div>
-    </div>
+    </section>
   );
 }

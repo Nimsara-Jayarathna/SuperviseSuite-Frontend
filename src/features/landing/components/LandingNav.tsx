@@ -1,20 +1,30 @@
 import { Button } from '@/components/ui/Button';
 
-export function LandingNav() {
-  return (
-    <nav className="flex items-center justify-between px-8 py-4">
-      <div className="flex items-center gap-2">
-        <div className="flex h-8 w-8 items-center justify-center rounded-md bg-indigo-500 text-xs font-bold text-white">
-          SS
-        </div>
-        <span className="text-sm font-semibold text-gray-900">SuperviseSuite</span>
-      </div>
+type LandingNavProps = {
+  onLogin: () => void;
+  onRegister: () => void;
+};
 
-      <div className="flex items-center gap-4">
-        <button className="text-sm text-gray-600 hover:text-gray-900">Login</button>
-        <Button className="rounded-md bg-indigo-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-indigo-600">
-          Register
-        </Button>
+export function LandingNav({ onLogin, onRegister }: LandingNavProps) {
+  return (
+    <nav className="fixed left-0 right-0 top-0 z-50 h-[var(--nav-height)] border-b border-border bg-background/80 backdrop-blur-xl">
+      <div className="mx-auto flex h-full max-w-6xl items-center justify-between px-6">
+        <div className="flex items-center gap-2">
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary">
+            <span className="text-xs font-bold text-primary-foreground">SS</span>
+          </div>
+          <span className="text-lg font-semibold tracking-tight text-foreground">
+            SuperviseSuite
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="nav" size="sm" onClick={onLogin}>
+            Login
+          </Button>
+          <Button variant="nav-primary" size="sm" onClick={onRegister}>
+            Register
+          </Button>
+        </div>
       </div>
     </nav>
   );
