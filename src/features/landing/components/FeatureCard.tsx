@@ -1,10 +1,15 @@
 import type { LandingFeatureCard } from '../types';
 
-type FeatureCardProps = Omit<LandingFeatureCard, 'id'>;
+type FeatureCardProps = Omit<LandingFeatureCard, 'id'> & {
+  onClick?: () => void;
+};
 
-export function FeatureCard({ icon: Icon, title, description }: FeatureCardProps) {
+export function FeatureCard({ icon: Icon, title, description, onClick }: FeatureCardProps) {
   return (
-    <div className="group cursor-pointer rounded-xl border border-border bg-card p-6 transition-all duration-200 hover:border-primary/20 hover:shadow-md">
+    <div
+      className={`group rounded-xl border border-border bg-card p-6 transition-all duration-200 hover:border-primary/20 hover:shadow-md${onClick ? ' cursor-pointer' : ''}`}
+      onClick={onClick}
+    >
       <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
         <Icon size={20} />
       </div>

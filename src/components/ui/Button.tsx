@@ -10,7 +10,8 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 };
 
 const VARIANT_CLASSES: Record<ButtonVariant, string> = {
-  default: '',
+  default:
+    'rounded-md border border-border bg-background px-4 py-2 font-medium text-foreground hover:bg-muted transition-colors',
   hero: 'rounded-lg bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90 transition-opacity',
   'hero-outline':
     'rounded-lg border border-border bg-background px-6 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors',
@@ -20,7 +21,7 @@ const VARIANT_CLASSES: Record<ButtonVariant, string> = {
 };
 
 const SIZE_CLASSES: Record<ButtonSize, string> = {
-  sm: 'text-sm',
+  sm: 'text-xs',
   md: 'text-sm',
   lg: 'text-base',
 };

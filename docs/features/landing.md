@@ -47,9 +47,9 @@ Size prop accepts: `sm` \| `md` (default) \| `lg`
 |-------|-------|---------|
 | `--primary` | `217 91% 60%` | Brand blue |
 | `--primary-foreground` | `0 0% 100%` | Text on primary |
-| `--background` | `210 20% 98%` | Page background |
+| `--background` | `0 0% 100%` | Page background |
 | `--foreground` | `222 47% 11%` | Body text |
-| `--muted` | `210 20% 96%` | Subtle backgrounds |
+| `--muted` | `210 40% 96%` | Subtle backgrounds |
 | `--muted-foreground` | `215 16% 47%` | Secondary text |
 | `--card` | `0 0% 100%` | Card background |
 | `--border` | `214 32% 91%` | Border color |
