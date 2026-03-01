@@ -24,6 +24,7 @@ export type RegisterRequest = {
   email: string;
   password: string;
   role: UserRole;
+  registrationNumber: string;
 };
 
 /** Successful auth response — access token + user profile */

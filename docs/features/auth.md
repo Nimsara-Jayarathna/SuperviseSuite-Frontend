@@ -20,7 +20,7 @@ LoginPage
 └── LoginForm          — email + password fields, client-side validation, error display
 
 RegisterPage
-└── RegisterForm       — first/last name, email, password, confirm password fields
+└── RegisterForm       — first/last name, registration number, email, password, confirm password fields
 ```
 
 ---
@@ -79,6 +79,7 @@ Identical layout to `LoginPage`.
 |-------|-------|
 | `firstName` | Required, non-empty |
 | `lastName` | Required, non-empty |
+| `registrationNumber` | Required, non-empty |
 | `email` | Required, valid email format |
 | `password` | Required, min 8 characters |
 | `confirmPassword` | Required, must match `password` |
@@ -126,7 +127,7 @@ Thin wrapper around `apiClient`. Toggle `USE_MOCK` to switch between mock and re
 const res: AuthResponse = await authApi.login({ email, password });
 
 // Register
-const res: AuthResponse = await authApi.register({ firstName, lastName, email, password, role });
+const res: AuthResponse = await authApi.register({ firstName, lastName, registrationNumber, email, password, role });
 ```
 
 ### Mock mode
@@ -195,7 +196,7 @@ All guards read directly from `tokenStorage` — no React Context required.
 | `UserRole` | `'SUPERVISOR' \| 'STUDENT'` |
 | `AuthUser` | Authenticated user profile returned by the backend |
 | `LoginRequest` | POST `/api/auth/login` body |
-| `RegisterRequest` | POST `/api/auth/register` body |
+| `RegisterRequest` | POST `/api/auth/register` body — includes `registrationNumber` |
 | `AuthResponse` | Successful auth response — `accessToken`, `refreshToken`, `user` |
 
 ---

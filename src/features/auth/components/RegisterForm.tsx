@@ -9,6 +9,7 @@ type FieldErrors = {
   email?: string;
   password?: string;
   confirmPassword?: string;
+  registrationNumber?: string;
 };
 
 /** Client-side validation — returns an error map; empty object means valid. */
@@ -18,6 +19,7 @@ function validate(
   email: string,
   password: string,
   confirmPassword: string,
+  registrationNumber: string,
 ): FieldErrors {
   const errors: FieldErrors = {};
   if (!firstName.trim()) errors.firstName = 'First name is required.';
@@ -28,6 +30,7 @@ function validate(
   else if (password.length < 8) errors.password = 'Password must be at least 8 characters.';
   if (!confirmPassword) errors.confirmPassword = 'Please confirm your password.';
   else if (password !== confirmPassword) errors.confirmPassword = 'Passwords do not match.';
+  if (!registrationNumber.trim()) errors.registrationNumber = 'Registration number is required.';
   return errors;
 }
 
@@ -43,6 +46,7 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [registrationNumber, setRegistrationNumber] = useState('');
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
   // Map backend field-level errors onto individual fields.
@@ -64,7 +68,7 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
     e.preventDefault();
     clearError();
 
-    const errors = validate(firstName, lastName, email, password, confirmPassword);
+    const errors = validate(firstName, lastName, email, password, confirmPassword, registrationNumber);
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
       return;
@@ -72,7 +76,7 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
     setFieldErrors({});
 
     // Supervisor accounts are created by admins — public registration is STUDENT only.
-    await register({ firstName, lastName, email, password, role: 'STUDENT' });
+    await register({ firstName, lastName, email, password, role: 'STUDENT', registrationNumber });
     onSuccess?.();
   }
 
@@ -127,6 +131,27 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
             </p>
           )}
         </div>
+      </div>
+
+      {/* Registration Number */}
+      <div className="flex flex-col gap-1">
+        <label htmlFor="reg-number" className="text-sm font-medium text-foreground">
+          Registration Number
+        </label>
+        <Input
+          id="reg-number"
+          type="text"
+          autoComplete="off"
+          placeholder="e.g. IT24100487"
+          value={registrationNumber}
+          onChange={(e) => setRegistrationNumber(e.target.value)}
+          className={inputClass}
+        />
+        {(fieldErrors.registrationNumber ?? backendFieldErrors?.registrationNumber) && (
+          <p className="text-xs text-red-500">
+            {fieldErrors.registrationNumber ?? backendFieldErrors?.registrationNumber}
+          </p>
+        )}
       </div>
 
       {/* Email */}
