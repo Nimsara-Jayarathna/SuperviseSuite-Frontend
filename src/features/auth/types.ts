@@ -23,7 +23,6 @@ export type RegisterRequest = {
   lastName: string;
   email: string;
   password: string;
-  role: UserRole;
   registrationNumber: string;
 };
 
