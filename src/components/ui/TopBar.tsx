@@ -1,4 +1,3 @@
-import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { Logo } from '@/components/brand/Logo';
 import { Button } from '@/components/ui/Button';
@@ -15,21 +14,12 @@ type TopBarProps = {
   role: 'student' | 'supervisor';
   homePath: string;
   navItems: NavItem[];
-  primaryAction?: ReactNode;
   userName: string;
   userEmail: string;
   onLogout: () => void;
 };
 
-export function TopBar({
-  role,
-  homePath,
-  navItems,
-  primaryAction,
-  userName,
-  userEmail,
-  onLogout,
-}: TopBarProps) {
+export function TopBar({ role, homePath, navItems, userName, userEmail, onLogout }: TopBarProps) {
   return (
     <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/85 backdrop-blur">
       <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
@@ -64,7 +54,6 @@ export function TopBar({
             </nav>
 
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              {primaryAction ? <div>{primaryAction}</div> : null}
               <div className="text-sm">
                 <p className="font-medium text-foreground">{userName}</p>
                 <p className="text-muted-foreground">{userEmail}</p>
