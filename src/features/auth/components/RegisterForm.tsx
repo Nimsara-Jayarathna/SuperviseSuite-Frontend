@@ -82,8 +82,8 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
     }
     setFieldErrors({});
 
-    // Supervisor accounts are created by admins — public registration is STUDENT only.
-    await register({ firstName, lastName, email, password, role: 'STUDENT', registrationNumber });
+    // Role is assigned server-side — the backend always sets STUDENT for public registration.
+    await register({ firstName, lastName, email, password, registrationNumber });
     onSuccess?.();
   }
 
