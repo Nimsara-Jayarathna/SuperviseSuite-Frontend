@@ -29,7 +29,9 @@ export function LoginPage() {
         <LoginForm />
 
         {/* Footer */}
-        <p className="mt-8 text-center text-xs text-muted-foreground">Need help? Contact support.</p>
+        <p className="mt-8 text-center text-xs text-muted-foreground">
+          Need help? Contact support.
+        </p>
       </div>
     </div>
   );

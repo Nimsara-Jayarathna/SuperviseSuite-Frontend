@@ -9,10 +9,7 @@ export function LandingPage() {
 
   return (
     <PublicLayout>
-      <LandingNav
-        onLogin={() => navigate('/login')}
-        onRegister={() => navigate('/register')}
-      />
+      <LandingNav onLogin={() => navigate('/login')} onRegister={() => navigate('/register')} />
       <HeroSection
         onStudentPortal={() => navigate('/register')}
         onSupervisorAccess={() => navigate('/login')}

@@ -33,8 +33,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
   }, {});
 
   // Show a general banner only for non-field-level errors.
-  const generalError =
-    error && error.code !== 'VALIDATION_ERROR' ? error.message : null;
+  const generalError = error && error.code !== 'VALIDATION_ERROR' ? error.message : null;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

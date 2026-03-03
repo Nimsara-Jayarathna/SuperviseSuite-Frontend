@@ -68,7 +68,14 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
     e.preventDefault();
     clearError();
 
-    const errors = validate(firstName, lastName, email, password, confirmPassword, registrationNumber);
+    const errors = validate(
+      firstName,
+      lastName,
+      email,
+      password,
+      confirmPassword,
+      registrationNumber,
+    );
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
       return;
