@@ -21,15 +21,15 @@ export function SupervisorProjectCard({ project }: SupervisorProjectCardProps) {
   const overflowCount = Math.max(0, project.members.length - visibleMembers.length);
 
   return (
-    <article className="flex h-full flex-col rounded-3xl border border-border bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
-      <div className="grid min-h-[7.5rem] grid-cols-[minmax(0,1fr)_auto] gap-3">
+    <article className="flex h-full flex-col rounded-3xl border border-border bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
+      <div className="grid min-h-[6.5rem] grid-cols-[minmax(0,1fr)_auto] gap-2.5">
         <div className="min-w-0">
           <StatusBadge tone={lifecycleTone(project)} className="tracking-[0.08em]">
             {project.lifecycle.replace('_', ' ')}
           </StatusBadge>
-          <h2 className="mt-2 text-lg font-semibold text-foreground">{project.title}</h2>
+          <h2 className="mt-1.5 text-lg font-semibold text-foreground">{project.title}</h2>
           <p
-            className="mt-1 overflow-hidden text-sm leading-6 text-muted-foreground"
+            className="mt-1 overflow-hidden text-sm leading-5 text-muted-foreground"
             style={{
               display: '-webkit-box',
               WebkitLineClamp: 2,
@@ -41,52 +41,52 @@ export function SupervisorProjectCard({ project }: SupervisorProjectCardProps) {
         </div>
 
         <div className="flex items-start">
-          <p className="rounded-2xl bg-slate-50 px-3 py-1.5 text-sm font-semibold text-foreground">
+          <p className="rounded-2xl bg-slate-50 px-3 py-1 text-sm font-semibold text-foreground">
             {project.progress}%
           </p>
         </div>
       </div>
 
-      <div className="mt-4 grid gap-2 sm:grid-cols-3">
-        <div className="flex min-h-[4.75rem] flex-col justify-center rounded-2xl bg-slate-50 px-3 py-2.5">
-          <p className="truncate text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+      <div className="mt-3 grid gap-2 sm:grid-cols-3">
+        <div className="flex min-h-[4.25rem] flex-col justify-center rounded-2xl bg-slate-50 px-3 py-2">
+          <p className="truncate text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
             Members
           </p>
-          <p className="mt-1 text-lg font-semibold text-foreground">{project.members.length}</p>
+          <p className="mt-1 text-base font-semibold text-foreground">{project.members.length}</p>
         </div>
-        <div className="flex min-h-[4.75rem] flex-col justify-center rounded-2xl bg-slate-50 px-3 py-2.5">
-          <p className="truncate text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+        <div className="flex min-h-[4.25rem] flex-col justify-center rounded-2xl bg-slate-50 px-3 py-2">
+          <p className="truncate text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
             Open Actions
           </p>
-          <p className="mt-1 text-lg font-semibold text-foreground">{openActionCount}</p>
+          <p className="mt-1 text-base font-semibold text-foreground">{openActionCount}</p>
         </div>
-        <div className="flex min-h-[4.75rem] flex-col justify-center rounded-2xl bg-slate-50 px-3 py-2.5">
-          <p className="truncate text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+        <div className="flex min-h-[4.25rem] flex-col justify-center rounded-2xl bg-slate-50 px-3 py-2">
+          <p className="truncate text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
             Integration Flags
           </p>
-          <p className="mt-1 text-lg font-semibold text-foreground">{issueCount}</p>
+          <p className="mt-1 text-base font-semibold text-foreground">{issueCount}</p>
         </div>
       </div>
 
-      <div className="mt-4 min-h-[3.25rem]">
-        <div className="flex flex-wrap gap-1.5 overflow-hidden">
+      <div className="mt-3 min-h-[2.75rem] max-h-[2.75rem] overflow-hidden">
+        <div className="flex flex-wrap gap-1.5">
           {visibleMembers.map((member) => (
             <span
               key={`${project.id}-${member.id}`}
-              className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-medium text-foreground"
+              className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-[10px] font-medium text-foreground"
             >
               {member.name}
             </span>
           ))}
           {overflowCount > 0 ? (
-            <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-medium text-muted-foreground">
+            <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-[10px] font-medium text-muted-foreground">
               +{overflowCount}
             </span>
           ) : null}
         </div>
       </div>
 
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
+      <div className="mt-3 grid gap-2 sm:grid-cols-2">
         <Link
           to={`/supervisor/projects/${project.id}`}
           className="inline-flex h-10 items-center justify-center rounded-2xl bg-slate-900 px-4 text-sm font-semibold text-white transition-opacity hover:opacity-90"

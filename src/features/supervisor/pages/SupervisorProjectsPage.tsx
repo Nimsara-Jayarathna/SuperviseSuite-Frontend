@@ -85,7 +85,7 @@ export function SupervisorProjectsPage() {
         </select>
       </section>
 
-      <section className="grid items-stretch gap-4 xl:grid-cols-2">
+      <section className="grid items-stretch gap-3 xl:grid-cols-2">
         {visibleProjects.map((project) => (
           <SupervisorProjectCard key={project.id} project={project} />
         ))}
