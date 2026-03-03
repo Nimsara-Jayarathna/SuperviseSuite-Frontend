@@ -1,5 +1,6 @@
 import { useDeferredValue, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { EmptyState } from '@/components/feedback/EmptyState';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { SupervisorProjectCard } from '../components/SupervisorProjectCard';
 import { useSupervisorWorkspace } from '../hooks/useSupervisorWorkspace';
@@ -18,6 +19,7 @@ const LIFECYCLE_OPTIONS: LifecycleFilter[] = [
 ];
 
 export function SupervisorProjectsPage() {
+  const navigate = useNavigate();
   const { projects } = useSupervisorWorkspace();
   const [query, setQuery] = useState('');
   const [lifecycle, setLifecycle] = useState<LifecycleFilter>('ALL');
@@ -40,6 +42,12 @@ export function SupervisorProjectsPage() {
 
     return matchesQuery && matchesLifecycle && matchesIntegration;
   });
+
+  const resetFilters = () => {
+    setQuery('');
+    setLifecycle('ALL');
+    setIntegration('ALL');
+  };
 
   return (
     <div className="space-y-5">
@@ -87,11 +95,26 @@ export function SupervisorProjectsPage() {
         </select>
       </section>
 
-      <section className="grid items-stretch gap-2.5 lg:gap-3 xl:grid-cols-2">
-        {visibleProjects.map((project) => (
-          <SupervisorProjectCard key={project.id} project={project} />
-        ))}
-      </section>
+      {visibleProjects.length > 0 ? (
+        <section className="grid items-stretch gap-2.5 lg:gap-3 xl:grid-cols-2">
+          {visibleProjects.map((project) => (
+            <SupervisorProjectCard key={project.id} project={project} />
+          ))}
+        </section>
+      ) : (
+        <EmptyState
+          title="No projects found"
+          description="Try adjusting your search or filters to find a project."
+          primaryAction={{
+            label: 'Create new project',
+            onClick: () => navigate('/supervisor/projects/new'),
+          }}
+          secondaryAction={{
+            label: 'Clear filters',
+            onClick: resetFilters,
+          }}
+        />
+      )}
     </div>
   );
 }
