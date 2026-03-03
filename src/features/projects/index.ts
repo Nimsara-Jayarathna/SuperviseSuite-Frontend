@@ -1,7 +1,3 @@
-export * from './pages/SupervisorProjectsPage';
-export * from './pages/StudentProjectsPage';
-export * from './pages/ProjectDetailsPage';
-export * from './pages/CreateProjectPage';
 export * from './components/ProjectCard';
 export * from './components/ProjectForm';
 export * from './api/projectsApi';

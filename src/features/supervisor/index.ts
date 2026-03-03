@@ -1,5 +1,7 @@
 export * from './types';
+export * from './data/mockSupervisorWorkspace';
 export * from './hooks/useSupervisorWorkspace';
+export * from './components/SupervisorProjectCard';
 export * from './pages/SupervisorDashboardPage';
 export * from './pages/SupervisorProjectsPage';
 export * from './pages/CreateProjectPage';
