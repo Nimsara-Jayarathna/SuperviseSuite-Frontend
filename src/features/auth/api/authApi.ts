@@ -1,4 +1,4 @@
-import type { AuthResponse, LoginRequest, RegisterRequest } from '../types';
+import type { AuthResponse, LoginRequest, RegisterRequest, RegisterResponse } from '../types';
 import { apiClient } from '@/services/apiClient';
 
 // Switch to false once the backend /api/auth/* endpoints are live.
@@ -32,20 +32,11 @@ export const authApi = {
     return apiClient.post<AuthResponse>('/api/auth/login', body);
   },
 
-  async register(body: RegisterRequest): Promise<AuthResponse> {
+  async register(body: RegisterRequest): Promise<RegisterResponse> {
     if (USE_MOCK) {
       await mockDelay();
-      return {
-        ...MOCK_RESPONSE,
-        user: {
-          ...MOCK_RESPONSE.user,
-          email: body.email,
-          firstName: body.firstName,
-          lastName: body.lastName,
-          role: body.role,
-        },
-      };
+      return { message: 'Account created successfully.' };
     }
-    return apiClient.post<AuthResponse>('/api/auth/register', body);
+    return apiClient.post<RegisterResponse>('/api/auth/register', body);
   },
 };

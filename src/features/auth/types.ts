@@ -26,6 +26,11 @@ export type RegisterRequest = {
   registrationNumber: string;
 };
 
+/** POST /api/auth/register — account created, no tokens issued */
+export type RegisterResponse = {
+  message: string;
+};
+
 /** Successful auth response — access token + user profile */
 export type AuthResponse = {
   accessToken: string;
