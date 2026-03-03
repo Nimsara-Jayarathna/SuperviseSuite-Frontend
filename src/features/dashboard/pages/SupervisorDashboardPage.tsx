@@ -1,6 +1,7 @@
 import { useDeferredValue, useState } from 'react';
 import { AlertTriangle, ArrowRight, FolderKanban, Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { PageHeader } from '@/components/ui/PageHeader';
 import { useSupervisorWorkspace } from '@/features/supervisor/hooks/useSupervisorWorkspace';
 
 const dateFormatter = new Intl.DateTimeFormat('en', {
@@ -33,62 +34,48 @@ export function SupervisorDashboardPage() {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-        <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
-          <div className="max-w-3xl">
-            <p className="text-sm font-medium uppercase tracking-[0.3em] text-amber-600">
-              Supervisor Workspace
-            </p>
-            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-              Monitor delivery health across every supervised project.
-            </h1>
-            <p className="mt-3 text-sm leading-7 text-muted-foreground sm:text-base">
-              This dashboard follows the prototype supervision flow, but the implementation is
-              adapted to the current frontend structure with reusable route modules and mock-backed
-              UI states.
-            </p>
-          </div>
-
-          <div className="w-full max-w-md">
-            <label className="relative block">
-              <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <input
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="Search project or student"
-                className="w-full rounded-2xl border border-border bg-white py-3 pl-11 pr-4 text-sm outline-none transition-colors focus:border-amber-300"
-              />
-            </label>
-          </div>
-        </div>
-      </section>
+      <PageHeader
+        title="Supervisor Dashboard"
+        subtitle="Monitor delivery health across every supervised project."
+        actions={
+          <label className="relative block w-full max-w-md">
+            <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search project or student"
+              className="w-full rounded-2xl border border-border bg-white py-3 pl-11 pr-4 text-sm outline-none transition-colors focus:border-amber-300"
+            />
+          </label>
+        }
+      />
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-        <div className="rounded-3xl border border-border bg-white p-5 shadow-sm">
+        <div className="rounded-2xl border border-border bg-white p-5 shadow-sm">
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
             Total projects
           </p>
           <p className="mt-3 text-3xl font-semibold text-foreground">{stats.total}</p>
         </div>
-        <div className="rounded-3xl border border-border bg-white p-5 shadow-sm">
+        <div className="rounded-2xl border border-border bg-white p-5 shadow-sm">
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
             Active
           </p>
           <p className="mt-3 text-3xl font-semibold text-foreground">{stats.active}</p>
         </div>
-        <div className="rounded-3xl border border-border bg-white p-5 shadow-sm">
+        <div className="rounded-2xl border border-border bg-white p-5 shadow-sm">
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
             At risk
           </p>
           <p className="mt-3 text-3xl font-semibold text-foreground">{stats.atRisk}</p>
         </div>
-        <div className="rounded-3xl border border-border bg-white p-5 shadow-sm">
+        <div className="rounded-2xl border border-border bg-white p-5 shadow-sm">
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
             Behind
           </p>
           <p className="mt-3 text-3xl font-semibold text-foreground">{stats.behind}</p>
         </div>
-        <div className="rounded-3xl border border-border bg-white p-5 shadow-sm">
+        <div className="rounded-2xl border border-border bg-white p-5 shadow-sm">
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
             Overdue actions
           </p>

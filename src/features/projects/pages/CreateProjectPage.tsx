@@ -1,5 +1,7 @@
 import { startTransition, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { PageTabs } from '@/components/ui/PageTabs';
 import { useSupervisorWorkspace } from '@/features/supervisor/hooks/useSupervisorWorkspace';
 
 type Step = 1 | 2 | 3;
@@ -72,34 +74,23 @@ export function CreateProjectPage() {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-3xl border border-border bg-white p-6 shadow-sm">
-        <p className="text-sm font-medium uppercase tracking-[0.3em] text-amber-600">
-          Create Project
-        </p>
-        <h1 className="mt-3 text-3xl font-semibold tracking-tight text-foreground">
-          Start a new supervision workspace.
-        </h1>
-        <p className="mt-3 text-sm leading-7 text-muted-foreground sm:text-base">
-          This keeps the prototype’s two-step project setup idea, but refactors it into a
-          multi-stage, frontend-only draft flow. No backend persistence is wired yet.
-        </p>
-      </section>
+      <PageHeader
+        title="Create Project"
+        subtitle="Start a new supervision workspace. This draft flow is UI-only until the backend project API is connected."
+      />
 
       <section className="rounded-3xl border border-border bg-white p-6 shadow-sm">
-        <div className="grid gap-3 md:grid-cols-3">
-          {[1, 2, 3].map((item) => (
-            <div
-              key={item}
-              className={`rounded-2xl border px-4 py-4 text-sm font-medium ${
-                step === item
-                  ? 'border-amber-300 bg-amber-50 text-amber-700'
-                  : 'border-slate-200 bg-slate-50 text-muted-foreground'
-              }`}
-            >
-              Step {item}: {item === 1 ? 'Basics' : item === 2 ? 'Connections' : 'Review'}
-            </div>
-          ))}
-        </div>
+        <PageTabs
+          items={[
+            { value: '1', label: 'Step 1: Basics' },
+            { value: '2', label: 'Step 2: Connections' },
+            { value: '3', label: 'Step 3: Review' },
+          ]}
+          value={String(step)}
+          onChange={() => {}}
+          tone="supervisor"
+          className="border-0 p-0 shadow-none"
+        />
 
         {step === 1 ? (
           <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">

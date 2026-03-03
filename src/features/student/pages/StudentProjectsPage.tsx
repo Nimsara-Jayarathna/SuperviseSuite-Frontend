@@ -1,4 +1,5 @@
 import { FolderKanban } from 'lucide-react';
+import { PageHeader } from '@/components/ui/PageHeader';
 import { StudentProjectCard } from '../components/StudentProjectCard';
 import { useStudentProjects } from '../hooks/useStudentProjects';
 
@@ -7,6 +8,11 @@ export function StudentProjectsPage() {
 
   return (
     <div className="space-y-8">
+      <PageHeader
+        title="My Projects"
+        subtitle="Browse your assigned projects and open each workspace to review progress, meetings, action items, and files."
+      />
+
       {projects.length > 0 ? (
         <section className="grid gap-5 xl:grid-cols-2">
           {projects.map((project) => (

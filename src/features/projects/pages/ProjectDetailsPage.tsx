@@ -9,7 +9,9 @@ import {
   MessageSquareMore,
 } from 'lucide-react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
-import { cn } from '@/lib/cn';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { PageTabs } from '@/components/ui/PageTabs';
+import { StatusBadge } from '@/components/ui/StatusBadge';
 import { useSupervisorWorkspace } from '@/features/supervisor/hooks/useSupervisorWorkspace';
 import type { SupervisorProjectLifecycle, SupervisorProjectTab } from '@/features/supervisor/types';
 
@@ -43,14 +45,6 @@ const LIFECYCLE_OPTIONS: SupervisorProjectLifecycle[] = [
   'BEHIND',
   'COMPLETED',
 ];
-
-function lifecycleClasses(lifecycle: SupervisorProjectLifecycle) {
-  if (lifecycle === 'ACTIVE') return 'border-emerald-200 bg-emerald-50 text-emerald-700';
-  if (lifecycle === 'AT_RISK') return 'border-amber-200 bg-amber-50 text-amber-700';
-  if (lifecycle === 'BEHIND') return 'border-rose-200 bg-rose-50 text-rose-700';
-  if (lifecycle === 'COMPLETED') return 'border-slate-300 bg-slate-100 text-slate-700';
-  return 'border-sky-200 bg-sky-50 text-sky-700';
-}
 
 export function ProjectDetailsPage() {
   const { projectId } = useParams();
@@ -90,71 +84,76 @@ export function ProjectDetailsPage() {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-[2rem] border border-border bg-white p-6 shadow-sm sm:p-8">
-        <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
-          <div className="max-w-3xl">
-            <span
-              className={cn(
-                'inline-flex rounded-full border px-3 py-1 text-xs font-semibold tracking-wide',
-                lifecycleClasses(lifecycleDraft),
-              )}
-            >
-              {lifecycleDraft.replace('_', ' ')}
-            </span>
-            <h1 className="mt-4 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-              {project.title}
-            </h1>
-            <p className="mt-3 text-sm leading-7 text-muted-foreground sm:text-base">
-              {project.summary}
-            </p>
-
-            <div className="mt-5 flex flex-wrap gap-3 text-sm text-muted-foreground">
-              <span className="inline-flex items-center gap-2 rounded-full bg-slate-50 px-3 py-2">
-                <CalendarDays className="h-4 w-4" />
-                Milestone {dateFormatter.format(new Date(project.milestoneDate))}
-              </span>
-              <span className="inline-flex items-center gap-2 rounded-full bg-slate-50 px-3 py-2">
-                <BarChart3 className="h-4 w-4" />
-                Progress {project.progress}%
-              </span>
-            </div>
-          </div>
-
-          <div className="grid gap-3 sm:grid-cols-2 xl:w-[26rem]">
-            {project.metrics.map((metric) => (
-              <div
-                key={metric.label}
-                className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4"
-              >
-                <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
-                  {metric.label}
-                </p>
-                <p className="mt-2 text-2xl font-semibold text-foreground">{metric.value}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="rounded-3xl border border-border bg-white p-3 shadow-sm">
-        <div className="flex flex-wrap gap-2">
-          {TABS.map((tab) => (
+      <PageHeader
+        title={project.title}
+        subtitle={project.summary}
+        actions={
+          <>
             <button
-              key={tab}
               type="button"
-              onClick={() => handleTabChange(tab)}
-              className={cn(
-                'rounded-2xl px-4 py-2 text-sm font-medium capitalize transition-colors',
-                activeTab === tab
-                  ? 'bg-slate-900 text-white'
-                  : 'bg-transparent text-muted-foreground hover:bg-slate-100 hover:text-foreground',
-              )}
+              className="rounded-2xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
             >
-              {tab.replace('-', ' ')}
+              Add meeting
             </button>
-          ))}
-        </div>
+            <button
+              type="button"
+              className="rounded-2xl border border-border px-4 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-slate-50"
+            >
+              Upload file
+            </button>
+          </>
+        }
+      />
+
+      <section className="flex flex-wrap gap-3">
+        <StatusBadge
+          tone={
+            lifecycleDraft === 'ACTIVE'
+              ? 'success'
+              : lifecycleDraft === 'AT_RISK'
+                ? 'warning'
+                : lifecycleDraft === 'BEHIND'
+                  ? 'danger'
+                  : lifecycleDraft === 'COMPLETED'
+                    ? 'neutral'
+                    : 'student'
+          }
+        >
+          {lifecycleDraft.replace('_', ' ')}
+        </StatusBadge>
+        <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-2 text-sm text-muted-foreground shadow-sm">
+          <CalendarDays className="h-4 w-4" />
+          Milestone {dateFormatter.format(new Date(project.milestoneDate))}
+        </span>
+        <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-2 text-sm text-muted-foreground shadow-sm">
+          <BarChart3 className="h-4 w-4" />
+          Progress {project.progress}%
+        </span>
       </section>
+
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {project.metrics.map((metric) => (
+          <div
+            key={metric.label}
+            className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm"
+          >
+            <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
+              {metric.label}
+            </p>
+            <p className="mt-2 text-2xl font-semibold text-foreground">{metric.value}</p>
+          </div>
+        ))}
+      </section>
+
+      <PageTabs
+        items={TABS.map((tab) => ({
+          value: tab,
+          label: tab.replace('-', ' '),
+        }))}
+        value={activeTab}
+        onChange={(value) => handleTabChange(value as SupervisorProjectTab)}
+        tone="supervisor"
+      />
 
       {activeTab === 'overview' ? (
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1.3fr)_minmax(0,0.9fr)]">

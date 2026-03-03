@@ -1,5 +1,7 @@
 import { useDeferredValue, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { StatusBadge } from '@/components/ui/StatusBadge';
 import { useSupervisorWorkspace } from '@/features/supervisor/hooks/useSupervisorWorkspace';
 import type { SupervisorProjectLifecycle } from '@/features/supervisor/types';
 
@@ -14,14 +16,6 @@ const LIFECYCLE_OPTIONS: LifecycleFilter[] = [
   'BEHIND',
   'COMPLETED',
 ];
-
-function badgeClasses(lifecycle: SupervisorProjectLifecycle) {
-  if (lifecycle === 'ACTIVE') return 'border-emerald-200 bg-emerald-50 text-emerald-700';
-  if (lifecycle === 'AT_RISK') return 'border-amber-200 bg-amber-50 text-amber-700';
-  if (lifecycle === 'BEHIND') return 'border-rose-200 bg-rose-50 text-rose-700';
-  if (lifecycle === 'COMPLETED') return 'border-slate-300 bg-slate-100 text-slate-700';
-  return 'border-sky-200 bg-sky-50 text-sky-700';
-}
 
 export function SupervisorProjectsPage() {
   const { projects } = useSupervisorWorkspace();
@@ -49,57 +43,46 @@ export function SupervisorProjectsPage() {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-3xl border border-border bg-white p-6 shadow-sm">
-        <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
-          <div className="max-w-3xl">
-            <p className="text-sm font-medium uppercase tracking-[0.3em] text-amber-600">
-              Projects
-            </p>
-            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-foreground">
-              Review every supervised project in one place.
-            </h1>
-            <p className="mt-3 text-sm leading-7 text-muted-foreground sm:text-base">
-              This page keeps the prototype project list behavior, but it is reworked into the
-              current frontend’s card-based layout and feature structure.
-            </p>
-          </div>
-
+      <PageHeader
+        title="Projects"
+        subtitle="Review every supervised project in one place."
+        actions={
           <Link
             to="/supervisor/projects/new"
             className="inline-flex items-center justify-center rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90"
           >
             New project
           </Link>
-        </div>
+        }
+      />
 
-        <div className="mt-6 grid gap-3 lg:grid-cols-[minmax(0,1fr)_220px_220px]">
-          <input
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search by project title or member"
-            className="rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-amber-300"
-          />
-          <select
-            value={lifecycle}
-            onChange={(event) => setLifecycle(event.target.value as LifecycleFilter)}
-            className="rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-amber-300"
-          >
-            {LIFECYCLE_OPTIONS.map((option) => (
-              <option key={option} value={option}>
-                {option === 'ALL' ? 'All lifecycle states' : option.replace('_', ' ')}
-              </option>
-            ))}
-          </select>
-          <select
-            value={integration}
-            onChange={(event) => setIntegration(event.target.value as IntegrationFilter)}
-            className="rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-amber-300"
-          >
-            <option value="ALL">All integrations</option>
-            <option value="CONNECTED">Fully connected</option>
-            <option value="ISSUES">Has integration issues</option>
-          </select>
-        </div>
+      <section className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_220px_220px]">
+        <input
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Search by project title or member"
+          className="rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-amber-300"
+        />
+        <select
+          value={lifecycle}
+          onChange={(event) => setLifecycle(event.target.value as LifecycleFilter)}
+          className="rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-amber-300"
+        >
+          {LIFECYCLE_OPTIONS.map((option) => (
+            <option key={option} value={option}>
+              {option === 'ALL' ? 'All lifecycle states' : option.replace('_', ' ')}
+            </option>
+          ))}
+        </select>
+        <select
+          value={integration}
+          onChange={(event) => setIntegration(event.target.value as IntegrationFilter)}
+          className="rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-amber-300"
+        >
+          <option value="ALL">All integrations</option>
+          <option value="CONNECTED">Fully connected</option>
+          <option value="ISSUES">Has integration issues</option>
+        </select>
       </section>
 
       <section className="grid gap-5 xl:grid-cols-2">
@@ -118,11 +101,22 @@ export function SupervisorProjectsPage() {
             >
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <span
-                    className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${badgeClasses(project.lifecycle)}`}
+                  <StatusBadge
+                    tone={
+                      project.lifecycle === 'ACTIVE'
+                        ? 'success'
+                        : project.lifecycle === 'AT_RISK'
+                          ? 'warning'
+                          : project.lifecycle === 'BEHIND'
+                            ? 'danger'
+                            : project.lifecycle === 'COMPLETED'
+                              ? 'neutral'
+                              : 'student'
+                    }
+                    className="tracking-[0.08em]"
                   >
                     {project.lifecycle.replace('_', ' ')}
-                  </span>
+                  </StatusBadge>
                   <h2 className="mt-3 text-xl font-semibold text-foreground">{project.title}</h2>
                   <p className="mt-2 text-sm leading-7 text-muted-foreground">{project.summary}</p>
                 </div>
