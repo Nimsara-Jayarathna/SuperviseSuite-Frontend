@@ -3,7 +3,7 @@ import { apiClient } from '@/services/apiClient';
 
 // Switch to false once the backend /api/auth/* endpoints are live.
 // Mock credentials must never reach a production build.
-const USE_MOCK = true;
+const USE_MOCK = false;
 
 const MOCK_DELAY = 600; // ms — simulates network latency in dev
 

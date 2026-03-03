@@ -28,6 +28,11 @@ function validate(
   else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.email = 'Enter a valid email.';
   if (!password) errors.password = 'Password is required.';
   else if (password.length < 8) errors.password = 'Password must be at least 8 characters.';
+  else if (!/[A-Z]/.test(password)) errors.password = 'Password must contain an uppercase letter.';
+  else if (!/[a-z]/.test(password)) errors.password = 'Password must contain a lowercase letter.';
+  else if (!/[0-9]/.test(password)) errors.password = 'Password must contain a digit.';
+  else if (!/[^A-Za-z0-9]/.test(password))
+    errors.password = 'Password must contain a special character.';
   if (!confirmPassword) errors.confirmPassword = 'Please confirm your password.';
   else if (password !== confirmPassword) errors.confirmPassword = 'Passwords do not match.';
   if (!registrationNumber.trim()) errors.registrationNumber = 'Registration number is required.';
