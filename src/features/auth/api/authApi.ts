@@ -35,7 +35,14 @@ export const authApi = {
   async register(body: RegisterRequest): Promise<RegisterResponse> {
     if (USE_MOCK) {
       await mockDelay();
-      return { message: 'Account created successfully.' };
+      return {
+        id: 'mock-user-id',
+        email: body.email,
+        firstName: body.firstName,
+        lastName: body.lastName,
+        registrationNumber: body.registrationNumber,
+        role: 'STUDENT',
+      };
     }
     return apiClient.post<RegisterResponse>('/api/auth/register', body);
   },
