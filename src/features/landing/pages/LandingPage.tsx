@@ -1,21 +1,18 @@
+import { useNavigate } from 'react-router-dom';
 import { PublicLayout } from '@/app/layout/PublicLayout';
 import { FeaturesSection } from '../components/FeaturesSection';
 import { HeroSection } from '../components/HeroSection';
 import { LandingNav } from '../components/LandingNav';
 
 export function LandingPage() {
-  // TODO: replace stubs with auth modal open / route navigation (feat/auth-forms)
-  const handleLogin = () => {};
-  const handleRegister = () => {};
-  const handleStudentPortal = () => {};
-  const handleSupervisorAccess = () => {};
+  const navigate = useNavigate();
 
   return (
     <PublicLayout>
-      <LandingNav onLogin={handleLogin} onRegister={handleRegister} />
+      <LandingNav onLogin={() => navigate('/login')} onRegister={() => navigate('/register')} />
       <HeroSection
-        onStudentPortal={handleStudentPortal}
-        onSupervisorAccess={handleSupervisorAccess}
+        onStudentPortal={() => navigate('/register')}
+        onSupervisorAccess={() => navigate('/login')}
       />
       <FeaturesSection />
     </PublicLayout>

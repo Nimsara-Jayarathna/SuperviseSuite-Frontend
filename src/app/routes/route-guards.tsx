@@ -1,5 +1,40 @@
-import type { ReactNode } from 'react';
+import { Navigate, Outlet } from 'react-router-dom';
+import { tokenStorage } from '@/services/tokenStorage';
 
-export function RouteGuardPlaceholder({ children }: { children: ReactNode }) {
-  return <>{children}</>;
+// Role → home route mapping, shared across all guards.
+const ROLE_HOME: Record<string, string> = {
+  SUPERVISOR: '/supervisor/dashboard',
+  STUDENT: '/student/projects',
+};
+
+/**
+ * Blocks unauthenticated users — redirects to /login.
+ * Use for any route that requires a valid session.
+ */
+export function RequireAuth() {
+  const token = tokenStorage.getAccessToken();
+  if (!token) return <Navigate to="/login" replace />;
+  return <Outlet />;
+}
+
+/**
+ * Blocks users without the required role.
+ * Security note: this is a UI-only guard — the backend must also enforce
+ * role-based access on every protected API endpoint.
+ */
+export function RequireRole({ role }: { role: string }) {
+  const user = tokenStorage.getUser();
+  if (!user) return <Navigate to="/login" replace />;
+  if (user.role !== role) return <Navigate to="/" replace />;
+  return <Outlet />;
+}
+
+/**
+ * Blocks authenticated users from guest-only pages (/login, /register).
+ * Redirects them to their role home instead.
+ */
+export function RequireGuest() {
+  const user = tokenStorage.getUser();
+  if (!user) return <Outlet />;
+  return <Navigate to={ROLE_HOME[user.role] ?? '/'} replace />;
 }
