@@ -13,10 +13,11 @@ type AppShellProps = {
   role: 'student' | 'supervisor';
   homePath: string;
   navItems: AppShellNavItem[];
+  primaryAction?: ReactNode;
   children: ReactNode;
 };
 
-export function AppShell({ role, homePath, navItems, children }: AppShellProps) {
+export function AppShell({ role, homePath, navItems, primaryAction, children }: AppShellProps) {
   const navigate = useNavigate();
   const user = tokenStorage.getUser();
   const fullName = user ? `${user.firstName} ${user.lastName}`.trim() : role;
@@ -34,6 +35,7 @@ export function AppShell({ role, homePath, navItems, children }: AppShellProps) 
         role={role}
         homePath={homePath}
         navItems={navItems}
+        primaryAction={primaryAction}
         userName={fullName || role}
         userEmail={
           user?.email ??
