@@ -1,28 +1,17 @@
+import { StudentLayout } from '@/app/layout/StudentLayout';
 import { LoginPage, RegisterPage } from '@/features/auth';
+import { SupervisorDashboardPage } from '@/features/dashboard';
 import { LandingPage } from '@/features/landing';
-import { Route, Routes } from 'react-router-dom';
+import { StudentProjectDetailsPage, StudentProjectsPage } from '@/features/student';
+import { Navigate, Route, Routes, useParams } from 'react-router-dom';
 import { RequireRole } from './route-guards';
 
-// ---------------------------------------------------------------------------
-// Placeholder pages — replace with real feature pages as they are built
-// ---------------------------------------------------------------------------
-function StudentProjectsPage() {
-  return (
-    <div className="flex min-h-screen items-center justify-center">
-      <p className="text-lg text-gray-600">Student Projects (coming soon)</p>
-    </div>
-  );
-}
+function StudentProjectRedirect() {
+  const { projectId } = useParams();
+  const target = projectId ? `/student/projects/${projectId}` : '/student/projects';
 
-function SupervisorDashboardPage() {
-  return (
-    <div className="flex min-h-screen items-center justify-center">
-      <p className="text-lg text-gray-600">Supervisor Dashboard (coming soon)</p>
-    </div>
-  );
+  return <Navigate to={target} replace />;
 }
-
-// ---------------------------------------------------------------------------
 
 export function AppRoutes() {
   return (
@@ -36,7 +25,15 @@ export function AppRoutes() {
 
       {/* Student-only */}
       <Route element={<RequireRole role="STUDENT" />}>
-        <Route path="/student/projects" element={<StudentProjectsPage />} />
+        <Route path="/student" element={<StudentLayout />}>
+          <Route index element={<Navigate to="projects" replace />} />
+          <Route path="projects" element={<StudentProjectsPage />} />
+          <Route path="projects/:projectId" element={<StudentProjectDetailsPage />} />
+        </Route>
+        <Route path="/project" element={<StudentProjectRedirect />} />
+        <Route path="/project/:projectId" element={<StudentProjectRedirect />} />
+        <Route path="/projects" element={<StudentProjectRedirect />} />
+        <Route path="/projects/:projectId" element={<StudentProjectRedirect />} />
       </Route>
 
       {/* Supervisor-only */}

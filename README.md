@@ -1,6 +1,8 @@
 # SuperviseSuite Frontend
 
-Structure-only scaffold for a React + Vite + Tailwind CSS frontend.
+React + Vite + Tailwind CSS frontend for SuperviseSuite.
+
+The current implementation is still frontend-first, but it now includes working UI flows for public auth screens and the student project workspace. Backend data integration is still incomplete, so some features remain mock-backed or placeholder-only.
 
 ## Local Development
 
@@ -68,14 +70,22 @@ CI is intentionally not configured yet. In a later phase, automated pipelines wi
 
 ## Folder Structure
 
-- `src/app` - App-level placeholders (routes, layouts, providers, config).
-- `src/features` - Feature-based placeholder modules (`auth`, `projects`, `dashboard`).
-- `src/components` - Shared placeholder UI and feedback components.
-- `src/services` - Placeholder service modules.
-- `src/lib` - Placeholder utility modules.
+- `src/app` - App-level routing, layouts, providers, and config.
+- `src/features` - Feature-based modules (`landing`, `auth`, `student`, plus placeholder `projects` and `dashboard` areas).
+- `src/components` - Shared UI, brand, and feedback components.
+- `src/services` - Shared service modules (for example, API client and token storage).
+- `src/lib` - Shared utility modules.
 - `src/styles` - Global styles.
 - `src/types` - Shared types.
 
+## Current UI Scope
+
+- Public routes are implemented for `/`, `/login`, and `/register`.
+- Student UI routes are implemented for `/student`, `/student/projects`, and `/student/projects/:projectId`.
+- Legacy student aliases (`/project`, `/project/:id`, `/projects`, `/projects/:id`) redirect into the student workspace.
+- The student workspace currently uses local mock data for UI rendering only.
+- Supervisor dashboard and shared `projects` feature modules still contain placeholder implementations.
+
 ## Note
 
-This is a structure-only scaffold. No business logic, auth logic, routing behavior, API behavior, integrations, or feature workflows are implemented.
+The repository standard is to keep local checks green before commit or PR. Run `npm run verify` after UI changes so formatting, linting, and type checks stay aligned with project expectations.
