@@ -8,7 +8,7 @@ import type { AuthUser, LoginRequest, RegisterRequest } from '../types';
 
 /** Role → home route mapping, used after a successful login/register. */
 const ROLE_HOME: Record<string, string> = {
-  SUPERVISOR: '/supervisor/dashboard',
+  SUPERVISOR: '/supervisor',
   STUDENT: '/student/projects',
 };
 

@@ -3,9 +3,13 @@ import { tokenStorage } from '@/services/tokenStorage';
 
 // Role → home route mapping, shared across all guards.
 const ROLE_HOME: Record<string, string> = {
-  SUPERVISOR: '/supervisor/dashboard',
+  SUPERVISOR: '/supervisor',
   STUDENT: '/student/projects',
 };
+
+// UI-only preview mode: allow authenticated users to inspect either role's shell locally.
+// Backend authorization must still enforce the real role restrictions.
+const ALLOW_CROSS_ROLE_PREVIEW = true;
 
 /**
  * Blocks unauthenticated users — redirects to /login.
@@ -25,7 +29,8 @@ export function RequireAuth() {
 export function RequireRole({ role }: { role: string }) {
   const user = tokenStorage.getUser();
   if (!user) return <Navigate to="/login" replace />;
-  if (user.role !== role) return <Navigate to="/" replace />;
+  if (ALLOW_CROSS_ROLE_PREVIEW) return <Outlet />;
+  if (user.role !== role) return <Navigate to={ROLE_HOME[user.role] ?? '/'} replace />;
   return <Outlet />;
 }
 
