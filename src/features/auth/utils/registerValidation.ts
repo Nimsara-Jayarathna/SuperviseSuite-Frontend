@@ -58,8 +58,8 @@ export function validateRegisterForm(fields: {
 /**
  * Maps a backend {@link ApiError} details array onto {@link RegisterFieldErrors}.
  *
- * The backend uses {@code message}; {@code issue} is kept as a fallback for
- * compatibility with existing mocks.
+ * The backend serialises the field as {@code issue} (from {@code ApiErrorDetail#getIssue()}).
+ * {@code message} is checked first as a forward-compatibility fallback.
  *
  * @returns A field-keyed error map, or an empty object when there are no details.
  */

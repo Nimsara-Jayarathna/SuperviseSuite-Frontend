@@ -12,9 +12,10 @@ export type ApiErrorCode =
 /** A single field-level validation error, present in `ApiError.details`. */
 export type ApiErrorDetail = {
   field: string;
-  /** Backend uses `message`; `issue` kept for backward compatibility with mocks. */
-  message?: string;
+  /** Backend serialises this as `issue` (from `ApiErrorDetail#getIssue()`). */
   issue?: string;
+  /** Kept for forward-compatibility if the backend field is ever renamed to `message`. */
+  message?: string;
 };
 
 /** Backend error payload returned on every non-2xx response. */
