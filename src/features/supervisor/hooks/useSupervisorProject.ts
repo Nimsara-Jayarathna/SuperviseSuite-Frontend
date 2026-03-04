@@ -57,7 +57,57 @@ export function useSupervisorProject(projectId: string | undefined) {
   }
 
   useEffect(() => {
-    void loadProject();
+    if (!projectId) {
+      setState({
+        project: null,
+        isLoading: false,
+        error: null,
+      });
+      return;
+    }
+
+    let isCancelled = false;
+    setState((current) => ({ ...current, isLoading: true, error: null }));
+
+    void supervisorApi
+      .getProjectById(projectId)
+      .then((project) => {
+        if (isCancelled) {
+          return;
+        }
+
+        setState({
+          project,
+          isLoading: false,
+          error: null,
+        });
+      })
+      .catch((error) => {
+        if (isCancelled) {
+          return;
+        }
+
+        setState({
+          project: null,
+          isLoading: false,
+          error: isApiException(error)
+            ? error.apiError
+            : {
+                code: 'INTERNAL_ERROR',
+                message: 'Unable to load the project right now.',
+                details: [],
+                timestamp: new Date().toISOString(),
+                status: 0,
+                error: 'Unexpected Error',
+                path: '',
+                traceId: null,
+              },
+        });
+      });
+
+    return () => {
+      isCancelled = true;
+    };
   }, [projectId]);
 
   return {

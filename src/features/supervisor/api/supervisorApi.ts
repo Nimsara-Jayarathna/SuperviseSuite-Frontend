@@ -7,8 +7,8 @@ import type {
   SupervisorStudentSearchResult,
 } from '../types';
 
-let cachedProjectsById: Record<string, SupervisorProjectDetail> = {};
-let inFlightProjectRequests: Record<string, Promise<SupervisorProjectDetail>> = {};
+const cachedProjectsById: Partial<Record<string, SupervisorProjectDetail>> = {};
+const inFlightProjectRequests: Partial<Record<string, Promise<SupervisorProjectDetail>>> = {};
 
 export const supervisorApi = {
   getProjects(): Promise<SupervisorProjectSummary[]> {
