@@ -50,9 +50,7 @@ export function SupervisorProjectCard({ project }: SupervisorProjectCardProps) {
           <p className="truncate text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
             Members
           </p>
-          <p className="mt-0.5 text-[15px] font-semibold text-foreground">
-            {project.memberCount}
-          </p>
+          <p className="mt-0.5 text-[15px] font-semibold text-foreground">{project.memberCount}</p>
         </div>
         <div className="flex min-h-16 flex-col justify-center rounded-2xl bg-slate-50 px-3 py-1.5">
           <p className="truncate text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
