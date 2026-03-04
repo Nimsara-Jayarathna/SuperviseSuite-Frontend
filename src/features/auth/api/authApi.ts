@@ -44,4 +44,21 @@ export const authApi = {
     }
     return apiClient.post<RegisterResponse>('/api/auth/register', body);
   },
+
+  /**
+   * Exchanges the {@code ss_refresh_token} httpOnly cookie for a fresh pair of
+   * cookies. The browser sends the cookie automatically; no token handling is
+   * needed here. Called by the {@code apiClient} 401 interceptor.
+   */
+  async refresh(): Promise<LoginResponse> {
+    return apiClient.post<LoginResponse>('/api/auth/refresh', {});
+  },
+
+  /**
+   * Revokes the {@code ss_refresh_token} cookie server-side and instructs the
+   * browser to delete both auth cookies via {@code Max-Age=0} Set-Cookie headers.
+   */
+  async logout(): Promise<void> {
+    return apiClient.post<void>('/api/auth/logout', {});
+  },
 };

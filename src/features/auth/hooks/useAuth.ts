@@ -76,7 +76,13 @@ export function useAuth() {
     }
   }
 
-  function logout(): void {
+  async function logout(): Promise<void> {
+    try {
+      await authApi.logout();
+    } catch {
+      // Swallow errors — even if the server call fails the browser will have
+      // cleared the cookies (Max-Age=0) and we still wipe local state.
+    }
     tokenStorage.clearAll();
     setState({ user: null, isLoading: false, error: null });
     navigate('/');

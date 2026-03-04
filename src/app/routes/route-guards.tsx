@@ -16,8 +16,8 @@ const ALLOW_CROSS_ROLE_PREVIEW = true;
  * Use for any route that requires a valid session.
  */
 export function RequireAuth() {
-  const token = tokenStorage.getAccessToken();
-  if (!token) return <Navigate to="/login" replace />;
+  const user = tokenStorage.getUser();
+  if (!user) return <Navigate to="/login" replace />;
   return <Outlet />;
 }
 
