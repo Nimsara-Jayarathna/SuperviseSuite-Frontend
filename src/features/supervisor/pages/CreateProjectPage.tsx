@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { BlockingState } from '@/components/ui/BlockingState';
 import { Button, buttonStyles } from '@/components/ui/Button';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -34,11 +34,21 @@ const INITIAL_DRAFT: DraftState = {
   milestoneDueDate: '',
 };
 
+const FIELD_LIMITS = {
+  title: 40,
+  batch: 32,
+  semester: 32,
+  summary: 250,
+  milestoneTitle: 40,
+  milestoneDescription: 250,
+} as const;
+
 function buildStudentLabel(student: SupervisorStudentSearchResult) {
   return `${student.firstName} ${student.lastName}`.trim() || student.email;
 }
 
 export function CreateProjectPage() {
+  const navigate = useNavigate();
   const [draft, setDraft] = useState<DraftState>(INITIAL_DRAFT);
   const [studentQuery, setStudentQuery] = useState('');
   const [selectedStudents, setSelectedStudents] = useState<SupervisorStudentSearchResult[]>([]);
@@ -190,7 +200,12 @@ export function CreateProjectPage() {
   }
 
   function closeRequestModal() {
+    const nextStatus = requestModal.status;
     setRequestModal((current) => ({ ...current, isOpen: false }));
+
+    if (nextStatus === 'success') {
+      navigate('/supervisor/projects');
+    }
   }
 
   function retrySubmit() {
@@ -199,6 +214,14 @@ export function CreateProjectPage() {
 
   const shouldShowSearchPanel =
     studentQuery.trim().length >= 3 || searchState === 'loading' || searchState === 'error';
+
+  function renderLimit(currentLength: number, maxLength: number) {
+    return (
+      <span className="text-xs text-muted-foreground">
+        {currentLength}/{maxLength} characters
+      </span>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -228,13 +251,12 @@ export function CreateProjectPage() {
               </div>
 
               <label className="block">
-                <span className="mb-2 block text-sm font-medium text-foreground">
-                  Project title
-                </span>
+                <span className="mb-2 block text-sm font-medium text-foreground">Project title</span>
                 <input
                   required
                   value={draft.title}
                   onChange={(event) => updateDraft('title', event.target.value)}
+                  maxLength={FIELD_LIMITS.title}
                   placeholder="e.g. Smart Attendance Tracker"
                   className="w-full rounded-2xl border border-border px-4 py-3 text-sm outline-none transition-colors focus:border-amber-300"
                   disabled={isSubmitting}
@@ -242,16 +264,23 @@ export function CreateProjectPage() {
               </label>
 
               <label className="block">
-                <span className="mb-2 block text-sm font-medium text-foreground">Summary</span>
+                <span className="mb-2 flex items-center justify-between gap-3 text-sm font-medium text-foreground">
+                  <span>Summary</span>
+                  {renderLimit(draft.summary.length, FIELD_LIMITS.summary)}
+                </span>
                 <textarea
                   required
                   value={draft.summary}
                   onChange={(event) => updateDraft('summary', event.target.value)}
+                  maxLength={FIELD_LIMITS.summary}
                   placeholder="Describe the project scope, purpose, and expected outcome."
                   rows={5}
                   className="w-full rounded-2xl border border-border px-4 py-3 text-sm outline-none transition-colors focus:border-amber-300"
                   disabled={isSubmitting}
                 />
+                <span className="mt-2 block text-xs text-muted-foreground">
+                  Limit the summary to the key project scope and intended outcome.
+                </span>
               </label>
 
               <div className="grid gap-4 sm:grid-cols-2">
@@ -261,6 +290,7 @@ export function CreateProjectPage() {
                     required
                     value={draft.batch}
                     onChange={(event) => updateDraft('batch', event.target.value)}
+                    maxLength={FIELD_LIMITS.batch}
                     className="w-full rounded-2xl border border-border px-4 py-3 text-sm outline-none transition-colors focus:border-amber-300"
                     disabled={isSubmitting}
                   />
@@ -271,6 +301,7 @@ export function CreateProjectPage() {
                     required
                     value={draft.semester}
                     onChange={(event) => updateDraft('semester', event.target.value)}
+                    maxLength={FIELD_LIMITS.semester}
                     className="w-full rounded-2xl border border-border px-4 py-3 text-sm outline-none transition-colors focus:border-amber-300"
                     disabled={isSubmitting}
                   />
@@ -402,6 +433,7 @@ export function CreateProjectPage() {
                   required
                   value={draft.milestoneTitle}
                   onChange={(event) => updateDraft('milestoneTitle', event.target.value)}
+                  maxLength={FIELD_LIMITS.milestoneTitle}
                   placeholder="e.g. Proposal Submission"
                   className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-amber-300"
                   disabled={isSubmitting}
@@ -409,17 +441,25 @@ export function CreateProjectPage() {
               </label>
 
               <label className="block">
-                <span className="mb-2 block text-sm font-medium text-foreground">
-                  Milestone description
+                <span className="mb-2 flex items-center justify-between gap-3 text-sm font-medium text-foreground">
+                  <span>Milestone description</span>
+                  {renderLimit(
+                    draft.milestoneDescription.length,
+                    FIELD_LIMITS.milestoneDescription,
+                  )}
                 </span>
                 <textarea
                   value={draft.milestoneDescription}
                   onChange={(event) => updateDraft('milestoneDescription', event.target.value)}
+                  maxLength={FIELD_LIMITS.milestoneDescription}
                   placeholder="Add any context or review expectations for this milestone."
                   rows={4}
                   className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-amber-300"
                   disabled={isSubmitting}
                 />
+                <span className="mt-2 block text-xs text-muted-foreground">
+                  Keep milestone notes concise so the first review point stays clear.
+                </span>
               </label>
 
               <label className="block sm:max-w-xs">
