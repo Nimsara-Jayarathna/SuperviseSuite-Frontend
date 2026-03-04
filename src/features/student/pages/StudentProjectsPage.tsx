@@ -1,6 +1,7 @@
 import { useDeferredValue, useState } from 'react';
 import { ErrorState } from '@/components/feedback/ErrorState';
 import { EmptyState } from '@/components/feedback/EmptyState';
+import { ErrorState } from '@/components/feedback/ErrorState';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { StudentProjectCard } from '../components/StudentProjectCard';
 import { StudentProjectCardSkeleton } from '../components/StudentProjectCardSkeleton';
@@ -59,7 +60,7 @@ export function StudentProjectsPage() {
           description="You don’t have any assigned projects matching your filters yet."
           secondaryAction={{
             label: hasActiveFilters ? 'Clear filters' : 'Refresh',
-            onClick: hasActiveFilters ? () => setQuery('') : () => window.location.reload(),
+            onClick: hasActiveFilters ? () => setQuery('') : () => void reload(),
           }}
         />
       )}

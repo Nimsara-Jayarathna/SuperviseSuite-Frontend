@@ -92,7 +92,72 @@ The live student detail page currently exposes only backend-backed tabs:
 
 Tabs for activity, meetings, action items, and files are intentionally not shown until backend endpoints are available.
 
-## Empty States
+## Projects Route
+
+The `/student/projects` route is now backed by `GET /api/student/projects`.
+
+### Current live data source
+
+- `StudentProjectsPage` no longer reads from seeded/mock student list data.
+- Data is loaded through `useStudentProjectSummaries`.
+- API calls are made through `studentApi.getProjects()`.
+
+### Current list record shape
+
+The list route intentionally uses a summary model instead of the full older mock detail shape.
+
+Fields currently used by the list UI:
+
+- `id`
+- `title`
+- `summary`
+- `status`
+- `batch`
+- `semester`
+- `milestoneDate`
+- `lastActivityAt`
+- `progressPercent`
+- `supervisorName`
+
+### Loading and error handling
+
+- While loading:
+  - card skeletons are shown via `StudentProjectCardSkeleton`
+- On failure:
+  - shared `ErrorState` is shown
+- On success with no records:
+  - shared `EmptyState` is shown
+
+### Removed mock-only list concerns
+
+The list route no longer depends on seeded detail-only data that is not yet backed by the student list API, including:
+
+- `metrics[]`
+- action-item counts
+- integration status records
+- full team member arrays
+- detail-oriented artifacts (activity/meetings/files)
+
+## Project Detail Route
+
+`/student/projects/:projectId` is intentionally unchanged in this phase.
+
+### Current state
+
+- still uses `useStudentProjects` (mock-backed hook)
+- still renders the richer tabbed workspace:
+  - `overview`
+  - `team`
+  - `activity`
+  - `meetings`
+  - `action-items`
+  - `files`
+
+### Why
+
+The student detail endpoint has not been implemented in the backend yet. The student list was moved to real API data first to avoid mixing list and detail API scope in one sprint.
+
+## Empty State
 
 `StudentProjectsPage` uses the shared `EmptyState` component.
 
@@ -101,7 +166,7 @@ Tabs for activity, meetings, action items, and files are intentionally not shown
 - Description: "You don’t have any assigned projects matching your filters yet."
 - Action:
   - `Clear filters` when a search query is active
-  - `Refresh` when the list is empty without an active query
+  - `Refresh` (re-fetch via hook reload) when the list is empty without an active query
 
 ## Loading and Error Handling
 
