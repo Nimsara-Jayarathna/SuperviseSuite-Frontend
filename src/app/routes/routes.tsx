@@ -11,7 +11,7 @@ import {
 } from '@/features/supervisor';
 import { tokenStorage } from '@/services/tokenStorage';
 import { Navigate, Route, Routes, useParams } from 'react-router-dom';
-import { RequireRole } from './route-guards';
+import { RequireGuest, RequireRole } from './route-guards';
 
 function LegacyDashboardRedirect() {
   const user = tokenStorage.getUser();
@@ -75,9 +75,11 @@ export function AppRoutes() {
       {/* Public */}
       <Route path="/" element={<LandingPage />} />
 
-      {/* /login and /register are always accessible */}
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/register" element={<RegisterPage />} />
+      {/* Guest-only — redirect authenticated users to their dashboard */}
+      <Route element={<RequireGuest />}>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+      </Route>
 
       {/* Student-only */}
       <Route element={<RequireRole role="STUDENT" />}>

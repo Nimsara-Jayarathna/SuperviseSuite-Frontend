@@ -1,9 +1,9 @@
-import type { AuthResponse, LoginRequest, RegisterRequest } from '../types';
+import type { AuthResponse, LoginRequest, RegisterRequest, RegisterResponse } from '../types';
 import { apiClient } from '@/services/apiClient';
 
 // Switch to false once the backend /api/auth/* endpoints are live.
 // Mock credentials must never reach a production build.
-const USE_MOCK = true;
+const USE_MOCK = false;
 
 const MOCK_DELAY = 600; // ms — simulates network latency in dev
 
@@ -32,20 +32,18 @@ export const authApi = {
     return apiClient.post<AuthResponse>('/api/auth/login', body);
   },
 
-  async register(body: RegisterRequest): Promise<AuthResponse> {
+  async register(body: RegisterRequest): Promise<RegisterResponse> {
     if (USE_MOCK) {
       await mockDelay();
       return {
-        ...MOCK_RESPONSE,
-        user: {
-          ...MOCK_RESPONSE.user,
-          email: body.email,
-          firstName: body.firstName,
-          lastName: body.lastName,
-          role: body.role,
-        },
+        id: 'mock-user-id',
+        email: body.email,
+        firstName: body.firstName,
+        lastName: body.lastName,
+        registrationNumber: body.registrationNumber,
+        role: 'STUDENT',
       };
     }
-    return apiClient.post<AuthResponse>('/api/auth/register', body);
+    return apiClient.post<RegisterResponse>('/api/auth/register', body);
   },
 };

@@ -18,7 +18,7 @@ This branch is now UI-complete enough to cover the public landing flow, auth scr
 
 Default example:
 
-`VITE_API_BASE_URL=http://localhost:8080`
+`VITE_API_BASE_URL=http://localhost:8081`
 
 ### Install and Run
 
@@ -35,6 +35,8 @@ Default example:
 - `npm run format:check` - Check formatting and fail if files are not formatted.
 - `npm run typecheck` - Run TypeScript checks with no emit.
 - `npm run verify` - Run `format:check`, `lint`, and `typecheck` in sequence.
+- `npm test` - Run all unit tests with Vitest (single run).
+- `npm run test:watch` - Run tests in watch mode.
 
 ### Common Commands
 
@@ -43,6 +45,7 @@ Default example:
 - `npm run format:check`
 - `npm run typecheck`
 - `npm run verify`
+- `npm test`
 - `npm run build`
 - `npm run preview`
 
@@ -50,9 +53,12 @@ Default example:
 
 Before commit/PR, run:
 
-`npm run verify`
+```
+npm run verify
+npm test
+```
 
-This command checks formatting, linting, and type safety. If formatting fails, run `npm run format` and rerun `npm run verify`.
+`verify` checks formatting, linting, and type safety. If formatting fails, run `npm run format` and rerun `npm run verify`. `npm test` runs the full unit test suite and must exit 0.
 
 ## Contributing / Workflow
 

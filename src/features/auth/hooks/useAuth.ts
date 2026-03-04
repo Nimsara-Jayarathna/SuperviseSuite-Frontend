@@ -68,12 +68,10 @@ export function useAuth() {
   async function register(body: RegisterRequest): Promise<void> {
     setLoading();
     try {
-      const res = await authApi.register(body);
-      tokenStorage.setAccessToken(res.accessToken);
-      tokenStorage.setRefreshToken(res.refreshToken);
-      tokenStorage.setUser(res.user);
-      setUser(res.user);
-      navigate(ROLE_HOME[res.user.role] ?? '/');
+      await authApi.register(body);
+      // Registration only creates the account — the student must sign in separately.
+      setState((s) => ({ ...s, isLoading: false, error: null }));
+      navigate('/login');
     } catch (err) {
       if (isApiException(err)) setError(err.apiError);
       else setUnexpectedError();

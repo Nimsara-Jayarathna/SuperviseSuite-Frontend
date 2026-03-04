@@ -23,8 +23,17 @@ export type RegisterRequest = {
   lastName: string;
   email: string;
   password: string;
-  role: UserRole;
   registrationNumber: string;
+};
+
+/** POST /api/auth/register — newly created student's public profile (no tokens issued) */
+export type RegisterResponse = {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  registrationNumber: string;
+  role: UserRole;
 };
 
 /** Successful auth response — access token + user profile */

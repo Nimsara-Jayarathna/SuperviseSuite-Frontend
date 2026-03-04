@@ -45,8 +45,9 @@ Keep messages short and meaningful.
 
 ## Local Verification
 
-- Before PR, run `npm run verify`.
-- `verify` should run: `format:check`, `lint`, and `typecheck`.
+- Before PR, run `npm run verify` and `npm test`.
+- `verify` runs: `format:check`, `lint`, and `typecheck`.
+- `npm test` runs the full unit test suite — must exit 0.
 
 ## Artifacts Never to Commit
 
