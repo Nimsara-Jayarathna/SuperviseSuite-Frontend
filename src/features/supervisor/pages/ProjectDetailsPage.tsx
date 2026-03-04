@@ -6,7 +6,6 @@ import { ErrorState } from '@/components/feedback/ErrorState';
 import { buttonStyles } from '@/components/ui/Button';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { PageTabs } from '@/components/ui/PageTabs';
-import { StatusBadge } from '@/components/ui/StatusBadge';
 import { isApiException } from '@/services/apiClient';
 import type { ApiError } from '@/types';
 import { supervisorApi } from '../api/supervisorApi';
@@ -84,14 +83,6 @@ function memberDisplayName(member: SupervisorProjectDetailMember) {
   return `${member.firstName ?? ''} ${member.lastName ?? ''}`.trim() || member.email;
 }
 
-function lifecycleTone(status: string) {
-  if (status === 'ACTIVE') return 'success';
-  if (status === 'AT_RISK') return 'warning';
-  if (status === 'BEHIND') return 'danger';
-  if (status === 'COMPLETED') return 'neutral';
-  return 'student';
-}
-
 function buildOverviewEditForm(project: SupervisorProjectDetail): OverviewEditForm {
   return {
     title: project.title,
@@ -140,6 +131,10 @@ export function ProjectDetailsPage() {
   const [isSavingOverview, setIsSavingOverview] = useState(false);
   const [saveError, setSaveError] = useState<ApiError | null>(null);
   const [overviewForm, setOverviewForm] = useState<OverviewEditForm | null>(null);
+  const [quickLifecycleStatus, setQuickLifecycleStatus] =
+    useState<SupervisorProjectLifecycle>('PLANNING');
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [statusUpdateError, setStatusUpdateError] = useState<ApiError | null>(null);
   const [isManagingStudents, setIsManagingStudents] = useState(false);
   const [studentQuery, setStudentQuery] = useState('');
   const [studentSearchState, setStudentSearchState] = useState<SearchState>('idle');
@@ -182,6 +177,12 @@ export function ProjectDetailsPage() {
       setOverviewForm(buildOverviewEditForm(project));
     }
   }, [project, isEditingOverview]);
+
+  useEffect(() => {
+    if (project && !isUpdatingStatus) {
+      setQuickLifecycleStatus(project.lifecycleStatus);
+    }
+  }, [project, isUpdatingStatus]);
 
   useEffect(() => {
     const normalizedQuery = studentQuery.trim();
@@ -280,6 +281,31 @@ export function ProjectDetailsPage() {
       setSaveError(toApiError(saveException, 'Unable to update the project right now.'));
     } finally {
       setIsSavingOverview(false);
+    }
+  }
+
+  async function handleQuickStatusChange(nextStatus: SupervisorProjectLifecycle) {
+    if (!projectId || !project) {
+      return;
+    }
+
+    const previousStatus = project.lifecycleStatus;
+    setQuickLifecycleStatus(nextStatus);
+    setIsUpdatingStatus(true);
+    setStatusUpdateError(null);
+
+    try {
+      await supervisorApi.updateProjectStatus(projectId, {
+        lifecycleStatus: nextStatus,
+      });
+      await reload();
+    } catch (statusException) {
+      setQuickLifecycleStatus(previousStatus);
+      setStatusUpdateError(
+        toApiError(statusException, 'Unable to update project status right now.'),
+      );
+    } finally {
+      setIsUpdatingStatus(false);
     }
   }
 
@@ -452,9 +478,22 @@ export function ProjectDetailsPage() {
       />
 
       <section className="flex flex-wrap gap-3">
-        <StatusBadge tone={lifecycleTone(project.lifecycleStatus)}>
-          {project.lifecycleStatus.replace('_', ' ')}
-        </StatusBadge>
+        <label className="inline-flex items-center rounded-full border border-slate-200 bg-slate-100 px-3 py-2 text-sm shadow-sm">
+          <select
+            value={quickLifecycleStatus}
+            onChange={(event) =>
+              void handleQuickStatusChange(event.target.value as SupervisorProjectLifecycle)
+            }
+            disabled={isUpdatingStatus}
+            className="bg-transparent font-semibold tracking-[0.08em] text-foreground outline-none"
+          >
+            {LIFECYCLE_OPTIONS.map((status) => (
+              <option key={status} value={status}>
+                {status.replace('_', ' ')}
+              </option>
+            ))}
+          </select>
+        </label>
         <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-2 text-sm text-muted-foreground shadow-sm">
           <CalendarDays className="h-4 w-4" />
           {project.milestoneDate
@@ -470,6 +509,9 @@ export function ProjectDetailsPage() {
           Progress {project.progressPercent ?? 0}%
         </span>
       </section>
+      {statusUpdateError ? (
+        <p className="text-sm text-rose-600">{statusUpdateError.message}</p>
+      ) : null}
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">

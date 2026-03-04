@@ -213,3 +213,7 @@ export type UpdateSupervisorProjectMilestoneRequest = {
   dueDate: string;
   status: SupervisorProjectDetailMilestone['status'];
 };
+
+export type UpdateSupervisorProjectStatusRequest = {
+  lifecycleStatus: SupervisorProjectLifecycle;
+};

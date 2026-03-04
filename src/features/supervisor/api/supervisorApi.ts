@@ -9,6 +9,7 @@ import type {
   SupervisorStudentSearchResult,
   UpdateSupervisorProjectMilestoneRequest,
   UpdateSupervisorProjectRequest,
+  UpdateSupervisorProjectStatusRequest,
 } from '../types';
 
 const cachedProjectsById: Partial<Record<string, SupervisorProjectDetail>> = {};
@@ -57,6 +58,18 @@ export const supervisorApi = {
   ): Promise<SupervisorProjectDetail> {
     const updated = await apiClient.patch<SupervisorProjectDetail>(
       `/api/supervisor/projects/${projectId}`,
+      body,
+    );
+    cachedProjectsById[projectId] = updated;
+    return updated;
+  },
+
+  async updateProjectStatus(
+    projectId: string,
+    body: UpdateSupervisorProjectStatusRequest,
+  ): Promise<SupervisorProjectDetail> {
+    const updated = await apiClient.patch<SupervisorProjectDetail>(
+      `/api/supervisor/projects/${projectId}/status`,
       body,
     );
     cachedProjectsById[projectId] = updated;
