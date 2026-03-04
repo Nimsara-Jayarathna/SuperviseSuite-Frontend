@@ -55,9 +55,10 @@ import { Logo } from '@/components/brand/Logo';
 
 | Location | Component | Size |
 |----------|-----------|------|
-| `LandingNav` | `LogoMark` | `28` |
+| `TopBar` (public + private) | `Logo` | `38` |
+| `HeroSection` | `LogoMark` | larger decorative hero usage |
 | `LoginPage` | `LogoMark` wrapped in `<Link to="/">` | `52` |
 | `RegisterPage` | `LogoMark` wrapped in `<Link to="/">` | `52` |
 | `index.html` | Static `/logo.svg` | favicon |
 
-Clicking the logo on auth pages navigates back to `/`.
+Clicking the logo in the top bar and auth pages navigates back to the appropriate route.

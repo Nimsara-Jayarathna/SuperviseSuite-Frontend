@@ -2,7 +2,7 @@
 
 React + Vite + Tailwind CSS frontend for SuperviseSuite.
 
-The current implementation is still frontend-first, but it now includes working UI flows for public auth screens and the student project workspace. Backend data integration is still incomplete, so some features remain mock-backed or placeholder-only.
+This branch is now UI-complete enough to cover the public landing flow, auth screens, the student workspace, and the supervisor workspace. The app is still frontend-first: several screens are powered by local mock data and UI-only route guards while backend integration is still being completed.
 
 ## Local Development
 
@@ -70,21 +70,36 @@ CI is intentionally not configured yet. In a later phase, automated pipelines wi
 
 ## Folder Structure
 
-- `src/app` - App-level routing, layouts, providers, and config.
-- `src/features` - Feature-based modules (`landing`, `auth`, `student`, plus placeholder `projects` and `dashboard` areas).
+- `src/app` - App-level routing, shared layouts (`AppShell`, `PublicLayout`), providers, and guards.
+- `src/features` - Feature-based modules (`landing`, `auth`, `student`, `supervisor`).
 - `src/components` - Shared UI, brand, and feedback components.
 - `src/services` - Shared service modules (for example, API client and token storage).
 - `src/lib` - Shared utility modules.
-- `src/styles` - Global styles.
+- `src/styles` - Global styles and shared animation utilities.
 - `src/types` - Shared types.
 
 ## Current UI Scope
 
 - Public routes are implemented for `/`, `/login`, and `/register`.
 - Student UI routes are implemented for `/student`, `/student/projects`, and `/student/projects/:projectId`.
-- Legacy student aliases (`/project`, `/project/:id`, `/projects`, `/projects/:id`) redirect into the student workspace.
-- The student workspace currently uses local mock data for UI rendering only.
-- Supervisor dashboard and shared `projects` feature modules still contain placeholder implementations.
+- Supervisor UI routes are implemented for `/supervisor`, `/supervisor/dashboard`, `/supervisor/projects`, `/supervisor/projects/new`, and `/supervisor/projects/:projectId`.
+- Legacy aliases (`/dashboard`, `/project`, `/project/new`, `/project/:projectId`, `/projects`, `/projects/new`, `/projects/:projectId`) redirect into the correct student or supervisor route based on the stored user.
+- Student and supervisor routes share the same top-bar shell (`AppShell` + `TopBar`) and the same shared button system.
+- Student and supervisor workspaces are currently mock-data-backed for UI rendering.
+- Route guards support a UI-only cross-role preview mode in local development. This is not a security boundary and must be enforced by the backend.
+
+## UI Architecture Notes
+
+- `TopBar` is the single navigation shell for public and authenticated layouts.
+- `Button.tsx` is the single source of truth for button variants, sizing, and states.
+- `PageHeader`, `PageTabs`, `StatusBadge`, `Card`, and `EmptyState` are shared primitives used across landing, student, and supervisor pages.
+- The landing page is treated as a public page inside the same design system, not a separate marketing site.
+
+## Documentation
+
+- Overview index: `docs/README.md`
+- Feature guides: `docs/features/*.md`
+- Shared UI notes: `docs/ui/*.md`
 
 ## Note
 
