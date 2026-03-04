@@ -1,0 +1,69 @@
+import { useEffect, useState } from 'react';
+import { isApiException } from '@/services/apiClient';
+import type { ApiError } from '@/types';
+import { supervisorApi } from '../api/supervisorApi';
+import type { SupervisorProjectDetail } from '../types';
+
+type SupervisorProjectState = {
+  project: SupervisorProjectDetail | null;
+  isLoading: boolean;
+  error: ApiError | null;
+};
+
+export function useSupervisorProject(projectId: string | undefined) {
+  const [state, setState] = useState<SupervisorProjectState>({
+    project: null,
+    isLoading: Boolean(projectId),
+    error: null,
+  });
+
+  async function loadProject(forceRefresh = false) {
+    if (!projectId) {
+      setState({
+        project: null,
+        isLoading: false,
+        error: null,
+      });
+      return;
+    }
+
+    setState((current) => ({ ...current, isLoading: true, error: null }));
+
+    try {
+      const project = await supervisorApi.getProjectById(projectId, forceRefresh);
+      setState({
+        project,
+        isLoading: false,
+        error: null,
+      });
+    } catch (error) {
+      setState({
+        project: null,
+        isLoading: false,
+        error: isApiException(error)
+          ? error.apiError
+          : {
+              code: 'INTERNAL_ERROR',
+              message: 'Unable to load the project right now.',
+              details: [],
+              timestamp: new Date().toISOString(),
+              status: 0,
+              error: 'Unexpected Error',
+              path: '',
+              traceId: null,
+            },
+      });
+    }
+  }
+
+  useEffect(() => {
+    void loadProject();
+  }, [projectId]);
+
+  return {
+    project: state.project,
+    isLoading: state.isLoading,
+    error: state.error,
+    reload: () => loadProject(true),
+  };
+}

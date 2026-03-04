@@ -2,13 +2,38 @@ import { apiClient } from '@/services/apiClient';
 import type {
   CreateSupervisorProjectRequest,
   CreateSupervisorProjectResponse,
+  SupervisorProjectDetail,
   SupervisorProjectSummary,
   SupervisorStudentSearchResult,
 } from '../types';
 
+let cachedProjectsById: Record<string, SupervisorProjectDetail> = {};
+let inFlightProjectRequests: Record<string, Promise<SupervisorProjectDetail>> = {};
+
 export const supervisorApi = {
   getProjects(): Promise<SupervisorProjectSummary[]> {
     return apiClient.get<SupervisorProjectSummary[]>('/api/supervisor/projects');
+  },
+
+  async getProjectById(projectId: string, forceRefresh = false): Promise<SupervisorProjectDetail> {
+    if (!forceRefresh && cachedProjectsById[projectId]) {
+      return cachedProjectsById[projectId];
+    }
+
+    if (!forceRefresh && inFlightProjectRequests[projectId]) {
+      return inFlightProjectRequests[projectId];
+    }
+
+    const request = apiClient.get<SupervisorProjectDetail>(`/api/supervisor/projects/${projectId}`);
+    inFlightProjectRequests[projectId] = request;
+
+    try {
+      const project = await request;
+      cachedProjectsById[projectId] = project;
+      return project;
+    } finally {
+      delete inFlightProjectRequests[projectId];
+    }
   },
 
   searchStudents(query: string): Promise<SupervisorStudentSearchResult[]> {

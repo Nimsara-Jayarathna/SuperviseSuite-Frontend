@@ -13,6 +13,11 @@ type SupervisorProjectsState = {
 let cachedProjects: SupervisorProjectSummary[] | null = null;
 let inFlightProjectsRequest: Promise<SupervisorProjectSummary[]> | null = null;
 
+export function invalidateSupervisorProjectsCache() {
+  cachedProjects = null;
+  inFlightProjectsRequest = null;
+}
+
 export function useSupervisorProjects() {
   const [state, setState] = useState<SupervisorProjectsState>({
     projects: [],
