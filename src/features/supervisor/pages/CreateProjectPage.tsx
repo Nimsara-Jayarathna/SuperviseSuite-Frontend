@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { BlockingState } from '@/components/ui/BlockingState';
 import { Button, buttonStyles } from '@/components/ui/Button';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { RequestStateModal } from '@/components/ui/RequestStateModal';
 import { isApiException } from '@/services/apiClient';
 import { supervisorApi } from '../api/supervisorApi';
 import type {
@@ -47,6 +48,17 @@ export function CreateProjectPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [createdProject, setCreatedProject] = useState<CreateSupervisorProjectResponse | null>(null);
+  const [requestModal, setRequestModal] = useState<{
+    isOpen: boolean;
+    status: 'loading' | 'success' | 'error';
+    title: string;
+    message: string;
+  }>({
+    isOpen: false,
+    status: 'loading',
+    title: '',
+    message: '',
+  });
 
   useEffect(() => {
     const normalizedQuery = studentQuery.trim();
@@ -128,6 +140,12 @@ export function CreateProjectPage() {
     setIsSubmitting(true);
     setSubmitError(null);
     setCreatedProject(null);
+    setRequestModal({
+      isOpen: true,
+      status: 'loading',
+      title: 'Creating project',
+      message: 'Saving the project, assigning students, and creating the first milestone.',
+    });
 
     try {
       const response = await supervisorApi.createProject({
@@ -149,15 +167,34 @@ export function CreateProjectPage() {
       setStudentQuery('');
       setSearchResults([]);
       setSearchState('idle');
+      setRequestModal({
+        isOpen: true,
+        status: 'success',
+        title: 'Project created',
+        message: `${response.title} was created successfully and is ready for the next workflow steps.`,
+      });
     } catch (error) {
-      setSubmitError(
-        isApiException(error)
-          ? error.apiError.message
-          : 'Unable to create the project right now. Please try again.',
-      );
+      const message = isApiException(error)
+        ? error.apiError.message
+        : 'Unable to create the project right now. Please try again.';
+      setSubmitError(message);
+      setRequestModal({
+        isOpen: true,
+        status: 'error',
+        title: 'Project creation failed',
+        message,
+      });
     } finally {
       setIsSubmitting(false);
     }
+  }
+
+  function closeRequestModal() {
+    setRequestModal((current) => ({ ...current, isOpen: false }));
+  }
+
+  function retrySubmit() {
+    closeRequestModal();
   }
 
   const shouldShowSearchPanel =
@@ -170,9 +207,16 @@ export function CreateProjectPage() {
         subtitle="Create a supervisor project, assign registered students, and capture the first milestone in one request."
       />
 
-      <section className="relative rounded-3xl border border-border bg-white p-6 shadow-sm">
-        <BlockingState isActive={isSubmitting} mode="overlay" message="Creating project..." />
+      <RequestStateModal
+        isOpen={requestModal.isOpen}
+        status={requestModal.status}
+        title={requestModal.title}
+        message={requestModal.message}
+        onClose={requestModal.status === 'loading' ? undefined : closeRequestModal}
+        onRetry={requestModal.status === 'error' ? retrySubmit : undefined}
+      />
 
+      <section className="rounded-3xl border border-border bg-white p-6 shadow-sm">
         <form className="space-y-8" onSubmit={handleSubmit}>
           <div className="grid gap-8 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
             <div className="space-y-6">
