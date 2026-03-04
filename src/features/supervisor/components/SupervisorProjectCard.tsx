@@ -1,4 +1,7 @@
 import { Link } from 'react-router-dom';
+import { buttonStyles } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import { ProjectCardFooter } from '@/components/ui/ProjectCardFooter';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import type { SupervisorProject } from '../types';
 
@@ -21,8 +24,8 @@ export function SupervisorProjectCard({ project }: SupervisorProjectCardProps) {
   const overflowCount = Math.max(0, project.members.length - visibleMembers.length);
 
   return (
-    <article className="flex h-full flex-col rounded-3xl border border-border bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
-      <div className="grid min-h-[6rem] grid-cols-[minmax(0,1fr)_auto] gap-2">
+    <Card className="flex h-full flex-col transition-shadow hover:shadow-md" padding="sm">
+      <div className="grid min-h-[5.75rem] grid-cols-[minmax(0,1fr)_auto] gap-2">
         <div className="min-w-0">
           <StatusBadge tone={lifecycleTone(project)} className="tracking-[0.08em]">
             {project.lifecycle.replace('_', ' ')}
@@ -47,7 +50,7 @@ export function SupervisorProjectCard({ project }: SupervisorProjectCardProps) {
         </div>
       </div>
 
-      <div className="mt-2.5 grid gap-1.5 sm:grid-cols-3">
+      <div className="mt-3 grid gap-2 sm:grid-cols-3">
         <div className="flex min-h-16 flex-col justify-center rounded-2xl bg-slate-50 px-3 py-1.5">
           <p className="truncate text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
             Members
@@ -70,7 +73,7 @@ export function SupervisorProjectCard({ project }: SupervisorProjectCardProps) {
         </div>
       </div>
 
-      <div className="mt-2.5 min-h-10 max-h-10 overflow-hidden">
+      <div className="mt-3 min-h-10 max-h-10 overflow-hidden">
         <div className="flex flex-wrap gap-1.5">
           {visibleMembers.map((member) => (
             <span
@@ -88,20 +91,24 @@ export function SupervisorProjectCard({ project }: SupervisorProjectCardProps) {
         </div>
       </div>
 
-      <div className="mt-2.5 grid gap-2 sm:grid-cols-2">
-        <Link
-          to={`/supervisor/projects/${project.id}`}
-          className="inline-flex h-10 items-center justify-center rounded-2xl bg-slate-900 px-3.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-        >
-          Open workspace
-        </Link>
-        <Link
-          to={`/supervisor/projects/${project.id}?tab=action-items`}
-          className="inline-flex h-10 items-center justify-center rounded-2xl border border-border px-3.5 text-sm font-semibold text-foreground transition-colors hover:bg-slate-50"
-        >
-          Action items
-        </Link>
-      </div>
-    </article>
+      <ProjectCardFooter
+        primaryAction={
+          <Link
+            to={`/supervisor/projects/${project.id}`}
+            className={buttonStyles({ variant: 'primary', size: 'md', className: 'w-full' })}
+          >
+            Open workspace
+          </Link>
+        }
+        secondaryAction={
+          <Link
+            to={`/supervisor/projects/${project.id}?tab=action-items`}
+            className={buttonStyles({ variant: 'secondary', size: 'md', className: 'w-full' })}
+          >
+            Action items
+          </Link>
+        }
+      />
+    </Card>
   );
 }

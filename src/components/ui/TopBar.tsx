@@ -10,7 +10,14 @@ type NavItem = {
   active: boolean;
 };
 
-type TopBarProps = {
+type PublicAction = {
+  label: string;
+  onClick: () => void;
+  variant: 'nav' | 'nav-primary';
+};
+
+type PrivateTopBarProps = {
+  mode?: 'private';
   role: 'student' | 'supervisor';
   homePath: string;
   navItems: NavItem[];
@@ -19,7 +26,43 @@ type TopBarProps = {
   onLogout: () => void;
 };
 
-export function TopBar({ role, homePath, navItems, userName, userEmail, onLogout }: TopBarProps) {
+type PublicTopBarProps = {
+  mode: 'public';
+  homePath: string;
+  actions: PublicAction[];
+};
+
+type TopBarProps = PrivateTopBarProps | PublicTopBarProps;
+
+export function TopBar(props: TopBarProps) {
+  if (props.mode === 'public') {
+    return (
+      <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/85 backdrop-blur">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
+          <Link to={props.homePath} className="inline-flex items-center">
+            <Logo size={38} showWordmark />
+          </Link>
+
+          <div className="flex items-center gap-2">
+            {props.actions.map((action) => (
+              <Button
+                key={action.label}
+                variant={action.variant}
+                size="md"
+                className="font-medium"
+                onClick={action.onClick}
+              >
+                {action.label}
+              </Button>
+            ))}
+          </div>
+        </div>
+      </header>
+    );
+  }
+
+  const { role, homePath, navItems, userName, userEmail, onLogout } = props;
+
   return (
     <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/85 backdrop-blur">
       <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
@@ -58,10 +101,7 @@ export function TopBar({ role, homePath, navItems, userName, userEmail, onLogout
                 <p className="font-medium text-foreground">{userName}</p>
                 <p className="text-muted-foreground">{userEmail}</p>
               </div>
-              <Button
-                onClick={onLogout}
-                className="rounded-2xl border-slate-200 bg-white px-4 py-2 text-sm text-foreground hover:bg-slate-100"
-              >
+              <Button variant="secondary" size="md" className="font-medium" onClick={onLogout}>
                 Log out
               </Button>
             </div>

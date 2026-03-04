@@ -1,6 +1,9 @@
 import { useDeferredValue, useState } from 'react';
-import { AlertTriangle, ArrowRight, FolderKanban, Search } from 'lucide-react';
+import { AlertTriangle, ArrowRight, Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { EmptyState } from '@/components/feedback/EmptyState';
+import { buttonStyles } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { useSupervisorWorkspace } from '../hooks/useSupervisorWorkspace';
 
@@ -51,36 +54,36 @@ export function SupervisorDashboardPage() {
       />
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-        <div className="rounded-2xl border border-border bg-white p-5 shadow-sm">
+        <Card className="rounded-2xl" padding="md">
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
             Total projects
           </p>
           <p className="mt-3 text-3xl font-semibold text-foreground">{stats.total}</p>
-        </div>
-        <div className="rounded-2xl border border-border bg-white p-5 shadow-sm">
+        </Card>
+        <Card className="rounded-2xl" padding="md">
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
             Active
           </p>
           <p className="mt-3 text-3xl font-semibold text-foreground">{stats.active}</p>
-        </div>
-        <div className="rounded-2xl border border-border bg-white p-5 shadow-sm">
+        </Card>
+        <Card className="rounded-2xl" padding="md">
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
             At risk
           </p>
           <p className="mt-3 text-3xl font-semibold text-foreground">{stats.atRisk}</p>
-        </div>
-        <div className="rounded-2xl border border-border bg-white p-5 shadow-sm">
+        </Card>
+        <Card className="rounded-2xl" padding="md">
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
             Behind
           </p>
           <p className="mt-3 text-3xl font-semibold text-foreground">{stats.behind}</p>
-        </div>
-        <div className="rounded-2xl border border-border bg-white p-5 shadow-sm">
+        </Card>
+        <Card className="rounded-2xl" padding="md">
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
             Overdue actions
           </p>
           <p className="mt-3 text-3xl font-semibold text-foreground">{stats.overdueActions}</p>
-        </div>
+        </Card>
       </section>
 
       <section className="rounded-3xl border border-border bg-white p-6 shadow-sm">
@@ -93,7 +96,7 @@ export function SupervisorDashboardPage() {
           </div>
           <Link
             to="/supervisor/projects"
-            className="inline-flex items-center gap-2 text-sm font-medium text-amber-700 transition-colors hover:text-amber-800"
+            className={buttonStyles({ variant: 'ghost', size: 'md' })}
           >
             View all projects
             <ArrowRight className="h-4 w-4" />
@@ -141,19 +144,19 @@ export function SupervisorDashboardPage() {
                         <div className="flex flex-wrap gap-2">
                           <Link
                             to={`/supervisor/projects/${project.id}`}
-                            className="rounded-xl bg-slate-900 px-3 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90"
+                            className={buttonStyles({ variant: 'primary', size: 'sm' })}
                           >
                             Open
                           </Link>
                           <Link
                             to={`/supervisor/projects/${project.id}?tab=meetings`}
-                            className="rounded-xl border border-border px-3 py-2 text-xs font-semibold text-foreground transition-colors hover:bg-slate-50"
+                            className={buttonStyles({ variant: 'secondary', size: 'sm' })}
                           >
                             Meetings
                           </Link>
                           <Link
                             to={`/supervisor/projects/${project.id}?tab=files`}
-                            className="rounded-xl border border-border px-3 py-2 text-xs font-semibold text-foreground transition-colors hover:bg-slate-50"
+                            className={buttonStyles({ variant: 'secondary', size: 'sm' })}
                           >
                             Files
                           </Link>
@@ -166,11 +169,11 @@ export function SupervisorDashboardPage() {
             </table>
           </div>
         ) : (
-          <div className="mt-5 rounded-3xl border border-dashed border-border bg-slate-50 p-10 text-center">
-            <FolderKanban className="mx-auto h-10 w-10 text-muted-foreground" />
-            <h3 className="mt-4 text-lg font-semibold text-foreground">
-              No projects match this search.
-            </h3>
+          <div className="mt-5">
+            <EmptyState
+              title="No projects found"
+              description="No supervised projects match your current filters."
+            />
           </div>
         )}
       </section>
@@ -221,7 +224,7 @@ export function SupervisorDashboardPage() {
                   </div>
                   <Link
                     to={`/supervisor/projects/${project.id}`}
-                    className="text-sm font-medium text-amber-700 transition-colors hover:text-amber-800"
+                    className={buttonStyles({ variant: 'ghost', size: 'sm' })}
                   >
                     Review
                   </Link>

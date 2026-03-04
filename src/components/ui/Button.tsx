@@ -1,7 +1,16 @@
 import { cn } from '@/lib/cn';
 import type { ButtonHTMLAttributes } from 'react';
 
-type ButtonVariant = 'hero' | 'hero-outline' | 'nav' | 'nav-primary' | 'default';
+type ButtonVariant =
+  | 'default'
+  | 'primary'
+  | 'secondary'
+  | 'ghost'
+  | 'danger'
+  | 'nav'
+  | 'nav-primary'
+  | 'hero'
+  | 'hero-outline';
 type ButtonSize = 'sm' | 'md' | 'lg';
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -9,22 +18,40 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   size?: ButtonSize;
 };
 
+const BASE_CLASSES =
+  'inline-flex items-center justify-center gap-2 rounded-2xl font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-sky-200 disabled:cursor-not-allowed disabled:opacity-50';
+
 const VARIANT_CLASSES: Record<ButtonVariant, string> = {
-  default:
-    'rounded-md border border-border bg-background px-4 py-2 font-medium text-foreground hover:bg-muted transition-colors',
-  hero: 'rounded-lg bg-primary px-6 py-2.5 font-semibold text-primary-foreground hover:opacity-90 transition-opacity',
-  'hero-outline':
-    'rounded-lg border border-border bg-background px-6 py-2.5 font-semibold text-foreground hover:bg-muted transition-colors',
-  nav: 'rounded-md px-3 py-1.5 text-muted-foreground hover:text-foreground transition-colors bg-transparent',
-  'nav-primary':
-    'rounded-md bg-primary px-3 py-1.5 font-medium text-primary-foreground hover:opacity-90 transition-opacity',
+  default: 'border border-slate-200 bg-white text-foreground hover:bg-slate-50',
+  primary: 'bg-sky-600 text-white hover:bg-sky-700',
+  secondary: 'border border-slate-200 bg-white text-foreground hover:bg-slate-50',
+  ghost: 'bg-transparent text-muted-foreground hover:bg-slate-100 hover:text-foreground',
+  danger: 'bg-rose-600 text-white hover:bg-rose-700',
+  hero: 'bg-sky-600 text-white hover:bg-sky-700',
+  'hero-outline': 'border border-slate-200 bg-white text-foreground hover:bg-slate-50',
+  nav: 'bg-transparent text-muted-foreground hover:bg-slate-100 hover:text-foreground',
+  'nav-primary': 'bg-sky-600 text-white hover:bg-sky-700',
 };
 
 const SIZE_CLASSES: Record<ButtonSize, string> = {
-  sm: 'text-xs',
-  md: 'text-sm',
-  lg: 'text-base',
+  sm: 'h-9 px-3 text-xs',
+  md: 'h-10 px-4 text-sm',
+  lg: 'h-11 px-5 text-sm sm:text-base',
 };
+
+type ButtonStylesOptions = {
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  className?: string;
+};
+
+export function buttonStyles({
+  variant = 'default',
+  size = 'md',
+  className,
+}: ButtonStylesOptions = {}) {
+  return cn(BASE_CLASSES, VARIANT_CLASSES[variant], SIZE_CLASSES[size], className);
+}
 
 export function Button({
   variant = 'default',
@@ -33,11 +60,5 @@ export function Button({
   type = 'button',
   ...props
 }: ButtonProps) {
-  return (
-    <button
-      type={type}
-      className={cn(VARIANT_CLASSES[variant], SIZE_CLASSES[size], className)}
-      {...props}
-    />
-  );
+  return <button type={type} className={buttonStyles({ variant, size, className })} {...props} />;
 }

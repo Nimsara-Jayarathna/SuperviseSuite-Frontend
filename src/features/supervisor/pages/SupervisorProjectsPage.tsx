@@ -1,6 +1,7 @@
 import { useDeferredValue, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { EmptyState } from '@/components/feedback/EmptyState';
+import { buttonStyles } from '@/components/ui/Button';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { SupervisorProjectCard } from '../components/SupervisorProjectCard';
 import { useSupervisorWorkspace } from '../hooks/useSupervisorWorkspace';
@@ -48,6 +49,8 @@ export function SupervisorProjectsPage() {
     setLifecycle('ALL');
     setIntegration('ALL');
   };
+  const hasActiveFilters =
+    normalizedQuery.length > 0 || lifecycle !== 'ALL' || integration !== 'ALL';
 
   return (
     <div className="space-y-5">
@@ -55,14 +58,12 @@ export function SupervisorProjectsPage() {
         title="Projects"
         subtitle="Review every supervised project in one place."
         actions={
-          <div className="lg:pt-1">
-            <Link
-              to="/supervisor/projects/new"
-              className="inline-flex h-10 items-center justify-center rounded-2xl bg-slate-900 px-4 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-            >
-              New project
-            </Link>
-          </div>
+          <Link
+            to="/supervisor/projects/new"
+            className={buttonStyles({ variant: 'primary', size: 'md' })}
+          >
+            New project
+          </Link>
         }
       />
 
@@ -104,15 +105,19 @@ export function SupervisorProjectsPage() {
       ) : (
         <EmptyState
           title="No projects found"
-          description="Try adjusting your search or filters to find a project."
+          description="No supervised projects match your current filters."
           primaryAction={{
             label: 'Create new project',
             onClick: () => navigate('/supervisor/projects/new'),
           }}
-          secondaryAction={{
-            label: 'Clear filters',
-            onClick: resetFilters,
-          }}
+          secondaryAction={
+            hasActiveFilters
+              ? {
+                  label: 'Clear filters',
+                  onClick: resetFilters,
+                }
+              : undefined
+          }
         />
       )}
     </div>

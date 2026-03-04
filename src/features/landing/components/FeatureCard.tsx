@@ -1,3 +1,4 @@
+import { Card } from '@/components/ui/Card';
 import { cn } from '@/lib/cn';
 import type { LandingFeatureCard } from '../types';
 
@@ -7,11 +8,12 @@ type FeatureCardProps = Omit<LandingFeatureCard, 'id'> & {
 
 export function FeatureCard({ icon: Icon, title, description, onClick }: FeatureCardProps) {
   return (
-    <div
+    <Card
       className={cn(
-        'group flex h-full flex-col rounded-2xl border border-border bg-card p-5 transition-all duration-200 hover:border-primary/20 hover:shadow-md',
+        'group flex h-full flex-col rounded-2xl bg-card transition-all duration-200 hover:border-primary/20 hover:shadow-md',
         onClick && 'cursor-pointer',
       )}
+      padding="md"
       onClick={onClick}
       role={onClick ? 'button' : undefined}
       tabIndex={onClick ? 0 : undefined}
@@ -28,6 +30,6 @@ export function FeatureCard({ icon: Icon, title, description, onClick }: Feature
       </div>
       <h3 className="mb-1.5 text-sm font-semibold text-foreground">{title}</h3>
       <p className="text-sm leading-relaxed text-muted-foreground">{description}</p>
-    </div>
+    </Card>
   );
 }
