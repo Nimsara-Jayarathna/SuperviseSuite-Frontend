@@ -2,40 +2,49 @@ import { useEffect, useState } from 'react';
 import { isApiException } from '@/services/apiClient';
 import type { ApiError } from '@/types';
 import { studentApi } from '../api/studentApi';
-import type { StudentProjectSummary } from '../types';
+import type { StudentProjectDetail } from '../types';
 
-type StudentProjectSummariesState = {
-  projects: StudentProjectSummary[];
+type StudentProjectState = {
+  project: StudentProjectDetail | null;
   isLoading: boolean;
   error: ApiError | null;
 };
 
-export function useStudentProjectSummaries() {
-  const [state, setState] = useState<StudentProjectSummariesState>({
-    projects: [],
-    isLoading: true,
+export function useStudentProject(projectId: string | undefined) {
+  const [state, setState] = useState<StudentProjectState>({
+    project: null,
+    isLoading: Boolean(projectId),
     error: null,
   });
 
-  async function loadProjects() {
+  async function loadProject(forceRefresh = false) {
+    if (!projectId) {
+      setState({
+        project: null,
+        isLoading: false,
+        error: null,
+      });
+      return;
+    }
+
     setState((current) => ({ ...current, isLoading: true, error: null }));
 
     try {
-      const projects = await studentApi.getProjects();
+      const project = await studentApi.getProjectById(projectId, forceRefresh);
       setState({
-        projects,
+        project,
         isLoading: false,
         error: null,
       });
     } catch (error) {
       setState({
-        projects: [],
+        project: null,
         isLoading: false,
         error: isApiException(error)
           ? error.apiError
           : {
               code: 'INTERNAL_ERROR',
-              message: 'Unable to load projects right now.',
+              message: 'Unable to load the project right now.',
               details: [],
               timestamp: new Date().toISOString(),
               status: 0,
@@ -48,17 +57,27 @@ export function useStudentProjectSummaries() {
   }
 
   useEffect(() => {
+    if (!projectId) {
+      setState({
+        project: null,
+        isLoading: false,
+        error: null,
+      });
+      return;
+    }
+
     let isCancelled = false;
     setState((current) => ({ ...current, isLoading: true, error: null }));
 
     void studentApi
-      .getProjects()
-      .then((projects) => {
+      .getProjectById(projectId)
+      .then((project) => {
         if (isCancelled) {
           return;
         }
+
         setState({
-          projects,
+          project,
           isLoading: false,
           error: null,
         });
@@ -67,14 +86,15 @@ export function useStudentProjectSummaries() {
         if (isCancelled) {
           return;
         }
+
         setState({
-          projects: [],
+          project: null,
           isLoading: false,
           error: isApiException(error)
             ? error.apiError
             : {
                 code: 'INTERNAL_ERROR',
-                message: 'Unable to load projects right now.',
+                message: 'Unable to load the project right now.',
                 details: [],
                 timestamp: new Date().toISOString(),
                 status: 0,
@@ -88,12 +108,12 @@ export function useStudentProjectSummaries() {
     return () => {
       isCancelled = true;
     };
-  }, []);
+  }, [projectId]);
 
   return {
-    projects: state.projects,
+    project: state.project,
     isLoading: state.isLoading,
     error: state.error,
-    reload: () => loadProjects(),
+    reload: () => loadProject(true),
   };
 }

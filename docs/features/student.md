@@ -19,27 +19,78 @@ Student workspace UI for browsing assigned projects and reviewing project detail
 ## Current UX Structure
 
 - Shared app shell via `AppShell` and `TopBar`
-- Student list page with:
-  - `PageHeader`
-  - inline search
-  - API-backed project cards
-  - loading skeletons
-  - shared error/empty states
-- Student detail page currently remains mock-backed and keeps the previous tabbed workspace UI
+- Project list page with `PageHeader`, inline search, compact project cards, loading skeletons, `ErrorState`, and `EmptyState`
+- Project detail page with:
+  - metadata badges
+  - metric row from backend-backed fields
+  - shared `PageTabs`
+  - tabbed sections for `overview`, `team`, and `milestones`
 
 ## Key Files
 
 | File | Purpose |
 |------|---------|
-| `src/features/student/pages/StudentProjectsPage.tsx` | API-backed student project list + search + loading/error/empty states |
-| `src/features/student/pages/StudentProjectDetailsPage.tsx` | Student project workspace (currently mock-backed) |
-| `src/features/student/components/StudentProjectCard.tsx` | Summary card for backend-backed student list records |
-| `src/features/student/components/StudentProjectCardSkeleton.tsx` | Skeleton placeholder for student project list loading |
-| `src/features/student/api/studentApi.ts` | Student API client for project list reads |
-| `src/features/student/hooks/useStudentProjectSummaries.ts` | API-backed student project list hook |
-| `src/features/student/hooks/useStudentProjects.ts` | Local mock-backed project access hook (currently used by detail route) |
-| `src/features/student/data/mockStudentProjects.ts` | UI mock data source |
-| `src/features/student/types.ts` | Feature-local summary/detail/tab types |
+| `src/features/student/pages/StudentProjectsPage.tsx` | API-backed student project list + search + empty/error states |
+| `src/features/student/pages/StudentProjectDetailsPage.tsx` | API-backed student project detail view |
+| `src/features/student/components/StudentProjectCard.tsx` | Compact list card used on `/student/projects` |
+| `src/features/student/components/StudentProjectCardSkeleton.tsx` | Skeleton placeholder for project list loading |
+| `src/features/student/components/StudentProjectDetailsSkeleton.tsx` | Skeleton placeholder for detail page loading |
+| `src/features/student/hooks/useStudentProjects.ts` | API-backed list hook with cache and request dedupe |
+| `src/features/student/hooks/useStudentProject.ts` | API-backed detail hook with per-project cache |
+| `src/features/student/api/studentApi.ts` | Student API client for list and detail endpoints |
+| `src/features/student/types.ts` | Feature-local API models and detail-tab types |
+
+## API Coverage
+
+### List route
+
+`/student/projects` is backed by:
+
+- `GET /api/student/projects`
+
+Current list-card fields used by UI:
+
+- `id`
+- `title`
+- `summary`
+- `status`
+- `batch`
+- `semester`
+- `milestoneDate`
+- `lastActivityAt`
+- `progressPercent`
+- `supervisorName`
+
+### Detail route
+
+`/student/projects/:projectId` is backed by:
+
+- `GET /api/student/projects/:projectId`
+
+Current detail fields used by UI:
+
+- `id`
+- `title`
+- `summary`
+- `status`
+- `batch`
+- `semester`
+- `milestoneDate`
+- `lastActivityAt`
+- `progressPercent`
+- `healthNote`
+- `members[]`
+- `milestones[]`
+
+## Detail Tabs
+
+The live student detail page currently exposes only backend-backed tabs:
+
+- `overview`
+- `team`
+- `milestones`
+
+Tabs for activity, meetings, action items, and files are intentionally not shown until backend endpoints are available.
 
 ## Projects Route
 
@@ -117,8 +168,15 @@ The student detail endpoint has not been implemented in the backend yet. The stu
   - `Clear filters` when a search query is active
   - `Refresh` (re-fetch via hook reload) when the list is empty without an active query
 
+## Loading and Error Handling
+
+- List loading: `StudentProjectCardSkeleton`
+- Detail loading: `StudentProjectDetailsSkeleton`
+- API failures: shared `ErrorState`
+- `404` on detail route: dedicated "Project not found" state with back navigation
+
 ## Notes
 
-- `/student/projects` is backend-connected for list reads.
-- `/student/projects/:projectId` is still mock-backed in this phase.
-- Route guards currently allow UI-only cross-role preview during local development. Real authorization must be enforced by the backend.
+- Student project list and detail routes are backend-connected.
+- Student mock project seed data has been removed from the feature module.
+- Route guards remain UI-level only and are not a backend security boundary.

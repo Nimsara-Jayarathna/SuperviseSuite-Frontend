@@ -1,13 +1,13 @@
 import { useDeferredValue, useState } from 'react';
-import { EmptyState } from '@/components/feedback/EmptyState';
 import { ErrorState } from '@/components/feedback/ErrorState';
+import { EmptyState } from '@/components/feedback/EmptyState';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { StudentProjectCard } from '../components/StudentProjectCard';
 import { StudentProjectCardSkeleton } from '../components/StudentProjectCardSkeleton';
-import { useStudentProjectSummaries } from '../hooks/useStudentProjectSummaries';
+import { useStudentProjects } from '../hooks/useStudentProjects';
 
 export function StudentProjectsPage() {
-  const { projects, isLoading, error, reload } = useStudentProjectSummaries();
+  const { projects, isLoading, error, reload } = useStudentProjects();
   const [query, setQuery] = useState('');
   // Defer filtering slightly so the list stays responsive while typing.
   const deferredQuery = useDeferredValue(query);
@@ -16,7 +16,7 @@ export function StudentProjectsPage() {
   const visibleProjects = projects.filter((project) =>
     normalizedQuery.length === 0
       ? true
-      : `${project.title} ${project.summary ?? ''} ${project.supervisorName ?? ''}`
+      : `${project.title} ${project.summary ?? ''} ${project.supervisorName ?? ''} ${project.batch ?? ''} ${project.semester ?? ''}`
           .toLowerCase()
           .includes(normalizedQuery),
   );
@@ -28,7 +28,7 @@ export function StudentProjectsPage() {
     <div className="space-y-6">
       <PageHeader
         title="My Projects"
-        subtitle="Browse your assigned projects and open each workspace to review progress, meetings, action items, and files."
+        subtitle="Browse your assigned projects and open each workspace to review summary, team, and milestones."
         actions={
           <input
             value={query}

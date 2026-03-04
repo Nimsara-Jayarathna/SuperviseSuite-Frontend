@@ -1,10 +1,10 @@
-export type StudentProjectStatus = 'ACTIVE' | 'AT_RISK' | 'PLANNING';
+export type StudentProjectLifecycle = 'PLANNING' | 'ACTIVE' | 'AT_RISK' | 'BEHIND' | 'COMPLETED';
 
 export type StudentProjectSummary = {
   id: string;
   title: string;
   summary: string | null;
-  status: StudentProjectStatus;
+  status: StudentProjectLifecycle;
   batch: string | null;
   semester: string | null;
   milestoneDate: string | null;
@@ -13,73 +13,37 @@ export type StudentProjectSummary = {
   supervisorName: string | null;
 };
 
-export type StudentProjectTab =
-  | 'overview'
-  | 'team'
-  | 'activity'
-  | 'meetings'
-  | 'action-items'
-  | 'files';
-
-export type StudentProjectMetric = {
-  label: string;
-  value: string;
+export type StudentProjectDetailMember = {
+  id: string;
+  firstName: string | null;
+  lastName: string | null;
+  email: string;
+  registrationNumber: string | null;
+  memberRole: 'SUPERVISOR' | 'STUDENT';
 };
 
-export type StudentProjectIntegration = {
-  label: string;
-  status: 'Connected' | 'Needs attention' | 'Optional';
-  href?: string;
-};
-
-export type StudentProjectActivity = {
+export type StudentProjectDetailMilestone = {
   id: string;
   title: string;
-  description: string;
-  occurredAt: string;
-};
-
-export type StudentProjectMeeting = {
-  id: string;
-  title: string;
-  scheduledFor: string;
-  status: 'Approved' | 'Pending' | 'Draft';
-  notes: string;
-};
-
-export type StudentProjectActionItem = {
-  id: string;
-  title: string;
-  owner: string;
+  description: string | null;
   dueDate: string;
-  status: 'Done' | 'In progress' | 'Blocked';
+  status: 'PLANNED' | 'IN_PROGRESS' | 'COMPLETED' | 'MISSED' | 'CANCELLED';
+  sequenceNo: number;
 };
 
-export type StudentProjectFile = {
-  id: string;
-  name: string;
-  type: string;
-  updatedAt: string;
-};
-
-export type StudentProject = {
+export type StudentProjectDetail = {
   id: string;
   title: string;
-  summary: string;
-  status: StudentProjectStatus;
-  batch: string;
-  semester: string;
-  milestoneDate: string;
-  lastUpdatedAt: string;
-  communicationUrl?: string;
-  repositoryUrl?: string;
-  jiraBoardUrl?: string;
-  highlights: string[];
-  teamMembers: string[];
-  metrics: StudentProjectMetric[];
-  integrations: StudentProjectIntegration[];
-  activity: StudentProjectActivity[];
-  meetings: StudentProjectMeeting[];
-  actionItems: StudentProjectActionItem[];
-  files: StudentProjectFile[];
+  summary: string | null;
+  status: StudentProjectLifecycle;
+  batch: string | null;
+  semester: string | null;
+  milestoneDate: string | null;
+  lastActivityAt: string | null;
+  progressPercent: number | null;
+  healthNote: string | null;
+  members: StudentProjectDetailMember[];
+  milestones: StudentProjectDetailMilestone[];
 };
+
+export type StudentProjectDetailTab = 'overview' | 'team' | 'milestones';

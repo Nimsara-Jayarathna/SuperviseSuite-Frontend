@@ -1,33 +1,32 @@
 import { apiClient } from '@/services/apiClient';
-import type { StudentProjectSummary } from '../types';
+import type { StudentProjectDetail, StudentProjectSummary } from '../types';
 
-const cachedStudentProjects: { value: StudentProjectSummary[] | null } = { value: null };
-const inFlightStudentProjects: { value: Promise<StudentProjectSummary[]> | null } = { value: null };
-
-export function invalidateStudentProjectsCache() {
-  cachedStudentProjects.value = null;
-  inFlightStudentProjects.value = null;
-}
+const cachedProjectsById: Partial<Record<string, StudentProjectDetail>> = {};
+const inFlightProjectRequests: Partial<Record<string, Promise<StudentProjectDetail>>> = {};
 
 export const studentApi = {
-  async getProjects(forceRefresh = false): Promise<StudentProjectSummary[]> {
-    if (!forceRefresh && cachedStudentProjects.value) {
-      return cachedStudentProjects.value;
+  getProjects(): Promise<StudentProjectSummary[]> {
+    return apiClient.get<StudentProjectSummary[]>('/api/student/projects');
+  },
+
+  async getProjectById(projectId: string, forceRefresh = false): Promise<StudentProjectDetail> {
+    if (!forceRefresh && cachedProjectsById[projectId]) {
+      return cachedProjectsById[projectId];
     }
 
-    if (!forceRefresh && inFlightStudentProjects.value) {
-      return inFlightStudentProjects.value;
+    if (!forceRefresh && inFlightProjectRequests[projectId]) {
+      return inFlightProjectRequests[projectId];
     }
 
-    const request = apiClient.get<StudentProjectSummary[]>('/api/student/projects');
-    inFlightStudentProjects.value = request;
+    const request = apiClient.get<StudentProjectDetail>(`/api/student/projects/${projectId}`);
+    inFlightProjectRequests[projectId] = request;
 
     try {
-      const projects = await request;
-      cachedStudentProjects.value = projects;
-      return projects;
+      const project = await request;
+      cachedProjectsById[projectId] = project;
+      return project;
     } finally {
-      inFlightStudentProjects.value = null;
+      delete inFlightProjectRequests[projectId];
     }
   },
 };
