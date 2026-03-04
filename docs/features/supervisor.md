@@ -34,14 +34,66 @@ Global legacy aliases such as `/dashboard`, `/project`, `/project/new`, and `/pr
 | File | Purpose |
 |------|---------|
 | `src/features/supervisor/pages/SupervisorDashboardPage.tsx` | Supervisor overview and quick project access |
-| `src/features/supervisor/pages/SupervisorProjectsPage.tsx` | Project list, filters, and in-page create action |
+| `src/features/supervisor/pages/SupervisorProjectsPage.tsx` | API-backed project list, lifecycle filter, skeleton loading, and in-page create action |
 | `src/features/supervisor/pages/CreateProjectPage.tsx` | API-backed create project flow with student lookup and milestone form |
 | `src/features/supervisor/pages/ProjectDetailsPage.tsx` | Project workspace detail page |
-| `src/features/supervisor/components/SupervisorProjectCard.tsx` | Compact supervisor list card |
+| `src/features/supervisor/components/SupervisorProjectCard.tsx` | Summary card for backend-backed project list records |
+| `src/features/supervisor/components/SupervisorProjectCardSkeleton.tsx` | Skeleton placeholder for project list loading |
 | `src/features/supervisor/api/supervisorApi.ts` | Supervisor API client for student search and project creation |
+| `src/features/supervisor/hooks/useSupervisorProjects.ts` | API-backed supervisor project list hook |
 | `src/features/supervisor/hooks/useSupervisorWorkspace.ts` | Local mock-backed workspace hook |
 | `src/features/supervisor/data/mockSupervisorWorkspace.ts` | UI mock data source |
 | `src/features/supervisor/index.ts` | Barrel export for pages, hooks, data, and components |
+
+## Projects Route
+
+The `/supervisor/projects` route is now backed by `GET /api/supervisor/projects`.
+
+### Current live data source
+
+- `SupervisorProjectsPage` no longer reads from seeded/mock supervisor workspace data
+- Data is loaded through `useSupervisorProjects`
+- API calls are made through `supervisorApi.getProjects()`
+
+### Current list record shape
+
+The list route intentionally uses a smaller summary model instead of the full mock-only project shape.
+
+Fields currently used by the list UI:
+
+- `id`
+- `title`
+- `summary`
+- `lifecycleStatus`
+- `batch`
+- `semester`
+- `milestoneDate`
+- `progressPercent`
+- `healthNote`
+- `memberCount`
+
+### Loading and error handling
+
+- While loading:
+  - card skeletons are shown via `SupervisorProjectCardSkeleton`
+- On failure:
+  - shared `ErrorState` is shown
+- On success with no records:
+  - shared `EmptyState` is shown
+
+### Development note
+
+The project list hook deduplicates the initial request in development so React Strict Mode does not trigger duplicate `GET /api/supervisor/projects` calls during mount checks.
+
+### Removed mock-only list concerns
+
+The list route no longer depends on seeded fields that are not yet backed by the backend, including:
+
+- integration filters
+- integration issue counts
+- action item counts
+- action-item shortcut buttons
+- seeded member chip previews
 
 ## Create Project Flow
 
@@ -80,6 +132,7 @@ Global legacy aliases such as `/dashboard`, `/project`, `/project/new`, and `/pr
   - selected `studentIds`
   - one initial milestone
 - The page displays backend success and error messages directly in the request-state modal
+- On success, closing the success modal redirects to `/supervisor/projects`
 
 ## Request Feedback UI
 
@@ -121,6 +174,7 @@ Applied input limits in the current create form:
 
 ## Notes
 
-- `SupervisorProjectsPage` and `ProjectDetailsPage` are still mock-data-backed for list/detail display.
-- `CreateProjectPage` is now backend-connected for student search and project creation.
+- `SupervisorProjectsPage` is backend-connected for list reads.
+- `CreateProjectPage` is backend-connected for student search and project creation.
+- `SupervisorDashboardPage` and `ProjectDetailsPage` still rely on mock-backed workspace data.
 - Route guards currently allow UI-only cross-role preview during local development. Real authorization must be enforced by the backend.
