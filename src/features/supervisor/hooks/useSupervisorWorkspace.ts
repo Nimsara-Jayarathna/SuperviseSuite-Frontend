@@ -4,6 +4,7 @@ import type { SupervisorDashboardStats } from '../types';
 
 export function useSupervisorWorkspace() {
   const user = tokenStorage.getUser();
+  // The supervisor workspace is mock-backed, but the fixture is still personalized to the stored user.
   const projects = createSupervisorProjects(user);
 
   const getProjectById = (projectId: string) =>
@@ -14,6 +15,7 @@ export function useSupervisorWorkspace() {
     active: projects.filter((project) => project.lifecycle === 'ACTIVE').length,
     atRisk: projects.filter((project) => project.lifecycle === 'AT_RISK').length,
     behind: projects.filter((project) => project.lifecycle === 'BEHIND').length,
+    // Use a fixed comparison date so the demo dashboard stays deterministic across reloads.
     overdueActions: projects.reduce(
       (count, project) =>
         count +

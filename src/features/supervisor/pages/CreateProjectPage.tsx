@@ -20,6 +20,7 @@ type DraftState = {
 };
 
 export function CreateProjectPage() {
+  // Reuse student members from the current mock workspace so the UI can behave like a live picker.
   const { projects } = useSupervisorWorkspace();
   const availableStudents = Array.from(
     new Map(
@@ -70,6 +71,7 @@ export function CreateProjectPage() {
   }
 
   function handleSubmit() {
+    // This screen is still a UI-only draft flow until the backend create endpoint is wired.
     setSubmitted(true);
   }
 

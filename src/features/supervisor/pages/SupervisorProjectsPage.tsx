@@ -25,6 +25,7 @@ export function SupervisorProjectsPage() {
   const [query, setQuery] = useState('');
   const [lifecycle, setLifecycle] = useState<LifecycleFilter>('ALL');
   const [integration, setIntegration] = useState<IntegrationFilter>('ALL');
+  // Defer the free-text query so large list filtering does not run on every keystroke.
   const deferredQuery = useDeferredValue(query);
   const normalizedQuery = deferredQuery.trim().toLowerCase();
 
@@ -44,6 +45,7 @@ export function SupervisorProjectsPage() {
     return matchesQuery && matchesLifecycle && matchesIntegration;
   });
 
+  // Reset returns the page to the default "all projects" state used by the route.
   const resetFilters = () => {
     setQuery('');
     setLifecycle('ALL');

@@ -24,6 +24,7 @@ function statusClasses(status: string) {
 export function SupervisorDashboardPage() {
   const { projects, stats } = useSupervisorWorkspace();
   const [query, setQuery] = useState('');
+  // Keep the dashboard search lightweight by filtering from a deferred query value.
   const deferredQuery = useDeferredValue(query);
   const normalizedQuery = deferredQuery.trim().toLowerCase();
 

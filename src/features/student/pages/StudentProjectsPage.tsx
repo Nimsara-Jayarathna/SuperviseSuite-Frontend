@@ -7,6 +7,7 @@ import { useStudentProjects } from '../hooks/useStudentProjects';
 export function StudentProjectsPage() {
   const { projects } = useStudentProjects();
   const [query, setQuery] = useState('');
+  // Defer filtering slightly so the list stays responsive while typing.
   const deferredQuery = useDeferredValue(query);
   const normalizedQuery = deferredQuery.trim().toLowerCase();
 
@@ -18,6 +19,7 @@ export function StudentProjectsPage() {
           .includes(normalizedQuery),
   );
 
+  // The empty state changes its action label depending on whether the user is filtering.
   const hasActiveFilters = normalizedQuery.length > 0;
 
   return (

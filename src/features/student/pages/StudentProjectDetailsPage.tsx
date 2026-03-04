@@ -60,6 +60,7 @@ export function StudentProjectDetailsPage() {
 
   const project = projectId ? getProjectById(projectId) : null;
   const requestedTab = searchParams.get('tab') as StudentProjectTab | null;
+  // Invalid or missing tab params always fall back to the overview tab.
   const activeTab =
     requestedTab && AVAILABLE_TABS.includes(requestedTab) ? requestedTab : 'overview';
 
@@ -84,6 +85,7 @@ export function StudentProjectDetailsPage() {
     startTransition(() => {
       const nextParams = new URLSearchParams(searchParams);
 
+      // Keep "overview" as the clean default route instead of persisting it in the URL.
       if (nextTab === 'overview') {
         nextParams.delete('tab');
       } else {
@@ -148,6 +150,7 @@ export function StudentProjectDetailsPage() {
         tone="neutral"
       />
 
+      {/* Overview keeps the denser split layout, while the other tabs stay single-panel. */}
       {activeTab === 'overview' && (
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1.3fr)_minmax(0,0.9fr)]">
           <section className="space-y-6">
@@ -241,6 +244,7 @@ export function StudentProjectDetailsPage() {
         </div>
       )}
 
+      {/* The smaller tabs deliberately stay as standalone panels so the tab switch feels stable. */}
       {activeTab === 'team' && (
         <section className="rounded-3xl border border-border bg-white p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-foreground">Team</h2>

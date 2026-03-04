@@ -52,11 +52,13 @@ export function ProjectDetailsPage() {
   const { getProjectById } = useSupervisorWorkspace();
   const [searchParams, setSearchParams] = useSearchParams();
   const project = projectId ? getProjectById(projectId) : null;
+  // Keep lifecycle editing local to the page until the real transition API is connected.
   const [lifecycleDraft, setLifecycleDraft] = useState<SupervisorProjectLifecycle>(
     project?.lifecycle ?? 'PLANNING',
   );
 
   const requestedTab = searchParams.get('tab') as SupervisorProjectTab | null;
+  // Invalid tab params fall back to overview so deep links cannot break the page shell.
   const activeTab = requestedTab && TABS.includes(requestedTab) ? requestedTab : 'overview';
 
   if (!project) {
@@ -78,6 +80,7 @@ export function ProjectDetailsPage() {
 
   function handleTabChange(tab: SupervisorProjectTab) {
     const nextParams = new URLSearchParams(searchParams);
+    // Keep the base detail route clean by omitting the default overview tab from the URL.
     if (tab === 'overview') nextParams.delete('tab');
     else nextParams.set('tab', tab);
     setSearchParams(nextParams, { replace: true });
