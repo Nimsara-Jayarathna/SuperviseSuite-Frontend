@@ -4,13 +4,8 @@ import { isApiException } from '@/services/apiClient';
 import { tokenStorage } from '@/services/tokenStorage';
 import type { ApiError } from '@/types';
 import { authApi } from '../api/authApi';
-import type { AuthUser, LoginResponse, LoginRequest, RegisterRequest } from '../types';
-
-/** Role → home route mapping, used after a successful login/register. */
-const ROLE_HOME: Record<string, string> = {
-  SUPERVISOR: '/supervisor',
-  STUDENT: '/student/projects',
-};
+import type { AuthUser, LoginResponse, LoginRequest } from '../types';
+import { ROLE_HOME } from '@/app/routes/roleHome';
 
 type AuthState = {
   user: AuthUser | null;
@@ -63,19 +58,6 @@ export function useAuth() {
     }
   }
 
-  async function register(body: RegisterRequest): Promise<void> {
-    setLoading();
-    try {
-      await authApi.register(body);
-      // Registration only creates the account — the student must sign in separately.
-      setState((s) => ({ ...s, isLoading: false, error: null }));
-      navigate('/login');
-    } catch (err) {
-      if (isApiException(err)) setError(err.apiError);
-      else setUnexpectedError();
-    }
-  }
-
   async function logout(): Promise<void> {
     try {
       await authApi.logout();
@@ -97,7 +79,6 @@ export function useAuth() {
     isLoading: state.isLoading,
     error: state.error,
     login,
-    register,
     logout,
     clearError,
   };

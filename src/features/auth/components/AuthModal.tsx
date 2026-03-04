@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/cn';
+import { useAuth } from '../hooks/useAuth';
 import { useRegister } from '../hooks/useRegister';
 import { LoginForm } from './LoginForm';
 import { RegisterForm } from './RegisterForm';
@@ -17,7 +18,8 @@ type AuthModalProps = {
 export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalProps) {
   const [activeTab, setActiveTab] = useState<AuthTab>(initialTab);
   const dialogRef = useRef<HTMLDivElement>(null);
-  const { register, isLoading: registerLoading, error: registerError, clearError } = useRegister();
+  const { login, isLoading: loginLoading, error: loginError, clearError: clearLoginError } = useAuth();
+  const { register, isLoading: registerLoading, error: registerError, clearError: clearRegisterError } = useRegister();
 
   // Sync active tab when parent re-opens the modal with a different tab
   useEffect(() => {
@@ -103,13 +105,19 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
 
         {/* Form */}
         {activeTab === 'login' ? (
-          <LoginForm onSuccess={onClose} />
+          <LoginForm
+            onSubmit={login}
+            isLoading={loginLoading}
+            error={loginError}
+            onClearError={clearLoginError}
+            onSuccess={onClose}
+          />
         ) : (
           <RegisterForm
             onSubmit={register}
             isLoading={registerLoading}
             error={registerError}
-            onClearError={clearError}
+            onClearError={clearRegisterError}
             onSuccess={onClose}
           />
         )}

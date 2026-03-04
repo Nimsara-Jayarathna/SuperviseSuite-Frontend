@@ -1,8 +1,21 @@
 import { Link } from 'react-router-dom';
 import { LogoMark } from '@/components/brand/Logo';
+import { useAuth } from '../hooks/useAuth';
 import { LoginForm } from '../components/LoginForm';
 
+/**
+ * Composition root for the login flow.
+ *
+ * Open/Closed Principle: LoginPage wires the useAuth hook into
+ * LoginForm via props. LoginForm can be extended or tested without
+ * modifying this page, and this page does not know about form internals.
+ *
+ * Dependency Inversion: LoginForm receives abstractions (callbacks + state),
+ * not a concrete hook — the hook lives here, at the boundary layer.
+ */
 export function LoginPage() {
+  const { login, isLoading, error, clearError } = useAuth();
+
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-white px-4 py-12">
       {/* Soft gradient orbs in top corners */}
@@ -25,8 +38,13 @@ export function LoginPage() {
           </p>
         </div>
 
-        {/* Form */}
-        <LoginForm />
+        {/* Form — receives hook state via props (Dependency Inversion) */}
+        <LoginForm
+          onSubmit={login}
+          isLoading={isLoading}
+          error={error}
+          onClearError={clearError}
+        />
 
         {/* Footer */}
         <p className="mt-8 text-center text-xs text-muted-foreground">

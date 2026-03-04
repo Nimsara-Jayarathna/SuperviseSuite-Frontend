@@ -63,8 +63,12 @@ export function RegisterForm({
     setFieldErrors({});
 
     // Role is assigned server-side — the backend always sets STUDENT for public registration.
-    await onSubmit({ firstName, lastName, email, password, registrationNumber });
-    onSuccess?.();
+    try {
+      await onSubmit({ firstName, lastName, email, password, registrationNumber });
+      onSuccess?.();
+    } catch {
+      // errors are handled by the caller (useRegister) — do not re-throw
+    }
   }
 
   const inputClass =
