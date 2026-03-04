@@ -1,11 +1,13 @@
 import { useDeferredValue, useState } from 'react';
+import { ErrorState } from '@/components/feedback/ErrorState';
 import { EmptyState } from '@/components/feedback/EmptyState';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { StudentProjectCard } from '../components/StudentProjectCard';
+import { StudentProjectCardSkeleton } from '../components/StudentProjectCardSkeleton';
 import { useStudentProjects } from '../hooks/useStudentProjects';
 
 export function StudentProjectsPage() {
-  const { projects } = useStudentProjects();
+  const { projects, isLoading, error, reload } = useStudentProjects();
   const [query, setQuery] = useState('');
   // Defer filtering slightly so the list stays responsive while typing.
   const deferredQuery = useDeferredValue(query);
@@ -14,7 +16,7 @@ export function StudentProjectsPage() {
   const visibleProjects = projects.filter((project) =>
     normalizedQuery.length === 0
       ? true
-      : `${project.title} ${project.summary} ${project.teamMembers.join(' ')}`
+      : `${project.title} ${project.summary ?? ''} ${project.supervisorName ?? ''} ${project.batch ?? ''} ${project.semester ?? ''}`
           .toLowerCase()
           .includes(normalizedQuery),
   );
@@ -26,7 +28,7 @@ export function StudentProjectsPage() {
     <div className="space-y-6">
       <PageHeader
         title="My Projects"
-        subtitle="Browse your assigned projects and open each workspace to review progress, meetings, action items, and files."
+        subtitle="Browse your assigned projects and open each workspace to review summary, team, and milestones."
         actions={
           <input
             value={query}
@@ -37,7 +39,15 @@ export function StudentProjectsPage() {
         }
       />
 
-      {visibleProjects.length > 0 ? (
+      {isLoading ? (
+        <section className="grid gap-4 xl:grid-cols-2">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <StudentProjectCardSkeleton key={`student-project-skeleton-${index}`} />
+          ))}
+        </section>
+      ) : error ? (
+        <ErrorState error={error} onRetry={() => void reload()} />
+      ) : visibleProjects.length > 0 ? (
         <section className="grid gap-4 xl:grid-cols-2">
           {visibleProjects.map((project) => (
             <StudentProjectCard key={project.id} project={project} />
