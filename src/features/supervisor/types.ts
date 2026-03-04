@@ -98,3 +98,44 @@ export type SupervisorDashboardStats = {
   behind: number;
   overdueActions: number;
 };
+
+export type SupervisorStudentSearchResult = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  registrationNumber: string;
+};
+
+export type CreateSupervisorProjectRequest = {
+  title: string;
+  summary: string;
+  batch: string;
+  semester: string;
+  studentIds: string[];
+  milestone: {
+    title: string;
+    description: string;
+    dueDate: string;
+  };
+};
+
+export type CreateSupervisorProjectResponse = {
+  id: string;
+  title: string;
+  summary: string;
+  batch: string;
+  semester: string;
+  lifecycleStatus: SupervisorProjectLifecycle | 'PLANNING';
+  progressPercent: number;
+  milestoneDate: string;
+  students: SupervisorStudentSearchResult[];
+  milestone: {
+    id: string;
+    title: string;
+    description: string | null;
+    dueDate: string;
+    status: 'PLANNED' | 'IN_PROGRESS' | 'COMPLETED' | 'MISSED' | 'CANCELLED';
+    sequenceNo: number;
+  };
+};

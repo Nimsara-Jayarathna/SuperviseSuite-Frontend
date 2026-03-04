@@ -1,4 +1,5 @@
 export * from './types';
+export * from './api/supervisorApi';
 export * from './data/mockSupervisorWorkspace';
 export * from './hooks/useSupervisorWorkspace';
 export * from './components/SupervisorProjectCard';
