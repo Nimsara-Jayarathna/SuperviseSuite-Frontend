@@ -17,11 +17,11 @@ export function useStudentProjectSummaries() {
     error: null,
   });
 
-  async function loadProjects(forceRefresh = false) {
+  async function loadProjects() {
     setState((current) => ({ ...current, isLoading: true, error: null }));
 
     try {
-      const projects = await studentApi.getProjects(forceRefresh);
+      const projects = await studentApi.getProjects();
       setState({
         projects,
         isLoading: false,
@@ -94,6 +94,6 @@ export function useStudentProjectSummaries() {
     projects: state.projects,
     isLoading: state.isLoading,
     error: state.error,
-    reload: () => loadProjects(true),
+    reload: () => loadProjects(),
   };
 }

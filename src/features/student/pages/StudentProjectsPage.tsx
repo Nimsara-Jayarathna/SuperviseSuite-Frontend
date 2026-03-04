@@ -1,7 +1,6 @@
 import { useDeferredValue, useState } from 'react';
 import { ErrorState } from '@/components/feedback/ErrorState';
 import { EmptyState } from '@/components/feedback/EmptyState';
-import { ErrorState } from '@/components/feedback/ErrorState';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { StudentProjectCard } from '../components/StudentProjectCard';
 import { StudentProjectCardSkeleton } from '../components/StudentProjectCardSkeleton';
