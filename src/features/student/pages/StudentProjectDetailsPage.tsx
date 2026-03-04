@@ -95,8 +95,11 @@ export function StudentProjectDetailsPage() {
         subtitle={project.summary ?? 'No summary has been recorded for this project yet.'}
       />
 
-      <section className="flex flex-wrap gap-3">
-        <StatusBadge tone={statusTone(project.status)}>
+      <section className="flex flex-wrap items-center gap-3">
+        <StatusBadge
+          tone={statusTone(project.status)}
+          className="px-3 py-2 text-sm tracking-[0.08em]"
+        >
           {project.status.replace('_', ' ')}
         </StatusBadge>
         <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-2 text-sm text-muted-foreground shadow-sm">
