@@ -1,4 +1,4 @@
-import { useDeferredValue, useState } from 'react';
+import { useDeferredValue, useEffect, useState } from 'react';
 import { AlertTriangle, ArrowRight, Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { EmptyState } from '@/components/feedback/EmptyState';
@@ -47,8 +47,10 @@ function DashboardStatsSkeleton() {
 export function SupervisorDashboardPage() {
   const { dashboard, isLoading, error, reload } = useSupervisorDashboard();
   const [query, setQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
   const deferredQuery = useDeferredValue(query);
   const normalizedQuery = deferredQuery.trim().toLowerCase();
+  const pageSize = 5;
 
   const projects = dashboard?.projects ?? [];
   const visibleProjects = projects.filter((project) =>
@@ -56,6 +58,16 @@ export function SupervisorDashboardPage() {
       ? true
       : `${project.title} ${project.summary ?? ''}`.toLowerCase().includes(normalizedQuery),
   );
+  const totalPages = Math.max(1, Math.ceil(visibleProjects.length / pageSize));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const pagedProjects = visibleProjects.slice(
+    (safeCurrentPage - 1) * pageSize,
+    safeCurrentPage * pageSize,
+  );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [normalizedQuery]);
 
   const attentionProjects = projects.filter(
     (project) => project.lifecycleStatus === 'AT_RISK' || project.lifecycleStatus === 'BEHIND',
@@ -163,51 +175,81 @@ export function SupervisorDashboardPage() {
             ))}
           </div>
         ) : visibleProjects.length > 0 ? (
-          <div className="mt-5 overflow-x-auto">
-            <table className="min-w-full text-left text-sm">
-              <thead className="border-b border-slate-200 text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                <tr>
-                  <th className="px-3 py-3">Project</th>
-                  <th className="px-3 py-3">Status</th>
-                  <th className="px-3 py-3">Milestone</th>
-                  <th className="px-3 py-3">Progress</th>
-                  <th className="px-3 py-3">Quick links</th>
-                </tr>
-              </thead>
-              <tbody>
-                {visibleProjects.map((project) => (
-                  <tr key={project.id} className="border-b border-slate-100 last:border-0">
-                    <td className="px-3 py-4 align-top">
-                      <p className="font-medium text-foreground">{project.title}</p>
-                      <p className="mt-1 max-w-md text-muted-foreground">
-                        {project.summary ?? 'No summary provided yet.'}
-                      </p>
-                    </td>
-                    <td className="px-3 py-4 align-top">
-                      <span
-                        className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${statusClasses(project.lifecycleStatus)}`}
-                      >
-                        {project.lifecycleStatus.replace('_', ' ')}
-                      </span>
-                    </td>
-                    <td className="px-3 py-4 align-top text-muted-foreground">
-                      {formatMilestoneDate(project.milestoneDate)}
-                    </td>
-                    <td className="px-3 py-4 align-top text-muted-foreground">
-                      {project.progressPercent ?? 0}%
-                    </td>
-                    <td className="px-3 py-4 align-top">
-                      <Link
-                        to={`/supervisor/projects/${project.id}`}
-                        className={buttonStyles({ variant: 'primary', size: 'sm' })}
-                      >
-                        Open
-                      </Link>
-                    </td>
+          <div className="mt-5 space-y-3">
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-left text-sm">
+                <thead className="border-b border-slate-200 text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                  <tr>
+                    <th className="px-3 py-3">Project</th>
+                    <th className="px-3 py-3">Status</th>
+                    <th className="px-3 py-3">Milestone</th>
+                    <th className="px-3 py-3">Progress</th>
+                    <th className="px-3 py-3">Quick links</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {pagedProjects.map((project) => (
+                    <tr key={project.id} className="border-b border-slate-100 last:border-0">
+                      <td className="px-3 py-4 align-top">
+                        <p className="font-medium text-foreground">{project.title}</p>
+                        <p className="mt-1 max-w-md text-muted-foreground">
+                          {project.summary ?? 'No summary provided yet.'}
+                        </p>
+                      </td>
+                      <td className="px-3 py-4 align-top">
+                        <span
+                          className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${statusClasses(project.lifecycleStatus)}`}
+                        >
+                          {project.lifecycleStatus.replace('_', ' ')}
+                        </span>
+                      </td>
+                      <td className="px-3 py-4 align-top text-muted-foreground">
+                        {formatMilestoneDate(project.milestoneDate)}
+                      </td>
+                      <td className="px-3 py-4 align-top text-muted-foreground">
+                        {project.progressPercent ?? 0}%
+                      </td>
+                      <td className="px-3 py-4 align-top">
+                        <Link
+                          to={`/supervisor/projects/${project.id}`}
+                          className={buttonStyles({ variant: 'primary', size: 'sm' })}
+                        >
+                          Open
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-muted-foreground">
+                Showing {(safeCurrentPage - 1) * pageSize + 1}-
+                {Math.min(safeCurrentPage * pageSize, visibleProjects.length)} of{' '}
+                {visibleProjects.length}
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  className={buttonStyles({ variant: 'secondary', size: 'sm' })}
+                  onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                  disabled={safeCurrentPage <= 1}
+                >
+                  Previous
+                </button>
+                <span className="text-xs text-muted-foreground">
+                  Page {safeCurrentPage} / {totalPages}
+                </span>
+                <button
+                  type="button"
+                  className={buttonStyles({ variant: 'secondary', size: 'sm' })}
+                  onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+                  disabled={safeCurrentPage >= totalPages}
+                >
+                  Next
+                </button>
+              </div>
+            </div>
           </div>
         ) : (
           <div className="mt-5">
