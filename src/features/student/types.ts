@@ -1,5 +1,18 @@
 export type StudentProjectStatus = 'ACTIVE' | 'AT_RISK' | 'PLANNING';
 
+export type StudentProjectSummary = {
+  id: string;
+  title: string;
+  summary: string | null;
+  status: StudentProjectStatus;
+  batch: string | null;
+  semester: string | null;
+  milestoneDate: string | null;
+  lastActivityAt: string | null;
+  progressPercent: number | null;
+  supervisorName: string | null;
+};
+
 export type StudentProjectTab =
   | 'overview'
   | 'team'

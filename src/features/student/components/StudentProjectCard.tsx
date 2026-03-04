@@ -4,7 +4,7 @@ import { buttonStyles } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { ProjectCardFooter } from '@/components/ui/ProjectCardFooter';
 import { StatusBadge } from '@/components/ui/StatusBadge';
-import type { StudentProject } from '../types';
+import type { StudentProjectSummary } from '../types';
 
 const dateFormatter = new Intl.DateTimeFormat('en', {
   month: 'short',
@@ -13,19 +13,16 @@ const dateFormatter = new Intl.DateTimeFormat('en', {
 });
 
 type StudentProjectCardProps = {
-  project: StudentProject;
+  project: StudentProjectSummary;
 };
 
-function statusTone(status: StudentProject['status']) {
+function statusTone(status: StudentProjectSummary['status']) {
   if (status === 'ACTIVE') return 'success';
   if (status === 'AT_RISK') return 'warning';
   return 'student';
 }
 
 export function StudentProjectCard({ project }: StudentProjectCardProps) {
-  const progressMetric = project.metrics.find((metric) => metric.label === 'Progress');
-  const actionsMetric = project.metrics.find((metric) => metric.label === 'Open actions');
-
   return (
     <Card className="flex h-full flex-col transition-shadow hover:shadow-md" padding="sm">
       <div className="grid min-h-[5.75rem] grid-cols-[minmax(0,1fr)_auto] gap-2">
@@ -42,11 +39,11 @@ export function StudentProjectCard({ project }: StudentProjectCardProps) {
               WebkitBoxOrient: 'vertical',
             }}
           >
-            {project.summary}
+            {project.summary ?? 'No summary has been recorded for this project yet.'}
           </p>
         </div>
         <span className="inline-flex h-fit rounded-2xl bg-slate-50 px-2.5 py-1 text-sm font-semibold text-foreground">
-          {progressMetric?.value ?? '-'}
+          {(project.progressPercent ?? 0).toString()}%
         </span>
       </div>
 
@@ -56,15 +53,15 @@ export function StudentProjectCard({ project }: StudentProjectCardProps) {
             Progress
           </p>
           <p className="mt-0.5 text-[15px] font-semibold text-foreground">
-            {progressMetric?.value ?? '-'}
+            {(project.progressPercent ?? 0).toString()}%
           </p>
         </div>
         <div className="flex min-h-16 flex-col justify-center rounded-2xl bg-slate-50 px-3 py-2">
           <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
-            Team
+            Supervisor
           </p>
           <p className="mt-0.5 text-[15px] font-semibold text-foreground">
-            {project.teamMembers.length} members
+            {project.supervisorName ?? 'Not assigned'}
           </p>
         </div>
       </div>
@@ -72,15 +69,19 @@ export function StudentProjectCard({ project }: StudentProjectCardProps) {
       <div className="mt-3 flex flex-wrap gap-2 text-sm text-muted-foreground">
         <span className="inline-flex items-center gap-2 rounded-2xl bg-slate-50 px-3 py-2">
           <CalendarDays className="h-4 w-4" />
-          Milestone {dateFormatter.format(new Date(project.milestoneDate))}
+          {project.milestoneDate
+            ? `Milestone ${dateFormatter.format(new Date(project.milestoneDate))}`
+            : 'Milestone not set'}
         </span>
         <span className="inline-flex items-center gap-2 rounded-2xl bg-slate-50 px-3 py-2">
           <ListTodo className="h-4 w-4" />
-          {actionsMetric?.value ?? '0'} open actions
+          {project.batch ?? 'Batch not set'} • {project.semester ?? 'Semester not set'}
         </span>
         <span className="inline-flex items-center gap-2 rounded-2xl bg-slate-50 px-3 py-2">
           <CircleAlert className="h-4 w-4" />
-          Updated {dateFormatter.format(new Date(project.lastUpdatedAt))}
+          {project.lastActivityAt
+            ? `Updated ${dateFormatter.format(new Date(project.lastActivityAt))}`
+            : 'Last activity not recorded'}
         </span>
       </div>
 
@@ -91,14 +92,6 @@ export function StudentProjectCard({ project }: StudentProjectCardProps) {
             className={buttonStyles({ variant: 'primary', size: 'md', className: 'w-full' })}
           >
             Open workspace
-          </Link>
-        }
-        secondaryAction={
-          <Link
-            to={`/student/projects/${project.id}?tab=action-items`}
-            className={buttonStyles({ variant: 'secondary', size: 'md', className: 'w-full' })}
-          >
-            Action items
           </Link>
         }
       />

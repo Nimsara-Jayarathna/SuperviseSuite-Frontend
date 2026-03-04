@@ -1,11 +1,13 @@
 import { useDeferredValue, useState } from 'react';
 import { EmptyState } from '@/components/feedback/EmptyState';
+import { ErrorState } from '@/components/feedback/ErrorState';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { StudentProjectCard } from '../components/StudentProjectCard';
-import { useStudentProjects } from '../hooks/useStudentProjects';
+import { StudentProjectCardSkeleton } from '../components/StudentProjectCardSkeleton';
+import { useStudentProjectSummaries } from '../hooks/useStudentProjectSummaries';
 
 export function StudentProjectsPage() {
-  const { projects } = useStudentProjects();
+  const { projects, isLoading, error, reload } = useStudentProjectSummaries();
   const [query, setQuery] = useState('');
   // Defer filtering slightly so the list stays responsive while typing.
   const deferredQuery = useDeferredValue(query);
@@ -14,7 +16,7 @@ export function StudentProjectsPage() {
   const visibleProjects = projects.filter((project) =>
     normalizedQuery.length === 0
       ? true
-      : `${project.title} ${project.summary} ${project.teamMembers.join(' ')}`
+      : `${project.title} ${project.summary ?? ''} ${project.supervisorName ?? ''}`
           .toLowerCase()
           .includes(normalizedQuery),
   );
@@ -37,7 +39,15 @@ export function StudentProjectsPage() {
         }
       />
 
-      {visibleProjects.length > 0 ? (
+      {isLoading ? (
+        <section className="grid gap-4 xl:grid-cols-2">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <StudentProjectCardSkeleton key={`student-project-skeleton-${index}`} />
+          ))}
+        </section>
+      ) : error ? (
+        <ErrorState error={error} onRetry={() => void reload()} />
+      ) : visibleProjects.length > 0 ? (
         <section className="grid gap-4 xl:grid-cols-2">
           {visibleProjects.map((project) => (
             <StudentProjectCard key={project.id} project={project} />
@@ -49,7 +59,7 @@ export function StudentProjectsPage() {
           description="You don’t have any assigned projects matching your filters yet."
           secondaryAction={{
             label: hasActiveFilters ? 'Clear filters' : 'Refresh',
-            onClick: hasActiveFilters ? () => setQuery('') : () => window.location.reload(),
+            onClick: hasActiveFilters ? () => setQuery('') : () => void reload(),
           }}
         />
       )}
