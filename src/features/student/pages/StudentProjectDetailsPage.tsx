@@ -37,6 +37,10 @@ function statusTone(status: string) {
   return 'student';
 }
 
+function toTabLabel(tab: string) {
+  return tab.charAt(0).toUpperCase() + tab.slice(1);
+}
+
 export function StudentProjectDetailsPage() {
   const { projectId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -149,7 +153,7 @@ export function StudentProjectDetailsPage() {
       <PageTabs
         items={TABS.map((tab) => ({
           value: tab,
-          label: tab,
+          label: toTabLabel(tab),
         }))}
         value={activeTab}
         onChange={(value) => handleTabChange(value as StudentProjectDetailTab)}
