@@ -10,6 +10,9 @@ type SupervisorProjectsState = {
   error: ApiError | null;
 };
 
+let cachedProjects: SupervisorProjectSummary[] | null = null;
+let inFlightProjectsRequest: Promise<SupervisorProjectSummary[]> | null = null;
+
 export function useSupervisorProjects() {
   const [state, setState] = useState<SupervisorProjectsState>({
     projects: [],
@@ -17,17 +20,41 @@ export function useSupervisorProjects() {
     error: null,
   });
 
-  async function loadProjects() {
+  async function loadProjects(forceRefresh = false) {
     setState((current) => ({ ...current, isLoading: true, error: null }));
 
     try {
-      const projects = await supervisorApi.getProjects();
+      if (!forceRefresh && cachedProjects) {
+        setState({
+          projects: cachedProjects,
+          isLoading: false,
+          error: null,
+        });
+        return;
+      }
+
+      if (!forceRefresh && inFlightProjectsRequest) {
+        const projects = await inFlightProjectsRequest;
+        setState({
+          projects,
+          isLoading: false,
+          error: null,
+        });
+        return;
+      }
+
+      inFlightProjectsRequest = supervisorApi.getProjects();
+      const projects = await inFlightProjectsRequest;
+      cachedProjects = projects;
+      inFlightProjectsRequest = null;
+
       setState({
         projects,
         isLoading: false,
         error: null,
       });
     } catch (error) {
+      inFlightProjectsRequest = null;
       setState({
         projects: [],
         isLoading: false,
@@ -55,6 +82,6 @@ export function useSupervisorProjects() {
     projects: state.projects,
     isLoading: state.isLoading,
     error: state.error,
-    reload: loadProjects,
+    reload: () => loadProjects(true),
   };
 }
