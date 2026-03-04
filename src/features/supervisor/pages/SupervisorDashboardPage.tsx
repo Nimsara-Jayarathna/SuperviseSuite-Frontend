@@ -2,10 +2,12 @@ import { useDeferredValue, useState } from 'react';
 import { AlertTriangle, ArrowRight, Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { EmptyState } from '@/components/feedback/EmptyState';
+import { ErrorState } from '@/components/feedback/ErrorState';
 import { buttonStyles } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { useSupervisorWorkspace } from '../hooks/useSupervisorWorkspace';
+import { useSupervisorDashboard } from '../hooks/useSupervisorDashboard';
+import type { SupervisorDashboardProjectItem } from '../types';
 
 const dateFormatter = new Intl.DateTimeFormat('en', {
   month: 'short',
@@ -21,20 +23,55 @@ function statusClasses(status: string) {
   return 'border-sky-200 bg-sky-50 text-sky-700';
 }
 
+function formatMilestoneDate(value: string | null) {
+  return value ? dateFormatter.format(new Date(value)) : 'Not set';
+}
+
+function DashboardStatsSkeleton() {
+  return (
+    <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+      {Array.from({ length: 5 }).map((_, index) => (
+        <Card
+          key={`dashboard-stat-skeleton-${index}`}
+          className="animate-pulse rounded-2xl"
+          padding="md"
+        >
+          <div className="h-3 w-24 rounded bg-slate-100" />
+          <div className="mt-3 h-8 w-12 rounded bg-slate-200" />
+        </Card>
+      ))}
+    </section>
+  );
+}
+
 export function SupervisorDashboardPage() {
-  const { projects, stats } = useSupervisorWorkspace();
+  const { dashboard, isLoading, error, reload } = useSupervisorDashboard();
   const [query, setQuery] = useState('');
-  // Keep the dashboard search lightweight by filtering from a deferred query value.
   const deferredQuery = useDeferredValue(query);
   const normalizedQuery = deferredQuery.trim().toLowerCase();
 
+  const projects = dashboard?.projects ?? [];
   const visibleProjects = projects.filter((project) =>
     normalizedQuery.length === 0
       ? true
-      : `${project.title} ${project.summary} ${project.members.map((member) => member.name).join(' ')}`
-          .toLowerCase()
-          .includes(normalizedQuery),
+      : `${project.title} ${project.summary ?? ''}`.toLowerCase().includes(normalizedQuery),
   );
+
+  const attentionProjects = projects.filter(
+    (project) => project.lifecycleStatus === 'AT_RISK' || project.lifecycleStatus === 'BEHIND',
+  );
+  const upcomingProjects = [...projects]
+    .filter((project) => Boolean(project.milestoneDate))
+    .sort((a, b) => {
+      const left = a.milestoneDate ?? '';
+      const right = b.milestoneDate ?? '';
+      return left.localeCompare(right);
+    })
+    .slice(0, 4);
+
+  if (error) {
+    return <ErrorState error={error} onRetry={() => void reload()} />;
+  }
 
   return (
     <div className="space-y-6">
@@ -47,45 +84,57 @@ export function SupervisorDashboardPage() {
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search project or student"
+              placeholder="Search project"
               className="w-full rounded-2xl border border-border bg-white py-3 pl-11 pr-4 text-sm outline-none transition-colors focus:border-amber-300"
             />
           </label>
         }
       />
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-        <Card className="rounded-2xl" padding="md">
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
-            Total projects
-          </p>
-          <p className="mt-3 text-3xl font-semibold text-foreground">{stats.total}</p>
-        </Card>
-        <Card className="rounded-2xl" padding="md">
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
-            Active
-          </p>
-          <p className="mt-3 text-3xl font-semibold text-foreground">{stats.active}</p>
-        </Card>
-        <Card className="rounded-2xl" padding="md">
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
-            At risk
-          </p>
-          <p className="mt-3 text-3xl font-semibold text-foreground">{stats.atRisk}</p>
-        </Card>
-        <Card className="rounded-2xl" padding="md">
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
-            Behind
-          </p>
-          <p className="mt-3 text-3xl font-semibold text-foreground">{stats.behind}</p>
-        </Card>
-        <Card className="rounded-2xl" padding="md">
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
-            Overdue actions
-          </p>
-          <p className="mt-3 text-3xl font-semibold text-foreground">{stats.overdueActions}</p>
-        </Card>
-      </section>
+      {isLoading || !dashboard ? (
+        <DashboardStatsSkeleton />
+      ) : (
+        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+          <Card className="rounded-2xl" padding="md">
+            <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
+              Total projects
+            </p>
+            <p className="mt-3 text-3xl font-semibold text-foreground">{dashboard.totalProjects}</p>
+          </Card>
+          <Card className="rounded-2xl" padding="md">
+            <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
+              Active
+            </p>
+            <p className="mt-3 text-3xl font-semibold text-foreground">
+              {dashboard.activeProjects}
+            </p>
+          </Card>
+          <Card className="rounded-2xl" padding="md">
+            <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
+              At risk
+            </p>
+            <p className="mt-3 text-3xl font-semibold text-foreground">
+              {dashboard.atRiskProjects}
+            </p>
+          </Card>
+          <Card className="rounded-2xl" padding="md">
+            <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
+              Behind
+            </p>
+            <p className="mt-3 text-3xl font-semibold text-foreground">
+              {dashboard.behindProjects}
+            </p>
+          </Card>
+          <Card className="rounded-2xl" padding="md">
+            <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
+              Upcoming milestones
+            </p>
+            <p className="mt-3 text-3xl font-semibold text-foreground">
+              {dashboard.upcomingMilestonesCount}
+            </p>
+          </Card>
+        </section>
+      )}
 
       <section className="rounded-3xl border border-border bg-white p-6 shadow-sm">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -104,7 +153,16 @@ export function SupervisorDashboardPage() {
           </Link>
         </div>
 
-        {visibleProjects.length > 0 ? (
+        {isLoading ? (
+          <div className="mt-5 space-y-3 animate-pulse">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <div
+                key={`dashboard-row-skeleton-${index}`}
+                className="h-16 rounded-2xl bg-slate-100"
+              />
+            ))}
+          </div>
+        ) : visibleProjects.length > 0 ? (
           <div className="mt-5 overflow-x-auto">
             <table className="min-w-full text-left text-sm">
               <thead className="border-b border-slate-200 text-xs uppercase tracking-[0.2em] text-muted-foreground">
@@ -112,60 +170,42 @@ export function SupervisorDashboardPage() {
                   <th className="px-3 py-3">Project</th>
                   <th className="px-3 py-3">Status</th>
                   <th className="px-3 py-3">Milestone</th>
-                  <th className="px-3 py-3">Open actions</th>
+                  <th className="px-3 py-3">Progress</th>
                   <th className="px-3 py-3">Quick links</th>
                 </tr>
               </thead>
               <tbody>
-                {visibleProjects.map((project) => {
-                  const openActionCount = project.actionItems.filter(
-                    (item) => item.status !== 'Done',
-                  ).length;
-
-                  return (
-                    <tr key={project.id} className="border-b border-slate-100 last:border-0">
-                      <td className="px-3 py-4 align-top">
-                        <p className="font-medium text-foreground">{project.title}</p>
-                        <p className="mt-1 max-w-md text-muted-foreground">{project.summary}</p>
-                      </td>
-                      <td className="px-3 py-4 align-top">
-                        <span
-                          className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${statusClasses(project.lifecycle)}`}
-                        >
-                          {project.lifecycle.replace('_', ' ')}
-                        </span>
-                      </td>
-                      <td className="px-3 py-4 align-top text-muted-foreground">
-                        {dateFormatter.format(new Date(project.milestoneDate))}
-                      </td>
-                      <td className="px-3 py-4 align-top text-muted-foreground">
-                        {openActionCount}
-                      </td>
-                      <td className="px-3 py-4 align-top">
-                        <div className="flex flex-wrap gap-2">
-                          <Link
-                            to={`/supervisor/projects/${project.id}`}
-                            className={buttonStyles({ variant: 'primary', size: 'sm' })}
-                          >
-                            Open
-                          </Link>
-                          <Link
-                            to={`/supervisor/projects/${project.id}?tab=meetings`}
-                            className={buttonStyles({ variant: 'secondary', size: 'sm' })}
-                          >
-                            Meetings
-                          </Link>
-                          <Link
-                            to={`/supervisor/projects/${project.id}?tab=files`}
-                            className={buttonStyles({ variant: 'secondary', size: 'sm' })}
-                          >
-                            Files
-                          </Link>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
+                {visibleProjects.map((project) => (
+                  <tr key={project.id} className="border-b border-slate-100 last:border-0">
+                    <td className="px-3 py-4 align-top">
+                      <p className="font-medium text-foreground">{project.title}</p>
+                      <p className="mt-1 max-w-md text-muted-foreground">
+                        {project.summary ?? 'No summary provided yet.'}
+                      </p>
+                    </td>
+                    <td className="px-3 py-4 align-top">
+                      <span
+                        className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${statusClasses(project.lifecycleStatus)}`}
+                      >
+                        {project.lifecycleStatus.replace('_', ' ')}
+                      </span>
+                    </td>
+                    <td className="px-3 py-4 align-top text-muted-foreground">
+                      {formatMilestoneDate(project.milestoneDate)}
+                    </td>
+                    <td className="px-3 py-4 align-top text-muted-foreground">
+                      {project.progressPercent ?? 0}%
+                    </td>
+                    <td className="px-3 py-4 align-top">
+                      <Link
+                        to={`/supervisor/projects/${project.id}`}
+                        className={buttonStyles({ variant: 'primary', size: 'sm' })}
+                      >
+                        Open
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
@@ -182,12 +222,18 @@ export function SupervisorDashboardPage() {
       <section className="grid gap-5 xl:grid-cols-2">
         <div className="rounded-3xl border border-border bg-white p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-foreground">Projects needing attention</h2>
-          <div className="mt-5 space-y-4">
-            {projects
-              .filter(
-                (project) => project.lifecycle === 'AT_RISK' || project.lifecycle === 'BEHIND',
-              )
-              .map((project) => (
+          {isLoading ? (
+            <div className="mt-5 space-y-4 animate-pulse">
+              {Array.from({ length: 3 }).map((_, index) => (
+                <div
+                  key={`attention-skeleton-${index}`}
+                  className="h-20 rounded-2xl bg-slate-100"
+                />
+              ))}
+            </div>
+          ) : attentionProjects.length > 0 ? (
+            <div className="mt-5 space-y-4">
+              {attentionProjects.map((project: SupervisorDashboardProjectItem) => (
                 <div
                   key={project.id}
                   className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
@@ -196,23 +242,32 @@ export function SupervisorDashboardPage() {
                     <div>
                       <p className="font-medium text-foreground">{project.title}</p>
                       <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                        {project.healthNote}
+                        {project.healthNote ?? 'No health note recorded yet.'}
                       </p>
                     </div>
                     <AlertTriangle className="mt-1 h-5 w-5 text-amber-600" />
                   </div>
                 </div>
               ))}
-          </div>
+            </div>
+          ) : (
+            <p className="mt-5 text-sm text-muted-foreground">
+              No projects currently need urgent attention.
+            </p>
+          )}
         </div>
 
         <div className="rounded-3xl border border-border bg-white p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-foreground">Upcoming milestones</h2>
-          <div className="mt-5 space-y-4">
-            {[...projects]
-              .sort((a, b) => a.milestoneDate.localeCompare(b.milestoneDate))
-              .slice(0, 4)
-              .map((project) => (
+          {isLoading ? (
+            <div className="mt-5 space-y-4 animate-pulse">
+              {Array.from({ length: 3 }).map((_, index) => (
+                <div key={`upcoming-skeleton-${index}`} className="h-16 rounded-2xl bg-slate-100" />
+              ))}
+            </div>
+          ) : upcomingProjects.length > 0 ? (
+            <div className="mt-5 space-y-4">
+              {upcomingProjects.map((project) => (
                 <div
                   key={project.id}
                   className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 p-4"
@@ -220,7 +275,7 @@ export function SupervisorDashboardPage() {
                   <div>
                     <p className="font-medium text-foreground">{project.title}</p>
                     <p className="mt-1 text-sm text-muted-foreground">
-                      {dateFormatter.format(new Date(project.milestoneDate))}
+                      {formatMilestoneDate(project.milestoneDate)}
                     </p>
                   </div>
                   <Link
@@ -231,7 +286,12 @@ export function SupervisorDashboardPage() {
                   </Link>
                 </div>
               ))}
-          </div>
+            </div>
+          ) : (
+            <p className="mt-5 text-sm text-muted-foreground">
+              No upcoming milestones in the current window.
+            </p>
+          )}
         </div>
       </section>
     </div>

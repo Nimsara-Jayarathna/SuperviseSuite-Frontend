@@ -4,6 +4,7 @@ import type {
   AddSupervisorProjectMilestoneRequest,
   CreateSupervisorProjectRequest,
   CreateSupervisorProjectResponse,
+  SupervisorDashboard,
   SupervisorProjectDetail,
   SupervisorProjectSummary,
   SupervisorStudentSearchResult,
@@ -16,6 +17,10 @@ const cachedProjectsById: Partial<Record<string, SupervisorProjectDetail>> = {};
 const inFlightProjectRequests: Partial<Record<string, Promise<SupervisorProjectDetail>>> = {};
 
 export const supervisorApi = {
+  getDashboard(): Promise<SupervisorDashboard> {
+    return apiClient.get<SupervisorDashboard>('/api/supervisor/dashboard');
+  },
+
   getProjects(): Promise<SupervisorProjectSummary[]> {
     return apiClient.get<SupervisorProjectSummary[]>('/api/supervisor/projects');
   },

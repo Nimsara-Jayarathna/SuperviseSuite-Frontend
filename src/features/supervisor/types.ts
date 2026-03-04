@@ -147,6 +147,29 @@ export type SupervisorDashboardStats = {
   overdueActions: number;
 };
 
+export type SupervisorDashboardProjectItem = {
+  id: string;
+  title: string;
+  summary: string | null;
+  lifecycleStatus: SupervisorProjectLifecycle;
+  milestoneDate: string | null;
+  lastActivityAt: string | null;
+  progressPercent: number | null;
+  healthNote: string | null;
+};
+
+export type SupervisorDashboard = {
+  totalProjects: number;
+  planningProjects: number;
+  activeProjects: number;
+  atRiskProjects: number;
+  behindProjects: number;
+  completedProjects: number;
+  upcomingMilestonesCount: number;
+  projects: SupervisorDashboardProjectItem[];
+  recentProjects: SupervisorDashboardProjectItem[];
+};
+
 export type SupervisorStudentSearchResult = {
   id: string;
   firstName: string;
