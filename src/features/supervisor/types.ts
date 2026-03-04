@@ -187,3 +187,12 @@ export type CreateSupervisorProjectResponse = {
     sequenceNo: number;
   };
 };
+
+export type UpdateSupervisorProjectRequest = {
+  title: string;
+  summary: string;
+  batch: string;
+  semester: string;
+  lifecycleStatus: SupervisorProjectLifecycle;
+  healthNote: string | null;
+};

@@ -1,3 +1,5 @@
+import { useEffect, useState } from 'react';
+import type { FormEvent } from 'react';
 import { CalendarDays, Clock3, Users } from 'lucide-react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { ErrorState } from '@/components/feedback/ErrorState';
@@ -5,9 +7,17 @@ import { buttonStyles } from '@/components/ui/Button';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { PageTabs } from '@/components/ui/PageTabs';
 import { StatusBadge } from '@/components/ui/StatusBadge';
+import { isApiException } from '@/services/apiClient';
+import type { ApiError } from '@/types';
+import { supervisorApi } from '../api/supervisorApi';
 import { ProjectDetailsSkeleton } from '../components/ProjectDetailsSkeleton';
 import { useSupervisorProject } from '../hooks/useSupervisorProject';
-import type { SupervisorProjectDetailMember, SupervisorProjectDetailTab } from '../types';
+import type {
+  SupervisorProjectDetail,
+  SupervisorProjectDetailMember,
+  SupervisorProjectDetailTab,
+  SupervisorProjectLifecycle,
+} from '../types';
 
 const dateFormatter = new Intl.DateTimeFormat('en', {
   month: 'short',
@@ -24,6 +34,22 @@ const dateTimeFormatter = new Intl.DateTimeFormat('en', {
 });
 
 const TABS: SupervisorProjectDetailTab[] = ['overview', 'team', 'milestones'];
+const LIFECYCLE_OPTIONS: SupervisorProjectLifecycle[] = [
+  'PLANNING',
+  'ACTIVE',
+  'AT_RISK',
+  'BEHIND',
+  'COMPLETED',
+];
+
+type OverviewEditForm = {
+  title: string;
+  summary: string;
+  batch: string;
+  semester: string;
+  lifecycleStatus: SupervisorProjectLifecycle;
+  healthNote: string;
+};
 
 function memberDisplayName(member: SupervisorProjectDetailMember) {
   return `${member.firstName ?? ''} ${member.lastName ?? ''}`.trim() || member.email;
@@ -37,13 +63,49 @@ function lifecycleTone(status: string) {
   return 'student';
 }
 
+function buildOverviewEditForm(project: SupervisorProjectDetail): OverviewEditForm {
+  return {
+    title: project.title,
+    summary: project.summary ?? '',
+    batch: project.batch ?? '',
+    semester: project.semester ?? '',
+    lifecycleStatus: project.lifecycleStatus,
+    healthNote: project.healthNote ?? '',
+  };
+}
+
+function toNullableTrimmed(value: string) {
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
 export function ProjectDetailsPage() {
   const { projectId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const { project, isLoading, error, reload } = useSupervisorProject(projectId);
+  const [isEditingOverview, setIsEditingOverview] = useState(false);
+  const [isSavingOverview, setIsSavingOverview] = useState(false);
+  const [saveError, setSaveError] = useState<ApiError | null>(null);
+  const [overviewForm, setOverviewForm] = useState<OverviewEditForm | null>(null);
 
   const requestedTab = searchParams.get('tab') as SupervisorProjectDetailTab | null;
   const activeTab = requestedTab && TABS.includes(requestedTab) ? requestedTab : 'overview';
+  const initialOverviewForm = project ? buildOverviewEditForm(project) : null;
+  const isOverviewDirty =
+    overviewForm !== null &&
+    initialOverviewForm !== null &&
+    (overviewForm.title !== initialOverviewForm.title ||
+      overviewForm.summary !== initialOverviewForm.summary ||
+      overviewForm.batch !== initialOverviewForm.batch ||
+      overviewForm.semester !== initialOverviewForm.semester ||
+      overviewForm.lifecycleStatus !== initialOverviewForm.lifecycleStatus ||
+      overviewForm.healthNote !== initialOverviewForm.healthNote);
+
+  useEffect(() => {
+    if (project && !isEditingOverview) {
+      setOverviewForm(buildOverviewEditForm(project));
+    }
+  }, [project, isEditingOverview]);
 
   function handleTabChange(tab: SupervisorProjectDetailTab) {
     const nextParams = new URLSearchParams(searchParams);
@@ -53,6 +115,63 @@ export function ProjectDetailsPage() {
       nextParams.set('tab', tab);
     }
     setSearchParams(nextParams, { replace: true });
+  }
+
+  function handleStartOverviewEdit() {
+    if (!project) {
+      return;
+    }
+    setOverviewForm(buildOverviewEditForm(project));
+    setSaveError(null);
+    setIsEditingOverview(true);
+  }
+
+  function handleCancelOverviewEdit() {
+    if (project) {
+      setOverviewForm(buildOverviewEditForm(project));
+    }
+    setSaveError(null);
+    setIsEditingOverview(false);
+  }
+
+  async function handleSaveOverview(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!project || !overviewForm || !projectId) {
+      return;
+    }
+
+    setIsSavingOverview(true);
+    setSaveError(null);
+
+    try {
+      await supervisorApi.updateProject(projectId, {
+        title: overviewForm.title.trim(),
+        summary: overviewForm.summary.trim(),
+        batch: overviewForm.batch.trim(),
+        semester: overviewForm.semester.trim(),
+        lifecycleStatus: overviewForm.lifecycleStatus,
+        healthNote: toNullableTrimmed(overviewForm.healthNote),
+      });
+      await reload();
+      setIsEditingOverview(false);
+    } catch (saveException) {
+      setSaveError(
+        isApiException(saveException)
+          ? saveException.apiError
+          : {
+              code: 'INTERNAL_ERROR',
+              message: 'Unable to update the project right now.',
+              details: [],
+              timestamp: new Date().toISOString(),
+              status: 0,
+              error: 'Unexpected Error',
+              path: '',
+              traceId: null,
+            },
+      );
+    } finally {
+      setIsSavingOverview(false);
+    }
   }
 
   if (isLoading) {
@@ -160,29 +279,184 @@ export function ProjectDetailsPage() {
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
           <section className="space-y-6">
             <div className="rounded-3xl border border-border bg-white p-6 shadow-sm">
-              <h2 className="text-lg font-semibold text-foreground">Project summary</h2>
-              <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Batch</p>
-                  <p className="mt-1 font-medium text-foreground">{project.batch ?? 'Not set'}</p>
-                </div>
-                <div>
-                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                    Semester
-                  </p>
-                  <p className="mt-1 font-medium text-foreground">
-                    {project.semester ?? 'Not set'}
-                  </p>
-                </div>
-                <div className="sm:col-span-2">
-                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                    Health note
-                  </p>
-                  <p className="mt-1 text-sm leading-7 text-muted-foreground">
-                    {project.healthNote ?? 'No health note recorded yet.'}
-                  </p>
-                </div>
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="text-lg font-semibold text-foreground">Project summary</h2>
+                {!isEditingOverview ? (
+                  <button
+                    type="button"
+                    className={buttonStyles({ variant: 'secondary', size: 'sm' })}
+                    onClick={handleStartOverviewEdit}
+                  >
+                    Edit details
+                  </button>
+                ) : null}
               </div>
+
+              {isEditingOverview && overviewForm ? (
+                <form className="mt-5 space-y-4" onSubmit={handleSaveOverview}>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <label className="space-y-1.5">
+                      <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                        Title
+                      </span>
+                      <input
+                        required
+                        maxLength={40}
+                        value={overviewForm.title}
+                        onChange={(event) =>
+                          setOverviewForm((current) =>
+                            current ? { ...current, title: event.target.value } : current,
+                          )
+                        }
+                        className="h-10 w-full rounded-2xl border border-border bg-white px-4 text-sm outline-none transition-colors focus:border-amber-300"
+                      />
+                    </label>
+                    <label className="space-y-1.5">
+                      <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                        Lifecycle
+                      </span>
+                      <select
+                        value={overviewForm.lifecycleStatus}
+                        onChange={(event) =>
+                          setOverviewForm((current) =>
+                            current
+                              ? {
+                                  ...current,
+                                  lifecycleStatus: event.target.value as SupervisorProjectLifecycle,
+                                }
+                              : current,
+                          )
+                        }
+                        className="h-10 w-full rounded-2xl border border-border bg-white px-4 text-sm outline-none transition-colors focus:border-amber-300"
+                      >
+                        {LIFECYCLE_OPTIONS.map((option) => (
+                          <option key={option} value={option}>
+                            {option.replace('_', ' ')}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="space-y-1.5">
+                      <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                        Batch
+                      </span>
+                      <input
+                        required
+                        maxLength={32}
+                        value={overviewForm.batch}
+                        onChange={(event) =>
+                          setOverviewForm((current) =>
+                            current ? { ...current, batch: event.target.value } : current,
+                          )
+                        }
+                        className="h-10 w-full rounded-2xl border border-border bg-white px-4 text-sm outline-none transition-colors focus:border-amber-300"
+                      />
+                    </label>
+                    <label className="space-y-1.5">
+                      <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                        Semester
+                      </span>
+                      <input
+                        required
+                        maxLength={32}
+                        value={overviewForm.semester}
+                        onChange={(event) =>
+                          setOverviewForm((current) =>
+                            current ? { ...current, semester: event.target.value } : current,
+                          )
+                        }
+                        className="h-10 w-full rounded-2xl border border-border bg-white px-4 text-sm outline-none transition-colors focus:border-amber-300"
+                      />
+                    </label>
+                    <label className="space-y-1.5 sm:col-span-2">
+                      <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                        Summary
+                      </span>
+                      <textarea
+                        required
+                        maxLength={250}
+                        rows={4}
+                        value={overviewForm.summary}
+                        onChange={(event) =>
+                          setOverviewForm((current) =>
+                            current ? { ...current, summary: event.target.value } : current,
+                          )
+                        }
+                        className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-amber-300"
+                      />
+                    </label>
+                    <label className="space-y-1.5 sm:col-span-2">
+                      <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                        Health note
+                      </span>
+                      <textarea
+                        maxLength={250}
+                        rows={3}
+                        value={overviewForm.healthNote}
+                        onChange={(event) =>
+                          setOverviewForm((current) =>
+                            current ? { ...current, healthNote: event.target.value } : current,
+                          )
+                        }
+                        className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-amber-300"
+                      />
+                    </label>
+                  </div>
+
+                  {saveError ? <p className="text-sm text-rose-600">{saveError.message}</p> : null}
+
+                  <div className="flex flex-wrap justify-end gap-2">
+                    <button
+                      type="button"
+                      disabled={isSavingOverview}
+                      className={buttonStyles({ variant: 'secondary', size: 'md' })}
+                      onClick={handleCancelOverviewEdit}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isSavingOverview || !isOverviewDirty}
+                      className={buttonStyles({ variant: 'primary', size: 'md' })}
+                    >
+                      {isSavingOverview ? 'Saving...' : 'Save changes'}
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                      Batch
+                    </p>
+                    <p className="mt-1 font-medium text-foreground">{project.batch ?? 'Not set'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                      Semester
+                    </p>
+                    <p className="mt-1 font-medium text-foreground">
+                      {project.semester ?? 'Not set'}
+                    </p>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                      Summary
+                    </p>
+                    <p className="mt-1 text-sm leading-7 text-muted-foreground">
+                      {project.summary ?? 'No summary has been recorded for this project yet.'}
+                    </p>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                      Health note
+                    </p>
+                    <p className="mt-1 text-sm leading-7 text-muted-foreground">
+                      {project.healthNote ?? 'No health note recorded yet.'}
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="rounded-3xl border border-border bg-white p-6 shadow-sm">
