@@ -7,6 +7,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { RequestStateModal } from '@/components/ui/RequestStateModal';
 import { isApiException } from '@/services/apiClient';
 import { supervisorApi } from '../api/supervisorApi';
+import { invalidateSupervisorProjectsCache } from '../hooks/useSupervisorProjects';
 import type { CreateSupervisorProjectResponse, SupervisorStudentSearchResult } from '../types';
 
 type DraftState = {
@@ -171,6 +172,7 @@ export function CreateProjectPage() {
       });
 
       setCreatedProject(response);
+      invalidateSupervisorProjectsCache();
       setDraft(INITIAL_DRAFT);
       setSelectedStudents([]);
       setStudentQuery('');

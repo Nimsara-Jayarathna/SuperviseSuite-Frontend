@@ -13,6 +13,39 @@ export type SupervisorProjectSummary = {
   memberCount: number;
 };
 
+export type SupervisorProjectDetailMember = {
+  id: string;
+  firstName: string | null;
+  lastName: string | null;
+  email: string;
+  registrationNumber: string | null;
+  memberRole: 'SUPERVISOR' | 'STUDENT';
+};
+
+export type SupervisorProjectDetailMilestone = {
+  id: string;
+  title: string;
+  description: string | null;
+  dueDate: string;
+  status: 'PLANNED' | 'IN_PROGRESS' | 'COMPLETED' | 'MISSED' | 'CANCELLED';
+  sequenceNo: number;
+};
+
+export type SupervisorProjectDetail = {
+  id: string;
+  title: string;
+  summary: string | null;
+  lifecycleStatus: SupervisorProjectLifecycle;
+  batch: string | null;
+  semester: string | null;
+  milestoneDate: string | null;
+  progressPercent: number | null;
+  healthNote: string | null;
+  lastActivityAt: string | null;
+  members: SupervisorProjectDetailMember[];
+  milestones: SupervisorProjectDetailMilestone[];
+};
+
 export type SupervisorProjectTab =
   | 'overview'
   | 'team'
@@ -20,6 +53,8 @@ export type SupervisorProjectTab =
   | 'meetings'
   | 'action-items'
   | 'files';
+
+export type SupervisorProjectDetailTab = 'overview' | 'team' | 'milestones';
 
 export type SupervisorProjectMember = {
   id: string;
