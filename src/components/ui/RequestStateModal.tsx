@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/Button';
+import { createPortal } from 'react-dom';
 
 type RequestStateModalProps = {
   isOpen: boolean;
@@ -43,7 +44,7 @@ export function RequestStateModal({
     return null;
   }
 
-  return (
+  const content = (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 px-4 backdrop-blur-[2px]">
       <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
         <div className="flex flex-col items-center text-center">
@@ -69,4 +70,10 @@ export function RequestStateModal({
       </div>
     </div>
   );
+
+  if (typeof document === 'undefined') {
+    return content;
+  }
+
+  return createPortal(content, document.body);
 }
