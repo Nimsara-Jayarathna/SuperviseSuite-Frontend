@@ -91,8 +91,8 @@ CI is intentionally not configured yet. In a later phase, automated pipelines wi
 - Supervisor UI routes are implemented for `/supervisor`, `/supervisor/dashboard`, `/supervisor/projects`, `/supervisor/projects/new`, and `/supervisor/projects/:projectId`.
 - Legacy aliases (`/dashboard`, `/project`, `/project/new`, `/project/:projectId`, `/projects`, `/projects/new`, `/projects/:projectId`) redirect into the correct student or supervisor route based on the stored user.
 - Student and supervisor routes share the same top-bar shell (`AppShell` + `TopBar`) and the same shared button system.
-- Student project list/detail and supervisor project list/detail/create flows are backend-connected.
-- Some supervisor dashboard and future workflow panels remain mock-backed until dedicated APIs are added.
+- Student project list/detail and supervisor dashboard/list/detail/create flows are backend-connected.
+- Some advanced workflow panels (for example meetings/files/action-items as full modules) remain out of scope or partially mock-derived until dedicated APIs are added.
 - Route guards support a UI-only cross-role preview mode in local development. This is not a security boundary and must be enforced by the backend.
 
 ## UI Architecture Notes

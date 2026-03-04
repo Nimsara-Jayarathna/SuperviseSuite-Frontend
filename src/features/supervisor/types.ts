@@ -147,6 +147,29 @@ export type SupervisorDashboardStats = {
   overdueActions: number;
 };
 
+export type SupervisorDashboardProjectItem = {
+  id: string;
+  title: string;
+  summary: string | null;
+  lifecycleStatus: SupervisorProjectLifecycle;
+  milestoneDate: string | null;
+  lastActivityAt: string | null;
+  progressPercent: number | null;
+  healthNote: string | null;
+};
+
+export type SupervisorDashboard = {
+  totalProjects: number;
+  planningProjects: number;
+  activeProjects: number;
+  atRiskProjects: number;
+  behindProjects: number;
+  completedProjects: number;
+  upcomingMilestonesCount: number;
+  projects: SupervisorDashboardProjectItem[];
+  recentProjects: SupervisorDashboardProjectItem[];
+};
+
 export type SupervisorStudentSearchResult = {
   id: string;
   firstName: string;
@@ -186,4 +209,34 @@ export type CreateSupervisorProjectResponse = {
     status: 'PLANNED' | 'IN_PROGRESS' | 'COMPLETED' | 'MISSED' | 'CANCELLED';
     sequenceNo: number;
   };
+};
+
+export type UpdateSupervisorProjectRequest = {
+  title: string;
+  summary: string;
+  batch: string;
+  semester: string;
+  lifecycleStatus: SupervisorProjectLifecycle;
+  healthNote: string | null;
+};
+
+export type AddSupervisorProjectMembersRequest = {
+  studentIds: string[];
+};
+
+export type AddSupervisorProjectMilestoneRequest = {
+  title: string;
+  description: string | null;
+  dueDate: string;
+};
+
+export type UpdateSupervisorProjectMilestoneRequest = {
+  title: string;
+  description: string | null;
+  dueDate: string;
+  status: SupervisorProjectDetailMilestone['status'];
+};
+
+export type UpdateSupervisorProjectStatusRequest = {
+  lifecycleStatus: SupervisorProjectLifecycle;
 };

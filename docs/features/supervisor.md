@@ -1,6 +1,6 @@
 # Supervisor Feature
 
-Supervisor workspace UI for dashboard review, project listing, project creation, and project detail views.
+Supervisor workspace for dashboard monitoring, project listing, project creation, and project detail management.
 
 ## Routes
 
@@ -14,228 +14,211 @@ Supervisor workspace UI for dashboard review, project listing, project creation,
 
 ## Alias Support
 
-The supervisor tree also accepts prototype-compatible aliases:
+Supported aliases:
 
-- `/supervisor/project` → `/supervisor/projects`
-- `/supervisor/project/new` → `/supervisor/projects/new`
-- `/supervisor/project/:projectId` → same detail page
+- `/supervisor/project` -> `/supervisor/projects`
+- `/supervisor/project/new` -> `/supervisor/projects/new`
+- `/supervisor/project/:projectId` -> `/supervisor/projects/:projectId`
 
-Global legacy aliases such as `/dashboard`, `/project`, `/project/new`, and `/projects/:projectId` redirect into supervisor routes when the stored user is a supervisor.
+Global legacy aliases (`/dashboard`, `/project`, `/project/new`, `/projects/:projectId`) redirect to supervisor routes when stored user role is supervisor.
 
-## Current UX Structure
+## API Coverage Summary
 
-- Shared app shell via `AppShell` and `TopBar`
-- No left sidebar
-- Top navigation contains persistent sections only
-- Project creation lives in-page (`SupervisorProjectsPage` header + empty state), not in the top bar
+Supervisor feature currently uses these APIs:
+
+- `GET /api/supervisor/dashboard`
+- `GET /api/supervisor/projects`
+- `GET /api/supervisor/projects/{projectId}`
+- `GET /api/supervisor/students/search?q=...`
+- `POST /api/supervisor/projects`
+- `PATCH /api/supervisor/projects/{projectId}`
+- `PATCH /api/supervisor/projects/{projectId}/status`
+- `POST /api/supervisor/projects/{projectId}/members`
+- `POST /api/supervisor/projects/{projectId}/milestones`
+- `PATCH /api/supervisor/projects/{projectId}/milestones/{milestoneId}`
+
+---
 
 ## Key Files
 
 | File | Purpose |
 |------|---------|
-| `src/features/supervisor/pages/SupervisorDashboardPage.tsx` | Supervisor overview and quick project access |
-| `src/features/supervisor/pages/SupervisorProjectsPage.tsx` | API-backed project list, lifecycle filter, skeleton loading, and in-page create action |
-| `src/features/supervisor/pages/CreateProjectPage.tsx` | API-backed create project flow with student lookup and milestone form |
-| `src/features/supervisor/pages/ProjectDetailsPage.tsx` | API-backed trimmed project detail page |
-| `src/features/supervisor/components/SupervisorProjectCard.tsx` | Summary card for backend-backed project list records |
-| `src/features/supervisor/components/SupervisorProjectCardSkeleton.tsx` | Skeleton placeholder for project list loading |
-| `src/features/supervisor/components/ProjectDetailsSkeleton.tsx` | Skeleton placeholder for project detail loading |
-| `src/features/supervisor/api/supervisorApi.ts` | Supervisor API client for student search and project creation |
-| `src/features/supervisor/hooks/useSupervisorProjects.ts` | API-backed supervisor project list hook |
-| `src/features/supervisor/hooks/useSupervisorProject.ts` | API-backed supervisor project detail hook |
-| `src/features/supervisor/hooks/useSupervisorWorkspace.ts` | Local mock-backed workspace hook |
-| `src/features/supervisor/data/mockSupervisorWorkspace.ts` | UI mock data source |
-| `src/features/supervisor/index.ts` | Barrel export for pages, hooks, data, and components |
+| `src/features/supervisor/pages/SupervisorDashboardPage.tsx` | API-backed supervisor dashboard with project-health search table and client-side pagination (5 rows/page) |
+| `src/features/supervisor/pages/SupervisorProjectsPage.tsx` | API-backed project list with lifecycle filter and skeleton/error/empty states |
+| `src/features/supervisor/pages/CreateProjectPage.tsx` | API-backed project creation with student lookup and request-state modal |
+| `src/features/supervisor/pages/ProjectDetailsPage.tsx` | API-backed detail page with overview edit, team student-add flow, and milestone add/edit |
+| `src/features/supervisor/components/SupervisorProjectCard.tsx` | Clickable summary card (full-card navigation) with compact status/progress layout |
+| `src/features/supervisor/components/SupervisorProjectCardSkeleton.tsx` | List loading placeholder |
+| `src/features/supervisor/components/ProjectDetailsSkeleton.tsx` | Detail loading placeholder |
+| `src/features/supervisor/api/supervisorApi.ts` | Supervisor API client for read + mutation endpoints |
+| `src/features/supervisor/hooks/useSupervisorDashboard.ts` | Dashboard hook with loading/error/retry |
+| `src/features/supervisor/hooks/useSupervisorProjects.ts` | Project list hook |
+| `src/features/supervisor/hooks/useSupervisorProject.ts` | Project detail hook |
 
-## Projects Route
+---
 
-The `/supervisor/projects` route is now backed by `GET /api/supervisor/projects`.
+## Dashboard (`/supervisor/dashboard`)
 
-### Current live data source
+### Data source
 
-- `SupervisorProjectsPage` no longer reads from seeded/mock supervisor workspace data
-- Data is loaded through `useSupervisorProjects`
-- API calls are made through `supervisorApi.getProjects()`
+- Uses `useSupervisorDashboard`
+- Calls `GET /api/supervisor/dashboard`
 
-### Current list record shape
+### Current behavior
 
-The list route intentionally uses a smaller summary model instead of the full mock-only project shape.
+- Stats cards from backend aggregates:
+  - total projects
+  - active
+  - at risk
+  - behind
+  - upcoming milestones
+- Project health table:
+  - backend project summary rows
+  - local search by title/summary
+  - FE-only pagination at 5 rows per page
+- Attention and upcoming sections:
+  - derived from dashboard `projects[]` payload on FE
 
-Fields currently used by the list UI:
+### UX states
 
-- `id`
-- `title`
-- `summary`
-- `lifecycleStatus`
-- `batch`
-- `semester`
-- `milestoneDate`
-- `progressPercent`
-- `healthNote`
-- `memberCount`
+- Loading: skeleton cards/rows
+- Error: `ErrorState` with retry
+- Empty results: `EmptyState` or fallback text blocks
 
-### Loading and error handling
+---
 
-- While loading:
-  - card skeletons are shown via `SupervisorProjectCardSkeleton`
-- On failure:
-  - shared `ErrorState` is shown
-- On success with no records:
-  - shared `EmptyState` is shown
+## Projects List (`/supervisor/projects`)
 
-### Development note
+### Data source
 
-The project list hook deduplicates the initial request in development so React Strict Mode does not trigger duplicate `GET /api/supervisor/projects` calls during mount checks.
+- Uses `useSupervisorProjects`
+- Calls `GET /api/supervisor/projects`
 
-### Removed mock-only list concerns
+### Card behavior
 
-The list route no longer depends on seeded fields that are not yet backed by the backend, including:
+- Entire card is clickable to open project detail.
+- "Open workspace" footer button removed.
+- Status badge and progress appear in top row for compact vertical layout.
+- Long text uses truncation with title tooltip fallback.
 
-- integration filters
-- integration issue counts
-- action item counts
-- action-item shortcut buttons
-- seeded member chip previews
+### Filtering
 
-## Project Detail Route
+- Query filter by title/summary/batch/semester
+- Lifecycle dropdown filter
 
-The `/supervisor/projects/:projectId` route is now backed by `GET /api/supervisor/projects/:projectId`.
+---
 
-### Current live data source
+## Create Project (`/supervisor/projects/new`)
 
-- `ProjectDetailsPage` no longer reads from seeded/mock supervisor workspace data
-- Data is loaded through `useSupervisorProject`
-- API calls are made through `supervisorApi.getProjectById()`
+### Current scope
 
-### Current detail record shape
-
-The detail route intentionally uses a smaller backend-backed detail model instead of the older mock-heavy project shape.
-
-Fields currently used by the detail UI:
-
-- `id`
-- `title`
-- `summary`
-- `lifecycleStatus`
-- `batch`
-- `semester`
-- `milestoneDate`
-- `progressPercent`
-- `healthNote`
-- `lastActivityAt`
-- `members[]`
-- `milestones[]`
-
-### Current tabs
-
-The live detail page currently exposes only tabs supported by the backend response:
-
-- `overview`
-- `team`
-- `milestones`
-
-### Loading and error handling
-
-- While loading:
-  - `ProjectDetailsSkeleton` is shown
-- On failure:
-  - shared `ErrorState` is shown
-- On `404`:
-  - a dedicated “Project not found” state is shown
-
-### Removed mock-only detail concerns
-
-The live detail route no longer depends on seeded fields that are not yet backed by the backend, including:
-
-- activity timeline
-- contribution analytics
-- meetings
-- action items
-- files
-- integration panels
-- quick-link sections for external tools
-
-## Create Project Flow
-
-`CreateProjectPage` is no longer the older multi-step UI draft. It now submits a real backend request for the first project creation use case.
-
-### Current input scope
-
-- `title`
-- `summary`
-- `batch`
-- `semester`
-- one initial milestone:
-  - `milestoneTitle`
-  - `milestoneDescription`
-  - `milestoneDueDate`
-- one or more student assignments selected from backend search results
-
-### Student assignment lookup
-
-- Student lookup calls `GET /api/supervisor/students/search?q=...`
-- Search starts after 3 typed characters
-- Search currently targets registered student emails
-- Result items show:
-  - full name
-  - email
-  - registration number
-- Empty result state is explicit:
-  - `No registered student found.`
-- Duplicate student selections are prevented in the UI
-
-### Submit behavior
-
-- Project creation calls `POST /api/supervisor/projects`
-- The page sends one request containing:
-  - project basics
+- Fields:
+  - title
+  - summary
+  - batch
+  - semester
+  - initial milestone (`title`, `description`, `dueDate`)
   - selected `studentIds`
-  - one initial milestone
-- The page displays backend success and error messages directly in the request-state modal
-- On success, closing the success modal redirects to `/supervisor/projects`
 
-## Request Feedback UI
+### Student lookup flow
 
-The supervisor create flow now uses two loading patterns:
+- Search after 3+ characters
+- Calls `GET /api/supervisor/students/search?q=...`
+- Shows full name, email, registration number
+- Prevents duplicate selection
 
-- Inline loading:
-  - `BlockingState`
-  - Used only for local UI segments such as the student search results area
-- Full-screen blocking request modal:
-  - `RequestStateModal`
-  - Used for major write actions such as project creation
-  - Covers the full viewport through a React portal
-  - Supports:
-    - `loading`
-    - `success`
-    - `error`
+### Submit flow
 
-When project creation succeeds and the modal is closed, the page redirects to `/supervisor/projects`.
+- Calls `POST /api/supervisor/projects`
+- On success:
+  - shows success modal
+  - invalidates project list cache
+  - redirects to `/supervisor/projects`
 
-## Form Limits
+### Request feedback UI
 
-Applied input limits in the current create form:
+- Inline search loading uses `BlockingState`
+- Major action feedback uses full-screen `RequestStateModal`
 
-- `Project title`: 40 characters (limit enforced, counter hidden)
-- `Summary`: 250 characters (limit enforced, counter visible)
-- `Milestone title`: 40 characters (limit enforced, counter hidden)
-- `Milestone description`: 250 characters (limit enforced, counter visible)
-- `Batch`: 32 characters (limit enforced, counter hidden)
-- `Semester`: 32 characters (limit enforced, counter hidden)
+---
 
-## Empty State
+## Project Detail (`/supervisor/projects/:projectId`)
 
-`SupervisorProjectsPage` uses the shared `EmptyState` component when filters return zero visible projects.
+### Data source
 
-- Title: "No projects found"
-- Description: "No supervised projects match your current filters."
-- Primary action: `Create new project`
-- Secondary action: `Clear filters` (only when a filter or search query is active)
+- Uses `useSupervisorProject`
+- Calls `GET /api/supervisor/projects/{projectId}`
+
+### Tabs
+
+- `Overview`
+- `Team`
+- `Milestones`
+
+### Header status control
+
+- Lifecycle status is editable from the top chip row dropdown.
+- Calls `PATCH /api/supervisor/projects/{projectId}/status`.
+- On failure, UI reverts to previous status and shows inline error.
+
+### Overview tab: core edit mode
+
+- `Edit details` toggles inline form.
+- Editable fields:
+  - title
+  - summary
+  - batch
+  - semester
+  - lifecycle status
+  - health note
+- Save calls `PATCH /api/supervisor/projects/{projectId}`.
+- Cancel resets form to latest loaded data.
+
+### Team tab: add-student management (add-only)
+
+- `Manage students` mode supports:
+  - email search
+  - select/remove pending additions locally
+  - submit selected additions
+- Submit calls `POST /api/supervisor/projects/{projectId}/members`.
+- Existing member deletion is intentionally not in scope.
+
+### Milestones tab: add + edit
+
+- `Add milestone` form:
+  - title
+  - description
+  - due date
+  - calls `POST /api/supervisor/projects/{projectId}/milestones`
+- Milestone inline edit form:
+  - title
+  - description
+  - due date
+  - status
+  - calls `PATCH /api/supervisor/projects/{projectId}/milestones/{milestoneId}`
+
+### Error/empty handling
+
+- Loading: `ProjectDetailsSkeleton`
+- API errors: `ErrorState`
+- `NOT_FOUND`: dedicated project-not-found state with back link
+
+---
+
+## Form Limits (current)
+
+- Project title: `40`
+- Summary: `250`
+- Batch: `32`
+- Semester: `32`
+- Milestone title: `40`
+- Milestone description: `250`
+
+Summary and milestone description show visible counters where applicable in create flow.
+
+---
 
 ## Notes
 
-- `SupervisorProjectsPage` is backend-connected for list reads.
-- `ProjectDetailsPage` is backend-connected for detail reads.
-- `CreateProjectPage` is backend-connected for student search and project creation.
-- `SupervisorDashboardPage` still relies on mock-backed workspace data.
-- Route guards currently allow UI-only cross-role preview during local development. Real authorization must be enforced by the backend.
+- Supervisor dashboard, projects list, create flow, and detail management are all backend-connected.
+- Route guards are still UI-level and not a backend security boundary.
