@@ -15,8 +15,10 @@ import { useSupervisorProject } from '../hooks/useSupervisorProject';
 import type {
   SupervisorProjectDetail,
   SupervisorProjectDetailMember,
+  SupervisorProjectDetailMilestone,
   SupervisorProjectDetailTab,
   SupervisorProjectLifecycle,
+  SupervisorStudentSearchResult,
 } from '../types';
 
 const dateFormatter = new Intl.DateTimeFormat('en', {
@@ -34,6 +36,24 @@ const dateTimeFormatter = new Intl.DateTimeFormat('en', {
 });
 
 const TABS: SupervisorProjectDetailTab[] = ['overview', 'team', 'milestones'];
+const FIELD_LIMITS = {
+  title: 40,
+  summary: 250,
+  batch: 32,
+  semester: 32,
+  healthNote: 250,
+  milestoneTitle: 40,
+  milestoneDescription: 250,
+} as const;
+
+const MILESTONE_STATUS_OPTIONS: SupervisorProjectDetailMilestone['status'][] = [
+  'PLANNED',
+  'IN_PROGRESS',
+  'COMPLETED',
+  'MISSED',
+  'CANCELLED',
+];
+
 const LIFECYCLE_OPTIONS: SupervisorProjectLifecycle[] = [
   'PLANNING',
   'ACTIVE',
@@ -49,6 +69,15 @@ type OverviewEditForm = {
   semester: string;
   lifecycleStatus: SupervisorProjectLifecycle;
   healthNote: string;
+};
+
+type SearchState = 'idle' | 'loading' | 'results' | 'empty' | 'error';
+
+type MilestoneForm = {
+  title: string;
+  description: string;
+  dueDate: string;
+  status: SupervisorProjectDetailMilestone['status'];
 };
 
 function memberDisplayName(member: SupervisorProjectDetailMember) {
@@ -79,6 +108,30 @@ function toNullableTrimmed(value: string) {
   return trimmed.length > 0 ? trimmed : null;
 }
 
+function toApiError(error: unknown, fallbackMessage: string): ApiError {
+  return isApiException(error)
+    ? error.apiError
+    : {
+        code: 'INTERNAL_ERROR',
+        message: fallbackMessage,
+        details: [],
+        timestamp: new Date().toISOString(),
+        status: 0,
+        error: 'Unexpected Error',
+        path: '',
+        traceId: null,
+      };
+}
+
+function buildMilestoneForm(milestone: SupervisorProjectDetailMilestone): MilestoneForm {
+  return {
+    title: milestone.title,
+    description: milestone.description ?? '',
+    dueDate: milestone.dueDate,
+    status: milestone.status,
+  };
+}
+
 export function ProjectDetailsPage() {
   const { projectId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -87,6 +140,29 @@ export function ProjectDetailsPage() {
   const [isSavingOverview, setIsSavingOverview] = useState(false);
   const [saveError, setSaveError] = useState<ApiError | null>(null);
   const [overviewForm, setOverviewForm] = useState<OverviewEditForm | null>(null);
+  const [isManagingStudents, setIsManagingStudents] = useState(false);
+  const [studentQuery, setStudentQuery] = useState('');
+  const [studentSearchState, setStudentSearchState] = useState<SearchState>('idle');
+  const [studentSearchError, setStudentSearchError] = useState<ApiError | null>(null);
+  const [studentSearchResults, setStudentSearchResults] = useState<SupervisorStudentSearchResult[]>(
+    [],
+  );
+  const [selectedStudentsToAdd, setSelectedStudentsToAdd] = useState<
+    SupervisorStudentSearchResult[]
+  >([]);
+  const [isAddingStudents, setIsAddingStudents] = useState(false);
+  const [studentAddError, setStudentAddError] = useState<ApiError | null>(null);
+  const [isAddingMilestone, setIsAddingMilestone] = useState(false);
+  const [isSavingMilestone, setIsSavingMilestone] = useState(false);
+  const [milestoneError, setMilestoneError] = useState<ApiError | null>(null);
+  const [editingMilestoneId, setEditingMilestoneId] = useState<string | null>(null);
+  const [newMilestoneForm, setNewMilestoneForm] = useState<MilestoneForm>({
+    title: '',
+    description: '',
+    dueDate: '',
+    status: 'PLANNED',
+  });
+  const [editMilestoneForm, setEditMilestoneForm] = useState<MilestoneForm | null>(null);
 
   const requestedTab = searchParams.get('tab') as SupervisorProjectDetailTab | null;
   const activeTab = requestedTab && TABS.includes(requestedTab) ? requestedTab : 'overview';
@@ -106,6 +182,52 @@ export function ProjectDetailsPage() {
       setOverviewForm(buildOverviewEditForm(project));
     }
   }, [project, isEditingOverview]);
+
+  useEffect(() => {
+    const normalizedQuery = studentQuery.trim();
+    if (!project || !isManagingStudents || normalizedQuery.length < 3) {
+      setStudentSearchResults([]);
+      setStudentSearchState('idle');
+      setStudentSearchError(null);
+      return;
+    }
+
+    let isCancelled = false;
+    setStudentSearchState('loading');
+    setStudentSearchError(null);
+
+    const timeoutId = window.setTimeout(async () => {
+      try {
+        const results = await supervisorApi.searchStudents(normalizedQuery);
+        if (isCancelled) {
+          return;
+        }
+
+        const excludedIds = new Set([
+          ...project.members
+            .filter((member) => member.memberRole === 'STUDENT')
+            .map((member) => member.id),
+          ...selectedStudentsToAdd.map((student) => student.id),
+        ]);
+        const visibleResults = results.filter((student) => !excludedIds.has(student.id));
+
+        setStudentSearchResults(visibleResults);
+        setStudentSearchState(visibleResults.length > 0 ? 'results' : 'empty');
+      } catch (searchException) {
+        if (isCancelled) {
+          return;
+        }
+        setStudentSearchResults([]);
+        setStudentSearchState('error');
+        setStudentSearchError(toApiError(searchException, 'Unable to search students right now.'));
+      }
+    }, 300);
+
+    return () => {
+      isCancelled = true;
+      window.clearTimeout(timeoutId);
+    };
+  }, [isManagingStudents, project, selectedStudentsToAdd, studentQuery]);
 
   function handleTabChange(tab: SupervisorProjectDetailTab) {
     const nextParams = new URLSearchParams(searchParams);
@@ -155,22 +277,141 @@ export function ProjectDetailsPage() {
       await reload();
       setIsEditingOverview(false);
     } catch (saveException) {
-      setSaveError(
-        isApiException(saveException)
-          ? saveException.apiError
-          : {
-              code: 'INTERNAL_ERROR',
-              message: 'Unable to update the project right now.',
-              details: [],
-              timestamp: new Date().toISOString(),
-              status: 0,
-              error: 'Unexpected Error',
-              path: '',
-              traceId: null,
-            },
-      );
+      setSaveError(toApiError(saveException, 'Unable to update the project right now.'));
     } finally {
       setIsSavingOverview(false);
+    }
+  }
+
+  function handleStartStudentManagement() {
+    setIsManagingStudents(true);
+    setStudentAddError(null);
+  }
+
+  function handleCancelStudentManagement() {
+    setIsManagingStudents(false);
+    setStudentQuery('');
+    setStudentSearchResults([]);
+    setStudentSearchState('idle');
+    setStudentSearchError(null);
+    setSelectedStudentsToAdd([]);
+    setStudentAddError(null);
+  }
+
+  function handleSelectStudentToAdd(student: SupervisorStudentSearchResult) {
+    setSelectedStudentsToAdd((current) => {
+      if (current.some((item) => item.id === student.id)) {
+        return current;
+      }
+      return [...current, student];
+    });
+    setStudentQuery('');
+    setStudentSearchResults([]);
+    setStudentSearchState('idle');
+  }
+
+  function handleRemoveSelectedStudent(studentId: string) {
+    setSelectedStudentsToAdd((current) => current.filter((student) => student.id !== studentId));
+  }
+
+  async function handleAddStudents() {
+    if (!projectId || selectedStudentsToAdd.length === 0) {
+      return;
+    }
+
+    setIsAddingStudents(true);
+    setStudentAddError(null);
+
+    try {
+      await supervisorApi.addProjectMembers(projectId, {
+        studentIds: selectedStudentsToAdd.map((student) => student.id),
+      });
+      await reload();
+      handleCancelStudentManagement();
+    } catch (addException) {
+      setStudentAddError(toApiError(addException, 'Unable to add students right now.'));
+    } finally {
+      setIsAddingStudents(false);
+    }
+  }
+
+  function handleStartAddMilestone() {
+    setEditingMilestoneId(null);
+    setEditMilestoneForm(null);
+    setMilestoneError(null);
+    setIsAddingMilestone(true);
+  }
+
+  function handleCancelAddMilestone() {
+    setIsAddingMilestone(false);
+    setMilestoneError(null);
+    setNewMilestoneForm({
+      title: '',
+      description: '',
+      dueDate: '',
+      status: 'PLANNED',
+    });
+  }
+
+  async function handleCreateMilestone(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!projectId) {
+      return;
+    }
+
+    setIsSavingMilestone(true);
+    setMilestoneError(null);
+
+    try {
+      await supervisorApi.addProjectMilestone(projectId, {
+        title: newMilestoneForm.title.trim(),
+        description: toNullableTrimmed(newMilestoneForm.description),
+        dueDate: newMilestoneForm.dueDate,
+      });
+      await reload();
+      handleCancelAddMilestone();
+    } catch (milestoneException) {
+      setMilestoneError(toApiError(milestoneException, 'Unable to add milestone right now.'));
+    } finally {
+      setIsSavingMilestone(false);
+    }
+  }
+
+  function handleStartEditMilestone(milestone: SupervisorProjectDetailMilestone) {
+    setIsAddingMilestone(false);
+    setMilestoneError(null);
+    setEditingMilestoneId(milestone.id);
+    setEditMilestoneForm(buildMilestoneForm(milestone));
+  }
+
+  function handleCancelEditMilestone() {
+    setEditingMilestoneId(null);
+    setEditMilestoneForm(null);
+    setMilestoneError(null);
+  }
+
+  async function handleSaveMilestone(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!projectId || !editingMilestoneId || !editMilestoneForm) {
+      return;
+    }
+
+    setIsSavingMilestone(true);
+    setMilestoneError(null);
+
+    try {
+      await supervisorApi.updateProjectMilestone(projectId, editingMilestoneId, {
+        title: editMilestoneForm.title.trim(),
+        description: toNullableTrimmed(editMilestoneForm.description),
+        dueDate: editMilestoneForm.dueDate,
+        status: editMilestoneForm.status,
+      });
+      await reload();
+      handleCancelEditMilestone();
+    } catch (milestoneException) {
+      setMilestoneError(toApiError(milestoneException, 'Unable to update milestone right now.'));
+    } finally {
+      setIsSavingMilestone(false);
     }
   }
 
@@ -301,7 +542,7 @@ export function ProjectDetailsPage() {
                       </span>
                       <input
                         required
-                        maxLength={40}
+                        maxLength={FIELD_LIMITS.title}
                         value={overviewForm.title}
                         onChange={(event) =>
                           setOverviewForm((current) =>
@@ -342,7 +583,7 @@ export function ProjectDetailsPage() {
                       </span>
                       <input
                         required
-                        maxLength={32}
+                        maxLength={FIELD_LIMITS.batch}
                         value={overviewForm.batch}
                         onChange={(event) =>
                           setOverviewForm((current) =>
@@ -358,7 +599,7 @@ export function ProjectDetailsPage() {
                       </span>
                       <input
                         required
-                        maxLength={32}
+                        maxLength={FIELD_LIMITS.semester}
                         value={overviewForm.semester}
                         onChange={(event) =>
                           setOverviewForm((current) =>
@@ -374,7 +615,7 @@ export function ProjectDetailsPage() {
                       </span>
                       <textarea
                         required
-                        maxLength={250}
+                        maxLength={FIELD_LIMITS.summary}
                         rows={4}
                         value={overviewForm.summary}
                         onChange={(event) =>
@@ -390,7 +631,7 @@ export function ProjectDetailsPage() {
                         Health note
                       </span>
                       <textarea
-                        maxLength={250}
+                        maxLength={FIELD_LIMITS.healthNote}
                         rows={3}
                         value={overviewForm.healthNote}
                         onChange={(event) =>
@@ -492,7 +733,126 @@ export function ProjectDetailsPage() {
 
       {activeTab === 'team' ? (
         <section className="rounded-3xl border border-border bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-foreground">Team</h2>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-lg font-semibold text-foreground">Team</h2>
+            {!isManagingStudents ? (
+              <button
+                type="button"
+                className={buttonStyles({ variant: 'secondary', size: 'sm' })}
+                onClick={handleStartStudentManagement}
+              >
+                Manage students
+              </button>
+            ) : null}
+          </div>
+
+          {isManagingStudents ? (
+            <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <label className="block">
+                <span className="mb-2 block text-sm font-medium text-foreground">
+                  Search student email
+                </span>
+                <input
+                  value={studentQuery}
+                  onChange={(event) => setStudentQuery(event.target.value)}
+                  placeholder="Type at least 3 characters from a student email"
+                  className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-amber-300"
+                  disabled={isAddingStudents}
+                />
+              </label>
+
+              {studentQuery.trim().length >= 3 ? (
+                <div className="mt-3 rounded-2xl border border-slate-200 bg-white p-3">
+                  {studentSearchState === 'loading' ? (
+                    <p className="text-sm text-muted-foreground">Searching students...</p>
+                  ) : null}
+                  {studentSearchState === 'error' ? (
+                    <p className="text-sm text-rose-600">
+                      {studentSearchError?.message ?? 'Unable to search students right now.'}
+                    </p>
+                  ) : null}
+                  {studentSearchState === 'empty' ? (
+                    <p className="text-sm text-muted-foreground">No available students found.</p>
+                  ) : null}
+                  {studentSearchState === 'results' ? (
+                    <div className="space-y-2">
+                      {studentSearchResults.map((student) => (
+                        <button
+                          key={student.id}
+                          type="button"
+                          className="flex w-full items-start justify-between rounded-2xl border border-slate-200 bg-white px-3 py-2 text-left transition-colors hover:bg-slate-50"
+                          onClick={() => handleSelectStudentToAdd(student)}
+                        >
+                          <span>
+                            <span className="block text-sm font-medium text-foreground">
+                              {`${student.firstName} ${student.lastName}`.trim() || student.email}
+                            </span>
+                            <span className="block text-xs text-muted-foreground">
+                              {student.email}
+                              {student.registrationNumber ? ` • ${student.registrationNumber}` : ''}
+                            </span>
+                          </span>
+                          <span className="text-xs text-slate-500">Add</span>
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+
+              {selectedStudentsToAdd.length > 0 ? (
+                <div className="mt-3 space-y-2">
+                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                    Selected students
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedStudentsToAdd.map((student) => (
+                      <div
+                        key={student.id}
+                        className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-sm"
+                      >
+                        <span className="text-foreground">
+                          {`${student.firstName} ${student.lastName}`.trim() || student.email}
+                        </span>
+                        <button
+                          type="button"
+                          className="text-xs text-slate-500 hover:text-slate-700"
+                          onClick={() => handleRemoveSelectedStudent(student.id)}
+                          disabled={isAddingStudents}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
+              {studentAddError ? (
+                <p className="mt-3 text-sm text-rose-600">{studentAddError.message}</p>
+              ) : null}
+
+              <div className="mt-4 flex flex-wrap justify-end gap-2">
+                <button
+                  type="button"
+                  className={buttonStyles({ variant: 'secondary', size: 'sm' })}
+                  onClick={handleCancelStudentManagement}
+                  disabled={isAddingStudents}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className={buttonStyles({ variant: 'primary', size: 'sm' })}
+                  onClick={() => void handleAddStudents()}
+                  disabled={isAddingStudents || selectedStudentsToAdd.length === 0}
+                >
+                  {isAddingStudents ? 'Adding...' : 'Add selected students'}
+                </button>
+              </div>
+            </div>
+          ) : null}
+
           <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {project.members.map((member) => (
               <div key={member.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
@@ -510,7 +870,96 @@ export function ProjectDetailsPage() {
 
       {activeTab === 'milestones' ? (
         <section className="rounded-3xl border border-border bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-foreground">Milestones</h2>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-lg font-semibold text-foreground">Milestones</h2>
+            {!isAddingMilestone ? (
+              <button
+                type="button"
+                className={buttonStyles({ variant: 'secondary', size: 'sm' })}
+                onClick={handleStartAddMilestone}
+              >
+                Add milestone
+              </button>
+            ) : null}
+          </div>
+
+          {isAddingMilestone ? (
+            <form
+              className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4"
+              onSubmit={handleCreateMilestone}
+            >
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="space-y-1.5">
+                  <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                    Title
+                  </span>
+                  <input
+                    required
+                    maxLength={FIELD_LIMITS.milestoneTitle}
+                    value={newMilestoneForm.title}
+                    onChange={(event) =>
+                      setNewMilestoneForm((current) => ({ ...current, title: event.target.value }))
+                    }
+                    className="h-10 w-full rounded-2xl border border-border bg-white px-4 text-sm outline-none transition-colors focus:border-amber-300"
+                  />
+                </label>
+                <label className="space-y-1.5">
+                  <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                    Due date
+                  </span>
+                  <input
+                    required
+                    type="date"
+                    value={newMilestoneForm.dueDate}
+                    onChange={(event) =>
+                      setNewMilestoneForm((current) => ({
+                        ...current,
+                        dueDate: event.target.value,
+                      }))
+                    }
+                    className="h-10 w-full rounded-2xl border border-border bg-white px-4 text-sm outline-none transition-colors focus:border-amber-300"
+                  />
+                </label>
+                <label className="space-y-1.5 sm:col-span-2">
+                  <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                    Description
+                  </span>
+                  <textarea
+                    maxLength={FIELD_LIMITS.milestoneDescription}
+                    rows={3}
+                    value={newMilestoneForm.description}
+                    onChange={(event) =>
+                      setNewMilestoneForm((current) => ({
+                        ...current,
+                        description: event.target.value,
+                      }))
+                    }
+                    className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-amber-300"
+                  />
+                </label>
+              </div>
+              {milestoneError ? (
+                <p className="mt-3 text-sm text-rose-600">{milestoneError.message}</p>
+              ) : null}
+              <div className="mt-4 flex flex-wrap justify-end gap-2">
+                <button
+                  type="button"
+                  className={buttonStyles({ variant: 'secondary', size: 'sm' })}
+                  onClick={handleCancelAddMilestone}
+                  disabled={isSavingMilestone}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className={buttonStyles({ variant: 'primary', size: 'sm' })}
+                  disabled={isSavingMilestone}
+                >
+                  {isSavingMilestone ? 'Saving...' : 'Add milestone'}
+                </button>
+              </div>
+            </form>
+          ) : null}
           {project.milestones.length > 0 ? (
             <div className="mt-5 space-y-4">
               {project.milestones.map((milestone) => (
@@ -518,18 +967,130 @@ export function ProjectDetailsPage() {
                   key={milestone.id}
                   className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
                 >
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                    <p className="font-medium text-foreground">
-                      {milestone.sequenceNo}. {milestone.title}
-                    </p>
-                    <span className="text-sm text-muted-foreground">{milestone.status}</span>
-                  </div>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    Due {dateFormatter.format(new Date(milestone.dueDate))}
-                  </p>
-                  <p className="mt-2 text-sm leading-7 text-muted-foreground">
-                    {milestone.description ?? 'No description provided.'}
-                  </p>
+                  {editingMilestoneId === milestone.id && editMilestoneForm ? (
+                    <form className="space-y-3" onSubmit={handleSaveMilestone}>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <label className="space-y-1">
+                          <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                            Title
+                          </span>
+                          <input
+                            required
+                            maxLength={FIELD_LIMITS.milestoneTitle}
+                            value={editMilestoneForm.title}
+                            onChange={(event) =>
+                              setEditMilestoneForm((current) =>
+                                current ? { ...current, title: event.target.value } : current,
+                              )
+                            }
+                            className="h-10 w-full rounded-2xl border border-border bg-white px-4 text-sm outline-none transition-colors focus:border-amber-300"
+                          />
+                        </label>
+                        <label className="space-y-1">
+                          <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                            Due date
+                          </span>
+                          <input
+                            required
+                            type="date"
+                            value={editMilestoneForm.dueDate}
+                            onChange={(event) =>
+                              setEditMilestoneForm((current) =>
+                                current ? { ...current, dueDate: event.target.value } : current,
+                              )
+                            }
+                            className="h-10 w-full rounded-2xl border border-border bg-white px-4 text-sm outline-none transition-colors focus:border-amber-300"
+                          />
+                        </label>
+                        <label className="space-y-1 sm:col-span-2">
+                          <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                            Status
+                          </span>
+                          <select
+                            value={editMilestoneForm.status}
+                            onChange={(event) =>
+                              setEditMilestoneForm((current) =>
+                                current
+                                  ? {
+                                      ...current,
+                                      status: event.target
+                                        .value as SupervisorProjectDetailMilestone['status'],
+                                    }
+                                  : current,
+                              )
+                            }
+                            className="h-10 w-full rounded-2xl border border-border bg-white px-4 text-sm outline-none transition-colors focus:border-amber-300"
+                          >
+                            {MILESTONE_STATUS_OPTIONS.map((status) => (
+                              <option key={status} value={status}>
+                                {status.replace('_', ' ')}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        <label className="space-y-1 sm:col-span-2">
+                          <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                            Description
+                          </span>
+                          <textarea
+                            maxLength={FIELD_LIMITS.milestoneDescription}
+                            rows={3}
+                            value={editMilestoneForm.description}
+                            onChange={(event) =>
+                              setEditMilestoneForm((current) =>
+                                current ? { ...current, description: event.target.value } : current,
+                              )
+                            }
+                            className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-amber-300"
+                          />
+                        </label>
+                      </div>
+                      {milestoneError ? (
+                        <p className="text-sm text-rose-600">{milestoneError.message}</p>
+                      ) : null}
+                      <div className="flex flex-wrap justify-end gap-2">
+                        <button
+                          type="button"
+                          className={buttonStyles({ variant: 'secondary', size: 'sm' })}
+                          onClick={handleCancelEditMilestone}
+                          disabled={isSavingMilestone}
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="submit"
+                          className={buttonStyles({ variant: 'primary', size: 'sm' })}
+                          disabled={isSavingMilestone}
+                        >
+                          {isSavingMilestone ? 'Saving...' : 'Save milestone'}
+                        </button>
+                      </div>
+                    </form>
+                  ) : (
+                    <>
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                        <p className="font-medium text-foreground">
+                          {milestone.sequenceNo}. {milestone.title}
+                        </p>
+                        <div className="flex items-center gap-3">
+                          <span className="text-sm text-muted-foreground">{milestone.status}</span>
+                          <button
+                            type="button"
+                            className={buttonStyles({ variant: 'ghost', size: 'sm' })}
+                            onClick={() => handleStartEditMilestone(milestone)}
+                          >
+                            Edit
+                          </button>
+                        </div>
+                      </div>
+                      <p className="mt-2 text-sm text-muted-foreground">
+                        Due {dateFormatter.format(new Date(milestone.dueDate))}
+                      </p>
+                      <p className="mt-2 text-sm leading-7 text-muted-foreground">
+                        {milestone.description ?? 'No description provided.'}
+                      </p>
+                    </>
+                  )}
                 </div>
               ))}
             </div>

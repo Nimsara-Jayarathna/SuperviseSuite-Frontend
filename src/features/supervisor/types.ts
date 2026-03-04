@@ -196,3 +196,20 @@ export type UpdateSupervisorProjectRequest = {
   lifecycleStatus: SupervisorProjectLifecycle;
   healthNote: string | null;
 };
+
+export type AddSupervisorProjectMembersRequest = {
+  studentIds: string[];
+};
+
+export type AddSupervisorProjectMilestoneRequest = {
+  title: string;
+  description: string | null;
+  dueDate: string;
+};
+
+export type UpdateSupervisorProjectMilestoneRequest = {
+  title: string;
+  description: string | null;
+  dueDate: string;
+  status: SupervisorProjectDetailMilestone['status'];
+};

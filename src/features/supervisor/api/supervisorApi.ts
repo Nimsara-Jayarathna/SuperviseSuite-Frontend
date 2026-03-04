@@ -1,10 +1,13 @@
 import { apiClient } from '@/services/apiClient';
 import type {
+  AddSupervisorProjectMembersRequest,
+  AddSupervisorProjectMilestoneRequest,
   CreateSupervisorProjectRequest,
   CreateSupervisorProjectResponse,
   SupervisorProjectDetail,
   SupervisorProjectSummary,
   SupervisorStudentSearchResult,
+  UpdateSupervisorProjectMilestoneRequest,
   UpdateSupervisorProjectRequest,
 } from '../types';
 
@@ -54,6 +57,43 @@ export const supervisorApi = {
   ): Promise<SupervisorProjectDetail> {
     const updated = await apiClient.patch<SupervisorProjectDetail>(
       `/api/supervisor/projects/${projectId}`,
+      body,
+    );
+    cachedProjectsById[projectId] = updated;
+    return updated;
+  },
+
+  async addProjectMembers(
+    projectId: string,
+    body: AddSupervisorProjectMembersRequest,
+  ): Promise<SupervisorProjectDetail> {
+    const updated = await apiClient.post<SupervisorProjectDetail>(
+      `/api/supervisor/projects/${projectId}/members`,
+      body,
+    );
+    cachedProjectsById[projectId] = updated;
+    return updated;
+  },
+
+  async addProjectMilestone(
+    projectId: string,
+    body: AddSupervisorProjectMilestoneRequest,
+  ): Promise<SupervisorProjectDetail> {
+    const updated = await apiClient.post<SupervisorProjectDetail>(
+      `/api/supervisor/projects/${projectId}/milestones`,
+      body,
+    );
+    cachedProjectsById[projectId] = updated;
+    return updated;
+  },
+
+  async updateProjectMilestone(
+    projectId: string,
+    milestoneId: string,
+    body: UpdateSupervisorProjectMilestoneRequest,
+  ): Promise<SupervisorProjectDetail> {
+    const updated = await apiClient.patch<SupervisorProjectDetail>(
+      `/api/supervisor/projects/${projectId}/milestones/${milestoneId}`,
       body,
     );
     cachedProjectsById[projectId] = updated;
