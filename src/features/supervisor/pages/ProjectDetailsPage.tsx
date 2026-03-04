@@ -65,8 +65,7 @@ export function ProjectDetailsPage() {
         <div className="rounded-3xl border border-dashed border-border bg-white p-10 text-center shadow-sm">
           <h1 className="text-2xl font-semibold text-foreground">Project not found</h1>
           <p className="mt-3 text-sm text-muted-foreground">
-            The requested supervisor project could not be found or is not available to your
-            account.
+            The requested supervisor project could not be found or is not available to your account.
           </p>
           <Link
             to="/supervisor/projects"
@@ -117,7 +116,9 @@ export function ProjectDetailsPage() {
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
             Batch
           </p>
-          <p className="mt-2 text-2xl font-semibold text-foreground">{project.batch ?? 'Not set'}</p>
+          <p className="mt-2 text-2xl font-semibold text-foreground">
+            {project.batch ?? 'Not set'}
+          </p>
         </div>
         <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
@@ -188,8 +189,8 @@ export function ProjectDetailsPage() {
               <h2 className="text-lg font-semibold text-foreground">Current scope</h2>
               <p className="mt-3 text-sm leading-7 text-muted-foreground">
                 This detail view currently shows only backend-backed project data: core project
-                fields, assigned members, and milestone records. Workflow features such as
-                meetings, files, action items, and integrations are not part of this endpoint yet.
+                fields, assigned members, and milestone records. Workflow features such as meetings,
+                files, action items, and integrations are not part of this endpoint yet.
               </p>
             </div>
           </section>
