@@ -7,10 +7,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { RequestStateModal } from '@/components/ui/RequestStateModal';
 import { isApiException } from '@/services/apiClient';
 import { supervisorApi } from '../api/supervisorApi';
-import type {
-  CreateSupervisorProjectResponse,
-  SupervisorStudentSearchResult,
-} from '../types';
+import type { CreateSupervisorProjectResponse, SupervisorStudentSearchResult } from '../types';
 
 type DraftState = {
   title: string;
@@ -57,7 +54,9 @@ export function CreateProjectPage() {
   const [searchError, setSearchError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [createdProject, setCreatedProject] = useState<CreateSupervisorProjectResponse | null>(null);
+  const [createdProject, setCreatedProject] = useState<CreateSupervisorProjectResponse | null>(
+    null,
+  );
   const [requestModal, setRequestModal] = useState<{
     isOpen: boolean;
     status: 'loading' | 'success' | 'error';
@@ -251,7 +250,9 @@ export function CreateProjectPage() {
               </div>
 
               <label className="block">
-                <span className="mb-2 block text-sm font-medium text-foreground">Project title</span>
+                <span className="mb-2 block text-sm font-medium text-foreground">
+                  Project title
+                </span>
                 <input
                   required
                   value={draft.title}
@@ -313,8 +314,8 @@ export function CreateProjectPage() {
               <div>
                 <h2 className="text-lg font-semibold text-foreground">Student assignment</h2>
                 <p className="mt-2 text-sm leading-7 text-muted-foreground">
-                  Search registered students by email. Only selected students from the lookup can
-                  be assigned in this sprint.
+                  Search registered students by email. Only selected students from the lookup can be
+                  assigned in this sprint.
                 </p>
               </div>
 
@@ -351,7 +352,9 @@ export function CreateProjectPage() {
                             className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-left transition-colors hover:bg-slate-50"
                             disabled={isSubmitting}
                           >
-                            <p className="font-medium text-foreground">{buildStudentLabel(student)}</p>
+                            <p className="font-medium text-foreground">
+                              {buildStudentLabel(student)}
+                            </p>
                             <p className="mt-1 text-sm text-muted-foreground">{student.email}</p>
                             <p className="mt-1 text-xs uppercase tracking-[0.2em] text-muted-foreground">
                               {student.registrationNumber}
@@ -406,9 +409,7 @@ export function CreateProjectPage() {
                       ))}
                     </div>
                   ) : (
-                    <p className="mt-3 text-sm text-muted-foreground">
-                      No students selected yet.
-                    </p>
+                    <p className="mt-3 text-sm text-muted-foreground">No students selected yet.</p>
                   )}
                 </div>
               </div>
@@ -463,9 +464,7 @@ export function CreateProjectPage() {
               </label>
 
               <label className="block sm:max-w-xs">
-                <span className="mb-2 block text-sm font-medium text-foreground">
-                  Due date
-                </span>
+                <span className="mb-2 block text-sm font-medium text-foreground">Due date</span>
                 <input
                   required
                   type="date"
@@ -516,7 +515,9 @@ export function CreateProjectPage() {
             </div>
             <div className="rounded-2xl border border-emerald-200 bg-white px-4 py-4">
               <p className="text-xs uppercase tracking-[0.2em] text-emerald-700">Milestone</p>
-              <p className="mt-2 font-semibold text-emerald-950">{createdProject.milestone.title}</p>
+              <p className="mt-2 font-semibold text-emerald-950">
+                {createdProject.milestone.title}
+              </p>
             </div>
           </div>
         </section>
