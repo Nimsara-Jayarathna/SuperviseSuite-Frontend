@@ -36,9 +36,13 @@ export type RegisterResponse = {
   role: UserRole;
 };
 
-/** Successful auth response — access token + user profile */
-export type AuthResponse = {
-  accessToken: string;
-  refreshToken: string;
+/**
+ * Successful login response.
+ *
+ * Tokens are no longer included — they are delivered as httpOnly cookies by the
+ * backend and are therefore invisible to JavaScript. Only the user profile is
+ * returned in the response body so the frontend can populate UI state.
+ */
+export type LoginResponse = {
   user: AuthUser;
 };

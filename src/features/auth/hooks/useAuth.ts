@@ -4,7 +4,7 @@ import { isApiException } from '@/services/apiClient';
 import { tokenStorage } from '@/services/tokenStorage';
 import type { ApiError } from '@/types';
 import { authApi } from '../api/authApi';
-import type { AuthUser, LoginRequest, RegisterRequest } from '../types';
+import type { AuthUser, LoginResponse, LoginRequest, RegisterRequest } from '../types';
 
 /** Role → home route mapping, used after a successful login/register. */
 const ROLE_HOME: Record<string, string> = {
@@ -53,9 +53,7 @@ export function useAuth() {
   async function login(body: LoginRequest): Promise<void> {
     setLoading();
     try {
-      const res = await authApi.login(body);
-      tokenStorage.setAccessToken(res.accessToken);
-      tokenStorage.setRefreshToken(res.refreshToken);
+      const res: LoginResponse = await authApi.login(body);
       tokenStorage.setUser(res.user);
       setUser(res.user);
       navigate(ROLE_HOME[res.user.role] ?? '/');
