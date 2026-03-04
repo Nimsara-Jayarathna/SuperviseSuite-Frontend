@@ -1,14 +1,15 @@
 import { useDeferredValue, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { EmptyState } from '@/components/feedback/EmptyState';
+import { ErrorState } from '@/components/feedback/ErrorState';
 import { buttonStyles } from '@/components/ui/Button';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { SupervisorProjectCard } from '../components/SupervisorProjectCard';
-import { useSupervisorWorkspace } from '../hooks/useSupervisorWorkspace';
+import { SupervisorProjectCardSkeleton } from '../components/SupervisorProjectCardSkeleton';
+import { useSupervisorProjects } from '../hooks/useSupervisorProjects';
 import type { SupervisorProjectLifecycle } from '../types';
 
 type LifecycleFilter = 'ALL' | SupervisorProjectLifecycle;
-type IntegrationFilter = 'ALL' | 'CONNECTED' | 'ISSUES';
 
 const LIFECYCLE_OPTIONS: LifecycleFilter[] = [
   'ALL',
@@ -21,10 +22,9 @@ const LIFECYCLE_OPTIONS: LifecycleFilter[] = [
 
 export function SupervisorProjectsPage() {
   const navigate = useNavigate();
-  const { projects } = useSupervisorWorkspace();
+  const { projects, isLoading, error, reload } = useSupervisorProjects();
   const [query, setQuery] = useState('');
   const [lifecycle, setLifecycle] = useState<LifecycleFilter>('ALL');
-  const [integration, setIntegration] = useState<IntegrationFilter>('ALL');
   // Defer the free-text query so large list filtering does not run on every keystroke.
   const deferredQuery = useDeferredValue(query);
   const normalizedQuery = deferredQuery.trim().toLowerCase();
@@ -32,27 +32,20 @@ export function SupervisorProjectsPage() {
   const visibleProjects = projects.filter((project) => {
     const matchesQuery =
       normalizedQuery.length === 0 ||
-      `${project.title} ${project.summary} ${project.members.map((member) => member.name).join(' ')}`
+      `${project.title} ${project.summary ?? ''} ${project.batch ?? ''} ${project.semester ?? ''}`
         .toLowerCase()
         .includes(normalizedQuery);
-    const matchesLifecycle = lifecycle === 'ALL' || project.lifecycle === lifecycle;
-    const matchesIntegration =
-      integration === 'ALL' ||
-      (integration === 'CONNECTED' &&
-        project.integrations.every((item) => item.status === 'Connected')) ||
-      (integration === 'ISSUES' && project.integrations.some((item) => item.status === 'Issue'));
+    const matchesLifecycle = lifecycle === 'ALL' || project.lifecycleStatus === lifecycle;
 
-    return matchesQuery && matchesLifecycle && matchesIntegration;
+    return matchesQuery && matchesLifecycle;
   });
 
   // Reset returns the page to the default "all projects" state used by the route.
   const resetFilters = () => {
     setQuery('');
     setLifecycle('ALL');
-    setIntegration('ALL');
   };
-  const hasActiveFilters =
-    normalizedQuery.length > 0 || lifecycle !== 'ALL' || integration !== 'ALL';
+  const hasActiveFilters = normalizedQuery.length > 0 || lifecycle !== 'ALL';
 
   return (
     <div className="space-y-5">
@@ -69,11 +62,11 @@ export function SupervisorProjectsPage() {
         }
       />
 
-      <section className="grid gap-2.5 sm:gap-3 lg:grid-cols-[minmax(0,1fr)_210px_210px] lg:gap-4">
+      <section className="grid gap-2.5 sm:gap-3 lg:grid-cols-[minmax(0,1fr)_210px] lg:gap-4">
         <input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="Search by project title or member"
+          placeholder="Search by project title, summary, batch, or semester"
           className="h-10 rounded-2xl border border-border bg-white px-4 text-sm outline-none transition-colors focus:border-amber-300"
         />
         <select
@@ -87,18 +80,17 @@ export function SupervisorProjectsPage() {
             </option>
           ))}
         </select>
-        <select
-          value={integration}
-          onChange={(event) => setIntegration(event.target.value as IntegrationFilter)}
-          className="h-10 rounded-2xl border border-border bg-white px-4 text-sm outline-none transition-colors focus:border-amber-300"
-        >
-          <option value="ALL">All integrations</option>
-          <option value="CONNECTED">Fully connected</option>
-          <option value="ISSUES">Has integration issues</option>
-        </select>
       </section>
 
-      {visibleProjects.length > 0 ? (
+      {isLoading ? (
+        <section className="grid items-stretch gap-2.5 lg:gap-3 xl:grid-cols-2">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <SupervisorProjectCardSkeleton key={`supervisor-project-skeleton-${index}`} />
+          ))}
+        </section>
+      ) : error ? (
+        <ErrorState error={error} onRetry={() => void reload()} />
+      ) : visibleProjects.length > 0 ? (
         <section className="grid items-stretch gap-2.5 lg:gap-3 xl:grid-cols-2">
           {visibleProjects.map((project) => (
             <SupervisorProjectCard key={project.id} project={project} />

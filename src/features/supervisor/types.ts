@@ -1,5 +1,18 @@
 export type SupervisorProjectLifecycle = 'PLANNING' | 'ACTIVE' | 'AT_RISK' | 'BEHIND' | 'COMPLETED';
 
+export type SupervisorProjectSummary = {
+  id: string;
+  title: string;
+  summary: string | null;
+  lifecycleStatus: SupervisorProjectLifecycle;
+  batch: string | null;
+  semester: string | null;
+  milestoneDate: string | null;
+  progressPercent: number | null;
+  healthNote: string | null;
+  memberCount: number;
+};
+
 export type SupervisorProjectTab =
   | 'overview'
   | 'team'
