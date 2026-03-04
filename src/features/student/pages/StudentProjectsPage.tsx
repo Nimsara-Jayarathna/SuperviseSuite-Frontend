@@ -30,7 +30,7 @@ export function StudentProjectsPage() {
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Search your projects"
-            className="h-10 w-full rounded-2xl border border-border bg-white px-4 text-sm outline-none transition-colors focus:border-sky-300 sm:w-64"
+            className="h-10 w-full rounded-2xl border border-border bg-white px-4 text-sm outline-none transition-colors focus:border-slate-300 sm:w-64"
           />
         }
       />

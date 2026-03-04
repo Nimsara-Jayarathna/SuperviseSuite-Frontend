@@ -13,6 +13,7 @@ import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { PageTabs } from '@/components/ui/PageTabs';
 import { StatusBadge } from '@/components/ui/StatusBadge';
+import { buttonStyles } from '@/components/ui/Button';
 import { cn } from '@/lib/cn';
 import { useStudentProjects } from '../hooks/useStudentProjects';
 import type { StudentProjectActionItem, StudentProjectMeeting, StudentProjectTab } from '../types';
@@ -71,7 +72,7 @@ export function StudentProjectDetailsPage() {
         </p>
         <Link
           to="/student/projects"
-          className="mt-6 inline-flex items-center justify-center rounded-2xl bg-sky-600 px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+          className={buttonStyles({ variant: 'primary', size: 'md', className: 'mt-6' })}
         >
           Back to projects
         </Link>
@@ -144,7 +145,7 @@ export function StudentProjectDetailsPage() {
         }))}
         value={activeTab}
         onChange={(value) => setActiveTab(value as StudentProjectTab)}
-        tone="student"
+        tone="neutral"
       />
 
       {activeTab === 'overview' && (
@@ -176,7 +177,7 @@ export function StudentProjectDetailsPage() {
                         href={integration.href}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center gap-2 text-sm font-medium text-sky-600 transition-colors hover:text-sky-700"
+                        className={buttonStyles({ variant: 'link', size: 'sm' })}
                       >
                         Open
                         <ExternalLink className="h-4 w-4" />

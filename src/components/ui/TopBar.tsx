@@ -71,7 +71,7 @@ export function TopBar(props: TopBarProps) {
             <Link to={homePath} className="inline-flex items-center">
               <Logo size={38} showWordmark />
             </Link>
-            <StatusBadge tone={role === 'student' ? 'student' : 'supervisor'}>
+            <StatusBadge tone="neutral">
               {role === 'student' ? 'Student' : 'Supervisor'}
             </StatusBadge>
           </div>
@@ -85,9 +85,7 @@ export function TopBar(props: TopBarProps) {
                   className={cn(
                     'rounded-2xl px-4 py-2 text-sm font-medium transition-colors',
                     item.active
-                      ? role === 'student'
-                        ? 'bg-sky-600 text-white'
-                        : 'bg-slate-900 text-white'
+                      ? 'bg-slate-900 text-white'
                       : 'bg-white text-muted-foreground hover:bg-slate-100 hover:text-foreground',
                   )}
                 >
