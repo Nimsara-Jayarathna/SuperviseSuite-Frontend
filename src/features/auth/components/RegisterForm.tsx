@@ -55,19 +55,17 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
   // Map backend field-level errors onto individual fields.
+  // Backend uses `message`; fall back to `issue` for backward compatibility with mocks.
   const backendFieldErrors = error?.details.reduce<FieldErrors>((acc, d) => {
     const key = d.field as keyof FieldErrors;
-    acc[key] = d.issue;
+    acc[key] = (d.message ?? d.issue) as string;
     return acc;
   }, {});
 
-  // Show a general banner for conflict (duplicate email) or any non-field error.
-  const generalError =
-    error && error.code !== 'VALIDATION_ERROR'
-      ? error.code === 'CONFLICT'
-        ? 'An account with this email already exists.'
-        : error.message
-      : null;
+  // Show a general banner for conflict (duplicate email/registration number) or any non-field error.
+  // Use the backend message directly — it already distinguishes between duplicate email and
+  // duplicate registration number without leaking sensitive implementation details.
+  const generalError = error && error.code !== 'VALIDATION_ERROR' ? error.message : null;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
