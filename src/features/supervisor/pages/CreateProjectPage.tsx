@@ -1,353 +1,527 @@
-import { startTransition, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import type { FormEvent } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { BlockingState } from '@/components/ui/BlockingState';
 import { Button, buttonStyles } from '@/components/ui/Button';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { PageTabs } from '@/components/ui/PageTabs';
-import { useSupervisorWorkspace } from '../hooks/useSupervisorWorkspace';
-
-type Step = 1 | 2 | 3;
+import { RequestStateModal } from '@/components/ui/RequestStateModal';
+import { isApiException } from '@/services/apiClient';
+import { supervisorApi } from '../api/supervisorApi';
+import type { CreateSupervisorProjectResponse, SupervisorStudentSearchResult } from '../types';
 
 type DraftState = {
   title: string;
   batch: string;
   semester: string;
-  milestoneDate: string;
-  memberIds: string[];
-  communicationUrl: string;
-  repositoryUrl: string;
-  jiraProjectKey: string;
-  jiraBoardUrl: string;
+  summary: string;
+  milestoneTitle: string;
+  milestoneDescription: string;
+  milestoneDueDate: string;
 };
 
-export function CreateProjectPage() {
-  // Reuse student members from the current mock workspace so the UI can behave like a live picker.
-  const { projects } = useSupervisorWorkspace();
-  const availableStudents = Array.from(
-    new Map(
-      projects
-        .flatMap((project) => project.members)
-        .filter((member) => member.role === 'Student')
-        .map((member) => [member.id, member]),
-    ).values(),
-  );
+type SearchState = 'idle' | 'loading' | 'results' | 'empty' | 'error';
 
-  const [step, setStep] = useState<Step>(1);
-  const [submitted, setSubmitted] = useState(false);
-  const [draft, setDraft] = useState<DraftState>({
+const INITIAL_DRAFT: DraftState = {
+  title: '',
+  batch: '2026',
+  semester: 'Semester 1',
+  summary: '',
+  milestoneTitle: '',
+  milestoneDescription: '',
+  milestoneDueDate: '',
+};
+
+const FIELD_LIMITS = {
+  title: 40,
+  batch: 32,
+  semester: 32,
+  summary: 250,
+  milestoneTitle: 40,
+  milestoneDescription: 250,
+} as const;
+
+function buildStudentLabel(student: SupervisorStudentSearchResult) {
+  return `${student.firstName} ${student.lastName}`.trim() || student.email;
+}
+
+export function CreateProjectPage() {
+  const navigate = useNavigate();
+  const [draft, setDraft] = useState<DraftState>(INITIAL_DRAFT);
+  const [studentQuery, setStudentQuery] = useState('');
+  const [selectedStudents, setSelectedStudents] = useState<SupervisorStudentSearchResult[]>([]);
+  const [searchResults, setSearchResults] = useState<SupervisorStudentSearchResult[]>([]);
+  const [searchState, setSearchState] = useState<SearchState>('idle');
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [createdProject, setCreatedProject] = useState<CreateSupervisorProjectResponse | null>(
+    null,
+  );
+  const [requestModal, setRequestModal] = useState<{
+    isOpen: boolean;
+    status: 'loading' | 'success' | 'error';
+    title: string;
+    message: string;
+  }>({
+    isOpen: false,
+    status: 'loading',
     title: '',
-    batch: '2026',
-    semester: 'Semester 1',
-    milestoneDate: '',
-    memberIds: [],
-    communicationUrl: '',
-    repositoryUrl: '',
-    jiraProjectKey: '',
-    jiraBoardUrl: '',
+    message: '',
   });
 
-  function nextStep() {
-    startTransition(() => setStep((current) => Math.min(3, current + 1) as Step));
+  useEffect(() => {
+    const normalizedQuery = studentQuery.trim();
+
+    if (normalizedQuery.length < 3) {
+      setSearchResults([]);
+      setSearchState('idle');
+      setSearchError(null);
+      return;
+    }
+
+    let isCancelled = false;
+    setSearchState('loading');
+    setSearchError(null);
+
+    const timeoutId = window.setTimeout(async () => {
+      try {
+        const results = await supervisorApi.searchStudents(normalizedQuery);
+        if (isCancelled) {
+          return;
+        }
+
+        const visibleResults = results.filter(
+          (student) => !selectedStudents.some((selected) => selected.id === student.id),
+        );
+
+        setSearchResults(visibleResults);
+        setSearchState(visibleResults.length > 0 ? 'results' : 'empty');
+      } catch (error) {
+        if (isCancelled) {
+          return;
+        }
+
+        setSearchResults([]);
+        setSearchState('error');
+        setSearchError(
+          isApiException(error)
+            ? error.apiError.message
+            : 'Unable to search students right now. Please try again.',
+        );
+      }
+    }, 300);
+
+    return () => {
+      isCancelled = true;
+      window.clearTimeout(timeoutId);
+    };
+  }, [studentQuery, selectedStudents]);
+
+  function updateDraft<Field extends keyof DraftState>(field: Field, value: DraftState[Field]) {
+    setDraft((current) => ({ ...current, [field]: value }));
   }
 
-  function previousStep() {
-    startTransition(() => setStep((current) => Math.max(1, current - 1) as Step));
+  function selectStudent(student: SupervisorStudentSearchResult) {
+    setSelectedStudents((current) => {
+      if (current.some((item) => item.id === student.id)) {
+        return current;
+      }
+      return [...current, student];
+    });
+    setStudentQuery('');
+    setSearchResults([]);
+    setSearchState('idle');
+    setSearchError(null);
   }
 
-  function toggleMember(memberId: string) {
-    setDraft((current) => ({
-      ...current,
-      memberIds: current.memberIds.includes(memberId)
-        ? current.memberIds.filter((id) => id !== memberId)
-        : [...current.memberIds, memberId],
-    }));
+  function removeStudent(studentId: string) {
+    setSelectedStudents((current) => current.filter((student) => student.id !== studentId));
   }
 
-  function canContinueFromStep1() {
-    return Boolean(draft.title.trim() && draft.milestoneDate && draft.memberIds.length > 0);
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (selectedStudents.length === 0) {
+      setSubmitError('Select at least one registered student before creating the project.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setSubmitError(null);
+    setCreatedProject(null);
+    setRequestModal({
+      isOpen: true,
+      status: 'loading',
+      title: 'Creating project',
+      message: 'Saving the project, assigning students, and creating the first milestone.',
+    });
+
+    try {
+      const response = await supervisorApi.createProject({
+        title: draft.title.trim(),
+        summary: draft.summary.trim(),
+        batch: draft.batch.trim(),
+        semester: draft.semester.trim(),
+        studentIds: selectedStudents.map((student) => student.id),
+        milestone: {
+          title: draft.milestoneTitle.trim(),
+          description: draft.milestoneDescription.trim(),
+          dueDate: draft.milestoneDueDate,
+        },
+      });
+
+      setCreatedProject(response);
+      setDraft(INITIAL_DRAFT);
+      setSelectedStudents([]);
+      setStudentQuery('');
+      setSearchResults([]);
+      setSearchState('idle');
+      setRequestModal({
+        isOpen: true,
+        status: 'success',
+        title: 'Project created',
+        message: `${response.title} was created successfully and is ready for the next workflow steps.`,
+      });
+    } catch (error) {
+      const message = isApiException(error)
+        ? error.apiError.message
+        : 'Unable to create the project right now. Please try again.';
+      setSubmitError(message);
+      setRequestModal({
+        isOpen: true,
+        status: 'error',
+        title: 'Project creation failed',
+        message,
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
-  function canContinueFromStep2() {
-    return Boolean(draft.communicationUrl.trim());
+  function closeRequestModal() {
+    const nextStatus = requestModal.status;
+    setRequestModal((current) => ({ ...current, isOpen: false }));
+
+    if (nextStatus === 'success') {
+      navigate('/supervisor/projects');
+    }
   }
 
-  function handleSubmit() {
-    // This screen is still a UI-only draft flow until the backend create endpoint is wired.
-    setSubmitted(true);
+  function retrySubmit() {
+    closeRequestModal();
+  }
+
+  const shouldShowSearchPanel =
+    studentQuery.trim().length >= 3 || searchState === 'loading' || searchState === 'error';
+
+  function renderLimit(currentLength: number, maxLength: number) {
+    return (
+      <span className="text-xs text-muted-foreground">
+        {currentLength}/{maxLength} characters
+      </span>
+    );
   }
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Create Project"
-        subtitle="Start a new supervision workspace. This draft flow is UI-only until the backend project API is connected."
+        subtitle="Create a supervisor project, assign registered students, and capture the first milestone in one request."
+      />
+
+      <RequestStateModal
+        isOpen={requestModal.isOpen}
+        status={requestModal.status}
+        title={requestModal.title}
+        message={requestModal.message}
+        onClose={requestModal.status === 'loading' ? undefined : closeRequestModal}
+        onRetry={requestModal.status === 'error' ? retrySubmit : undefined}
       />
 
       <section className="rounded-3xl border border-border bg-white p-6 shadow-sm">
-        <PageTabs
-          items={[
-            { value: '1', label: 'Step 1: Basics' },
-            { value: '2', label: 'Step 2: Connections' },
-            { value: '3', label: 'Step 3: Review' },
-          ]}
-          value={String(step)}
-          onChange={() => {}}
-          tone="supervisor"
-          className="border-0 p-0 shadow-none"
-        />
+        <form className="space-y-8" onSubmit={handleSubmit}>
+          <div className="grid gap-8 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-lg font-semibold text-foreground">Project basics</h2>
+                <p className="mt-2 text-sm leading-7 text-muted-foreground">
+                  Capture the core project details the backend supports in this sprint.
+                </p>
+              </div>
 
-        {step === 1 ? (
-          <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-            <div className="space-y-4">
               <label className="block">
                 <span className="mb-2 block text-sm font-medium text-foreground">
                   Project title
                 </span>
                 <input
+                  required
                   value={draft.title}
-                  onChange={(event) =>
-                    setDraft((current) => ({ ...current, title: event.target.value }))
-                  }
+                  onChange={(event) => updateDraft('title', event.target.value)}
+                  maxLength={FIELD_LIMITS.title}
                   placeholder="e.g. Smart Attendance Tracker"
                   className="w-full rounded-2xl border border-border px-4 py-3 text-sm outline-none transition-colors focus:border-amber-300"
+                  disabled={isSubmitting}
                 />
+              </label>
+
+              <label className="block">
+                <span className="mb-2 flex items-center justify-between gap-3 text-sm font-medium text-foreground">
+                  <span>Summary</span>
+                  {renderLimit(draft.summary.length, FIELD_LIMITS.summary)}
+                </span>
+                <textarea
+                  required
+                  value={draft.summary}
+                  onChange={(event) => updateDraft('summary', event.target.value)}
+                  maxLength={FIELD_LIMITS.summary}
+                  placeholder="Describe the project scope, purpose, and expected outcome."
+                  rows={5}
+                  className="w-full rounded-2xl border border-border px-4 py-3 text-sm outline-none transition-colors focus:border-amber-300"
+                  disabled={isSubmitting}
+                />
+                <span className="mt-2 block text-xs text-muted-foreground">
+                  Limit the summary to the key project scope and intended outcome.
+                </span>
               </label>
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className="block">
                   <span className="mb-2 block text-sm font-medium text-foreground">Batch</span>
                   <input
+                    required
                     value={draft.batch}
-                    onChange={(event) =>
-                      setDraft((current) => ({ ...current, batch: event.target.value }))
-                    }
+                    onChange={(event) => updateDraft('batch', event.target.value)}
+                    maxLength={FIELD_LIMITS.batch}
                     className="w-full rounded-2xl border border-border px-4 py-3 text-sm outline-none transition-colors focus:border-amber-300"
+                    disabled={isSubmitting}
                   />
                 </label>
                 <label className="block">
                   <span className="mb-2 block text-sm font-medium text-foreground">Semester</span>
                   <input
+                    required
                     value={draft.semester}
-                    onChange={(event) =>
-                      setDraft((current) => ({ ...current, semester: event.target.value }))
-                    }
+                    onChange={(event) => updateDraft('semester', event.target.value)}
+                    maxLength={FIELD_LIMITS.semester}
                     className="w-full rounded-2xl border border-border px-4 py-3 text-sm outline-none transition-colors focus:border-amber-300"
+                    disabled={isSubmitting}
                   />
                 </label>
               </div>
-
-              <label className="block">
-                <span className="mb-2 block text-sm font-medium text-foreground">
-                  Next milestone date
-                </span>
-                <input
-                  type="date"
-                  value={draft.milestoneDate}
-                  onChange={(event) =>
-                    setDraft((current) => ({ ...current, milestoneDate: event.target.value }))
-                  }
-                  className="w-full rounded-2xl border border-border px-4 py-3 text-sm outline-none transition-colors focus:border-amber-300"
-                />
-              </label>
             </div>
 
-            <div>
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-foreground">Team assignment</h2>
-                <span className="text-sm text-muted-foreground">
-                  {draft.memberIds.length} selected
-                </span>
-              </div>
-              <div className="mt-4 grid gap-3">
-                {availableStudents.map((student) => {
-                  const selected = draft.memberIds.includes(student.id);
-
-                  return (
-                    <Button
-                      key={student.id}
-                      type="button"
-                      onClick={() => toggleMember(student.id)}
-                      variant={selected ? 'outline' : 'secondary'}
-                      className="h-auto w-full justify-start px-4 py-3 text-left"
-                    >
-                      <p className="font-medium text-foreground">{student.name}</p>
-                      <p className="mt-1 text-sm text-muted-foreground">Student contributor</p>
-                    </Button>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        ) : null}
-
-        {step === 2 ? (
-          <div className="mt-6 grid gap-4">
-            <label className="block">
-              <span className="mb-2 block text-sm font-medium text-foreground">
-                Communication URL
-              </span>
-              <input
-                value={draft.communicationUrl}
-                onChange={(event) =>
-                  setDraft((current) => ({ ...current, communicationUrl: event.target.value }))
-                }
-                placeholder="https://teams.microsoft.com/..."
-                className="w-full rounded-2xl border border-border px-4 py-3 text-sm outline-none transition-colors focus:border-amber-300"
-              />
-            </label>
-            <label className="block">
-              <span className="mb-2 block text-sm font-medium text-foreground">Repository URL</span>
-              <input
-                value={draft.repositoryUrl}
-                onChange={(event) =>
-                  setDraft((current) => ({ ...current, repositoryUrl: event.target.value }))
-                }
-                placeholder="https://github.com/org/repo"
-                className="w-full rounded-2xl border border-border px-4 py-3 text-sm outline-none transition-colors focus:border-amber-300"
-              />
-            </label>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <label className="block">
-                <span className="mb-2 block text-sm font-medium text-foreground">
-                  Jira project key
-                </span>
-                <input
-                  value={draft.jiraProjectKey}
-                  onChange={(event) =>
-                    setDraft((current) => ({ ...current, jiraProjectKey: event.target.value }))
-                  }
-                  placeholder="ABC"
-                  className="w-full rounded-2xl border border-border px-4 py-3 text-sm outline-none transition-colors focus:border-amber-300"
-                />
-              </label>
-              <label className="block">
-                <span className="mb-2 block text-sm font-medium text-foreground">
-                  Jira board URL
-                </span>
-                <input
-                  value={draft.jiraBoardUrl}
-                  onChange={(event) =>
-                    setDraft((current) => ({ ...current, jiraBoardUrl: event.target.value }))
-                  }
-                  placeholder="https://jira.example.com/boards/123"
-                  className="w-full rounded-2xl border border-border px-4 py-3 text-sm outline-none transition-colors focus:border-amber-300"
-                />
-              </label>
-            </div>
-          </div>
-        ) : null}
-
-        {step === 3 ? (
-          <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
-            <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
-              <h2 className="text-lg font-semibold text-foreground">Draft summary</h2>
-              <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Title</p>
-                  <p className="mt-1 font-medium text-foreground">
-                    {draft.title || 'Untitled project'}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                    Milestone
-                  </p>
-                  <p className="mt-1 font-medium text-foreground">
-                    {draft.milestoneDate || 'Not set'}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Batch</p>
-                  <p className="mt-1 font-medium text-foreground">{draft.batch}</p>
-                </div>
-                <div>
-                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                    Semester
-                  </p>
-                  <p className="mt-1 font-medium text-foreground">{draft.semester}</p>
-                </div>
-              </div>
-              <div className="mt-5">
-                <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                  Assigned students
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-lg font-semibold text-foreground">Student assignment</h2>
+                <p className="mt-2 text-sm leading-7 text-muted-foreground">
+                  Search registered students by email. Only selected students from the lookup can be
+                  assigned in this sprint.
                 </p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {availableStudents
-                    .filter((student) => draft.memberIds.includes(student.id))
-                    .map((student) => (
-                      <span
-                        key={student.id}
-                        className="inline-flex rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-foreground"
-                      >
-                        {student.name}
-                      </span>
-                    ))}
+              </div>
+
+              <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+                <label className="block">
+                  <span className="mb-2 block text-sm font-medium text-foreground">
+                    Search student email
+                  </span>
+                  <input
+                    value={studentQuery}
+                    onChange={(event) => setStudentQuery(event.target.value)}
+                    placeholder="Type at least 3 characters from the student email"
+                    className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-amber-300"
+                    disabled={isSubmitting}
+                  />
+                </label>
+
+                {shouldShowSearchPanel ? (
+                  <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-3">
+                    <BlockingState
+                      isActive={searchState === 'loading'}
+                      mode="inline"
+                      message="Searching registered students..."
+                      className="border-0 px-0 py-2"
+                    />
+
+                    {searchState === 'results' ? (
+                      <div className="space-y-2">
+                        {searchResults.map((student) => (
+                          <button
+                            key={student.id}
+                            type="button"
+                            onClick={() => selectStudent(student)}
+                            className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-left transition-colors hover:bg-slate-50"
+                            disabled={isSubmitting}
+                          >
+                            <p className="font-medium text-foreground">
+                              {buildStudentLabel(student)}
+                            </p>
+                            <p className="mt-1 text-sm text-muted-foreground">{student.email}</p>
+                            <p className="mt-1 text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                              {student.registrationNumber}
+                            </p>
+                          </button>
+                        ))}
+                      </div>
+                    ) : null}
+
+                    {searchState === 'empty' ? (
+                      <p className="px-1 py-2 text-sm text-muted-foreground">
+                        No registered student found.
+                      </p>
+                    ) : null}
+
+                    {searchState === 'error' ? (
+                      <p className="px-1 py-2 text-sm text-rose-600">
+                        {searchError ?? 'Unable to search students right now.'}
+                      </p>
+                    ) : null}
+                  </div>
+                ) : null}
+
+                <div className="mt-5">
+                  <div className="flex items-center justify-between gap-3">
+                    <h3 className="text-sm font-semibold text-foreground">Selected students</h3>
+                    <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                      {selectedStudents.length} selected
+                    </span>
+                  </div>
+
+                  {selectedStudents.length > 0 ? (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {selectedStudents.map((student) => (
+                        <div
+                          key={student.id}
+                          className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm"
+                        >
+                          <span className="font-medium text-foreground">
+                            {buildStudentLabel(student)}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => removeStudent(student.id)}
+                            className="text-muted-foreground transition-colors hover:text-foreground"
+                            aria-label={`Remove ${buildStudentLabel(student)}`}
+                            disabled={isSubmitting}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="mt-3 text-sm text-muted-foreground">No students selected yet.</p>
+                  )}
                 </div>
               </div>
             </div>
+          </div>
 
-            <div className="rounded-3xl border border-slate-200 bg-slate-900 p-5 text-slate-100">
-              <h2 className="text-lg font-semibold">Implementation note</h2>
-              <p className="mt-3 text-sm leading-7 text-slate-300">
-                This page currently validates and previews the project draft in the UI only. Actual
-                project creation should be connected to the backend project API in the next step.
+          <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6">
+            <div>
+              <h2 className="text-lg font-semibold text-foreground">Initial milestone</h2>
+              <p className="mt-2 text-sm leading-7 text-muted-foreground">
+                This release stores one initial milestone. Future sprints can expand this into a
+                full milestone timeline.
               </p>
-              {submitted ? (
-                <div className="mt-5 rounded-2xl bg-white/10 p-4 text-sm text-slate-200">
-                  Draft accepted in the UI flow. Connect this step to the backend to persist the
-                  project.
-                </div>
-              ) : null}
+            </div>
+
+            <div className="mt-5 grid gap-4">
+              <label className="block">
+                <span className="mb-2 block text-sm font-medium text-foreground">
+                  Milestone title
+                </span>
+                <input
+                  required
+                  value={draft.milestoneTitle}
+                  onChange={(event) => updateDraft('milestoneTitle', event.target.value)}
+                  maxLength={FIELD_LIMITS.milestoneTitle}
+                  placeholder="e.g. Proposal Submission"
+                  className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-amber-300"
+                  disabled={isSubmitting}
+                />
+              </label>
+
+              <label className="block">
+                <span className="mb-2 flex items-center justify-between gap-3 text-sm font-medium text-foreground">
+                  <span>Milestone description</span>
+                  {renderLimit(
+                    draft.milestoneDescription.length,
+                    FIELD_LIMITS.milestoneDescription,
+                  )}
+                </span>
+                <textarea
+                  value={draft.milestoneDescription}
+                  onChange={(event) => updateDraft('milestoneDescription', event.target.value)}
+                  maxLength={FIELD_LIMITS.milestoneDescription}
+                  placeholder="Add any context or review expectations for this milestone."
+                  rows={4}
+                  className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-amber-300"
+                  disabled={isSubmitting}
+                />
+                <span className="mt-2 block text-xs text-muted-foreground">
+                  Keep milestone notes concise so the first review point stays clear.
+                </span>
+              </label>
+
+              <label className="block sm:max-w-xs">
+                <span className="mb-2 block text-sm font-medium text-foreground">Due date</span>
+                <input
+                  required
+                  type="date"
+                  value={draft.milestoneDueDate}
+                  onChange={(event) => updateDraft('milestoneDueDate', event.target.value)}
+                  className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-amber-300"
+                  disabled={isSubmitting}
+                />
+              </label>
             </div>
           </div>
-        ) : null}
 
-        <div className="mt-6 flex flex-wrap justify-between gap-3">
-          <Link
-            to="/supervisor/projects"
-            className={buttonStyles({ variant: 'secondary', size: 'md' })}
-          >
-            Cancel
-          </Link>
+          {submitError ? (
+            <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+              {submitError}
+            </div>
+          ) : null}
 
-          <div className="flex flex-wrap gap-3">
-            {step > 1 ? (
-              <Button type="button" variant="secondary" size="md" onClick={previousStep}>
-                Back
-              </Button>
-            ) : null}
+          <div className="flex flex-wrap justify-between gap-3">
+            <Link
+              to="/supervisor/projects"
+              className={buttonStyles({ variant: 'secondary', size: 'md' })}
+            >
+              Back to projects
+            </Link>
 
-            {step === 1 ? (
-              <Button
-                type="button"
-                variant="primary"
-                size="md"
-                onClick={nextStep}
-                disabled={!canContinueFromStep1()}
-              >
-                Continue
-              </Button>
-            ) : null}
-
-            {step === 2 ? (
-              <Button
-                type="button"
-                variant="primary"
-                size="md"
-                onClick={nextStep}
-                disabled={!canContinueFromStep2()}
-              >
-                Review draft
-              </Button>
-            ) : null}
-
-            {step === 3 ? (
-              <Button type="button" variant="primary" size="md" onClick={handleSubmit}>
-                Finalize UI draft
-              </Button>
-            ) : null}
+            <Button type="submit" variant="primary" size="md" disabled={isSubmitting}>
+              Create project
+            </Button>
           </div>
-        </div>
+        </form>
       </section>
+
+      {createdProject ? (
+        <section className="rounded-3xl border border-emerald-200 bg-emerald-50 p-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-emerald-900">Project created</h2>
+          <p className="mt-2 text-sm leading-7 text-emerald-800">
+            {createdProject.title} was created in the backend with {createdProject.students.length}{' '}
+            assigned student{createdProject.students.length === 1 ? '' : 's'} and the first
+            milestone scheduled for {createdProject.milestone.dueDate}.
+          </p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <div className="rounded-2xl border border-emerald-200 bg-white px-4 py-4">
+              <p className="text-xs uppercase tracking-[0.2em] text-emerald-700">Lifecycle</p>
+              <p className="mt-2 font-semibold text-emerald-950">
+                {createdProject.lifecycleStatus.replace('_', ' ')}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-emerald-200 bg-white px-4 py-4">
+              <p className="text-xs uppercase tracking-[0.2em] text-emerald-700">Milestone</p>
+              <p className="mt-2 font-semibold text-emerald-950">
+                {createdProject.milestone.title}
+              </p>
+            </div>
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }
