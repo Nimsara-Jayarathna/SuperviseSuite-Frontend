@@ -9,6 +9,7 @@ import {
   MessageSquareMore,
 } from 'lucide-react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { Button, buttonStyles } from '@/components/ui/Button';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { PageTabs } from '@/components/ui/PageTabs';
 import { StatusBadge } from '@/components/ui/StatusBadge';
@@ -67,7 +68,7 @@ export function ProjectDetailsPage() {
         </p>
         <Link
           to="/supervisor/projects"
-          className="mt-6 inline-flex items-center justify-center rounded-2xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+          className={buttonStyles({ variant: 'primary', size: 'md', className: 'mt-6' })}
         >
           Back to projects
         </Link>
@@ -89,18 +90,12 @@ export function ProjectDetailsPage() {
         subtitle={project.summary}
         actions={
           <>
-            <button
-              type="button"
-              className="rounded-2xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-            >
+            <Button type="button" variant="primary" size="md">
               Add meeting
-            </button>
-            <button
-              type="button"
-              className="rounded-2xl border border-border px-4 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-slate-50"
-            >
+            </Button>
+            <Button type="button" variant="secondary" size="md">
               Upload file
-            </button>
+            </Button>
           </>
         }
       />
@@ -231,7 +226,7 @@ export function ProjectDetailsPage() {
                         href={integration.href}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center gap-2 text-sm font-medium text-amber-700 transition-colors hover:text-amber-800"
+                        className={buttonStyles({ variant: 'link', size: 'sm' })}
                       >
                         Open
                         <ExternalLink className="h-4 w-4" />
@@ -373,12 +368,9 @@ export function ProjectDetailsPage() {
         <section className="rounded-3xl border border-border bg-white p-6 shadow-sm">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="text-lg font-semibold text-foreground">Meetings</h2>
-            <button
-              type="button"
-              className="rounded-2xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-            >
+            <Button type="button" variant="primary" size="md">
               Add meeting minutes
-            </button>
+            </Button>
           </div>
           <div className="mt-5 overflow-x-auto">
             <table className="min-w-full text-left text-sm">
@@ -445,12 +437,9 @@ export function ProjectDetailsPage() {
         <section className="rounded-3xl border border-border bg-white p-6 shadow-sm">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="text-lg font-semibold text-foreground">Files</h2>
-            <button
-              type="button"
-              className="rounded-2xl border border-border px-4 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-slate-50"
-            >
+            <Button type="button" variant="secondary" size="md">
               Upload file
-            </button>
+            </Button>
           </div>
           <div className="mt-5 space-y-3">
             {project.files.map((file) => (

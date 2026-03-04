@@ -10,9 +10,10 @@ type HeroSectionProps = {
 export function HeroSection({ onStudentPortal, onSupervisorAccess }: HeroSectionProps) {
   return (
     <Card
-      className="grid gap-6 bg-white/85 lg:grid-cols-[minmax(0,1fr)_140px] lg:items-center"
+      className="relative overflow-hidden grid gap-6 bg-white/85 lg:grid-cols-[minmax(0,1fr)_280px] lg:items-center xl:grid-cols-[minmax(0,1fr)_320px]"
       padding="lg"
     >
+      <div className="pointer-events-none absolute -right-10 top-6 hidden h-32 w-32 rounded-full bg-sky-100/60 blur-3xl lg:block" />
       <div className="max-w-4xl">
         <h1 className="text-4xl font-semibold leading-tight tracking-tight text-foreground sm:text-5xl lg:text-6xl">
           Streamline Your <span className="gradient-text">Research Supervision.</span>
@@ -31,9 +32,16 @@ export function HeroSection({ onStudentPortal, onSupervisorAccess }: HeroSection
         </div>
       </div>
 
-      <div className="hidden lg:flex lg:justify-end">
-        <div className="flex h-24 w-24 items-center justify-center rounded-[1.75rem] bg-white/80 shadow-sm ring-1 ring-slate-200">
-          <LogoMark size={68} />
+      <div className="hidden lg:flex lg:items-center lg:justify-center">
+        <div className="relative flex h-56 w-full items-center justify-center">
+          <div className="absolute h-40 w-40 rounded-full bg-sky-100/70 blur-3xl" />
+          <div className="absolute right-6 top-6 h-6 w-6 rounded-full bg-white/90 hero-float-in" />
+          <div className="absolute bottom-7 left-10 h-4 w-4 rounded-full bg-sky-200/80 hero-float-in" />
+          <div className="hero-float-in hero-gentle-float relative flex h-48 w-48 items-center justify-center rounded-[2.75rem] bg-white/95 shadow-[0_18px_40px_rgba(15,23,42,0.08)] transition-transform duration-500 hover:-translate-y-1 hover:scale-[1.02]">
+            <div className="flex h-36 w-36 items-center justify-center rounded-[2.25rem] bg-slate-50">
+              <LogoMark size={144} />
+            </div>
+          </div>
         </div>
       </div>
     </Card>

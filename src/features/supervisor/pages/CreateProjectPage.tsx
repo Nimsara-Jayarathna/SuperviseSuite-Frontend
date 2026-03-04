@@ -1,5 +1,6 @@
 import { startTransition, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Button, buttonStyles } from '@/components/ui/Button';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { PageTabs } from '@/components/ui/PageTabs';
 import { useSupervisorWorkspace } from '../hooks/useSupervisorWorkspace';
@@ -159,19 +160,16 @@ export function CreateProjectPage() {
                   const selected = draft.memberIds.includes(student.id);
 
                   return (
-                    <button
+                    <Button
                       key={student.id}
                       type="button"
                       onClick={() => toggleMember(student.id)}
-                      className={`rounded-2xl border px-4 py-3 text-left transition-colors ${
-                        selected
-                          ? 'border-amber-300 bg-amber-50'
-                          : 'border-slate-200 bg-slate-50 hover:bg-slate-100'
-                      }`}
+                      variant={selected ? 'outline' : 'secondary'}
+                      className="h-auto w-full justify-start px-4 py-3 text-left"
                     >
                       <p className="font-medium text-foreground">{student.name}</p>
                       <p className="mt-1 text-sm text-muted-foreground">Student contributor</p>
-                    </button>
+                    </Button>
                   );
                 })}
               </div>
@@ -304,52 +302,46 @@ export function CreateProjectPage() {
         <div className="mt-6 flex flex-wrap justify-between gap-3">
           <Link
             to="/supervisor/projects"
-            className="inline-flex items-center justify-center rounded-2xl border border-border px-4 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-slate-50"
+            className={buttonStyles({ variant: 'secondary', size: 'md' })}
           >
             Cancel
           </Link>
 
           <div className="flex flex-wrap gap-3">
             {step > 1 ? (
-              <button
-                type="button"
-                onClick={previousStep}
-                className="rounded-2xl border border-border px-4 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-slate-50"
-              >
+              <Button type="button" variant="secondary" size="md" onClick={previousStep}>
                 Back
-              </button>
+              </Button>
             ) : null}
 
             {step === 1 ? (
-              <button
+              <Button
                 type="button"
+                variant="primary"
+                size="md"
                 onClick={nextStep}
                 disabled={!canContinueFromStep1()}
-                className="rounded-2xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Continue
-              </button>
+              </Button>
             ) : null}
 
             {step === 2 ? (
-              <button
+              <Button
                 type="button"
+                variant="primary"
+                size="md"
                 onClick={nextStep}
                 disabled={!canContinueFromStep2()}
-                className="rounded-2xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Review draft
-              </button>
+              </Button>
             ) : null}
 
             {step === 3 ? (
-              <button
-                type="button"
-                onClick={handleSubmit}
-                className="rounded-2xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-slate-950 transition-opacity hover:opacity-90"
-              >
+              <Button type="button" variant="primary" size="md" onClick={handleSubmit}>
                 Finalize UI draft
-              </button>
+              </Button>
             ) : null}
           </div>
         </div>

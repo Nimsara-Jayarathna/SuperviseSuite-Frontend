@@ -29,11 +29,42 @@ body {
   color: hsl(var(--foreground));
 }
 
+@keyframes hero-fade-up {
+  0% {
+    opacity: 0;
+    transform: translateY(18px) scale(0.96);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes hero-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
 @layer utilities {
   .gradient-text {
     background: linear-gradient(135deg, hsl(var(--primary)), hsl(250 80% 65%));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+  }
+
+  .hero-float-in {
+    animation: hero-fade-up 0.65s ease-out both;
+  }
+
+  .hero-gentle-float {
+    animation: hero-float 4.5s ease-in-out 0.35s infinite;
   }
 }

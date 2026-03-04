@@ -16,8 +16,8 @@ export function PublicLayout({ onLogin, onRegister, children }: PublicLayoutProp
         mode="public"
         homePath="/"
         actions={[
-          { label: 'Login', onClick: onLogin, variant: 'nav' },
-          { label: 'Register', onClick: onRegister, variant: 'nav-primary' },
+          { label: 'Login', onClick: onLogin, variant: 'ghost' },
+          { label: 'Register', onClick: onRegister, variant: 'primary' },
         ]}
       />
       <main className="relative z-10 mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">

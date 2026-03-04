@@ -13,7 +13,7 @@ type NavItem = {
 type PublicAction = {
   label: string;
   onClick: () => void;
-  variant: 'nav' | 'nav-primary';
+  variant: 'ghost' | 'primary';
 };
 
 type PrivateTopBarProps = {

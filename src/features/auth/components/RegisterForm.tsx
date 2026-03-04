@@ -220,7 +220,14 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
         )}
       </div>
 
-      <Button type="submit" variant="hero" size="lg" disabled={isLoading} className="mt-1 w-full">
+      <Button
+        type="submit"
+        variant="primary"
+        size="lg"
+        disabled={isLoading}
+        fullWidth
+        className="mt-1"
+      >
         {isLoading ? 'Creating account…' : 'Create Account'}
       </Button>
     </form>
