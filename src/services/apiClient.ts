@@ -53,12 +53,13 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     return undefined as unknown as T;
   }
 
-  const body: ApiResponse<T> = await response.json();
+  const body: unknown = await response.json();
 
   if (!response.ok) {
-    // Use the structured ApiError from the backend, or fall back to a synthetic one.
+    // GlobalExceptionHandler returns a raw ApiError body (not wrapped in ApiResponse).
+    // Cast directly — fall back to a synthetic error if the shape is unexpected.
     throw new ApiException(
-      body.error ?? {
+      (body as ApiError) ?? {
         timestamp: new Date().toISOString(),
         status: response.status,
         error: response.statusText,
@@ -71,7 +72,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     );
   }
 
-  return body.data;
+  return (body as ApiResponse<T>).data;
 }
 
 /** HTTP client for all backend API calls. Throws `ApiException` on failure. */
