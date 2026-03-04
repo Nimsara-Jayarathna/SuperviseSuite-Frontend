@@ -1,6 +1,6 @@
 # Landing Page Feature
 
-Public-facing marketing page served at `/`.
+Public-facing home page served at `/`.
 
 ## Route
 
@@ -12,8 +12,8 @@ Public-facing marketing page served at `/`.
 
 ```
 LandingPage
-├── LandingNav          — fixed top bar, Login / Register actions (stubs)
-├── HeroSection         — headline, subtitle, CTA buttons (stubs)
+├── PublicLayout        — shared top bar shell in public mode
+├── HeroSection         — headline, subtitle, primary/secondary role-switch CTAs
 └── FeaturesSection     — 3-column feature cards grid
     └── FeatureCard     — icon badge + title + description
 ```
@@ -27,19 +27,24 @@ The following handlers in `LandingPage` navigate to the auth pages:
 - `onStudentPortal` → `/register`
 - `onSupervisorAccess` → `/login`
 
-## Shared Infrastructure Added by This Feature
+## Current UX Notes
 
-### Button variants (`src/components/ui/Button.tsx`)
+- Uses the same `TopBar` component as authenticated pages, but in `public` mode.
+- Reuses the shared app container width and spacing system.
+- Hero CTAs use the shared button component.
+- The landing page is intentionally kept inside the same design system as student and supervisor pages.
+
+## Shared UI References
+
+### Button system (`src/components/ui/Button.tsx`)
 
 | Variant | Usage |
 |---------|-------|
-| `default` | Standard action button |
-| `nav` | Ghost-style nav link button |
-| `nav-primary` | Filled primary nav button |
-| `hero` | Large filled CTA button |
-| `hero-outline` | Large outlined CTA button |
+| `primary` | Primary CTA |
+| `secondary` | Secondary CTA / supporting action |
+| `ghost` | Public top bar utility action |
 
-Size prop accepts: `sm` \| `md` (default) \| `lg`
+See `docs/ui/button-system.md` for the canonical shared button contract.
 
 ### CSS Design Tokens (`src/styles/globals.css`)
 
@@ -55,14 +60,7 @@ Size prop accepts: `sm` \| `md` (default) \| `lg`
 | `--border` | `214 32% 91%` | Border color |
 | `--nav-height` | `64px` | Fixed nav bar height |
 
-The `.gradient-text` utility class applies the brand gradient:
-`hsl(217 91% 60%) → hsl(250 80% 65%)`.
+- `.gradient-text` applies the brand headline gradient.
+- Hero animation utilities such as `.hero-float-in` and `.hero-gentle-float` are defined here.
 
 All tokens are consumed via Tailwind's extended color config (`tailwind.config.ts`).
-
-## Dependencies Added
-
-| Package | Reason |
-|---------|--------|
-| `lucide-react` | Icons used in `FeaturesSection` |
-| `react-router-dom` | Client-side routing (`BrowserRouter`, `Routes`, `Route`) |

@@ -1,3 +1,4 @@
+import { Card } from '@/components/ui/Card';
 import { FileText, GitCommitHorizontal, Webhook } from 'lucide-react';
 import type { LandingFeatureCard } from '../types';
 import { FeatureCard } from './FeatureCard';
@@ -25,8 +26,21 @@ const FEATURE_CARDS: LandingFeatureCard[] = [
 
 export function FeaturesSection() {
   return (
-    <section className="border-t border-border bg-muted/30 py-24">
-      <div className="mx-auto grid max-w-5xl grid-cols-1 gap-6 px-6 sm:grid-cols-3">
+    <Card className="bg-white/85" padding="lg">
+      <div className="max-w-2xl">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-700">
+          Built for active supervision
+        </p>
+        <h2 className="mt-2 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+          Keep progress, meetings, and delivery in one shared workflow.
+        </h2>
+        <p className="mt-3 text-sm leading-7 text-muted-foreground sm:text-base">
+          Bring project tracking, supervisor reviews, and student updates into the same working
+          space without jumping between separate tools.
+        </p>
+      </div>
+
+      <div className="mt-4 grid gap-4 sm:grid-cols-3">
         {FEATURE_CARDS.map((card) => (
           <FeatureCard
             key={card.id}
@@ -36,6 +50,6 @@ export function FeaturesSection() {
           />
         ))}
       </div>
-    </section>
+    </Card>
   );
 }

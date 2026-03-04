@@ -6,10 +6,11 @@ Handles user authentication — login, registration, session persistence, and ro
 
 | Path | Component | Guard | Role |
 |------|-----------|-------|------|
-| `/login` | `LoginPage` | `RequireGuest` | Guest only |
-| `/register` | `RegisterPage` | `RequireGuest` | Guest only |
-| `/student/projects` | _(other dev)_ | `RequireRole("STUDENT")` | STUDENT |
-| `/supervisor/dashboard` | _(other dev)_ | `RequireRole("SUPERVISOR")` | SUPERVISOR |
+| `/login` | `LoginPage` | None | Public |
+| `/register` | `RegisterPage` | None | Public |
+| `/student/projects` | `StudentProjectsPage` | `RequireRole("STUDENT")` | STUDENT |
+| `/supervisor` | `SupervisorDashboardPage` | `RequireRole("SUPERVISOR")` | SUPERVISOR |
+| `/supervisor/dashboard` | `SupervisorDashboardPage` | `RequireRole("SUPERVISOR")` | SUPERVISOR |
 
 ---
 
@@ -88,7 +89,7 @@ Identical layout to `LoginPage`.
 | `password` | Required, min 8 characters |
 | `confirmPassword` | Required, must match `password` |
 
-**Note:** `role` is **not** sent from the frontend — the backend always assigns `STUDENT` for public registration. Supervisor accounts are created by admins only.
+**Note:** Registration currently creates student accounts only. Supervisor accounts are still assumed to come from an admin-managed flow.
 
 ---
 
@@ -117,7 +118,7 @@ const { user, isLoading, error, login, register, logout, clearError } = useAuth(
 | Role | Redirects to |
 |------|-------------|
 | `STUDENT` | `/student/projects` |
-| `SUPERVISOR` | `/supervisor/dashboard` |
+| `SUPERVISOR` | `/supervisor` |
 | Unknown | `/` |
 
 > **Note:** This table applies to `login()` only. `register()` always navigates to `/login` regardless of role — no session is created on registration.
@@ -222,10 +223,15 @@ type StoredUser = {
 | Guard | Behaviour |
 |-------|-----------|
 | `RequireAuth` | Redirects to `/login` if no access token in storage |
-| `RequireRole({ role })` | Redirects to `/login` if unauthenticated; to `/` if wrong role |
-| `RequireGuest` | Redirects authenticated users to their role home — applied to `/login` and `/register` |
+| `RequireRole({ role })` | Redirects to `/login` if unauthenticated; in current local preview mode it allows authenticated users to inspect either shell |
+| `RequireGuest` | Redirects authenticated users to their role home (use on `/login`, `/register` if needed) |
 
 All guards read directly from `tokenStorage` — no React Context required.
+
+Current implementation note:
+
+- `RequireRole` includes a local UI-preview bypass (`ALLOW_CROSS_ROLE_PREVIEW = true`) so developers can inspect both shells while the frontend is still mock-heavy.
+- This is not a real security boundary. The backend must enforce role access.
 
 ```tsx
 // Usage in routes.tsx

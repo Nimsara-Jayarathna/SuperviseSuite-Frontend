@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/cn';
 import { useRegister } from '../hooks/useRegister';
 import { LoginForm } from './LoginForm';
@@ -70,14 +71,16 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
         className="relative z-10 w-full max-w-md rounded-2xl border border-border bg-background p-6 shadow-xl focus:outline-none"
       >
         {/* Close button */}
-        <button
+        <Button
           type="button"
           onClick={onClose}
           aria-label="Close"
-          className="absolute right-4 top-4 flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          variant="ghost"
+          size="sm"
+          className="absolute right-4 top-4 h-7 w-7 rounded-full p-0"
         >
           ✕
-        </button>
+        </Button>
 
         {/* Tab bar */}
         <div className="mb-6 flex rounded-lg bg-muted p-1">
