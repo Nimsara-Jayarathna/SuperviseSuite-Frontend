@@ -15,7 +15,7 @@ Four types mirror the backend contract exactly:
 | Type | Purpose |
 |---|---|
 | `ApiErrorCode` | Union of all 8 stable error code strings |
-| `ApiErrorDetail` | Field-level validation detail `{ field, issue }` |
+| `ApiErrorDetail` | Field-level validation detail — `field` + `issue` (backend field name); `message` is an optional forward-compatibility alias |
 | `ApiError` | Full backend error response payload |
 | `ApiResponse<T>` | Generic success response wrapper |
 
