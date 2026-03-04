@@ -8,7 +8,6 @@ export type AuthUser = {
   role: UserRole;
   firstName: string;
   lastName: string;
-  isEmailVerified: boolean;
 };
 
 /** POST /api/auth/login request body */

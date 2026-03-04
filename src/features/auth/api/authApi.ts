@@ -17,7 +17,6 @@ const MOCK_RESPONSE: LoginResponse = {
     role: 'STUDENT',
     firstName: 'Demo',
     lastName: 'User',
-    isEmailVerified: true,
   },
 };
 
