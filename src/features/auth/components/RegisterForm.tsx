@@ -1,84 +1,61 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { useAuth } from '../hooks/useAuth';
+import type { ApiError } from '@/types';
+import type { RegisterRequest } from '../types';
+import {
+  getGeneralError,
+  mapBackendFieldErrors,
+  type RegisterFieldErrors,
+  validateRegisterForm,
+} from '../utils/registerValidation';
 
-type FieldErrors = {
-  firstName?: string;
-  lastName?: string;
-  email?: string;
-  password?: string;
-  confirmPassword?: string;
-  registrationNumber?: string;
-};
-
-/** Client-side validation — returns an error map; empty object means valid. */
-function validate(
-  firstName: string,
-  lastName: string,
-  email: string,
-  password: string,
-  confirmPassword: string,
-  registrationNumber: string,
-): FieldErrors {
-  const errors: FieldErrors = {};
-  if (!firstName.trim()) errors.firstName = 'First name is required.';
-  if (!lastName.trim()) errors.lastName = 'Last name is required.';
-  if (!email) errors.email = 'Email is required.';
-  else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.email = 'Enter a valid email.';
-  if (!password) errors.password = 'Password is required.';
-  else if (password.length < 8) errors.password = 'Password must be at least 8 characters.';
-  else if (!/[A-Z]/.test(password)) errors.password = 'Password must contain an uppercase letter.';
-  else if (!/[a-z]/.test(password)) errors.password = 'Password must contain a lowercase letter.';
-  else if (!/[0-9]/.test(password)) errors.password = 'Password must contain a digit.';
-  else if (!/[^A-Za-z0-9]/.test(password))
-    errors.password = 'Password must contain a special character.';
-  if (!confirmPassword) errors.confirmPassword = 'Please confirm your password.';
-  else if (password !== confirmPassword) errors.confirmPassword = 'Passwords do not match.';
-  if (!registrationNumber.trim()) errors.registrationNumber = 'Registration number is required.';
-  return errors;
-}
-
-type RegisterFormProps = {
+/**
+ * Props follow the Dependency Inversion Principle:
+ * RegisterForm depends on abstractions (callbacks + data), not on a concrete
+ * hook implementation. This makes the component independently testable and
+ * reusable in any context that can provide these props.
+ */
+export type RegisterFormProps = {
+  /** Called with the validated payload — caller decides what to do with it. */
+  onSubmit: (data: RegisterRequest) => Promise<void>;
+  isLoading: boolean;
+  error: ApiError | null;
+  onClearError: () => void;
   onSuccess?: () => void;
 };
 
-export function RegisterForm({ onSuccess }: RegisterFormProps) {
-  const { register, isLoading, error, clearError } = useAuth();
-
+export function RegisterForm({
+  onSubmit,
+  isLoading,
+  error,
+  onClearError,
+  onSuccess,
+}: RegisterFormProps) {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [registrationNumber, setRegistrationNumber] = useState('');
-  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [fieldErrors, setFieldErrors] = useState<RegisterFieldErrors>({});
 
-  // Map backend field-level errors onto individual fields.
-  // Backend uses `message`; fall back to `issue` for backward compatibility with mocks.
-  const backendFieldErrors = error?.details.reduce<FieldErrors>((acc, d) => {
-    const key = d.field as keyof FieldErrors;
-    acc[key] = (d.message ?? d.issue) as string;
-    return acc;
-  }, {});
-
-  // Show a general banner for conflict (duplicate email/registration number) or any non-field error.
-  // Use the backend message directly — it already distinguishes between duplicate email and
-  // duplicate registration number without leaking sensitive implementation details.
-  const generalError = error && error.code !== 'VALIDATION_ERROR' ? error.message : null;
+  // Derived from the ApiError using pure utility functions (Single Responsibility).
+  const backendFieldErrors = mapBackendFieldErrors(error);
+  const generalError = getGeneralError(error);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    clearError();
+    onClearError();
 
-    const errors = validate(
+    const errors = validateRegisterForm({
       firstName,
       lastName,
       email,
       password,
       confirmPassword,
       registrationNumber,
-    );
+    });
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
       return;
@@ -86,7 +63,7 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
     setFieldErrors({});
 
     // Role is assigned server-side — the backend always sets STUDENT for public registration.
-    await register({ firstName, lastName, email, password, registrationNumber });
+    await onSubmit({ firstName, lastName, email, password, registrationNumber });
     onSuccess?.();
   }
 
@@ -115,9 +92,9 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
             onChange={(e) => setFirstName(e.target.value)}
             className={inputClass}
           />
-          {(fieldErrors.firstName ?? backendFieldErrors?.firstName) && (
+          {(fieldErrors.firstName ?? backendFieldErrors.firstName) && (
             <p className="text-xs text-red-500">
-              {fieldErrors.firstName ?? backendFieldErrors?.firstName}
+              {fieldErrors.firstName ?? backendFieldErrors.firstName}
             </p>
           )}
         </div>
@@ -135,9 +112,9 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
             onChange={(e) => setLastName(e.target.value)}
             className={inputClass}
           />
-          {(fieldErrors.lastName ?? backendFieldErrors?.lastName) && (
+          {(fieldErrors.lastName ?? backendFieldErrors.lastName) && (
             <p className="text-xs text-red-500">
-              {fieldErrors.lastName ?? backendFieldErrors?.lastName}
+              {fieldErrors.lastName ?? backendFieldErrors.lastName}
             </p>
           )}
         </div>
@@ -157,9 +134,9 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
           onChange={(e) => setRegistrationNumber(e.target.value)}
           className={inputClass}
         />
-        {(fieldErrors.registrationNumber ?? backendFieldErrors?.registrationNumber) && (
+        {(fieldErrors.registrationNumber ?? backendFieldErrors.registrationNumber) && (
           <p className="text-xs text-red-500">
-            {fieldErrors.registrationNumber ?? backendFieldErrors?.registrationNumber}
+            {fieldErrors.registrationNumber ?? backendFieldErrors.registrationNumber}
           </p>
         )}
       </div>
@@ -178,8 +155,8 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
           onChange={(e) => setEmail(e.target.value)}
           className={inputClass}
         />
-        {(fieldErrors.email ?? backendFieldErrors?.email) && (
-          <p className="text-xs text-red-500">{fieldErrors.email ?? backendFieldErrors?.email}</p>
+        {(fieldErrors.email ?? backendFieldErrors.email) && (
+          <p className="text-xs text-red-500">{fieldErrors.email ?? backendFieldErrors.email}</p>
         )}
       </div>
 
@@ -197,9 +174,9 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
           onChange={(e) => setPassword(e.target.value)}
           className={inputClass}
         />
-        {(fieldErrors.password ?? backendFieldErrors?.password) && (
+        {(fieldErrors.password ?? backendFieldErrors.password) && (
           <p className="text-xs text-red-500">
-            {fieldErrors.password ?? backendFieldErrors?.password}
+            {fieldErrors.password ?? backendFieldErrors.password}
           </p>
         )}
       </div>

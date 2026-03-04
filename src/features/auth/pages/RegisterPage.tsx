@@ -1,8 +1,21 @@
 import { Link } from 'react-router-dom';
 import { LogoMark } from '@/components/brand/Logo';
 import { RegisterForm } from '../components/RegisterForm';
+import { useRegister } from '../hooks/useRegister';
 
+/**
+ * Composition root for the registration flow.
+ *
+ * Open/Closed Principle: RegisterPage wires the useRegister hook into
+ * RegisterForm via props. RegisterForm can be extended or tested without
+ * modifying this page, and this page does not know about form internals.
+ *
+ * Dependency Inversion: RegisterForm receives abstractions (callbacks + state),
+ * not a concrete hook — the hook lives here, at the boundary layer.
+ */
 export function RegisterPage() {
+  const { register, isLoading, error, clearError } = useRegister();
+
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-white px-4 py-12">
       {/* Background gradient orbs */}
@@ -25,8 +38,13 @@ export function RegisterPage() {
           </p>
         </div>
 
-        {/* Form */}
-        <RegisterForm />
+        {/* Form — receives hook state via props (Dependency Inversion) */}
+        <RegisterForm
+          onSubmit={register}
+          isLoading={isLoading}
+          error={error}
+          onClearError={clearError}
+        />
 
         {/* Footer */}
         <p className="mt-8 text-center text-xs text-muted-foreground">

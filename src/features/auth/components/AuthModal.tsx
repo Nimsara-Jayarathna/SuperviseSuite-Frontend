@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '@/lib/cn';
+import { useRegister } from '../hooks/useRegister';
 import { LoginForm } from './LoginForm';
 import { RegisterForm } from './RegisterForm';
 
@@ -15,6 +16,7 @@ type AuthModalProps = {
 export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalProps) {
   const [activeTab, setActiveTab] = useState<AuthTab>(initialTab);
   const dialogRef = useRef<HTMLDivElement>(null);
+  const { register, isLoading: registerLoading, error: registerError, clearError } = useRegister();
 
   // Sync active tab when parent re-opens the modal with a different tab
   useEffect(() => {
@@ -100,7 +102,13 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
         {activeTab === 'login' ? (
           <LoginForm onSuccess={onClose} />
         ) : (
-          <RegisterForm onSuccess={onClose} />
+          <RegisterForm
+            onSubmit={register}
+            isLoading={registerLoading}
+            error={registerError}
+            onClearError={clearError}
+            onSuccess={onClose}
+          />
         )}
       </div>
     </div>,
