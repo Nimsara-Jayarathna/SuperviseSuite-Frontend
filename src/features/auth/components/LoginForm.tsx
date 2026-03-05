@@ -1,53 +1,56 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { useAuth } from '../hooks/useAuth';
+import type { ApiError } from '@/types';
+import type { LoginRequest } from '../types';
+import {
+  getLoginGeneralError,
+  mapBackendLoginFieldErrors,
+  type LoginFieldErrors,
+  validateLoginForm,
+} from '../utils/loginValidation';
 
-type FieldErrors = { email?: string; password?: string };
-
-/** Client-side validation — returns an error map; empty object means valid. */
-function validate(email: string, password: string): FieldErrors {
-  const errors: FieldErrors = {};
-  if (!email) errors.email = 'Email is required.';
-  else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.email = 'Enter a valid email.';
-  if (!password) errors.password = 'Password is required.';
-  else if (password.length < 8) errors.password = 'Password must be at least 8 characters.';
-  return errors;
-}
-
-type LoginFormProps = {
+/**
+ * Props follow the Dependency Inversion Principle:
+ * LoginForm depends on abstractions (callbacks + data), not on a concrete
+ * hook implementation. This makes the component independently testable and
+ * reusable in any context that can provide these props.
+ */
+export type LoginFormProps = {
+  /** Called with the validated payload — caller decides what to do with it. */
+  onSubmit: (data: LoginRequest) => Promise<void>;
+  isLoading: boolean;
+  error: ApiError | null;
+  onClearError: () => void;
   onSuccess?: () => void;
 };
 
-export function LoginForm({ onSuccess }: LoginFormProps) {
-  const { login, isLoading, error, clearError } = useAuth();
-
+export function LoginForm({ onSubmit, isLoading, error, onClearError, onSuccess }: LoginFormProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [fieldErrors, setFieldErrors] = useState<LoginFieldErrors>({});
 
-  // Map backend field-level errors onto individual fields.
-  const backendFieldErrors = error?.details.reduce<FieldErrors>((acc, d) => {
-    if (d.field === 'email' || d.field === 'password') acc[d.field] = d.issue;
-    return acc;
-  }, {});
-
-  // Show a general banner only for non-field-level errors.
-  const generalError = error && error.code !== 'VALIDATION_ERROR' ? error.message : null;
+  // Derived from the ApiError using pure utility functions (Single Responsibility).
+  const backendFieldErrors = mapBackendLoginFieldErrors(error);
+  const generalError = getLoginGeneralError(error);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    clearError();
+    onClearError();
 
-    const errors = validate(email, password);
+    const errors = validateLoginForm(email, password);
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
       return;
     }
     setFieldErrors({});
 
-    await login({ email, password });
-    onSuccess?.();
+    try {
+      await onSubmit({ email, password });
+      onSuccess?.();
+    } catch {
+      // errors are handled by the caller (useAuth) — do not re-throw
+    }
   }
 
   const emailError = fieldErrors.email ?? backendFieldErrors?.email;

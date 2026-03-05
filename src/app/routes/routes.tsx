@@ -112,6 +112,9 @@ export function AppRoutes() {
       <Route path="/projects" element={<LegacyProjectListRedirect />} />
       <Route path="/projects/new" element={<LegacyProjectCreateRedirect />} />
       <Route path="/projects/:projectId" element={<LegacyProjectDetailsRedirect />} />
+
+      {/* Catch-all — authenticated users go to their role home, others to /login */}
+      <Route path="*" element={<LegacyDashboardRedirect />} />
     </Routes>
   );
 }

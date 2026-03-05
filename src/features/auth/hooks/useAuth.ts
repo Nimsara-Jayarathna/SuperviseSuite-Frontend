@@ -4,13 +4,8 @@ import { isApiException } from '@/services/apiClient';
 import { tokenStorage } from '@/services/tokenStorage';
 import type { ApiError } from '@/types';
 import { authApi } from '../api/authApi';
-import type { AuthUser, LoginRequest, RegisterRequest } from '../types';
-
-/** Role → home route mapping, used after a successful login/register. */
-const ROLE_HOME: Record<string, string> = {
-  SUPERVISOR: '/supervisor',
-  STUDENT: '/student/projects',
-};
+import type { AuthUser, LoginResponse, LoginRequest } from '../types';
+import { ROLE_HOME } from '@/app/routes/roleHome';
 
 type AuthState = {
   user: AuthUser | null;
@@ -53,9 +48,7 @@ export function useAuth() {
   async function login(body: LoginRequest): Promise<void> {
     setLoading();
     try {
-      const res = await authApi.login(body);
-      tokenStorage.setAccessToken(res.accessToken);
-      tokenStorage.setRefreshToken(res.refreshToken);
+      const res: LoginResponse = await authApi.login(body);
       tokenStorage.setUser(res.user);
       setUser(res.user);
       navigate(ROLE_HOME[res.user.role] ?? '/');
@@ -65,20 +58,13 @@ export function useAuth() {
     }
   }
 
-  async function register(body: RegisterRequest): Promise<void> {
-    setLoading();
+  async function logout(): Promise<void> {
     try {
-      await authApi.register(body);
-      // Registration only creates the account — the student must sign in separately.
-      setState((s) => ({ ...s, isLoading: false, error: null }));
-      navigate('/login');
-    } catch (err) {
-      if (isApiException(err)) setError(err.apiError);
-      else setUnexpectedError();
+      await authApi.logout();
+    } catch {
+      // Swallow errors — even if the server call fails the browser will have
+      // cleared the cookies (Max-Age=0) and we still wipe local state.
     }
-  }
-
-  function logout(): void {
     tokenStorage.clearAll();
     setState({ user: null, isLoading: false, error: null });
     navigate('/');
@@ -93,7 +79,6 @@ export function useAuth() {
     isLoading: state.isLoading,
     error: state.error,
     login,
-    register,
     logout,
     clearError,
   };

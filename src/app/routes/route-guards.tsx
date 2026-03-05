@@ -1,23 +1,19 @@
 import { Navigate, Outlet } from 'react-router-dom';
 import { tokenStorage } from '@/services/tokenStorage';
-
-// Role → home route mapping, shared across all guards.
-const ROLE_HOME: Record<string, string> = {
-  SUPERVISOR: '/supervisor',
-  STUDENT: '/student/projects',
-};
+import { ROLE_HOME } from './roleHome';
 
 // UI-only preview mode: allow authenticated users to inspect either role's shell locally.
+// Enabled only in dev builds (import.meta.env.DEV = true during `vite dev`, false after `vite build`).
 // Backend authorization must still enforce the real role restrictions.
-const ALLOW_CROSS_ROLE_PREVIEW = true;
+const ALLOW_CROSS_ROLE_PREVIEW = import.meta.env.DEV;
 
 /**
  * Blocks unauthenticated users — redirects to /login.
  * Use for any route that requires a valid session.
  */
 export function RequireAuth() {
-  const token = tokenStorage.getAccessToken();
-  if (!token) return <Navigate to="/login" replace />;
+  const user = tokenStorage.getUser();
+  if (!user) return <Navigate to="/login" replace />;
   return <Outlet />;
 }
 
