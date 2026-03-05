@@ -17,7 +17,15 @@ type AppShellProps = {
   children: ReactNode;
 };
 
-export function AppShell({ role, homePath, navItems, userName, userEmail, onLogout, children }: AppShellProps) {
+export function AppShell({
+  role,
+  homePath,
+  navItems,
+  userName,
+  userEmail,
+  onLogout,
+  children,
+}: AppShellProps) {
   return (
     <div className="relative min-h-screen overflow-hidden bg-slate-50">
       <div className="pointer-events-none absolute -left-24 top-16 h-72 w-72 rounded-full bg-sky-200/40 blur-3xl" />

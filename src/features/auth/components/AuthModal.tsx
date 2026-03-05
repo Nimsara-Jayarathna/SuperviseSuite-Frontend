@@ -18,8 +18,18 @@ type AuthModalProps = {
 export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalProps) {
   const [activeTab, setActiveTab] = useState<AuthTab>(initialTab);
   const dialogRef = useRef<HTMLDivElement>(null);
-  const { login, isLoading: loginLoading, error: loginError, clearError: clearLoginError } = useAuth();
-  const { register, isLoading: registerLoading, error: registerError, clearError: clearRegisterError } = useRegister();
+  const {
+    login,
+    isLoading: loginLoading,
+    error: loginError,
+    clearError: clearLoginError,
+  } = useAuth();
+  const {
+    register,
+    isLoading: registerLoading,
+    error: registerError,
+    clearError: clearRegisterError,
+  } = useRegister();
 
   // Sync active tab when parent re-opens the modal with a different tab
   useEffect(() => {

@@ -39,12 +39,7 @@ export function LoginPage() {
         </div>
 
         {/* Form — receives hook state via props (Dependency Inversion) */}
-        <LoginForm
-          onSubmit={login}
-          isLoading={isLoading}
-          error={error}
-          onClearError={clearError}
-        />
+        <LoginForm onSubmit={login} isLoading={isLoading} error={error} onClearError={clearError} />
 
         {/* Footer */}
         <p className="mt-8 text-center text-xs text-muted-foreground">

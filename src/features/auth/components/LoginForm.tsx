@@ -25,13 +25,7 @@ export type LoginFormProps = {
   onSuccess?: () => void;
 };
 
-export function LoginForm({
-  onSubmit,
-  isLoading,
-  error,
-  onClearError,
-  onSuccess,
-}: LoginFormProps) {
+export function LoginForm({ onSubmit, isLoading, error, onClearError, onSuccess }: LoginFormProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fieldErrors, setFieldErrors] = useState<LoginFieldErrors>({});

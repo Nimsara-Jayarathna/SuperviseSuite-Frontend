@@ -36,9 +36,7 @@ export function validateLoginForm(email: string, password: string): LoginFieldEr
  *
  * @returns A field-keyed error map, or an empty object when there are no details.
  */
-export function mapBackendLoginFieldErrors(
-  error: ApiError | null | undefined,
-): LoginFieldErrors {
+export function mapBackendLoginFieldErrors(error: ApiError | null | undefined): LoginFieldErrors {
   if (!error?.details?.length) return {};
   return error.details.reduce<LoginFieldErrors>((acc, d) => {
     if (d.field === 'email' || d.field === 'password') {
