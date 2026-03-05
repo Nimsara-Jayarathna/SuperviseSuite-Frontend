@@ -92,7 +92,7 @@ CI is intentionally not configured yet. In a later phase, automated pipelines wi
 - Legacy aliases (`/dashboard`, `/project`, `/project/new`, `/project/:projectId`, `/projects`, `/projects/new`, `/projects/:projectId`) redirect into the correct student or supervisor route based on the stored user.
 - Student and supervisor routes share the same top-bar shell (`AppShell` + `TopBar`) and the same shared button system.
 - Student and supervisor workspaces are currently mock-data-backed for UI rendering.
-- Route guards support a UI-only cross-role preview mode in local development. This is not a security boundary and must be enforced by the backend.
+- Route guards enforce real role restrictions in production builds. Cross-role preview is active only in dev builds (`import.meta.env.DEV`). This is a UI-only boundary; authorization is also enforced by the backend.
 
 ## UI Architecture Notes
 

@@ -72,7 +72,8 @@ Always use this before accessing `err.apiError`.
 | `apiClient.del<T>(path)` | DELETE request |
 
 All methods:
-- Automatically attach `Authorization: Bearer <token>` when a token is present in `tokenStorage`
+- Send cookies automatically via `credentials: 'include'` — the access token travels as an `HttpOnly` cookie, never as an `Authorization` header
+- On a `401` response, make one silent call to `POST /api/auth/refresh`; if that succeeds the original request is retried transparently; if it fails `tokenStorage.clearAll()` is called and the browser is redirected to `/login`
 - Return `Promise<T>` on success
 - Throw `ApiException` on all errors (non-2xx responses and network failures)
 - Build a synthetic `SERVICE_UNAVAILABLE` `ApiError` when the network is unreachable
