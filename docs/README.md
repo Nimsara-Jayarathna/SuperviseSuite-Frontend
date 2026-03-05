@@ -1,5 +1,27 @@
 # Documentation
 
-This directory is reserved for project documentation.
+Technical notes, architecture summaries, and feature guides for the SuperviseSuite frontend.
 
-Use it for technical notes, architecture summaries, onboarding guides, and other non-code documentation.
+## Index
+
+### Features
+
+| File | Description |
+|------|-------------|
+| [features/landing.md](features/landing.md) | Landing page route, shell, hero composition, and CTA behaviour |
+| [features/auth.md](features/auth.md) | Auth pages, forms, `useAuth`, `tokenStorage`, and guard behaviour |
+| [features/student.md](features/student.md) | Student routes, API-backed project list flow, current mock-backed detail flow, and empty state behaviour |
+| [features/supervisor.md](features/supervisor.md) | Supervisor routes, dashboard, projects, create flow, and detail views |
+| [features/brand.md](features/brand.md) | Logo component and SVG asset usage |
+
+### UI
+
+| File | Description |
+|------|-------------|
+| [ui/button-system.md](ui/button-system.md) | Shared button contract and variant guidance |
+
+### API
+
+| File | Description |
+|------|-------------|
+| [api/error-handling.md](api/error-handling.md) | Frontend error contract — `ApiError` types, `apiClient`, `ErrorState` |

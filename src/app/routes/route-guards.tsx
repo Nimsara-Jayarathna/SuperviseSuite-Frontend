@@ -1,5 +1,41 @@
-import type { ReactNode } from 'react';
+import { Navigate, Outlet } from 'react-router-dom';
+import { tokenStorage } from '@/services/tokenStorage';
+import { ROLE_HOME } from './roleHome';
 
-export function RouteGuardPlaceholder({ children }: { children: ReactNode }) {
-  return <>{children}</>;
+// UI-only preview mode: allow authenticated users to inspect either role's shell locally.
+// Enabled only in dev builds (import.meta.env.DEV = true during `vite dev`, false after `vite build`).
+// Backend authorization must still enforce the real role restrictions.
+const ALLOW_CROSS_ROLE_PREVIEW = import.meta.env.DEV;
+
+/**
+ * Blocks unauthenticated users — redirects to /login.
+ * Use for any route that requires a valid session.
+ */
+export function RequireAuth() {
+  const user = tokenStorage.getUser();
+  if (!user) return <Navigate to="/login" replace />;
+  return <Outlet />;
+}
+
+/**
+ * Blocks users without the required role.
+ * Security note: this is a UI-only guard — the backend must also enforce
+ * role-based access on every protected API endpoint.
+ */
+export function RequireRole({ role }: { role: string }) {
+  const user = tokenStorage.getUser();
+  if (!user) return <Navigate to="/login" replace />;
+  if (ALLOW_CROSS_ROLE_PREVIEW) return <Outlet />;
+  if (user.role !== role) return <Navigate to={ROLE_HOME[user.role] ?? '/'} replace />;
+  return <Outlet />;
+}
+
+/**
+ * Blocks authenticated users from guest-only pages (/login, /register).
+ * Redirects them to their role home instead.
+ */
+export function RequireGuest() {
+  const user = tokenStorage.getUser();
+  if (!user) return <Outlet />;
+  return <Navigate to={ROLE_HOME[user.role] ?? '/'} replace />;
 }
