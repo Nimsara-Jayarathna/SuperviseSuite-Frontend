@@ -1,15 +1,25 @@
 import { useEffect, useState } from 'react';
 import { isApiException } from '@/services/apiClient';
 import type { ApiError } from '@/types';
-import { studentApi } from '../api/studentApi';
-import type { StudentProjectSummary } from '../types';
+import { supervisorApi } from '../api/supervisorApi';
+import type { SupervisorProjectSummary } from '../types';
 
-export function useStudentProjects() {
-  const [state, setState] = useState<{
-    projects: StudentProjectSummary[];
-    isLoading: boolean;
-    error: ApiError | null;
-  }>({
+type SupervisorProjectsState = {
+  projects: SupervisorProjectSummary[];
+  isLoading: boolean;
+  error: ApiError | null;
+};
+
+let cachedProjects: SupervisorProjectSummary[] | null = null;
+let inFlightProjectsRequest: Promise<SupervisorProjectSummary[]> | null = null;
+
+export function invalidateSupervisorProjectsCache() {
+  cachedProjects = null;
+  inFlightProjectsRequest = null;
+}
+
+export function useSupervisorProjects() {
+  const [state, setState] = useState<SupervisorProjectsState>({
     projects: [],
     isLoading: true,
     error: null,
@@ -38,7 +48,7 @@ export function useStudentProjects() {
         return;
       }
 
-      inFlightProjectsRequest = studentApi.getProjects();
+      inFlightProjectsRequest = supervisorApi.getProjects();
       const projects = await inFlightProjectsRequest;
       cachedProjects = projects;
       inFlightProjectsRequest = null;
@@ -80,6 +90,3 @@ export function useStudentProjects() {
     reload: () => loadProjects(true),
   };
 }
-
-let cachedProjects: StudentProjectSummary[] | null = null;
-let inFlightProjectsRequest: Promise<StudentProjectSummary[]> | null = null;

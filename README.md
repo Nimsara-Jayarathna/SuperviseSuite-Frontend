@@ -2,7 +2,7 @@
 
 React + Vite + Tailwind CSS frontend for SuperviseSuite.
 
-This branch is now UI-complete enough to cover the public landing flow, auth screens, the student workspace, and the supervisor workspace. The app is still frontend-first: several screens are powered by local mock data and UI-only route guards while backend integration is still being completed.
+This branch is now UI-complete enough to cover the public landing flow, auth screens, the student workspace, and the supervisor workspace. Core project flows are backend-connected, while some dashboard/advanced workflow sections still use local mock data and UI-only route guards.
 
 ## Local Development
 
@@ -91,8 +91,9 @@ CI is intentionally not configured yet. In a later phase, automated pipelines wi
 - Supervisor UI routes are implemented for `/supervisor`, `/supervisor/dashboard`, `/supervisor/projects`, `/supervisor/projects/new`, and `/supervisor/projects/:projectId`.
 - Legacy aliases (`/dashboard`, `/project`, `/project/new`, `/project/:projectId`, `/projects`, `/projects/new`, `/projects/:projectId`) redirect into the correct student or supervisor route based on the stored user.
 - Student and supervisor routes share the same top-bar shell (`AppShell` + `TopBar`) and the same shared button system.
-- Student and supervisor workspaces are currently mock-data-backed for UI rendering.
-- Route guards enforce real role restrictions in production builds. Cross-role preview is active only in dev builds (`import.meta.env.DEV`). This is a UI-only boundary; authorization is also enforced by the backend.
+- Student project list/detail and supervisor dashboard/list/detail/create flows are backend-connected.
+- Some advanced workflow panels (for example meetings/files/action-items as full modules) remain out of scope or partially mock-derived until dedicated APIs are added.
+- Route guards support a UI-only cross-role preview mode in local development. This is not a security boundary and must be enforced by the backend.
 
 ## UI Architecture Notes
 

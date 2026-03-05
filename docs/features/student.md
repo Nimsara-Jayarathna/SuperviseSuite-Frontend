@@ -1,54 +1,111 @@
 # Student Feature
 
-Student workspace UI for browsing assigned projects and reviewing project details.
+Student workspace for browsing assigned projects and reading project detail.
 
 ## Routes
 
 | Path | Component | Layout |
 |------|-----------|--------|
-| `/student` | Redirects to `/student/projects` | `StudentLayout` |
+| `/student` | Redirect to `/student/projects` | `StudentLayout` |
 | `/student/projects` | `StudentProjectsPage` | `StudentLayout` |
 | `/student/projects/:projectId` | `StudentProjectDetailsPage` | `StudentLayout` |
 
-## Route Behaviour
+## Route Behavior
 
 - Protected by `RequireRole("STUDENT")`.
-- In the current local preview setup, authenticated users can still inspect the student shell even if their stored role is not `STUDENT`.
-- Legacy aliases such as `/project`, `/projects`, and `/project/:projectId` resolve into student routes when the stored user is not a supervisor.
+- Legacy aliases (`/project`, `/projects`, `/project/:projectId`) resolve into student routes for non-supervisor stored users.
+- Guard behavior remains UI-level only; backend authorization is the security boundary.
 
-## Current UX Structure
+---
 
-- Shared app shell via `AppShell` and `TopBar`
-- Project list page with `PageHeader`, inline search, compact project cards, and `EmptyState`
-- Project detail page with:
-  - metadata badges
-  - metric row
-  - shared `PageTabs`
-  - tabbed sections for `overview`, `team`, `activity`, `meetings`, `action-items`, and `files`
+## API Coverage
+
+Student pages currently use:
+
+- `GET /api/student/projects`
+- `GET /api/student/projects/{projectId}`
+
+---
 
 ## Key Files
 
 | File | Purpose |
 |------|---------|
-| `src/features/student/pages/StudentProjectsPage.tsx` | Student project list + search + empty state |
-| `src/features/student/pages/StudentProjectDetailsPage.tsx` | Student project workspace |
-| `src/features/student/components/StudentProjectCard.tsx` | Compact list card used on `/student/projects` |
-| `src/features/student/hooks/useStudentProjects.ts` | Local mock-backed project access hook |
-| `src/features/student/data/mockStudentProjects.ts` | UI mock data source |
-| `src/features/student/types.ts` | Feature-local project and tab types |
+| `src/features/student/pages/StudentProjectsPage.tsx` | API-backed list page with search + loading/error/empty states |
+| `src/features/student/pages/StudentProjectDetailsPage.tsx` | API-backed detail page |
+| `src/features/student/components/StudentProjectCard.tsx` | Clickable list card (full-card navigation) |
+| `src/features/student/components/StudentProjectCardSkeleton.tsx` | List loading placeholder |
+| `src/features/student/components/StudentProjectDetailsSkeleton.tsx` | Detail loading placeholder |
+| `src/features/student/hooks/useStudentProjects.ts` | List hook |
+| `src/features/student/hooks/useStudentProject.ts` | Detail hook |
+| `src/features/student/api/studentApi.ts` | Student API client |
+| `src/features/student/types.ts` | Student list/detail API models |
 
-## Empty States
+---
 
-`StudentProjectsPage` uses the shared `EmptyState` component.
+## Projects List (`/student/projects`)
 
-- Base empty case: no visible projects
-- Copy: "No projects found"
-- Description: "You don’t have any assigned projects matching your filters yet."
-- Action:
-  - `Clear filters` when a search query is active
-  - `Refresh` when the list is empty without an active query
+### Data source
+
+- Uses `useStudentProjects`
+- Calls `GET /api/student/projects`
+
+### Current card behavior
+
+- Full card click opens `/student/projects/:projectId`
+- Status + progress shown in compact top row
+- Long text fields are truncated with tooltip fallback
+- Legacy action footer buttons removed
+
+### Search/filter behavior
+
+- Local search by title/summary/supervisor/batch/semester
+- Uses deferred query for responsive typing
+
+### UX states
+
+- Loading: `StudentProjectCardSkeleton`
+- Error: `ErrorState` with retry
+- Empty: `EmptyState` with clear/refresh action depending on filter state
+
+---
+
+## Project Detail (`/student/projects/:projectId`)
+
+### Data source
+
+- Uses `useStudentProject`
+- Calls `GET /api/student/projects/{projectId}`
+
+### Tabs
+
+- `Overview`
+- `Team`
+- `Milestones`
+
+### Header chips
+
+- Status chip aligned with milestone/team/progress pills
+- Metadata chips are read-only for student role
+
+### Detail sections
+
+- Overview:
+  - batch, semester, health note, primary milestone summary
+- Team:
+  - assigned member cards (name/email/member role/registration number)
+- Milestones:
+  - milestone list with sequence, status, due date, description
+
+### UX states
+
+- Loading: `StudentProjectDetailsSkeleton`
+- API errors: `ErrorState`
+- `NOT_FOUND`: dedicated project-not-found screen with back link
+
+---
 
 ## Notes
 
-- This feature is currently UI-only and mock-data-backed.
-- The detail page uses consistent minimum-height tab panels so short tabs do not collapse the page layout too aggressively when switching views.
+- Student list and detail routes are backend-connected.
+- Student mock project seed data is removed from active list/detail rendering.
