@@ -1,114 +1,103 @@
 import { Link } from 'react-router-dom';
-import { buttonStyles } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
-import { ProjectCardFooter } from '@/components/ui/ProjectCardFooter';
 import { StatusBadge } from '@/components/ui/StatusBadge';
-import type { SupervisorProject } from '../types';
+import type { SupervisorProjectSummary } from '../types';
 
 type SupervisorProjectCardProps = {
-  project: SupervisorProject;
+  project: SupervisorProjectSummary;
 };
 
-function lifecycleTone(project: SupervisorProject) {
-  if (project.lifecycle === 'ACTIVE') return 'success';
-  if (project.lifecycle === 'AT_RISK') return 'warning';
-  if (project.lifecycle === 'BEHIND') return 'danger';
-  if (project.lifecycle === 'COMPLETED') return 'neutral';
+function lifecycleTone(project: SupervisorProjectSummary) {
+  if (project.lifecycleStatus === 'ACTIVE') return 'success';
+  if (project.lifecycleStatus === 'AT_RISK') return 'warning';
+  if (project.lifecycleStatus === 'BEHIND') return 'danger';
+  if (project.lifecycleStatus === 'COMPLETED') return 'neutral';
   return 'student';
 }
 
 export function SupervisorProjectCard({ project }: SupervisorProjectCardProps) {
-  const openActionCount = project.actionItems.filter((item) => item.status !== 'Done').length;
-  const issueCount = project.integrations.filter((item) => item.status !== 'Connected').length;
-  const visibleMembers = project.members.slice(0, 3);
-  const overflowCount = Math.max(0, project.members.length - visibleMembers.length);
+  const title = project.title;
+  const summary = project.summary ?? 'No summary provided yet.';
+  const batch = project.batch ?? 'Not set';
+  const healthNote = project.healthNote ?? 'No health note recorded yet.';
 
   return (
-    <Card className="flex h-full flex-col transition-shadow hover:shadow-md" padding="sm">
-      <div className="grid min-h-[5.75rem] grid-cols-[minmax(0,1fr)_auto] gap-2">
-        <div className="min-w-0">
-          <StatusBadge tone={lifecycleTone(project)} className="tracking-[0.08em]">
-            {project.lifecycle.replace('_', ' ')}
-          </StatusBadge>
-          <h2 className="mt-1 text-lg font-semibold text-foreground">{project.title}</h2>
-          <p
-            className="mt-0.5 overflow-hidden text-sm leading-[1.35rem] text-muted-foreground"
-            style={{
-              display: '-webkit-box',
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: 'vertical',
-            }}
-          >
-            {project.summary}
-          </p>
-        </div>
+    <Link
+      to={`/supervisor/projects/${project.id}`}
+      className="group flex h-full flex-col rounded-3xl border border-border bg-white p-4 shadow-sm transition-shadow hover:shadow-md focus:outline-none focus:ring-2 focus:ring-sky-200"
+    >
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2">
+        <h2 className="truncate text-lg font-semibold text-foreground" title={title}>
+          {title}
+        </h2>
 
-        <div className="flex items-center">
+        <div className="flex items-center gap-2">
+          <StatusBadge tone={lifecycleTone(project)} className="tracking-[0.08em]">
+            {project.lifecycleStatus.replace('_', ' ')}
+          </StatusBadge>
           <p className="rounded-2xl bg-slate-50 px-2.5 py-1 text-sm font-semibold text-foreground">
-            {project.progress}%
+            {project.progressPercent ?? 0}%
           </p>
         </div>
       </div>
 
-      <div className="mt-3 grid gap-2 sm:grid-cols-3">
-        <div className="flex min-h-16 flex-col justify-center rounded-2xl bg-slate-50 px-3 py-1.5">
+      <p
+        className="mt-1.5 overflow-hidden text-sm leading-[1.35rem] text-muted-foreground"
+        style={{
+          display: '-webkit-box',
+          WebkitLineClamp: 2,
+          WebkitBoxOrient: 'vertical',
+        }}
+        title={summary}
+      >
+        {summary}
+      </p>
+
+      <div className="mt-2.5 grid gap-2 sm:grid-cols-3">
+        <div className="flex min-h-14 flex-col justify-center rounded-2xl bg-slate-50 px-3 py-1.5">
           <p className="truncate text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
             Members
           </p>
-          <p className="mt-0.5 text-[15px] font-semibold text-foreground">
-            {project.members.length}
+          <p className="mt-0.5 truncate text-[15px] font-semibold text-foreground">
+            {project.memberCount}
           </p>
         </div>
-        <div className="flex min-h-16 flex-col justify-center rounded-2xl bg-slate-50 px-3 py-1.5">
+        <div className="flex min-h-14 flex-col justify-center rounded-2xl bg-slate-50 px-3 py-1.5">
           <p className="truncate text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
-            Open Actions
+            Milestone
           </p>
-          <p className="mt-0.5 text-[15px] font-semibold text-foreground">{openActionCount}</p>
+          <p
+            className="mt-0.5 truncate text-[15px] font-semibold text-foreground"
+            title={project.milestoneDate ?? 'Not set'}
+          >
+            {project.milestoneDate ? project.milestoneDate : 'Not set'}
+          </p>
         </div>
-        <div className="flex min-h-16 flex-col justify-center rounded-2xl bg-slate-50 px-3 py-1.5">
+        <div className="flex min-h-14 flex-col justify-center rounded-2xl bg-slate-50 px-3 py-1.5">
           <p className="truncate text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
-            Integration Flags
+            Batch
           </p>
-          <p className="mt-0.5 text-[15px] font-semibold text-foreground">{issueCount}</p>
+          <p className="mt-0.5 truncate text-[15px] font-semibold text-foreground" title={batch}>
+            {batch}
+          </p>
         </div>
       </div>
 
-      <div className="mt-3 min-h-10 max-h-10 overflow-hidden">
-        <div className="flex flex-wrap gap-1.5">
-          {visibleMembers.map((member) => (
-            <span
-              key={`${project.id}-${member.id}`}
-              className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-medium text-foreground"
-            >
-              {member.name}
-            </span>
-          ))}
-          {overflowCount > 0 ? (
-            <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-              +{overflowCount}
-            </span>
-          ) : null}
-        </div>
+      <div className="mt-2.5 min-h-10 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
+        <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+          Health note
+        </p>
+        <p
+          className="mt-1 overflow-hidden text-xs leading-5 text-muted-foreground"
+          style={{
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+          }}
+          title={healthNote}
+        >
+          {healthNote}
+        </p>
       </div>
-
-      <ProjectCardFooter
-        primaryAction={
-          <Link
-            to={`/supervisor/projects/${project.id}`}
-            className={buttonStyles({ variant: 'primary', size: 'md', className: 'w-full' })}
-          >
-            Open workspace
-          </Link>
-        }
-        secondaryAction={
-          <Link
-            to={`/supervisor/projects/${project.id}?tab=action-items`}
-            className={buttonStyles({ variant: 'secondary', size: 'md', className: 'w-full' })}
-          >
-            Action items
-          </Link>
-        }
-      />
-    </Card>
+    </Link>
   );
 }
