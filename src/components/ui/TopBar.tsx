@@ -24,6 +24,7 @@ type PrivateTopBarProps = {
   userName: string;
   userEmail: string;
   onLogout: () => void;
+  isLogoutPending?: boolean;
 };
 
 type PublicTopBarProps = {
@@ -61,7 +62,7 @@ export function TopBar(props: TopBarProps) {
     );
   }
 
-  const { role, homePath, navItems, userName, userEmail, onLogout } = props;
+  const { role, homePath, navItems, userName, userEmail, onLogout, isLogoutPending } = props;
 
   return (
     <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/85 backdrop-blur">
@@ -99,8 +100,14 @@ export function TopBar(props: TopBarProps) {
                 <p className="font-medium text-foreground">{userName}</p>
                 <p className="text-muted-foreground">{userEmail}</p>
               </div>
-              <Button variant="secondary" size="md" className="font-medium" onClick={onLogout}>
-                Log out
+              <Button
+                variant="secondary"
+                size="md"
+                className="font-medium"
+                onClick={onLogout}
+                disabled={isLogoutPending}
+              >
+                {isLogoutPending ? 'Logging out…' : 'Log out'}
               </Button>
             </div>
           </div>

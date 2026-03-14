@@ -197,7 +197,7 @@ export function RegisterForm({
           id="reg-confirm-password"
           type="password"
           autoComplete="new-password"
-          placeholder="••••••••"
+          placeholder="Re-enter your password"
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
           className={inputClass}
