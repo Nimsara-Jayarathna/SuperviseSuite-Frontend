@@ -23,7 +23,7 @@ const dateTimeFormatter = new Intl.DateTimeFormat('en', {
   minute: '2-digit',
 });
 
-const TABS: StudentProjectDetailTab[] = ['overview', 'team', 'milestones'];
+const BASE_TABS: StudentProjectDetailTab[] = ['overview', 'team', 'milestones'];
 
 function memberDisplayName(member: StudentProjectDetailMember) {
   return `${member.firstName ?? ''} ${member.lastName ?? ''}`.trim() || member.email;
@@ -45,9 +45,6 @@ export function StudentProjectDetailsPage() {
   const { projectId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const { project, isLoading, error, reload } = useStudentProject(projectId);
-
-  const requestedTab = searchParams.get('tab') as StudentProjectDetailTab | null;
-  const activeTab = requestedTab && TABS.includes(requestedTab) ? requestedTab : 'overview';
 
   function handleTabChange(tab: StudentProjectDetailTab) {
     const nextParams = new URLSearchParams(searchParams);
@@ -87,6 +84,12 @@ export function StudentProjectDetailsPage() {
   if (!project) {
     return null;
   }
+
+  const requestedTab = searchParams.get('tab') as StudentProjectDetailTab | null;
+  const tabs: StudentProjectDetailTab[] = project.repositoryUrl
+    ? [...BASE_TABS, 'github']
+    : BASE_TABS;
+  const activeTab = requestedTab && tabs.includes(requestedTab) ? requestedTab : 'overview';
 
   return (
     <div className="space-y-6">
@@ -154,7 +157,7 @@ export function StudentProjectDetailsPage() {
       </section>
 
       <PageTabs
-        items={TABS.map((tab) => ({
+        items={tabs.map((tab) => ({
           value: tab,
           label: toTabLabel(tab),
         }))}
@@ -191,23 +194,6 @@ export function StudentProjectDetailsPage() {
                 </div>
               </div>
             </div>
-
-            {project.repositoryUrl ? (
-              <div className="rounded-3xl border border-border bg-white p-6 shadow-sm">
-                <h2 className="text-lg font-semibold text-foreground">GitHub repository</h2>
-                <div className="mt-4 space-y-2">
-                  <a
-                    href={project.repositoryUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm font-medium text-sky-700 underline-offset-2 hover:underline"
-                  >
-                    {project.repositoryUrl}
-                  </a>
-                  <p className="text-xs text-muted-foreground">Repository managed by supervisor</p>
-                </div>
-              </div>
-            ) : null}
           </section>
 
           <aside className="rounded-3xl border border-border bg-white p-6 shadow-sm">
@@ -277,6 +263,23 @@ export function StudentProjectDetailsPage() {
           ) : (
             <p className="mt-4 text-sm text-muted-foreground">No milestones recorded yet.</p>
           )}
+        </section>
+      ) : null}
+
+      {activeTab === 'github' && project.repositoryUrl ? (
+        <section className="rounded-3xl border border-border bg-white p-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-foreground">GitHub repository</h2>
+          <div className="mt-4 space-y-2">
+            <a
+              href={project.repositoryUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm font-medium text-sky-700 underline-offset-2 hover:underline"
+            >
+              {project.repositoryUrl}
+            </a>
+            <p className="text-xs text-muted-foreground">Repository managed by supervisor</p>
+          </div>
         </section>
       ) : null}
     </div>
