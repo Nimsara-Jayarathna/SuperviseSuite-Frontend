@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { buttonStyles } from '@/components/ui/Button';
+import { RequestStateModal } from '@/components/ui/RequestStateModal';
 import { isApiException } from '@/services/apiClient';
 import { supervisorApi } from '../../api/supervisorApi';
 import type { SupervisorProjectDetail } from '../../types';
@@ -25,8 +26,17 @@ export function RepositorySection({ project, onUpdate }: RepositorySectionProps)
   const [isSaving, setIsSaving] = useState(false);
   const [urlInput, setUrlInput] = useState(project.repositoryUrl ?? '');
   const [validationError, setValidationError] = useState<string | null>(null);
-  const [saveError, setSaveError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [requestModal, setRequestModal] = useState<{
+    isOpen: boolean;
+    status: 'loading' | 'success' | 'error';
+    title: string;
+    message: string;
+  }>({
+    isOpen: false,
+    status: 'loading',
+    title: '',
+    message: '',
+  });
 
   const hasRepository = Boolean(project.repositoryUrl);
 
@@ -37,7 +47,6 @@ export function RepositorySection({ project, onUpdate }: RepositorySectionProps)
 
     setUrlInput(project.repositoryUrl ?? '');
     setValidationError(null);
-    setSaveError(null);
   }, [project.repositoryUrl, isEditing]);
 
   const hasChanges = useMemo(() => {
@@ -49,24 +58,23 @@ export function RepositorySection({ project, onUpdate }: RepositorySectionProps)
   function handleStartEdit() {
     setUrlInput(project.repositoryUrl ?? '');
     setValidationError(null);
-    setSaveError(null);
-    setSuccessMessage(null);
     setIsEditing(true);
   }
 
   function handleCancelEdit() {
     setUrlInput(project.repositoryUrl ?? '');
     setValidationError(null);
-    setSaveError(null);
     setIsEditing(false);
+  }
+
+  function closeRequestModal() {
+    setRequestModal((current) => ({ ...current, isOpen: false }));
   }
 
   async function handleSaveRepository() {
     const repositoryUrl = toRepositoryPayload(urlInput);
 
     setValidationError(null);
-    setSaveError(null);
-    setSuccessMessage(null);
 
     if (repositoryUrl && !isValidGithubRepositoryUrl(repositoryUrl)) {
       setValidationError('Please enter a valid GitHub repository URL');
@@ -74,20 +82,36 @@ export function RepositorySection({ project, onUpdate }: RepositorySectionProps)
     }
 
     setIsSaving(true);
+    setRequestModal({
+      isOpen: true,
+      status: 'loading',
+      title: 'Updating repository link',
+      message: 'Saving GitHub repository settings for this project.',
+    });
 
     try {
       const updatedProject = await supervisorApi.updateRepository(project.id, repositoryUrl);
       onUpdate(updatedProject);
       setIsEditing(false);
       setUrlInput(updatedProject.repositoryUrl ?? '');
-      setSuccessMessage(
-        repositoryUrl ? 'Repository link updated successfully.' : 'Repository link removed.',
-      );
+      setRequestModal({
+        isOpen: true,
+        status: 'success',
+        title: repositoryUrl ? 'Repository linked' : 'Repository removed',
+        message: repositoryUrl
+          ? 'GitHub repository URL was saved successfully.'
+          : 'GitHub repository URL was removed successfully.',
+      });
     } catch (error) {
       const message = isApiException(error)
         ? error.apiError.message
         : 'Unable to update repository. Please try again.';
-      setSaveError(message || 'Unable to update repository. Please try again.');
+      setRequestModal({
+        isOpen: true,
+        status: 'error',
+        title: 'Unable to update repository',
+        message: message || 'Unable to update repository. Please try again.',
+      });
     } finally {
       setIsSaving(false);
     }
@@ -95,6 +119,15 @@ export function RepositorySection({ project, onUpdate }: RepositorySectionProps)
 
   return (
     <section className="rounded-3xl border border-border bg-white p-6 shadow-sm">
+      <RequestStateModal
+        isOpen={requestModal.isOpen}
+        status={requestModal.status}
+        title={requestModal.title}
+        message={requestModal.message}
+        onClose={requestModal.status === 'loading' ? undefined : closeRequestModal}
+        onRetry={requestModal.status === 'error' ? () => void handleSaveRepository() : undefined}
+      />
+
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-lg font-semibold text-foreground">GitHub repository</h2>
         {!isEditing ? (
@@ -133,7 +166,6 @@ export function RepositorySection({ project, onUpdate }: RepositorySectionProps)
           </p>
 
           {validationError ? <p className="text-sm text-rose-600">{validationError}</p> : null}
-          {saveError ? <p className="text-sm text-rose-600">{saveError}</p> : null}
 
           <div className="flex flex-wrap justify-end gap-2">
             <button
@@ -167,12 +199,10 @@ export function RepositorySection({ project, onUpdate }: RepositorySectionProps)
           <p className="text-xs text-muted-foreground">
             Supervisors can edit or remove this repository link.
           </p>
-          {successMessage ? <p className="text-sm text-emerald-600">{successMessage}</p> : null}
         </div>
       ) : (
         <div className="mt-5 space-y-2">
           <p className="text-sm text-muted-foreground">No GitHub repository linked yet.</p>
-          {successMessage ? <p className="text-sm text-emerald-600">{successMessage}</p> : null}
         </div>
       )}
     </section>

@@ -6,6 +6,7 @@ import { ErrorState } from '@/components/feedback/ErrorState';
 import { buttonStyles } from '@/components/ui/Button';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { PageTabs } from '@/components/ui/PageTabs';
+import { RequestStateModal } from '@/components/ui/RequestStateModal';
 import { isApiException } from '@/services/apiClient';
 import type { ApiError } from '@/types';
 import { supervisorApi } from '../api/supervisorApi';
@@ -80,6 +81,14 @@ type MilestoneForm = {
   status: SupervisorProjectDetailMilestone['status'];
 };
 
+type RequestModalState = {
+  isOpen: boolean;
+  status: 'loading' | 'success' | 'error';
+  title: string;
+  message: string;
+  retryAction: (() => Promise<void>) | null;
+};
+
 function memberDisplayName(member: SupervisorProjectDetailMember) {
   return `${member.firstName ?? ''} ${member.lastName ?? ''}`.trim() || member.email;
 }
@@ -135,12 +144,10 @@ export function ProjectDetailsPage() {
   const [project, setProject] = useState<SupervisorProjectDetail | null>(null);
   const [isEditingOverview, setIsEditingOverview] = useState(false);
   const [isSavingOverview, setIsSavingOverview] = useState(false);
-  const [saveError, setSaveError] = useState<ApiError | null>(null);
   const [overviewForm, setOverviewForm] = useState<OverviewEditForm | null>(null);
   const [quickLifecycleStatus, setQuickLifecycleStatus] =
     useState<SupervisorProjectLifecycle>('PLANNING');
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
-  const [statusUpdateError, setStatusUpdateError] = useState<ApiError | null>(null);
   const [isManagingStudents, setIsManagingStudents] = useState(false);
   const [studentQuery, setStudentQuery] = useState('');
   const [studentSearchState, setStudentSearchState] = useState<SearchState>('idle');
@@ -152,10 +159,8 @@ export function ProjectDetailsPage() {
     SupervisorStudentSearchResult[]
   >([]);
   const [isAddingStudents, setIsAddingStudents] = useState(false);
-  const [studentAddError, setStudentAddError] = useState<ApiError | null>(null);
   const [isAddingMilestone, setIsAddingMilestone] = useState(false);
   const [isSavingMilestone, setIsSavingMilestone] = useState(false);
-  const [milestoneError, setMilestoneError] = useState<ApiError | null>(null);
   const [editingMilestoneId, setEditingMilestoneId] = useState<string | null>(null);
   const [newMilestoneForm, setNewMilestoneForm] = useState<MilestoneForm>({
     title: '',
@@ -164,6 +169,13 @@ export function ProjectDetailsPage() {
     status: 'PLANNED',
   });
   const [editMilestoneForm, setEditMilestoneForm] = useState<MilestoneForm | null>(null);
+  const [requestModal, setRequestModal] = useState<RequestModalState>({
+    isOpen: false,
+    status: 'loading',
+    title: '',
+    message: '',
+    retryAction: null,
+  });
 
   const requestedTab = searchParams.get('tab') as SupervisorProjectDetailTab | null;
   const activeTab = requestedTab && TABS.includes(requestedTab) ? requestedTab : 'overview';
@@ -254,12 +266,56 @@ export function ProjectDetailsPage() {
     setProject(updatedProject);
   }
 
+  function closeRequestModal() {
+    setRequestModal((current) => ({
+      ...current,
+      isOpen: false,
+      retryAction: null,
+    }));
+  }
+
+  function showLoadingModal(title: string, message: string) {
+    setRequestModal({
+      isOpen: true,
+      status: 'loading',
+      title,
+      message,
+      retryAction: null,
+    });
+  }
+
+  function showSuccessModal(title: string, message: string) {
+    setRequestModal({
+      isOpen: true,
+      status: 'success',
+      title,
+      message,
+      retryAction: null,
+    });
+  }
+
+  function showErrorModal(title: string, message: string, retryAction: () => Promise<void>) {
+    setRequestModal({
+      isOpen: true,
+      status: 'error',
+      title,
+      message,
+      retryAction,
+    });
+  }
+
+  function retryLastRequest() {
+    if (!requestModal.retryAction) {
+      return;
+    }
+    void requestModal.retryAction();
+  }
+
   function handleStartOverviewEdit() {
     if (!project) {
       return;
     }
     setOverviewForm(buildOverviewEditForm(project));
-    setSaveError(null);
     setIsEditingOverview(true);
   }
 
@@ -267,21 +323,19 @@ export function ProjectDetailsPage() {
     if (project) {
       setOverviewForm(buildOverviewEditForm(project));
     }
-    setSaveError(null);
     setIsEditingOverview(false);
   }
 
-  async function handleSaveOverview(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function submitOverviewUpdate() {
     if (!project || !overviewForm || !projectId) {
       return;
     }
 
     setIsSavingOverview(true);
-    setSaveError(null);
+    showLoadingModal('Saving project details', 'Updating the project summary and overview fields.');
 
     try {
-      await supervisorApi.updateProject(projectId, {
+      const updatedProject = await supervisorApi.updateProject(projectId, {
         title: overviewForm.title.trim(),
         summary: overviewForm.summary.trim(),
         batch: overviewForm.batch.trim(),
@@ -289,43 +343,63 @@ export function ProjectDetailsPage() {
         lifecycleStatus: overviewForm.lifecycleStatus,
         healthNote: toNullableTrimmed(overviewForm.healthNote),
       });
-      await reload();
+      setProject(updatedProject);
       setIsEditingOverview(false);
+      showSuccessModal(
+        'Project details updated',
+        'The project summary and overview details were updated successfully.',
+      );
     } catch (saveException) {
-      setSaveError(toApiError(saveException, 'Unable to update the project right now.'));
+      const apiError = toApiError(saveException, 'Unable to update the project right now.');
+      showErrorModal('Unable to save project details', apiError.message, submitOverviewUpdate);
     } finally {
       setIsSavingOverview(false);
     }
   }
 
-  async function handleQuickStatusChange(nextStatus: SupervisorProjectLifecycle) {
+  async function handleSaveOverview(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    await submitOverviewUpdate();
+  }
+
+  async function submitQuickStatusChange(
+    nextStatus: SupervisorProjectLifecycle,
+    previousStatus: SupervisorProjectLifecycle,
+  ) {
     if (!projectId || !project) {
       return;
     }
 
-    const previousStatus = project.lifecycleStatus;
     setQuickLifecycleStatus(nextStatus);
     setIsUpdatingStatus(true);
-    setStatusUpdateError(null);
+    showLoadingModal('Updating project status', `Switching lifecycle status to ${nextStatus}.`);
 
     try {
-      await supervisorApi.updateProjectStatus(projectId, {
+      const updatedProject = await supervisorApi.updateProjectStatus(projectId, {
         lifecycleStatus: nextStatus,
       });
-      await reload();
+      setProject(updatedProject);
+      showSuccessModal('Project status updated', `Lifecycle status is now ${nextStatus}.`);
     } catch (statusException) {
       setQuickLifecycleStatus(previousStatus);
-      setStatusUpdateError(
-        toApiError(statusException, 'Unable to update project status right now.'),
+      const apiError = toApiError(statusException, 'Unable to update project status right now.');
+      showErrorModal('Unable to update project status', apiError.message, async () =>
+        submitQuickStatusChange(nextStatus, previousStatus),
       );
     } finally {
       setIsUpdatingStatus(false);
     }
   }
 
+  function handleQuickStatusChange(nextStatus: SupervisorProjectLifecycle) {
+    if (!project) {
+      return;
+    }
+    void submitQuickStatusChange(nextStatus, project.lifecycleStatus);
+  }
+
   function handleStartStudentManagement() {
     setIsManagingStudents(true);
-    setStudentAddError(null);
   }
 
   function handleCancelStudentManagement() {
@@ -335,7 +409,6 @@ export function ProjectDetailsPage() {
     setStudentSearchState('idle');
     setStudentSearchError(null);
     setSelectedStudentsToAdd([]);
-    setStudentAddError(null);
   }
 
   function handleSelectStudentToAdd(student: SupervisorStudentSearchResult) {
@@ -354,37 +427,41 @@ export function ProjectDetailsPage() {
     setSelectedStudentsToAdd((current) => current.filter((student) => student.id !== studentId));
   }
 
-  async function handleAddStudents() {
+  async function submitAddStudents() {
     if (!projectId || selectedStudentsToAdd.length === 0) {
       return;
     }
 
     setIsAddingStudents(true);
-    setStudentAddError(null);
+    showLoadingModal('Adding team members', 'Assigning selected students to this project.');
 
     try {
-      await supervisorApi.addProjectMembers(projectId, {
+      const updatedProject = await supervisorApi.addProjectMembers(projectId, {
         studentIds: selectedStudentsToAdd.map((student) => student.id),
       });
-      await reload();
+      setProject(updatedProject);
       handleCancelStudentManagement();
+      showSuccessModal('Team updated', 'Selected students were added to the project.');
     } catch (addException) {
-      setStudentAddError(toApiError(addException, 'Unable to add students right now.'));
+      const apiError = toApiError(addException, 'Unable to add students right now.');
+      showErrorModal('Unable to add students', apiError.message, submitAddStudents);
     } finally {
       setIsAddingStudents(false);
     }
   }
 
+  function handleAddStudents() {
+    void submitAddStudents();
+  }
+
   function handleStartAddMilestone() {
     setEditingMilestoneId(null);
     setEditMilestoneForm(null);
-    setMilestoneError(null);
     setIsAddingMilestone(true);
   }
 
   function handleCancelAddMilestone() {
     setIsAddingMilestone(false);
-    setMilestoneError(null);
     setNewMilestoneForm({
       title: '',
       description: '',
@@ -393,33 +470,38 @@ export function ProjectDetailsPage() {
     });
   }
 
-  async function handleCreateMilestone(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function submitMilestoneCreate() {
     if (!projectId) {
       return;
     }
 
     setIsSavingMilestone(true);
-    setMilestoneError(null);
+    showLoadingModal('Adding milestone', 'Creating a new milestone for this project.');
 
     try {
-      await supervisorApi.addProjectMilestone(projectId, {
+      const updatedProject = await supervisorApi.addProjectMilestone(projectId, {
         title: newMilestoneForm.title.trim(),
         description: toNullableTrimmed(newMilestoneForm.description),
         dueDate: newMilestoneForm.dueDate,
       });
-      await reload();
+      setProject(updatedProject);
       handleCancelAddMilestone();
+      showSuccessModal('Milestone added', 'The milestone was added successfully.');
     } catch (milestoneException) {
-      setMilestoneError(toApiError(milestoneException, 'Unable to add milestone right now.'));
+      const apiError = toApiError(milestoneException, 'Unable to add milestone right now.');
+      showErrorModal('Unable to add milestone', apiError.message, submitMilestoneCreate);
     } finally {
       setIsSavingMilestone(false);
     }
   }
 
+  async function handleCreateMilestone(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    await submitMilestoneCreate();
+  }
+
   function handleStartEditMilestone(milestone: SupervisorProjectDetailMilestone) {
     setIsAddingMilestone(false);
-    setMilestoneError(null);
     setEditingMilestoneId(milestone.id);
     setEditMilestoneForm(buildMilestoneForm(milestone));
   }
@@ -427,32 +509,41 @@ export function ProjectDetailsPage() {
   function handleCancelEditMilestone() {
     setEditingMilestoneId(null);
     setEditMilestoneForm(null);
-    setMilestoneError(null);
   }
 
-  async function handleSaveMilestone(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function submitMilestoneUpdate() {
     if (!projectId || !editingMilestoneId || !editMilestoneForm) {
       return;
     }
 
     setIsSavingMilestone(true);
-    setMilestoneError(null);
+    showLoadingModal('Saving milestone', 'Updating milestone details and current status.');
 
     try {
-      await supervisorApi.updateProjectMilestone(projectId, editingMilestoneId, {
-        title: editMilestoneForm.title.trim(),
-        description: toNullableTrimmed(editMilestoneForm.description),
-        dueDate: editMilestoneForm.dueDate,
-        status: editMilestoneForm.status,
-      });
-      await reload();
+      const updatedProject = await supervisorApi.updateProjectMilestone(
+        projectId,
+        editingMilestoneId,
+        {
+          title: editMilestoneForm.title.trim(),
+          description: toNullableTrimmed(editMilestoneForm.description),
+          dueDate: editMilestoneForm.dueDate,
+          status: editMilestoneForm.status,
+        },
+      );
+      setProject(updatedProject);
       handleCancelEditMilestone();
+      showSuccessModal('Milestone updated', 'Milestone changes were saved successfully.');
     } catch (milestoneException) {
-      setMilestoneError(toApiError(milestoneException, 'Unable to update milestone right now.'));
+      const apiError = toApiError(milestoneException, 'Unable to update milestone right now.');
+      showErrorModal('Unable to update milestone', apiError.message, submitMilestoneUpdate);
     } finally {
       setIsSavingMilestone(false);
     }
+  }
+
+  async function handleSaveMilestone(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    await submitMilestoneUpdate();
   }
 
   if (isLoading) {
@@ -486,6 +577,15 @@ export function ProjectDetailsPage() {
 
   return (
     <div className="space-y-6">
+      <RequestStateModal
+        isOpen={requestModal.isOpen}
+        status={requestModal.status}
+        title={requestModal.title}
+        message={requestModal.message}
+        onClose={requestModal.status === 'loading' ? undefined : closeRequestModal}
+        onRetry={requestModal.status === 'error' ? retryLastRequest : undefined}
+      />
+
       <PageHeader
         title={project.title}
         subtitle={project.summary ?? 'No summary has been recorded for this project yet.'}
@@ -523,9 +623,6 @@ export function ProjectDetailsPage() {
           Progress {project.progressPercent ?? 0}%
         </span>
       </section>
-      {statusUpdateError ? (
-        <p className="text-sm text-rose-600">{statusUpdateError.message}</p>
-      ) : null}
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
@@ -699,9 +796,6 @@ export function ProjectDetailsPage() {
                       />
                     </label>
                   </div>
-
-                  {saveError ? <p className="text-sm text-rose-600">{saveError.message}</p> : null}
-
                   <div className="flex flex-wrap justify-end gap-2">
                     <button
                       type="button"
@@ -886,10 +980,6 @@ export function ProjectDetailsPage() {
                 </div>
               ) : null}
 
-              {studentAddError ? (
-                <p className="mt-3 text-sm text-rose-600">{studentAddError.message}</p>
-              ) : null}
-
               <div className="mt-4 flex flex-wrap justify-end gap-2">
                 <button
                   type="button"
@@ -902,7 +992,7 @@ export function ProjectDetailsPage() {
                 <button
                   type="button"
                   className={buttonStyles({ variant: 'primary', size: 'sm' })}
-                  onClick={() => void handleAddStudents()}
+                  onClick={handleAddStudents}
                   disabled={isAddingStudents || selectedStudentsToAdd.length === 0}
                 >
                   {isAddingStudents ? 'Adding...' : 'Add selected students'}
@@ -996,9 +1086,6 @@ export function ProjectDetailsPage() {
                   />
                 </label>
               </div>
-              {milestoneError ? (
-                <p className="mt-3 text-sm text-rose-600">{milestoneError.message}</p>
-              ) : null}
               <div className="mt-4 flex flex-wrap justify-end gap-2">
                 <button
                   type="button"
@@ -1103,9 +1190,6 @@ export function ProjectDetailsPage() {
                           />
                         </label>
                       </div>
-                      {milestoneError ? (
-                        <p className="text-sm text-rose-600">{milestoneError.message}</p>
-                      ) : null}
                       <div className="flex flex-wrap justify-end gap-2">
                         <button
                           type="button"
