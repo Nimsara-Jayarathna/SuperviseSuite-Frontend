@@ -22,18 +22,15 @@ const STATUS_STYLES: Record<
 > = {
   loading: {
     iconContainer: 'bg-sky-100/85 text-sky-700',
-    gradientOverlay:
-      'from-sky-100/85 via-white/70 to-sky-200/55',
+    gradientOverlay: 'from-sky-100/85 via-white/70 to-sky-200/55',
   },
   success: {
     iconContainer: 'bg-emerald-100/85 text-emerald-700',
-    gradientOverlay:
-      'from-emerald-100/85 via-white/70 to-emerald-200/55',
+    gradientOverlay: 'from-emerald-100/85 via-white/70 to-emerald-200/55',
   },
   error: {
     iconContainer: 'bg-rose-100/85 text-rose-700',
-    gradientOverlay:
-      'from-rose-100/85 via-white/70 to-rose-200/55',
+    gradientOverlay: 'from-rose-100/85 via-white/70 to-rose-200/55',
   },
 };
 

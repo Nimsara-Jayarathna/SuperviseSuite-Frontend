@@ -9,8 +9,7 @@ type RepositorySectionProps = {
   onUpdate: (updatedProject: SupervisorProjectDetail) => void;
 };
 
-const GITHUB_REPOSITORY_URL_PATTERN =
-  /^https:\/\/github\.com\/[a-zA-Z0-9_-]+\/[a-zA-Z0-9_-]+$/;
+const GITHUB_REPOSITORY_URL_PATTERN = /^https:\/\/github\.com\/[a-zA-Z0-9_-]+\/[a-zA-Z0-9_-]+$/;
 
 function toRepositoryPayload(value: string): string | null {
   const trimmed = value.trim();

@@ -23,15 +23,16 @@ const SURFACE_CLASSES: Record<CardSurface, string> = {
     'overflow-hidden border border-white/35 bg-white/55 backdrop-blur-md shadow-[0_18px_45px_rgba(15,23,42,0.14)]',
 };
 
-export function Card({ children, className, padding = 'md', surface = 'default', ...props }: CardProps) {
+export function Card({
+  children,
+  className,
+  padding = 'md',
+  surface = 'default',
+  ...props
+}: CardProps) {
   return (
     <div
-      className={cn(
-        'rounded-3xl',
-        SURFACE_CLASSES[surface],
-        PADDING_CLASSES[padding],
-        className,
-      )}
+      className={cn('rounded-3xl', SURFACE_CLASSES[surface], PADDING_CLASSES[padding], className)}
       {...props}
     >
       {children ?? 'Card Placeholder'}

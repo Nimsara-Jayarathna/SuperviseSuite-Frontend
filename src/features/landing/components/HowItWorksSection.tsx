@@ -36,7 +36,9 @@ export function HowItWorksSection() {
   return (
     <section className="relative overflow-hidden rounded-3xl border border-white/30 bg-slate-50/60 p-6 shadow-[0_18px_50px_rgba(15,23,42,0.1)] backdrop-blur-md">
       <div className="max-w-2xl">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-700">How it works</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-700">
+          How it works
+        </p>
         <h2 className="mt-2 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
           From setup to supervision in four simple steps.
         </h2>

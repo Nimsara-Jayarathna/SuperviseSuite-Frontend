@@ -28,7 +28,9 @@ export function WhoItsForSection() {
   return (
     <section className="relative overflow-hidden rounded-3xl border border-white/35 bg-white/60 p-6 shadow-[0_18px_50px_rgba(15,23,42,0.1)] backdrop-blur-md">
       <div className="max-w-2xl">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-700">Who it&apos;s for</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-700">
+          Who it&apos;s for
+        </p>
         <h2 className="mt-2 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
           Designed for modern research supervision.
         </h2>
