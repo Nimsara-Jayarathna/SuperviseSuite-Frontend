@@ -20,6 +20,7 @@ export function isApiException(error: unknown): error is ApiException {
 }
 
 const REFRESH_PATH = '/api/auth/refresh';
+let inFlightRefresh: Promise<boolean> | null = null;
 
 /**
  * Attempts a silent token refresh using the {@code ss_refresh_token} httpOnly cookie.
@@ -47,6 +48,18 @@ async function tryRefresh(): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+async function tryRefreshSingleFlight(): Promise<boolean> {
+  if (inFlightRefresh) {
+    return inFlightRefresh;
+  }
+
+  inFlightRefresh = tryRefresh().finally(() => {
+    inFlightRefresh = null;
+  });
+
+  return inFlightRefresh;
 }
 
 /**
@@ -92,7 +105,7 @@ async function request<T>(path: string, init: RequestInit = {}, isRetry = false)
   // Skipped when the failing request is itself the refresh endpoint (avoids loops),
   // and when this is already a post-refresh retry.
   if (response.status === 401 && path !== REFRESH_PATH && !isRetry) {
-    const refreshed = await tryRefresh();
+    const refreshed = await tryRefreshSingleFlight();
     if (refreshed) {
       return request<T>(path, init, true);
     }
