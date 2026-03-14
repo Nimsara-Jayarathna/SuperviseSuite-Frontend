@@ -26,6 +26,9 @@ export function HeroSection({ onStudentPortal, onSupervisorAccess }: HeroSection
             Supervisor Access
           </Button>
         </div>
+        <p className="mt-3 text-xs text-muted-foreground">
+          Used by university supervisors and final-year students to manage research projects.
+        </p>
       </div>
 
       <div className="hidden lg:flex lg:items-center lg:justify-center">

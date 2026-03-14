@@ -25,7 +25,7 @@ const FEATURE_CARDS: LandingFeatureCard[] = [
 
 export function FeaturesSection() {
   return (
-    <section className="bg-white/85 p-6">
+    <section className="bg-white/85 p-6 pt-8 sm:pt-10">
       <div className="max-w-2xl">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-700">
           Built for active supervision
@@ -39,7 +39,7 @@ export function FeaturesSection() {
         </p>
       </div>
 
-      <div className="mt-4 grid gap-4 sm:grid-cols-3">
+      <div className="mt-6 grid gap-5 sm:grid-cols-3">
         {FEATURE_CARDS.map((card) => (
           <FeatureCard
             key={card.id}
