@@ -8,7 +8,7 @@ type HeroSectionProps = {
 
 export function HeroSection({ onStudentPortal, onSupervisorAccess }: HeroSectionProps) {
   return (
-    <section className="relative grid gap-6 overflow-hidden bg-white/85 p-6 lg:grid-cols-[minmax(0,1fr)_280px] lg:items-center xl:grid-cols-[minmax(0,1fr)_320px]">
+    <section className="relative grid gap-6 overflow-hidden rounded-3xl border border-white/35 bg-white/60 p-6 shadow-[0_20px_55px_rgba(15,23,42,0.12)] backdrop-blur-md lg:grid-cols-[minmax(0,1fr)_280px] lg:items-center xl:grid-cols-[minmax(0,1fr)_320px]">
       <div className="pointer-events-none absolute -right-10 top-6 hidden h-32 w-32 rounded-full bg-sky-100/60 blur-3xl lg:block" />
       <div className="max-w-4xl">
         <h1 className="text-4xl font-semibold leading-tight tracking-tight text-foreground sm:text-5xl lg:text-6xl">

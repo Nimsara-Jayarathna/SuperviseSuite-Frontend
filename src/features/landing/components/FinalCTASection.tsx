@@ -7,7 +7,7 @@ type FinalCTASectionProps = {
 
 export function FinalCTASection({ onStudentPortal, onSupervisorAccess }: FinalCTASectionProps) {
   return (
-    <section className="bg-gradient-to-b from-slate-50 to-white p-8 sm:p-12">
+    <section className="relative overflow-hidden rounded-3xl border border-white/35 bg-gradient-to-b from-slate-50/85 to-white/75 p-8 shadow-[0_18px_50px_rgba(15,23,42,0.1)] backdrop-blur-md sm:p-12">
       <div className="mx-auto max-w-2xl text-center">
         <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
           Start managing your research project better.

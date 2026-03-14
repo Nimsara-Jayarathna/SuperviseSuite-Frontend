@@ -25,7 +25,7 @@ const FEATURE_CARDS: LandingFeatureCard[] = [
 
 export function FeaturesSection() {
   return (
-    <section className="bg-white/85 p-6 pt-8 sm:pt-10">
+    <section className="relative overflow-hidden rounded-3xl border border-white/35 bg-white/60 p-6 pt-8 shadow-[0_20px_55px_rgba(15,23,42,0.12)] backdrop-blur-md sm:pt-10">
       <div className="max-w-2xl">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-700">
           Built for active supervision

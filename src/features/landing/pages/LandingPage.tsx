@@ -13,7 +13,7 @@ export function LandingPage() {
 
   return (
     <PublicLayout onLogin={handleSupervisorAccess} onRegister={handleStudentPortal}>
-      <div className="space-y-0">
+      <div className="space-y-4 sm:space-y-5">
         <HeroSection
           onStudentPortal={handleStudentPortal}
           onSupervisorAccess={handleSupervisorAccess}

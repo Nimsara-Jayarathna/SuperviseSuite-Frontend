@@ -34,7 +34,7 @@ const STEPS: LandingStepCard[] = [
 
 export function HowItWorksSection() {
   return (
-    <section className="bg-slate-50/50 p-6">
+    <section className="relative overflow-hidden rounded-3xl border border-white/30 bg-slate-50/60 p-6 shadow-[0_18px_50px_rgba(15,23,42,0.1)] backdrop-blur-md">
       <div className="max-w-2xl">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-700">How it works</p>
         <h2 className="mt-2 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
@@ -44,8 +44,12 @@ export function HowItWorksSection() {
 
       <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2">
         {STEPS.map(({ id, icon: Icon, stepNumber, title, description }) => (
-          <div key={id} className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
-            <div className="flex items-start gap-4">
+          <div
+            key={id}
+            className="relative overflow-hidden rounded-3xl border border-transparent bg-white/55 p-5 shadow-[0_20px_48px_rgba(15,23,42,0.12)] backdrop-blur-md"
+          >
+            <div className="pointer-events-none absolute inset-0 rounded-[inherit] bg-[linear-gradient(145deg,rgba(255,255,255,0.78)_0%,rgba(255,255,255,0.46)_60%,rgba(14,165,233,0.12)_100%)]" />
+            <div className="relative z-10 flex items-start gap-4">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-50">
                 <Icon className="h-5 w-5 text-sky-700" />
               </div>
