@@ -24,4 +24,4 @@ Technical notes, architecture summaries, and feature guides for the SuperviseSui
 
 | File | Description |
 |------|-------------|
-| [api/error-handling.md](api/error-handling.md) | Frontend error contract — `ApiError` types, `apiClient`, `ErrorState` |
+| [api/error-handling.md](api/error-handling.md) | Frontend API envelope/error handling — `apiClient` normalization, `ApiError` types, refresh/retry rules |
