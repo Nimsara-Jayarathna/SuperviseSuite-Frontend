@@ -8,6 +8,7 @@ import type {
   SupervisorProjectDetail,
   SupervisorProjectSummary,
   SupervisorStudentSearchResult,
+  UpdateRepositoryRequest,
   UpdateSupervisorProjectMilestoneRequest,
   UpdateSupervisorProjectRequest,
   UpdateSupervisorProjectStatusRequest,
@@ -75,6 +76,19 @@ export const supervisorApi = {
   ): Promise<SupervisorProjectDetail> {
     const updated = await apiClient.patch<SupervisorProjectDetail>(
       `/api/supervisor/projects/${projectId}/status`,
+      body,
+    );
+    cachedProjectsById[projectId] = updated;
+    return updated;
+  },
+
+  async updateRepository(
+    projectId: string,
+    repositoryUrl: string | null,
+  ): Promise<SupervisorProjectDetail> {
+    const body: UpdateRepositoryRequest = { repositoryUrl };
+    const updated = await apiClient.patch<SupervisorProjectDetail>(
+      `/api/supervisor/projects/${projectId}/repository`,
       body,
     );
     cachedProjectsById[projectId] = updated;

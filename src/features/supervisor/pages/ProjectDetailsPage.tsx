@@ -9,6 +9,7 @@ import { PageTabs } from '@/components/ui/PageTabs';
 import { isApiException } from '@/services/apiClient';
 import type { ApiError } from '@/types';
 import { supervisorApi } from '../api/supervisorApi';
+import { RepositorySection } from '../components/ProjectDetail/RepositorySection';
 import { ProjectDetailsSkeleton } from '../components/ProjectDetailsSkeleton';
 import { useSupervisorProject } from '../hooks/useSupervisorProject';
 import type {
@@ -130,7 +131,8 @@ function toTabLabel(tab: string) {
 export function ProjectDetailsPage() {
   const { projectId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { project, isLoading, error, reload } = useSupervisorProject(projectId);
+  const { project: loadedProject, isLoading, error, reload } = useSupervisorProject(projectId);
+  const [project, setProject] = useState<SupervisorProjectDetail | null>(null);
   const [isEditingOverview, setIsEditingOverview] = useState(false);
   const [isSavingOverview, setIsSavingOverview] = useState(false);
   const [saveError, setSaveError] = useState<ApiError | null>(null);
@@ -175,6 +177,10 @@ export function ProjectDetailsPage() {
       overviewForm.semester !== initialOverviewForm.semester ||
       overviewForm.lifecycleStatus !== initialOverviewForm.lifecycleStatus ||
       overviewForm.healthNote !== initialOverviewForm.healthNote);
+
+  useEffect(() => {
+    setProject(loadedProject);
+  }, [loadedProject]);
 
   useEffect(() => {
     if (project && !isEditingOverview) {
@@ -242,6 +248,10 @@ export function ProjectDetailsPage() {
       nextParams.set('tab', tab);
     }
     setSearchParams(nextParams, { replace: true });
+  }
+
+  function handleProjectUpdate(updatedProject: SupervisorProjectDetail) {
+    setProject(updatedProject);
   }
 
   function handleStartOverviewEdit() {
@@ -745,6 +755,8 @@ export function ProjectDetailsPage() {
                 </div>
               )}
             </div>
+
+            <RepositorySection project={project} onUpdate={handleProjectUpdate} />
 
             <div className="rounded-3xl border border-border bg-white p-6 shadow-sm">
               <h2 className="text-lg font-semibold text-foreground">Current scope</h2>

@@ -191,6 +191,23 @@ export function StudentProjectDetailsPage() {
                 </div>
               </div>
             </div>
+
+            {project.repositoryUrl ? (
+              <div className="rounded-3xl border border-border bg-white p-6 shadow-sm">
+                <h2 className="text-lg font-semibold text-foreground">GitHub repository</h2>
+                <div className="mt-4 space-y-2">
+                  <a
+                    href={project.repositoryUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm font-medium text-sky-700 underline-offset-2 hover:underline"
+                  >
+                    {project.repositoryUrl}
+                  </a>
+                  <p className="text-xs text-muted-foreground">Repository managed by supervisor</p>
+                </div>
+              </div>
+            ) : null}
           </section>
 
           <aside className="rounded-3xl border border-border bg-white p-6 shadow-sm">

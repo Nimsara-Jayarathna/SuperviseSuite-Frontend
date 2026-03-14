@@ -42,6 +42,7 @@ export type StudentProjectDetail = {
   lastActivityAt: string | null;
   progressPercent: number | null;
   healthNote: string | null;
+  repositoryUrl?: string | null;
   members: StudentProjectDetailMember[];
   milestones: StudentProjectDetailMilestone[];
 };
