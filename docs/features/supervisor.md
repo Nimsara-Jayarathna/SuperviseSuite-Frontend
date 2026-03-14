@@ -33,6 +33,7 @@ Supervisor feature currently uses these APIs:
 - `POST /api/supervisor/projects`
 - `PATCH /api/supervisor/projects/{projectId}`
 - `PATCH /api/supervisor/projects/{projectId}/status`
+- `PATCH /api/supervisor/projects/{projectId}/repository`
 - `POST /api/supervisor/projects/{projectId}/members`
 - `POST /api/supervisor/projects/{projectId}/milestones`
 - `PATCH /api/supervisor/projects/{projectId}/milestones/{milestoneId}`
@@ -47,6 +48,7 @@ Supervisor feature currently uses these APIs:
 | `src/features/supervisor/pages/SupervisorProjectsPage.tsx` | API-backed project list with lifecycle filter and skeleton/error/empty states |
 | `src/features/supervisor/pages/CreateProjectPage.tsx` | API-backed project creation with student lookup and request-state modal |
 | `src/features/supervisor/pages/ProjectDetailsPage.tsx` | API-backed detail page with overview edit, team student-add flow, and milestone add/edit |
+| `src/features/supervisor/components/ProjectDetail/RepositorySection.tsx` | GitHub repository link add/edit/remove section with validation and request feedback |
 | `src/features/supervisor/components/SupervisorProjectCard.tsx` | Clickable summary card (full-card navigation) with compact status/progress layout |
 | `src/features/supervisor/components/SupervisorProjectCardSkeleton.tsx` | List loading placeholder |
 | `src/features/supervisor/components/ProjectDetailsSkeleton.tsx` | Detail loading placeholder |
@@ -173,6 +175,13 @@ Supervisor feature currently uses these APIs:
   - health note
 - Save calls `PATCH /api/supervisor/projects/{projectId}`.
 - Cancel resets form to latest loaded data.
+
+### Overview tab: GitHub repository link management
+
+- Dedicated repository section supports add/edit/remove.
+- Save calls `PATCH /api/supervisor/projects/{projectId}/repository`.
+- Client-side validation allows only `https://github.com/{owner}/{repo}`.
+- Empty input is treated as remove (`repositoryUrl = null`).
 
 ### Team tab: add-student management (add-only)
 
