@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
 import { CalendarDays, Clock3, Users } from 'lucide-react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
@@ -169,6 +169,9 @@ export function ProjectDetailsPage() {
     status: 'PLANNED',
   });
   const [editMilestoneForm, setEditMilestoneForm] = useState<MilestoneForm | null>(null);
+  const [initialEditMilestoneForm, setInitialEditMilestoneForm] = useState<MilestoneForm | null>(
+    null,
+  );
   const [requestModal, setRequestModal] = useState<RequestModalState>({
     isOpen: false,
     status: 'loading',
@@ -189,6 +192,18 @@ export function ProjectDetailsPage() {
       overviewForm.semester !== initialOverviewForm.semester ||
       overviewForm.lifecycleStatus !== initialOverviewForm.lifecycleStatus ||
       overviewForm.healthNote !== initialOverviewForm.healthNote);
+  const isEditMilestoneDirty = useMemo(() => {
+    if (!editMilestoneForm || !initialEditMilestoneForm) {
+      return false;
+    }
+
+    return (
+      editMilestoneForm.title !== initialEditMilestoneForm.title ||
+      editMilestoneForm.description !== initialEditMilestoneForm.description ||
+      editMilestoneForm.dueDate !== initialEditMilestoneForm.dueDate ||
+      editMilestoneForm.status !== initialEditMilestoneForm.status
+    );
+  }, [editMilestoneForm, initialEditMilestoneForm]);
 
   useEffect(() => {
     setProject(loadedProject);
@@ -501,18 +516,21 @@ export function ProjectDetailsPage() {
   }
 
   function handleStartEditMilestone(milestone: SupervisorProjectDetailMilestone) {
+    const nextForm = buildMilestoneForm(milestone);
     setIsAddingMilestone(false);
     setEditingMilestoneId(milestone.id);
-    setEditMilestoneForm(buildMilestoneForm(milestone));
+    setEditMilestoneForm(nextForm);
+    setInitialEditMilestoneForm(nextForm);
   }
 
   function handleCancelEditMilestone() {
     setEditingMilestoneId(null);
     setEditMilestoneForm(null);
+    setInitialEditMilestoneForm(null);
   }
 
   async function submitMilestoneUpdate() {
-    if (!projectId || !editingMilestoneId || !editMilestoneForm) {
+    if (!projectId || !editingMilestoneId || !editMilestoneForm || !isEditMilestoneDirty) {
       return;
     }
 
@@ -1202,7 +1220,7 @@ export function ProjectDetailsPage() {
                         <button
                           type="submit"
                           className={buttonStyles({ variant: 'primary', size: 'sm' })}
-                          disabled={isSavingMilestone}
+                          disabled={isSavingMilestone || !isEditMilestoneDirty}
                         >
                           {isSavingMilestone ? 'Saving...' : 'Save milestone'}
                         </button>

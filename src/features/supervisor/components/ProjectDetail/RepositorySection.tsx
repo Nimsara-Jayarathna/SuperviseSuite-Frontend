@@ -25,6 +25,7 @@ export function RepositorySection({ project, onUpdate }: RepositorySectionProps)
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [urlInput, setUrlInput] = useState(project.repositoryUrl ?? '');
+  const [initialEditValue, setInitialEditValue] = useState(project.repositoryUrl ?? '');
   const [validationError, setValidationError] = useState<string | null>(null);
   const [requestModal, setRequestModal] = useState<{
     isOpen: boolean;
@@ -46,23 +47,31 @@ export function RepositorySection({ project, onUpdate }: RepositorySectionProps)
     }
 
     setUrlInput(project.repositoryUrl ?? '');
+    setInitialEditValue(project.repositoryUrl ?? '');
     setValidationError(null);
   }, [project.repositoryUrl, isEditing]);
 
-  const hasChanges = useMemo(() => {
-    const nextPayload = toRepositoryPayload(urlInput);
-    const currentPayload = toRepositoryPayload(project.repositoryUrl ?? '');
-    return nextPayload !== currentPayload;
-  }, [project.repositoryUrl, urlInput]);
+  const hasInputChanged = useMemo(() => urlInput !== initialEditValue, [initialEditValue, urlInput]);
+
+  const nextRepositoryPayload = useMemo(() => toRepositoryPayload(urlInput), [urlInput]);
+  const isInputValid = useMemo(
+    () =>
+      nextRepositoryPayload === null || isValidGithubRepositoryUrl(nextRepositoryPayload),
+    [nextRepositoryPayload],
+  );
 
   function handleStartEdit() {
-    setUrlInput(project.repositoryUrl ?? '');
+    const currentValue = project.repositoryUrl ?? '';
+    setUrlInput(currentValue);
+    setInitialEditValue(currentValue);
     setValidationError(null);
     setIsEditing(true);
   }
 
   function handleCancelEdit() {
-    setUrlInput(project.repositoryUrl ?? '');
+    const currentValue = project.repositoryUrl ?? '';
+    setUrlInput(currentValue);
+    setInitialEditValue(currentValue);
     setValidationError(null);
     setIsEditing(false);
   }
@@ -72,14 +81,13 @@ export function RepositorySection({ project, onUpdate }: RepositorySectionProps)
   }
 
   async function handleSaveRepository() {
-    const repositoryUrl = toRepositoryPayload(urlInput);
-
-    setValidationError(null);
-
-    if (repositoryUrl && !isValidGithubRepositoryUrl(repositoryUrl)) {
+    if (!isInputValid) {
       setValidationError('Please enter a valid GitHub repository URL');
       return;
     }
+
+    const repositoryUrl = nextRepositoryPayload;
+    setValidationError(null);
 
     setIsSaving(true);
     setRequestModal({
@@ -150,8 +158,12 @@ export function RepositorySection({ project, onUpdate }: RepositorySectionProps)
             <input
               value={urlInput}
               onChange={(event) => {
-                setUrlInput(event.target.value);
-                if (validationError) {
+                const nextValue = event.target.value;
+                const nextPayload = toRepositoryPayload(nextValue);
+                setUrlInput(nextValue);
+                if (nextPayload && !isValidGithubRepositoryUrl(nextPayload)) {
+                  setValidationError('Please enter a valid GitHub repository URL');
+                } else {
                   setValidationError(null);
                 }
               }}
@@ -180,7 +192,7 @@ export function RepositorySection({ project, onUpdate }: RepositorySectionProps)
               type="button"
               className={buttonStyles({ variant: 'primary', size: 'sm' })}
               onClick={() => void handleSaveRepository()}
-              disabled={isSaving || !hasChanges}
+              disabled={isSaving || !hasInputChanged || !isInputValid}
             >
               {isSaving ? 'Saving...' : 'Save repository'}
             </button>
