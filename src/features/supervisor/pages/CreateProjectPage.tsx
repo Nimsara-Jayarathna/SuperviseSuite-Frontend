@@ -8,7 +8,7 @@ import { RequestStateModal } from '@/components/ui/RequestStateModal';
 import { isApiException } from '@/services/apiClient';
 import { supervisorApi } from '../api/supervisorApi';
 import { invalidateSupervisorProjectsCache } from '../hooks/useSupervisorProjects';
-import type { CreateSupervisorProjectResponse, SupervisorStudentSearchResult } from '../types';
+import type { SupervisorStudentSearchResult } from '../types';
 
 type DraftState = {
   title: string;
@@ -55,9 +55,7 @@ export function CreateProjectPage() {
   const [searchError, setSearchError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [createdProject, setCreatedProject] = useState<CreateSupervisorProjectResponse | null>(
-    null,
-  );
+  const [createdProjectId, setCreatedProjectId] = useState<string | null>(null);
   const [requestModal, setRequestModal] = useState<{
     isOpen: boolean;
     status: 'loading' | 'success' | 'error';
@@ -139,9 +137,10 @@ export function CreateProjectPage() {
     setSelectedStudents((current) => current.filter((student) => student.id !== studentId));
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
+  async function submitProjectCreation() {
+    if (isSubmitting) {
+      return;
+    }
     if (selectedStudents.length === 0) {
       setSubmitError('Select at least one registered student before creating the project.');
       return;
@@ -149,7 +148,7 @@ export function CreateProjectPage() {
 
     setIsSubmitting(true);
     setSubmitError(null);
-    setCreatedProject(null);
+    setCreatedProjectId(null);
     setRequestModal({
       isOpen: true,
       status: 'loading',
@@ -171,7 +170,7 @@ export function CreateProjectPage() {
         },
       });
 
-      setCreatedProject(response);
+      setCreatedProjectId(response.id);
       invalidateSupervisorProjectsCache();
       setDraft(INITIAL_DRAFT);
       setSelectedStudents([]);
@@ -200,17 +199,22 @@ export function CreateProjectPage() {
     }
   }
 
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    await submitProjectCreation();
+  }
+
   function closeRequestModal() {
     const nextStatus = requestModal.status;
     setRequestModal((current) => ({ ...current, isOpen: false }));
 
-    if (nextStatus === 'success') {
-      navigate('/supervisor/projects');
+    if (nextStatus === 'success' && createdProjectId) {
+      navigate(`/supervisor/projects/${createdProjectId}`);
     }
   }
 
-  function retrySubmit() {
-    closeRequestModal();
+  async function retrySubmit() {
+    await submitProjectCreation();
   }
 
   const shouldShowSearchPanel =
@@ -500,30 +504,6 @@ export function CreateProjectPage() {
         </form>
       </section>
 
-      {createdProject ? (
-        <section className="rounded-3xl border border-emerald-200 bg-emerald-50 p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-emerald-900">Project created</h2>
-          <p className="mt-2 text-sm leading-7 text-emerald-800">
-            {createdProject.title} was created in the backend with {createdProject.students.length}{' '}
-            assigned student{createdProject.students.length === 1 ? '' : 's'} and the first
-            milestone scheduled for {createdProject.milestone.dueDate}.
-          </p>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            <div className="rounded-2xl border border-emerald-200 bg-white px-4 py-4">
-              <p className="text-xs uppercase tracking-[0.2em] text-emerald-700">Lifecycle</p>
-              <p className="mt-2 font-semibold text-emerald-950">
-                {createdProject.lifecycleStatus.replace('_', ' ')}
-              </p>
-            </div>
-            <div className="rounded-2xl border border-emerald-200 bg-white px-4 py-4">
-              <p className="text-xs uppercase tracking-[0.2em] text-emerald-700">Milestone</p>
-              <p className="mt-2 font-semibold text-emerald-950">
-                {createdProject.milestone.title}
-              </p>
-            </div>
-          </div>
-        </section>
-      ) : null}
     </div>
   );
 }
