@@ -1,4 +1,3 @@
-import { Card } from '@/components/ui/Card';
 import { FileText, GitCommitHorizontal, Webhook } from 'lucide-react';
 import type { LandingFeatureCard } from '../types';
 import { FeatureCard } from './FeatureCard';
@@ -26,7 +25,7 @@ const FEATURE_CARDS: LandingFeatureCard[] = [
 
 export function FeaturesSection() {
   return (
-    <Card className="bg-white/85" padding="lg">
+    <section className="bg-white/85 p-6">
       <div className="max-w-2xl">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-700">
           Built for active supervision
@@ -50,6 +49,6 @@ export function FeaturesSection() {
           />
         ))}
       </div>
-    </Card>
+    </section>
   );
 }

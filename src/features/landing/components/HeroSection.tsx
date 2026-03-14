@@ -1,5 +1,4 @@
 import { LogoMark } from '@/components/brand/Logo';
-import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 
 type HeroSectionProps = {
@@ -9,10 +8,7 @@ type HeroSectionProps = {
 
 export function HeroSection({ onStudentPortal, onSupervisorAccess }: HeroSectionProps) {
   return (
-    <Card
-      className="relative overflow-hidden grid gap-6 bg-white/85 lg:grid-cols-[minmax(0,1fr)_280px] lg:items-center xl:grid-cols-[minmax(0,1fr)_320px]"
-      padding="lg"
-    >
+    <section className="relative grid gap-6 overflow-hidden bg-white/85 p-6 lg:grid-cols-[minmax(0,1fr)_280px] lg:items-center xl:grid-cols-[minmax(0,1fr)_320px]">
       <div className="pointer-events-none absolute -right-10 top-6 hidden h-32 w-32 rounded-full bg-sky-100/60 blur-3xl lg:block" />
       <div className="max-w-4xl">
         <h1 className="text-4xl font-semibold leading-tight tracking-tight text-foreground sm:text-5xl lg:text-6xl">
@@ -44,6 +40,6 @@ export function HeroSection({ onStudentPortal, onSupervisorAccess }: HeroSection
           </div>
         </div>
       </div>
-    </Card>
+    </section>
   );
 }
