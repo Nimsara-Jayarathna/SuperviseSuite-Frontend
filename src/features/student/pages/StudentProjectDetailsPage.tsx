@@ -4,6 +4,7 @@ import { ErrorState } from '@/components/feedback/ErrorState';
 import { buttonStyles } from '@/components/ui/Button';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { PageTabs } from '@/components/ui/PageTabs';
+import { RoleBadge } from '@/components/ui/RoleBadge';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { StudentProjectDetailsSkeleton } from '../components/StudentProjectDetailsSkeleton';
 import { useStudentProject } from '../hooks/useStudentProject';
@@ -222,13 +223,24 @@ export function StudentProjectDetailsPage() {
           <h2 className="text-lg font-semibold text-foreground">Team</h2>
           <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {project.members.map((member) => (
-              <div key={member.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <div
+                key={member.id}
+                className={`rounded-2xl border p-4 ${
+                  member.memberRole === 'SUPERVISOR'
+                    ? 'border-indigo-200 bg-indigo-50/40'
+                    : 'border-slate-200 bg-slate-50'
+                }`}
+              >
                 <p className="font-medium text-foreground">{memberDisplayName(member)}</p>
                 <p className="mt-1 text-sm text-muted-foreground">{member.email}</p>
-                <p className="mt-2 text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                  {member.memberRole}
-                  {member.registrationNumber ? ` • ${member.registrationNumber}` : ''}
-                </p>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <RoleBadge role={member.memberRole} />
+                  {member.registrationNumber ? (
+                    <span className="text-xs text-muted-foreground">
+                      • {member.registrationNumber}
+                    </span>
+                  ) : null}
+                </div>
               </div>
             ))}
           </div>
