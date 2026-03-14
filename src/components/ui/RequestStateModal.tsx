@@ -1,4 +1,7 @@
 import { Button } from '@/components/ui/Button';
+import { cn } from '@/lib/cn';
+import { CheckCircle, Loader2, XCircle } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 type RequestStateModalProps = {
@@ -10,24 +13,67 @@ type RequestStateModalProps = {
   onRetry?: () => void;
 };
 
+const STATUS_STYLES: Record<
+  RequestStateModalProps['status'],
+  {
+    iconContainer: string;
+    gradientOverlay: string;
+  }
+> = {
+  loading: {
+    iconContainer: 'bg-sky-100/85 text-sky-700',
+    gradientOverlay:
+      'from-sky-100/85 via-white/70 to-sky-200/55',
+  },
+  success: {
+    iconContainer: 'bg-emerald-100/85 text-emerald-700',
+    gradientOverlay:
+      'from-emerald-100/85 via-white/70 to-emerald-200/55',
+  },
+  error: {
+    iconContainer: 'bg-rose-100/85 text-rose-700',
+    gradientOverlay:
+      'from-rose-100/85 via-white/70 to-rose-200/55',
+  },
+};
+
 function StatusIcon({ status }: { status: RequestStateModalProps['status'] }) {
+  const styles = STATUS_STYLES[status];
+
   if (status === 'loading') {
     return (
-      <span className="h-12 w-12 animate-spin rounded-full border-4 border-slate-200 border-t-slate-900" />
+      <span
+        className={cn(
+          'inline-flex h-12 w-12 items-center justify-center rounded-full',
+          styles.iconContainer,
+        )}
+      >
+        <Loader2 className="h-6 w-6 animate-spin" />
+      </span>
     );
   }
 
   if (status === 'success') {
     return (
-      <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-2xl font-semibold text-emerald-700">
-        ✓
+      <span
+        className={cn(
+          'inline-flex h-12 w-12 items-center justify-center rounded-full',
+          styles.iconContainer,
+        )}
+      >
+        <CheckCircle className="h-6 w-6" />
       </span>
     );
   }
 
   return (
-    <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-rose-100 text-2xl font-semibold text-rose-700">
-      !
+    <span
+      className={cn(
+        'inline-flex h-12 w-12 items-center justify-center rounded-full',
+        styles.iconContainer,
+      )}
+    >
+      <XCircle className="h-6 w-6" />
     </span>
   );
 }
@@ -40,21 +86,66 @@ export function RequestStateModal({
   onClose,
   onRetry,
 }: RequestStateModalProps) {
+  const [isMounted, setIsMounted] = useState(false);
+  const styles = STATUS_STYLES[status];
+
+  useEffect(() => {
+    if (!isOpen) {
+      setIsMounted(false);
+      return;
+    }
+
+    const rafId = window.requestAnimationFrame(() => {
+      setIsMounted(true);
+    });
+
+    return () => window.cancelAnimationFrame(rafId);
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen || status !== 'success' || !onClose) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      onClose();
+    }, 3000);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [isOpen, status, onClose, title, message]);
+
   if (!isOpen) {
     return null;
   }
 
   const content = (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 px-4 backdrop-blur-[2px]">
-      <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
-        <div className="flex flex-col items-center text-center">
+    <div
+      className={cn(
+        'fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 px-4 backdrop-blur-md transition-opacity duration-250',
+        isMounted ? 'opacity-100' : 'opacity-0',
+      )}
+    >
+      <div
+        className={cn(
+          'relative w-full max-w-md overflow-hidden rounded-3xl border border-white/35 bg-white/65 p-6 shadow-[0_26px_72px_rgba(15,23,42,0.24)] backdrop-blur-md transition-all duration-300 ease-out',
+          isMounted ? 'scale-100 opacity-100' : 'scale-95 opacity-0',
+        )}
+      >
+        <div
+          className={cn(
+            'pointer-events-none absolute inset-0 rounded-[inherit] bg-gradient-to-br',
+            styles.gradientOverlay,
+          )}
+        />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-24 rounded-t-[inherit] bg-gradient-to-b from-white/55 to-transparent" />
+        <div className="relative z-10 flex flex-col items-center text-center">
           <StatusIcon status={status} />
           <h2 className="mt-5 text-xl font-semibold text-foreground">{title}</h2>
           <p className="mt-3 text-sm leading-7 text-muted-foreground">{message}</p>
         </div>
 
         {status !== 'loading' ? (
-          <div className="mt-6 flex flex-wrap justify-center gap-3">
+          <div className="relative z-10 mt-6 flex flex-wrap justify-center gap-3">
             {status === 'error' && onRetry ? (
               <Button type="button" variant="primary" size="md" onClick={onRetry}>
                 Retry
