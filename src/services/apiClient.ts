@@ -20,6 +20,7 @@ export function isApiException(error: unknown): error is ApiException {
 }
 
 const REFRESH_PATH = '/api/auth/refresh';
+const AUTH_PATH_PREFIX = '/api/auth/';
 let inFlightRefresh: Promise<boolean> | null = null;
 
 /**
@@ -62,6 +63,28 @@ async function tryRefreshSingleFlight(): Promise<boolean> {
   return inFlightRefresh;
 }
 
+function isAuthEndpoint(path: string): boolean {
+  return path.startsWith(AUTH_PATH_PREFIX);
+}
+
+async function parseJsonSafely(response: Response): Promise<unknown | null> {
+  try {
+    return (await response.json()) as unknown;
+  } catch {
+    return null;
+  }
+}
+
+function hasApiErrorShape(value: unknown): value is ApiError {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    typeof (value as ApiError).status === 'number' &&
+    typeof (value as ApiError).code === 'string' &&
+    typeof (value as ApiError).message === 'string'
+  );
+}
+
 /**
  * Core request function. Sends cookies automatically via {@code credentials: 'include'}.
  * No Authorization header — the access token lives in an httpOnly cookie.
@@ -101,10 +124,10 @@ async function request<T>(path: string, init: RequestInit = {}, isRetry = false)
     throw new ApiException(networkError);
   }
 
-  // 401 interceptor: attempt one silent refresh, then retry.
-  // Skipped when the failing request is itself the refresh endpoint (avoids loops),
-  // and when this is already a post-refresh retry.
-  if (response.status === 401 && path !== REFRESH_PATH && !isRetry) {
+  // 401 interceptor: attempt one silent refresh only for protected endpoints.
+  // Never refresh on public auth endpoints (e.g. /api/auth/login), because a 401
+  // there means invalid credentials, not an expired authenticated session.
+  if (response.status === 401 && !isAuthEndpoint(path) && !isRetry) {
     const refreshed = await tryRefreshSingleFlight();
     if (refreshed) {
       return request<T>(path, init, true);
@@ -129,18 +152,20 @@ async function request<T>(path: string, init: RequestInit = {}, isRetry = false)
     return undefined as unknown as T;
   }
 
-  const body: unknown = await response.json();
+  const body = await parseJsonSafely(response);
 
   if (!response.ok) {
-    // GlobalExceptionHandler returns a raw ApiError body (not wrapped in ApiResponse).
-    // Cast directly — fall back to a synthetic error if the shape is unexpected.
+    // Backend errors are expected as raw ApiError JSON. Fall back safely when a proxy
+    // or unexpected middleware returns an empty or non-JSON body.
     throw new ApiException(
-      (body as ApiError) ?? {
+      hasApiErrorShape(body)
+        ? body
+        : {
         timestamp: new Date().toISOString(),
         status: response.status,
         error: response.statusText,
-        code: 'INTERNAL_ERROR',
-        message: 'An unexpected error occurred.',
+        code: response.status === 401 ? 'UNAUTHORIZED' : 'INTERNAL_ERROR',
+        message: response.status === 401 ? 'Authentication failed.' : 'An unexpected error occurred.',
         path,
         traceId: null,
         details: [],
