@@ -503,7 +503,6 @@ export function CreateProjectPage() {
           </div>
         </form>
       </section>
-
     </div>
   );
 }

@@ -51,12 +51,14 @@ export function RepositorySection({ project, onUpdate }: RepositorySectionProps)
     setValidationError(null);
   }, [project.repositoryUrl, isEditing]);
 
-  const hasInputChanged = useMemo(() => urlInput !== initialEditValue, [initialEditValue, urlInput]);
+  const hasInputChanged = useMemo(
+    () => urlInput !== initialEditValue,
+    [initialEditValue, urlInput],
+  );
 
   const nextRepositoryPayload = useMemo(() => toRepositoryPayload(urlInput), [urlInput]);
   const isInputValid = useMemo(
-    () =>
-      nextRepositoryPayload === null || isValidGithubRepositoryUrl(nextRepositoryPayload),
+    () => nextRepositoryPayload === null || isValidGithubRepositoryUrl(nextRepositoryPayload),
     [nextRepositoryPayload],
   );
 
