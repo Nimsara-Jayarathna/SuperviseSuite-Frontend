@@ -4,6 +4,7 @@ import { ErrorState } from '@/components/feedback/ErrorState';
 import { buttonStyles } from '@/components/ui/Button';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { PageTabs } from '@/components/ui/PageTabs';
+import { RoleBadge } from '@/components/ui/RoleBadge';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { StudentProjectDetailsSkeleton } from '../components/StudentProjectDetailsSkeleton';
 import { useStudentProject } from '../hooks/useStudentProject';
@@ -23,7 +24,7 @@ const dateTimeFormatter = new Intl.DateTimeFormat('en', {
   minute: '2-digit',
 });
 
-const TABS: StudentProjectDetailTab[] = ['overview', 'team', 'milestones'];
+const BASE_TABS: StudentProjectDetailTab[] = ['overview', 'team', 'milestones'];
 
 function memberDisplayName(member: StudentProjectDetailMember) {
   return `${member.firstName ?? ''} ${member.lastName ?? ''}`.trim() || member.email;
@@ -45,9 +46,6 @@ export function StudentProjectDetailsPage() {
   const { projectId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const { project, isLoading, error, reload } = useStudentProject(projectId);
-
-  const requestedTab = searchParams.get('tab') as StudentProjectDetailTab | null;
-  const activeTab = requestedTab && TABS.includes(requestedTab) ? requestedTab : 'overview';
 
   function handleTabChange(tab: StudentProjectDetailTab) {
     const nextParams = new URLSearchParams(searchParams);
@@ -87,6 +85,12 @@ export function StudentProjectDetailsPage() {
   if (!project) {
     return null;
   }
+
+  const requestedTab = searchParams.get('tab') as StudentProjectDetailTab | null;
+  const tabs: StudentProjectDetailTab[] = project.repositoryUrl
+    ? [...BASE_TABS, 'github']
+    : BASE_TABS;
+  const activeTab = requestedTab && tabs.includes(requestedTab) ? requestedTab : 'overview';
 
   return (
     <div className="space-y-6">
@@ -154,7 +158,7 @@ export function StudentProjectDetailsPage() {
       </section>
 
       <PageTabs
-        items={TABS.map((tab) => ({
+        items={tabs.map((tab) => ({
           value: tab,
           label: toTabLabel(tab),
         }))}
@@ -219,13 +223,24 @@ export function StudentProjectDetailsPage() {
           <h2 className="text-lg font-semibold text-foreground">Team</h2>
           <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {project.members.map((member) => (
-              <div key={member.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <div
+                key={member.id}
+                className={`rounded-2xl border p-4 ${
+                  member.memberRole === 'SUPERVISOR'
+                    ? 'border-indigo-200 bg-indigo-50/40'
+                    : 'border-slate-200 bg-slate-50'
+                }`}
+              >
                 <p className="font-medium text-foreground">{memberDisplayName(member)}</p>
                 <p className="mt-1 text-sm text-muted-foreground">{member.email}</p>
-                <p className="mt-2 text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                  {member.memberRole}
-                  {member.registrationNumber ? ` • ${member.registrationNumber}` : ''}
-                </p>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <RoleBadge role={member.memberRole} />
+                  {member.registrationNumber ? (
+                    <span className="text-xs text-muted-foreground">
+                      • {member.registrationNumber}
+                    </span>
+                  ) : null}
+                </div>
               </div>
             ))}
           </div>
@@ -260,6 +275,23 @@ export function StudentProjectDetailsPage() {
           ) : (
             <p className="mt-4 text-sm text-muted-foreground">No milestones recorded yet.</p>
           )}
+        </section>
+      ) : null}
+
+      {activeTab === 'github' && project.repositoryUrl ? (
+        <section className="rounded-3xl border border-border bg-white p-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-foreground">GitHub repository</h2>
+          <div className="mt-4 space-y-2">
+            <a
+              href={project.repositoryUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm font-medium text-sky-700 underline-offset-2 hover:underline"
+            >
+              {project.repositoryUrl}
+            </a>
+            <p className="text-xs text-muted-foreground">Repository managed by supervisor</p>
+          </div>
         </section>
       ) : null}
     </div>

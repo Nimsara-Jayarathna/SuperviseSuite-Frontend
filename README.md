@@ -14,11 +14,17 @@ This branch is now UI-complete enough to cover the public landing flow, auth scr
 ### Environment
 
 1. Copy `.env.example` to `.env`.
-2. Update values as needed for local development.
+2. Use backend-aligned local values.
 
 Default example:
 
 `VITE_API_BASE_URL=http://localhost:8081`
+
+Local auth/refresh reliability notes:
+
+- Ensure backend `APP_PORT=8081` and frontend `VITE_API_BASE_URL` points to the same port.
+- Ensure backend `CORS_ALLOWED_ORIGINS=http://localhost:5173`.
+- Use `localhost` consistently in FE and BE (do not mix with `127.0.0.1`).
 
 ### Install and Run
 

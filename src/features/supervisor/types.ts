@@ -42,6 +42,7 @@ export type SupervisorProjectDetail = {
   progressPercent: number | null;
   healthNote: string | null;
   lastActivityAt: string | null;
+  repositoryUrl?: string | null;
   members: SupervisorProjectDetailMember[];
   milestones: SupervisorProjectDetailMilestone[];
 };
@@ -125,7 +126,7 @@ export type SupervisorProject = {
   progress: number;
   healthNote: string;
   communicationUrl?: string;
-  repositoryUrl?: string;
+  repositoryUrl?: string | null;
   jiraBoardUrl?: string;
   members: SupervisorProjectMember[];
   metrics: SupervisorProjectMetric[];
@@ -239,4 +240,8 @@ export type UpdateSupervisorProjectMilestoneRequest = {
 
 export type UpdateSupervisorProjectStatusRequest = {
   lifecycleStatus: SupervisorProjectLifecycle;
+};
+
+export type UpdateRepositoryRequest = {
+  repositoryUrl: string | null;
 };

@@ -1,4 +1,3 @@
-import { Card } from '@/components/ui/Card';
 import { FileText, GitCommitHorizontal, Webhook } from 'lucide-react';
 import type { LandingFeatureCard } from '../types';
 import { FeatureCard } from './FeatureCard';
@@ -26,7 +25,7 @@ const FEATURE_CARDS: LandingFeatureCard[] = [
 
 export function FeaturesSection() {
   return (
-    <Card className="bg-white/85" padding="lg">
+    <section className="relative overflow-hidden rounded-3xl border border-white/35 bg-white/60 p-6 pt-8 shadow-[0_20px_55px_rgba(15,23,42,0.12)] backdrop-blur-md sm:pt-10">
       <div className="max-w-2xl">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-700">
           Built for active supervision
@@ -40,7 +39,7 @@ export function FeaturesSection() {
         </p>
       </div>
 
-      <div className="mt-4 grid gap-4 sm:grid-cols-3">
+      <div className="mt-6 grid gap-5 sm:grid-cols-3">
         {FEATURE_CARDS.map((card) => (
           <FeatureCard
             key={card.id}
@@ -50,6 +49,6 @@ export function FeaturesSection() {
           />
         ))}
       </div>
-    </Card>
+    </section>
   );
 }

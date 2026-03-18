@@ -53,8 +53,12 @@ export function useAuth() {
       setUser(res.user);
       navigate(ROLE_HOME[res.user.role] ?? '/');
     } catch (err) {
-      if (isApiException(err)) setError(err.apiError);
-      else setUnexpectedError();
+      if (isApiException(err)) {
+        setError(err.apiError);
+      } else {
+        setUnexpectedError();
+      }
+      throw err;
     }
   }
 

@@ -23,6 +23,7 @@ export type RegisterFormProps = {
   error: ApiError | null;
   onClearError: () => void;
   onSuccess?: () => void;
+  feedbackMode?: 'inline' | 'modal';
 };
 
 export function RegisterForm({
@@ -31,6 +32,7 @@ export function RegisterForm({
   error,
   onClearError,
   onSuccess,
+  feedbackMode = 'inline',
 }: RegisterFormProps) {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -40,9 +42,10 @@ export function RegisterForm({
   const [registrationNumber, setRegistrationNumber] = useState('');
   const [fieldErrors, setFieldErrors] = useState<RegisterFieldErrors>({});
 
+  const showInlineBackendFeedback = feedbackMode === 'inline';
   // Derived from the ApiError using pure utility functions (Single Responsibility).
-  const backendFieldErrors = mapBackendFieldErrors(error);
-  const generalError = getGeneralError(error);
+  const backendFieldErrors = showInlineBackendFeedback ? mapBackendFieldErrors(error) : {};
+  const generalError = showInlineBackendFeedback ? getGeneralError(error) : null;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -194,7 +197,7 @@ export function RegisterForm({
           id="reg-confirm-password"
           type="password"
           autoComplete="new-password"
-          placeholder="••••••••"
+          placeholder="Re-enter your password"
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
           className={inputClass}
@@ -212,7 +215,7 @@ export function RegisterForm({
         fullWidth
         className="mt-1"
       >
-        {isLoading ? 'Creating account…' : 'Create Account'}
+        {isLoading && feedbackMode === 'inline' ? 'Creating account…' : 'Create Account'}
       </Button>
     </form>
   );

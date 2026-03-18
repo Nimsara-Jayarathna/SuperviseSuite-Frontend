@@ -23,16 +23,25 @@ export type LoginFormProps = {
   error: ApiError | null;
   onClearError: () => void;
   onSuccess?: () => void;
+  feedbackMode?: 'inline' | 'modal';
 };
 
-export function LoginForm({ onSubmit, isLoading, error, onClearError, onSuccess }: LoginFormProps) {
+export function LoginForm({
+  onSubmit,
+  isLoading,
+  error,
+  onClearError,
+  onSuccess,
+  feedbackMode = 'inline',
+}: LoginFormProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fieldErrors, setFieldErrors] = useState<LoginFieldErrors>({});
 
+  const showInlineBackendFeedback = feedbackMode === 'inline';
   // Derived from the ApiError using pure utility functions (Single Responsibility).
-  const backendFieldErrors = mapBackendLoginFieldErrors(error);
-  const generalError = getLoginGeneralError(error);
+  const backendFieldErrors = showInlineBackendFeedback ? mapBackendLoginFieldErrors(error) : {};
+  const generalError = showInlineBackendFeedback ? getLoginGeneralError(error) : null;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -105,7 +114,7 @@ export function LoginForm({ onSubmit, isLoading, error, onClearError, onSuccess 
         fullWidth
         className="mt-1"
       >
-        {isLoading ? 'Signing in…' : 'Sign In'}
+        {isLoading && feedbackMode === 'inline' ? 'Signing in…' : 'Sign In'}
       </Button>
     </form>
   );

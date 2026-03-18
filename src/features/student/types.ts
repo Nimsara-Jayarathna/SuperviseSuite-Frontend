@@ -42,8 +42,9 @@ export type StudentProjectDetail = {
   lastActivityAt: string | null;
   progressPercent: number | null;
   healthNote: string | null;
+  repositoryUrl?: string | null;
   members: StudentProjectDetailMember[];
   milestones: StudentProjectDetailMilestone[];
 };
 
-export type StudentProjectDetailTab = 'overview' | 'team' | 'milestones';
+export type StudentProjectDetailTab = 'overview' | 'team' | 'milestones' | 'github';

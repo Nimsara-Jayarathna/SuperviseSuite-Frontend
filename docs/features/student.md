@@ -82,6 +82,7 @@ Student pages currently use:
 - `Overview`
 - `Team`
 - `Milestones`
+- `GitHub` (shown only when `repositoryUrl` exists in the project detail payload)
 
 ### Header chips
 
@@ -96,6 +97,12 @@ Student pages currently use:
   - assigned member cards (name/email/member role/registration number)
 - Milestones:
   - milestone list with sequence, status, due date, description
+- GitHub (read-only):
+  - shown only when `project.repositoryUrl` exists
+  - displays clickable repository link
+  - link opens in a new tab (`target="_blank"`, `rel="noopener noreferrer"`)
+  - helper note: `Repository managed by supervisor`
+  - no add/edit/remove controls are rendered for students
 
 ### UX states
 
