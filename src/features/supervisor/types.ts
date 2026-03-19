@@ -13,6 +13,18 @@ export type SupervisorProjectSummary = {
   memberCount: number;
 };
 
+export type ProjectCommit = {
+  sha: string | null;
+  message: string;
+  author: string;
+  committedAt: string | null;
+};
+
+export type ProjectCommitActivity = {
+  repositoryLinked: boolean;
+  commits: ProjectCommit[];
+};
+
 export type SupervisorProjectDetailMember = {
   id: string;
   firstName: string | null;
@@ -55,7 +67,7 @@ export type SupervisorProjectTab =
   | 'action-items'
   | 'files';
 
-export type SupervisorProjectDetailTab = 'overview' | 'team' | 'milestones';
+export type SupervisorProjectDetailTab = 'overview' | 'team' | 'milestones' | 'github';
 
 export type SupervisorProjectMember = {
   id: string;
