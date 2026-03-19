@@ -8,11 +8,13 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { PageTabs } from '@/components/ui/PageTabs';
 import { RequestStateModal } from '@/components/ui/RequestStateModal';
 import { RoleBadge } from '@/components/ui/RoleBadge';
+import { CommitActivitySection } from '@/features/projects/components/CommitActivitySection';
 import { isApiException } from '@/services/apiClient';
 import type { ApiError } from '@/types';
 import { supervisorApi } from '../api/supervisorApi';
 import { RepositorySection } from '../components/ProjectDetail/RepositorySection';
 import { ProjectDetailsSkeleton } from '../components/ProjectDetailsSkeleton';
+import { useSupervisorProjectCommits } from '../hooks/useSupervisorProjectCommits';
 import { useSupervisorProject } from '../hooks/useSupervisorProject';
 import type {
   SupervisorProjectDetail,
@@ -37,7 +39,7 @@ const dateTimeFormatter = new Intl.DateTimeFormat('en', {
   minute: '2-digit',
 });
 
-const TABS: SupervisorProjectDetailTab[] = ['overview', 'team', 'milestones'];
+const TABS: SupervisorProjectDetailTab[] = ['overview', 'team', 'milestones', 'github'];
 const FIELD_LIMITS = {
   title: 40,
   summary: 250,
@@ -142,6 +144,7 @@ export function ProjectDetailsPage() {
   const { projectId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const { project: loadedProject, isLoading, error, reload } = useSupervisorProject(projectId);
+  const commitState = useSupervisorProjectCommits(projectId);
   const [project, setProject] = useState<SupervisorProjectDetail | null>(null);
   const [isEditingOverview, setIsEditingOverview] = useState(false);
   const [isSavingOverview, setIsSavingOverview] = useState(false);
@@ -1270,6 +1273,15 @@ export function ProjectDetailsPage() {
             <p className="mt-4 text-sm text-muted-foreground">No milestones recorded yet.</p>
           )}
         </section>
+      ) : null}
+
+      {activeTab === 'github' ? (
+        <CommitActivitySection
+          isLoading={commitState.isLoading}
+          error={commitState.error}
+          data={commitState.data}
+          onRetry={() => void commitState.reload()}
+        />
       ) : null}
     </div>
   );
