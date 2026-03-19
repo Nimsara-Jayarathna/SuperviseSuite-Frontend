@@ -1,4 +1,6 @@
 import { CalendarDays, Clock3, Users } from 'lucide-react';
+import { CommitActivitySection } from '@/features/projects/components/CommitActivitySection';
+import { useStudentProjectCommits } from '../hooks/useStudentProjectCommits';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { ErrorState } from '@/components/feedback/ErrorState';
 import { buttonStyles } from '@/components/ui/Button';
@@ -46,6 +48,7 @@ export function StudentProjectDetailsPage() {
   const { projectId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const { project, isLoading, error, reload } = useStudentProject(projectId);
+  const commitState = useStudentProjectCommits(projectId);
 
   function handleTabChange(tab: StudentProjectDetailTab) {
     const nextParams = new URLSearchParams(searchParams);
@@ -87,9 +90,7 @@ export function StudentProjectDetailsPage() {
   }
 
   const requestedTab = searchParams.get('tab') as StudentProjectDetailTab | null;
-  const tabs: StudentProjectDetailTab[] = project.repositoryUrl
-    ? [...BASE_TABS, 'github']
-    : BASE_TABS;
+  const tabs: StudentProjectDetailTab[] = [...BASE_TABS, 'github'];
   const activeTab = requestedTab && tabs.includes(requestedTab) ? requestedTab : 'overview';
 
   return (
@@ -278,22 +279,14 @@ export function StudentProjectDetailsPage() {
         </section>
       ) : null}
 
-      {activeTab === 'github' && project.repositoryUrl ? (
-        <section className="rounded-3xl border border-border bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-foreground">GitHub repository</h2>
-          <div className="mt-4 space-y-2">
-            <a
-              href={project.repositoryUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm font-medium text-sky-700 underline-offset-2 hover:underline"
-            >
-              {project.repositoryUrl}
-            </a>
-            <p className="text-xs text-muted-foreground">Repository managed by supervisor</p>
-          </div>
-        </section>
-      ) : null}
+      {activeTab === 'github' ? (
+  <CommitActivitySection
+    isLoading={commitState.isLoading}
+    error={commitState.error}
+    data={commitState.data}
+    onRetry={() => void commitState.reload()}
+  />
+) : null}
     </div>
   );
 }
