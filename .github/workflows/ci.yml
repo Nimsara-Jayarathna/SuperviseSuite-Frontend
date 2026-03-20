@@ -150,19 +150,16 @@ jobs:
           SSH_HOST: ${{ secrets.SSH_HOST }}
           SSH_PORT: ${{ secrets.SSH_PORT }}
           SSH_USER: ${{ secrets.SSH_USER }}
-          GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
-          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
           NPM_NET_NAME: ${{ vars.NPM_NET_NAME }}
         run: |
           SSH_OPTS="-i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes"
           ssh $SSH_OPTS -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" \
-            "NPM_NET_NAME='${NPM_NET_NAME:-npm_default}' GHCR_USERNAME='$GHCR_USERNAME' GHCR_TOKEN='$GHCR_TOKEN' IMAGE='$IMAGE_REPO:$DEPLOY_ENV' CONTAINER_NAME='$CONTAINER_NAME' NETWORK_ALIAS='$NETWORK_ALIAS' bash -s" <<'EOF'
+            "NPM_NET_NAME='${NPM_NET_NAME:-npm_default}' IMAGE='$IMAGE_REPO:$DEPLOY_ENV' CONTAINER_NAME='$CONTAINER_NAME' NETWORK_ALIAS='$NETWORK_ALIAS' bash -s" <<'EOF'
           set -euo pipefail
           if ! docker network inspect "$NPM_NET_NAME" >/dev/null 2>&1; then
             docker network create --driver bridge "$NPM_NET_NAME"
           fi
           docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
-          echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin
           docker pull "$IMAGE"
           docker run -d --name "$CONTAINER_NAME" \
             --network "$NPM_NET_NAME" \
