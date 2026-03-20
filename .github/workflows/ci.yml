@@ -50,6 +50,8 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     environment: ${{ github.ref == 'refs/heads/main' && 'prod' || 'stg' }}
+    env:
+      VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
 
     steps:
       - name: Checkout
@@ -76,8 +78,6 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build image
-        env:
-          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
         run: |
           docker build \
             --build-arg VITE_API_BASE_URL \
@@ -96,6 +96,11 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     environment: ${{ github.ref == 'refs/heads/main' && 'prod' || 'stg' }}
+    env:
+      SSH_HOST: ${{ secrets.SSH_HOST }}
+      SSH_PORT: ${{ secrets.SSH_PORT }}
+      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+      SSH_USER: ${{ secrets.SSH_USER }}
 
     steps:
       - name: Derive deployment metadata
@@ -115,11 +120,6 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y openssh-client
 
       - name: Validate SSH settings
-        env:
-          SSH_HOST: ${{ secrets.SSH_HOST }}
-          SSH_PORT: ${{ secrets.SSH_PORT }}
-          SSH_USER: ${{ secrets.SSH_USER }}
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         run: |
           echo "SSH_HOST=$SSH_HOST"
           echo "SSH_PORT=$SSH_PORT"
@@ -135,10 +135,6 @@ jobs:
           fi
 
       - name: Configure SSH key
-        env:
-          SSH_HOST: ${{ secrets.SSH_HOST }}
-          SSH_PORT: ${{ secrets.SSH_PORT }}
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         run: |
           mkdir -p ~/.ssh
           printf '%s' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
@@ -147,9 +143,6 @@ jobs:
 
       - name: Deploy container
         env:
-          SSH_HOST: ${{ secrets.SSH_HOST }}
-          SSH_PORT: ${{ secrets.SSH_PORT }}
-          SSH_USER: ${{ secrets.SSH_USER }}
           NPM_NET_NAME: ${{ vars.NPM_NET_NAME }}
         run: |
           SSH_OPTS="-i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes"
