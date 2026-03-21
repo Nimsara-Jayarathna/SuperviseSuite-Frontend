@@ -92,6 +92,7 @@ export function CreateProjectPage() {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState<CreateProjectStep>('basics');
   const [draft, setDraft] = useState<DraftState>(INITIAL_DRAFT);
+  const [expandedMilestoneId, setExpandedMilestoneId] = useState<string>(INITIAL_DRAFT.milestones[0].id);
   const [studentQuery, setStudentQuery] = useState('');
   const [selectedStudents, setSelectedStudents] = useState<SupervisorStudentSearchResult[]>([]);
   const [searchResults, setSearchResults] = useState<SupervisorStudentSearchResult[]>([]);
@@ -181,23 +182,32 @@ export function CreateProjectPage() {
   }
 
   function addMilestone() {
+    const nextMilestone = createMilestoneDraft();
     setDraft((current) => ({
       ...current,
-      milestones: [...current.milestones, createMilestoneDraft()],
+      milestones: [...current.milestones, nextMilestone],
     }));
+    setExpandedMilestoneId(nextMilestone.id);
   }
 
   function removeMilestone(milestoneId: string) {
+    const nextMilestones = draft.milestones.filter((milestone) => milestone.id !== milestoneId);
+    if (nextMilestones.length === 0) {
+      return;
+    }
+
     setDraft((current) => {
       if (current.milestones.length === 1) {
         return current;
       }
-
       return {
         ...current,
-        milestones: current.milestones.filter((milestone) => milestone.id !== milestoneId),
+        milestones: nextMilestones,
       };
     });
+    setExpandedMilestoneId((currentExpanded) =>
+      currentExpanded === milestoneId ? nextMilestones[nextMilestones.length - 1].id : currentExpanded,
+    );
   }
 
   function selectStudent(student: SupervisorStudentSearchResult) {
@@ -326,10 +336,12 @@ export function CreateProjectPage() {
 
       setCreatedProjectId(response.id);
       invalidateSupervisorProjectsCache();
+      const resetMilestone = createMilestoneDraft();
       setDraft({
         ...INITIAL_DRAFT,
-        milestones: [createMilestoneDraft()],
+        milestones: [resetMilestone],
       });
+      setExpandedMilestoneId(resetMilestone.id);
       setSelectedStudents([]);
       setStudentQuery('');
       setSearchResults([]);
@@ -411,7 +423,8 @@ export function CreateProjectPage() {
       />
 
       <section className="rounded-3xl border border-border bg-white p-6 shadow-sm">
-        <div className="grid gap-3 md:grid-cols-3">
+        <div className="overflow-x-auto">
+          <div className="flex min-w-max items-stretch gap-3">
           {CREATE_PROJECT_STEPS.map((step, index) => {
             const isActive = step.id === currentStep;
             const isComplete = index < currentStepIndex;
@@ -420,7 +433,7 @@ export function CreateProjectPage() {
               <div
                 key={step.id}
                 className={cn(
-                  'rounded-2xl border px-4 py-4 transition-colors',
+                  'min-w-[220px] flex-1 rounded-2xl border px-4 py-3 transition-colors',
                   isActive
                     ? 'border-amber-300 bg-amber-50'
                     : isComplete
@@ -428,14 +441,28 @@ export function CreateProjectPage() {
                       : 'border-slate-200 bg-slate-50',
                 )}
               >
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-                  {step.label}
-                </p>
-                <h2 className="mt-2 text-base font-semibold text-foreground">{step.title}</h2>
-                <p className="mt-1 text-sm text-muted-foreground">{step.description}</p>
+                <div className="flex items-center gap-3">
+                  <div
+                    className={cn(
+                      'flex h-9 w-9 shrink-0 items-center justify-center rounded-full border text-sm font-semibold',
+                      isActive
+                        ? 'border-amber-300 bg-amber-100 text-amber-900'
+                        : isComplete
+                          ? 'border-emerald-300 bg-emerald-100 text-emerald-900'
+                          : 'border-slate-300 bg-white text-slate-500',
+                    )}
+                  >
+                    {index + 1}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-foreground">{step.title}</p>
+                    <p className="text-xs text-muted-foreground">{step.description}</p>
+                  </div>
+                </div>
               </div>
             );
           })}
+          </div>
         </div>
 
         <form className="mt-8 space-y-8" onSubmit={handleSubmit}>
@@ -635,86 +662,105 @@ export function CreateProjectPage() {
 
               <div className="space-y-4">
                 {draft.milestones.map((milestone, index) => (
-                  <div
-                    key={milestone.id}
-                    className="rounded-3xl border border-slate-200 bg-slate-50 p-5"
-                  >
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div>
+                  <div key={milestone.id} className="rounded-3xl border border-slate-200 bg-slate-50">
+                    <button
+                      type="button"
+                      className="flex w-full items-start justify-between gap-4 px-5 py-4 text-left"
+                      onClick={() => setExpandedMilestoneId(milestone.id)}
+                    >
+                      <div className="min-w-0">
                         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
                           Milestone {index + 1}
                         </p>
-                        <h3 className="mt-1 text-base font-semibold text-foreground">
-                          Define a review checkpoint
-                        </h3>
+                        <p className="mt-1 text-base font-semibold text-foreground">
+                          {milestone.title.trim() || 'Define a review checkpoint'}
+                        </p>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          {milestone.dueDate
+                            ? `Due ${milestone.dueDate}`
+                            : 'Due date not set yet'}
+                        </p>
                       </div>
-                      {draft.milestones.length > 1 ? (
-                        <button
-                          type="button"
-                          className={buttonStyles({ variant: 'secondary', size: 'sm' })}
-                          onClick={() => removeMilestone(milestone.id)}
-                          disabled={isSubmitting}
-                        >
-                          Remove
-                        </button>
-                      ) : null}
-                    </div>
+                      <span className="shrink-0 text-sm text-muted-foreground">
+                        {expandedMilestoneId === milestone.id ? 'Hide' : 'Edit'}
+                      </span>
+                    </button>
 
-                    <div className="mt-5 grid gap-4">
-                      <label className="block">
-                        <span className="mb-2 block text-sm font-medium text-foreground">
-                          Milestone title
-                        </span>
-                        <input
-                          required
-                          value={milestone.title}
-                          onChange={(event) =>
-                            updateMilestone(milestone.id, 'title', event.target.value)
-                          }
-                          maxLength={FIELD_LIMITS.milestoneTitle}
-                          placeholder="e.g. Proposal Submission"
-                          className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-amber-300"
-                          disabled={isSubmitting}
-                        />
-                      </label>
+                    {expandedMilestoneId === milestone.id ? (
+                      <div className="border-t border-slate-200 px-5 pb-5 pt-4">
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <p className="text-sm text-muted-foreground">
+                            Fill in the milestone details, then add another if needed.
+                          </p>
+                          {draft.milestones.length > 1 ? (
+                            <button
+                              type="button"
+                              className={buttonStyles({ variant: 'secondary', size: 'sm' })}
+                              onClick={() => removeMilestone(milestone.id)}
+                              disabled={isSubmitting}
+                            >
+                              Remove
+                            </button>
+                          ) : null}
+                        </div>
 
-                      <label className="block">
-                        <span className="mb-2 flex items-center justify-between gap-3 text-sm font-medium text-foreground">
-                          <span>Milestone description</span>
-                          {renderLimit(
-                            milestone.description.length,
-                            FIELD_LIMITS.milestoneDescription,
-                          )}
-                        </span>
-                        <textarea
-                          value={milestone.description}
-                          onChange={(event) =>
-                            updateMilestone(milestone.id, 'description', event.target.value)
-                          }
-                          maxLength={FIELD_LIMITS.milestoneDescription}
-                          placeholder="Add any context or review expectations for this milestone."
-                          rows={4}
-                          className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-amber-300"
-                          disabled={isSubmitting}
-                        />
-                      </label>
+                        <div className="mt-4 grid gap-4">
+                          <label className="block">
+                            <span className="mb-2 block text-sm font-medium text-foreground">
+                              Milestone title
+                            </span>
+                            <input
+                              required
+                              value={milestone.title}
+                              onChange={(event) =>
+                                updateMilestone(milestone.id, 'title', event.target.value)
+                              }
+                              maxLength={FIELD_LIMITS.milestoneTitle}
+                              placeholder="e.g. Proposal Submission"
+                              className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-amber-300"
+                              disabled={isSubmitting}
+                            />
+                          </label>
 
-                      <label className="block sm:max-w-xs">
-                        <span className="mb-2 block text-sm font-medium text-foreground">
-                          Due date
-                        </span>
-                        <input
-                          required
-                          type="date"
-                          value={milestone.dueDate}
-                          onChange={(event) =>
-                            updateMilestone(milestone.id, 'dueDate', event.target.value)
-                          }
-                          className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-amber-300"
-                          disabled={isSubmitting}
-                        />
-                      </label>
-                    </div>
+                          <label className="block">
+                            <span className="mb-2 flex items-center justify-between gap-3 text-sm font-medium text-foreground">
+                              <span>Milestone description</span>
+                              {renderLimit(
+                                milestone.description.length,
+                                FIELD_LIMITS.milestoneDescription,
+                              )}
+                            </span>
+                            <textarea
+                              value={milestone.description}
+                              onChange={(event) =>
+                                updateMilestone(milestone.id, 'description', event.target.value)
+                              }
+                              maxLength={FIELD_LIMITS.milestoneDescription}
+                              placeholder="Add any context or review expectations for this milestone."
+                              rows={4}
+                              className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-amber-300"
+                              disabled={isSubmitting}
+                            />
+                          </label>
+
+                          <label className="block sm:max-w-xs">
+                            <span className="mb-2 block text-sm font-medium text-foreground">
+                              Due date
+                            </span>
+                            <input
+                              required
+                              type="date"
+                              value={milestone.dueDate}
+                              onChange={(event) =>
+                                updateMilestone(milestone.id, 'dueDate', event.target.value)
+                              }
+                              className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-amber-300"
+                              disabled={isSubmitting}
+                            />
+                          </label>
+                        </div>
+                      </div>
+                    ) : null}
                   </div>
                 ))}
               </div>
