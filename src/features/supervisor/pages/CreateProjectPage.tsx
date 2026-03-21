@@ -507,7 +507,7 @@ export function CreateProjectPage() {
                       <button
                         type="button"
                         onClick={() => removeMilestone(index)}
-                        className="text-xs text-muted-foreground transition-colors hover:text-rose-600"
+                        className="inline-flex h-9 items-center justify-center rounded-xl border border-rose-200 bg-rose-50 px-3 text-xs font-semibold text-rose-700 transition-colors hover:bg-rose-100 hover:text-rose-800 focus:outline-none focus:ring-2 focus:ring-rose-200"
                         disabled={isSubmitting}
                       >
                         Remove
@@ -516,18 +516,34 @@ export function CreateProjectPage() {
                   </div>
 
                   <div className="space-y-4">
-                    <label className="block">
-                      <span className="mb-2 block text-sm font-medium text-foreground">Title</span>
-                      <input
-                        required
-                        value={milestone.title}
-                        onChange={(e) => updateMilestone(index, 'title', e.target.value)}
-                        maxLength={FIELD_LIMITS.milestoneTitle}
-                        placeholder="e.g. Proposal Submission"
-                        className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-amber-300"
-                        disabled={isSubmitting}
-                      />
-                    </label>
+                    <div className="flex items-end gap-4">
+                      <label className="block flex-1">
+                        <span className="mb-2 block text-sm font-medium text-foreground">Title</span>
+                        <input
+                          required
+                          value={milestone.title}
+                          onChange={(e) => updateMilestone(index, 'title', e.target.value)}
+                          maxLength={FIELD_LIMITS.milestoneTitle}
+                          placeholder="e.g. Proposal Submission"
+                          className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-amber-300"
+                          disabled={isSubmitting}
+                        />
+                      </label>
+
+                      <label className="block w-[420px] shrink-0">
+                        <span className="mb-2 block text-sm font-medium text-foreground">
+                          Due date
+                        </span>
+                        <input
+                          required
+                          type="date"
+                          value={milestone.dueDate}
+                          onChange={(e) => updateMilestone(index, 'dueDate', e.target.value)}
+                          className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-amber-300"
+                          disabled={isSubmitting}
+                        />
+                      </label>
+                    </div>
 
                     <label className="block">
                       <span className="mb-2 flex items-center justify-between text-sm font-medium text-foreground">
@@ -543,20 +559,6 @@ export function CreateProjectPage() {
                         maxLength={FIELD_LIMITS.milestoneDescription}
                         placeholder="Add context or review expectations."
                         rows={3}
-                        className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-amber-300"
-                        disabled={isSubmitting}
-                      />
-                    </label>
-
-                    <label className="block sm:max-w-xs">
-                      <span className="mb-2 block text-sm font-medium text-foreground">
-                        Due date
-                      </span>
-                      <input
-                        required
-                        type="date"
-                        value={milestone.dueDate}
-                        onChange={(e) => updateMilestone(index, 'dueDate', e.target.value)}
                         className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-amber-300"
                         disabled={isSubmitting}
                       />
