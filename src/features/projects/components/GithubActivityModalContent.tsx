@@ -1,4 +1,8 @@
+import { useCallback, useEffect, useState } from 'react';
+import { buttonStyles } from '@/components/ui/Button';
+import { isApiException } from '@/services/apiClient';
 import type { ProjectGitHubRecentCommit } from '../types';
+import type { PaginatedListResult } from '../types';
 
 const dateTimeFormatter = new Intl.DateTimeFormat('en', {
   month: 'short',
@@ -30,17 +34,113 @@ function commitTypeBadgeClass(type: 'merge' | 'feat' | 'fix') {
 }
 
 type GithubActivityModalContentProps = {
-  commits: ProjectGitHubRecentCommit[];
+  isOpen: boolean;
+  pageSize: number;
+  fetchPage: (page: number, size: number) => Promise<PaginatedListResult<ProjectGitHubRecentCommit>>;
 };
 
-export function GithubActivityModalContent({ commits }: GithubActivityModalContentProps) {
-  if (commits.length === 0) {
+function ActivityItemSkeleton() {
+  return (
+    <article className="animate-pulse rounded-2xl border border-slate-200 bg-slate-50 p-4">
+      <div className="h-4 w-3/4 rounded bg-slate-200" />
+      <div className="mt-3 h-3 w-1/3 rounded bg-slate-200" />
+      <div className="mt-2 h-3 w-1/4 rounded bg-slate-200" />
+    </article>
+  );
+}
+
+export function GithubActivityModalContent({
+  isOpen,
+  pageSize,
+  fetchPage,
+}: GithubActivityModalContentProps) {
+  const [items, setItems] = useState<ProjectGitHubRecentCommit[]>([]);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const loadPage = useCallback(
+    async (targetPage: number, append: boolean) => {
+      if (append) {
+        setIsLoadingMore(true);
+      } else {
+        setIsInitialLoading(true);
+      }
+      setErrorMessage(null);
+
+      try {
+        const result = await fetchPage(targetPage, pageSize);
+        setItems((current) => (append ? [...current, ...result.items] : result.items));
+        setPage(result.page);
+        setHasMore(result.hasMore);
+      } catch (error) {
+        setErrorMessage(
+          isApiException(error)
+            ? error.apiError.message
+            : 'Unable to load GitHub activity right now.',
+        );
+      } finally {
+        if (append) {
+          setIsLoadingMore(false);
+        } else {
+          setIsInitialLoading(false);
+        }
+      }
+    },
+    [fetchPage, pageSize],
+  );
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+    setItems([]);
+    setPage(1);
+    setHasMore(false);
+    void loadPage(1, false);
+  }, [isOpen, loadPage]);
+
+  async function handleLoadMore() {
+    if (!hasMore || isLoadingMore || isInitialLoading) {
+      return;
+    }
+    await loadPage(page + 1, true);
+  }
+
+  if (isInitialLoading) {
+    return (
+      <div className="space-y-3">
+        {Array.from({ length: 5 }).map((_, index) => (
+          <ActivityItemSkeleton key={`activity-skeleton-${index}`} />
+        ))}
+      </div>
+    );
+  }
+
+  if (errorMessage) {
+    return (
+      <div className="space-y-3">
+        <p className="text-sm text-rose-700">{errorMessage}</p>
+        <button
+          type="button"
+          onClick={() => void loadPage(1, false)}
+          className={buttonStyles({ variant: 'secondary', size: 'sm' })}
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  if (items.length === 0) {
     return <p className="text-sm text-muted-foreground">No GitHub activity found.</p>;
   }
 
   return (
     <div className="space-y-3">
-      {commits.map((commit, index) => {
+      {items.map((commit, index) => {
         const type = getCommitType(commit.message);
 
         return (
@@ -66,6 +166,27 @@ export function GithubActivityModalContent({ commits }: GithubActivityModalConte
           </article>
         );
       })}
+
+      {isLoadingMore ? (
+        <div className="space-y-3 pt-1">
+          {Array.from({ length: 2 }).map((_, index) => (
+            <ActivityItemSkeleton key={`activity-bottom-skeleton-${index}`} />
+          ))}
+        </div>
+      ) : null}
+
+      {hasMore ? (
+        <div className="pt-2">
+          <button
+            type="button"
+            onClick={() => void handleLoadMore()}
+            className={buttonStyles({ variant: 'secondary', size: 'sm' })}
+            disabled={isInitialLoading || isLoadingMore}
+          >
+            Load more
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }

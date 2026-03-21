@@ -29,3 +29,10 @@ export type ProjectGitHubDashboard = {
   contributors: ProjectGitHubContributor[];
   recentCommits: ProjectGitHubRecentCommit[];
 };
+
+export type PaginatedListResult<T> = {
+  items: T[];
+  hasMore: boolean;
+  page: number;
+  size: number;
+};

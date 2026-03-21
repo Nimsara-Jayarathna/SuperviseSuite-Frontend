@@ -1,7 +1,9 @@
 import { CalendarDays, Clock3, Users } from 'lucide-react';
+import { useCallback } from 'react';
 import { CommitActivitySection } from '@/features/projects/components/CommitActivitySection';
 import { useStudentProjectCommits } from '../hooks/useStudentProjectCommits';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { env } from '@/app/config/env';
 import { ErrorState } from '@/components/feedback/ErrorState';
 import { buttonStyles } from '@/components/ui/Button';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -10,6 +12,7 @@ import { RoleBadge } from '@/components/ui/RoleBadge';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { StudentProjectDetailsSkeleton } from '../components/StudentProjectDetailsSkeleton';
 import { useStudentProject } from '../hooks/useStudentProject';
+import { studentApi } from '../api/studentApi';
 import type { StudentProjectDetailMember, StudentProjectDetailTab } from '../types';
 
 const dateFormatter = new Intl.DateTimeFormat('en', {
@@ -49,6 +52,24 @@ export function StudentProjectDetailsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { project, isLoading, error, reload } = useStudentProject(projectId);
   const commitState = useStudentProjectCommits(projectId);
+  const loadActivityPage = useCallback(
+    (page: number, size: number) => {
+      if (!projectId) {
+        return Promise.resolve({ items: [], hasMore: false, page, size });
+      }
+      return studentApi.getProjectGitHubActivityPage(projectId, page, size);
+    },
+    [projectId],
+  );
+  const loadContributorsPage = useCallback(
+    (page: number, size: number) => {
+      if (!projectId) {
+        return Promise.resolve({ items: [], hasMore: false, page, size });
+      }
+      return studentApi.getProjectGitHubContributorsPage(projectId, page, size);
+    },
+    [projectId],
+  );
 
   function handleTabChange(tab: StudentProjectDetailTab) {
     const nextParams = new URLSearchParams(searchParams);
@@ -285,6 +306,9 @@ export function StudentProjectDetailsPage() {
           error={commitState.error}
           data={commitState.data}
           onRetry={() => void commitState.reload()}
+          githubPageSize={env.githubPageSize}
+          loadActivityPage={loadActivityPage}
+          loadContributorsPage={loadContributorsPage}
         />
       ) : null}
     </div>

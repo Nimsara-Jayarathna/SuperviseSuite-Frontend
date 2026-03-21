@@ -1,4 +1,8 @@
+import { useCallback, useEffect, useState } from 'react';
+import { buttonStyles } from '@/components/ui/Button';
+import { isApiException } from '@/services/apiClient';
 import type { ProjectGitHubContributor } from '../types';
+import type { PaginatedListResult } from '../types';
 
 function initialsOf(name: string) {
   const parts = name
@@ -16,17 +20,115 @@ function initialsOf(name: string) {
 }
 
 type GithubContributorsModalContentProps = {
-  contributors: ProjectGitHubContributor[];
+  isOpen: boolean;
+  pageSize: number;
+  fetchPage: (page: number, size: number) => Promise<PaginatedListResult<ProjectGitHubContributor>>;
 };
 
-export function GithubContributorsModalContent({ contributors }: GithubContributorsModalContentProps) {
-  if (contributors.length === 0) {
+function ContributorItemSkeleton() {
+  return (
+    <article className="flex animate-pulse items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+      <div className="h-10 w-10 rounded-full bg-slate-200" />
+      <div className="flex-1">
+        <div className="h-4 w-2/5 rounded bg-slate-200" />
+        <div className="mt-2 h-3 w-1/4 rounded bg-slate-200" />
+      </div>
+    </article>
+  );
+}
+
+export function GithubContributorsModalContent({
+  isOpen,
+  pageSize,
+  fetchPage,
+}: GithubContributorsModalContentProps) {
+  const [items, setItems] = useState<ProjectGitHubContributor[]>([]);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const loadPage = useCallback(
+    async (targetPage: number, append: boolean) => {
+      if (append) {
+        setIsLoadingMore(true);
+      } else {
+        setIsInitialLoading(true);
+      }
+      setErrorMessage(null);
+
+      try {
+        const result = await fetchPage(targetPage, pageSize);
+        setItems((current) => (append ? [...current, ...result.items] : result.items));
+        setPage(result.page);
+        setHasMore(result.hasMore);
+      } catch (error) {
+        setErrorMessage(
+          isApiException(error)
+            ? error.apiError.message
+            : 'Unable to load GitHub contributors right now.',
+        );
+      } finally {
+        if (append) {
+          setIsLoadingMore(false);
+        } else {
+          setIsInitialLoading(false);
+        }
+      }
+    },
+    [fetchPage, pageSize],
+  );
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+    setItems([]);
+    setPage(1);
+    setHasMore(false);
+    void loadPage(1, false);
+  }, [isOpen, loadPage]);
+
+  async function handleLoadMore() {
+    if (!hasMore || isLoadingMore || isInitialLoading) {
+      return;
+    }
+    await loadPage(page + 1, true);
+  }
+
+  if (isInitialLoading) {
+    return (
+      <div className="space-y-3">
+        {Array.from({ length: 6 }).map((_, index) => (
+          <ContributorItemSkeleton key={`contributor-skeleton-${index}`} />
+        ))}
+      </div>
+    );
+  }
+
+  if (errorMessage) {
+    return (
+      <div className="space-y-3">
+        <p className="text-sm text-rose-700">{errorMessage}</p>
+        <button
+          type="button"
+          onClick={() => void loadPage(1, false)}
+          className={buttonStyles({ variant: 'secondary', size: 'sm' })}
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  if (items.length === 0) {
     return <p className="text-sm text-muted-foreground">No contributors found.</p>;
   }
 
   return (
     <div className="space-y-3">
-      {contributors.map((contributor, index) => (
+      {items.map((contributor, index) => (
         <article
           key={`${contributor.name}-${index}`}
           className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4"
@@ -42,6 +144,27 @@ export function GithubContributorsModalContent({ contributors }: GithubContribut
           </div>
         </article>
       ))}
+
+      {isLoadingMore ? (
+        <div className="space-y-3 pt-1">
+          {Array.from({ length: 2 }).map((_, index) => (
+            <ContributorItemSkeleton key={`contributors-bottom-skeleton-${index}`} />
+          ))}
+        </div>
+      ) : null}
+
+      {hasMore ? (
+        <div className="pt-2">
+          <button
+            type="button"
+            onClick={() => void handleLoadMore()}
+            className={buttonStyles({ variant: 'secondary', size: 'sm' })}
+            disabled={isInitialLoading || isLoadingMore}
+          >
+            Load more
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }

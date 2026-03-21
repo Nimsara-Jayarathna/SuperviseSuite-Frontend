@@ -1,7 +1,12 @@
 import { useState } from 'react';
 import type { ApiError } from '@/types';
 import { buttonStyles } from '@/components/ui/Button';
-import type { ProjectGitHubDashboard, ProjectGitHubRecentCommit } from '../types';
+import type {
+  PaginatedListResult,
+  ProjectGitHubContributor,
+  ProjectGitHubDashboard,
+  ProjectGitHubRecentCommit,
+} from '../types';
 import { GithubDetailsModal } from './GithubDetailsModal';
 import { GithubActivityModalContent } from './GithubActivityModalContent';
 import { GithubContributorsModalContent } from './GithubContributorsModalContent';
@@ -11,6 +16,15 @@ type CommitActivitySectionProps = {
   error: ApiError | null;
   data: ProjectGitHubDashboard | null;
   onRetry: () => void;
+  githubPageSize: number;
+  loadActivityPage: (
+    page: number,
+    size: number,
+  ) => Promise<PaginatedListResult<ProjectGitHubRecentCommit>>;
+  loadContributorsPage: (
+    page: number,
+    size: number,
+  ) => Promise<PaginatedListResult<ProjectGitHubContributor>>;
 };
 
 const dateTimeFormatter = new Intl.DateTimeFormat('en', {
@@ -141,6 +155,9 @@ export function CommitActivitySection({
   error,
   data,
   onRetry,
+  githubPageSize,
+  loadActivityPage,
+  loadContributorsPage,
 }: CommitActivitySectionProps) {
   const [openModal, setOpenModal] = useState<'activity' | 'contributors' | null>(null);
 
@@ -318,7 +335,11 @@ export function CommitActivitySection({
         title="GitHub Contributors"
         onClose={() => setOpenModal(null)}
       >
-        <GithubContributorsModalContent contributors={normalized.contributors} />
+        <GithubContributorsModalContent
+          isOpen={openModal === 'contributors'}
+          pageSize={githubPageSize}
+          fetchPage={loadContributorsPage}
+        />
       </GithubDetailsModal>
 
       <GithubDetailsModal
@@ -326,7 +347,11 @@ export function CommitActivitySection({
         title="GitHub Activity"
         onClose={() => setOpenModal(null)}
       >
-        <GithubActivityModalContent commits={normalized.recentCommits} />
+        <GithubActivityModalContent
+          isOpen={openModal === 'activity'}
+          pageSize={githubPageSize}
+          fetchPage={loadActivityPage}
+        />
       </GithubDetailsModal>
     </div>
   );

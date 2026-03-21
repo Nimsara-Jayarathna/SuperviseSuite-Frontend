@@ -1,4 +1,15 @@
 import { apiClient } from '@/services/apiClient';
+import {
+  buildPagedUrl,
+  fallbackSlicePage,
+  normalizePaginatedPayload,
+  shouldFallbackToDashboard,
+} from '@/features/projects/api/githubPagination';
+import type {
+  PaginatedListResult,
+  ProjectGitHubContributor,
+  ProjectGitHubRecentCommit,
+} from '@/features/projects/types';
 import type { ProjectGitHubActivity, StudentProjectDetail, StudentProjectSummary } from '../types';
 
 const cachedProjectsById: Partial<Record<string, StudentProjectDetail>> = {};
@@ -32,6 +43,46 @@ export const studentApi = {
       return dashboard;
     } finally {
       delete inFlightProjectGitHubRequests[projectId];
+    }
+  },
+
+  async getProjectGitHubActivityPage(
+    projectId: string,
+    page: number,
+    size: number,
+  ): Promise<PaginatedListResult<ProjectGitHubRecentCommit>> {
+    try {
+      const payload = await apiClient.get<unknown>(
+        buildPagedUrl(`/api/student/projects/${projectId}/github/activity`, page, size),
+      );
+      return normalizePaginatedPayload<ProjectGitHubRecentCommit>(payload, page, size);
+    } catch (error) {
+      if (!shouldFallbackToDashboard(error)) {
+        throw error;
+      }
+
+      const dashboard = await this.getProjectGitHubDashboard(projectId);
+      return fallbackSlicePage<ProjectGitHubRecentCommit>(dashboard.recentCommits ?? [], page, size);
+    }
+  },
+
+  async getProjectGitHubContributorsPage(
+    projectId: string,
+    page: number,
+    size: number,
+  ): Promise<PaginatedListResult<ProjectGitHubContributor>> {
+    try {
+      const payload = await apiClient.get<unknown>(
+        buildPagedUrl(`/api/student/projects/${projectId}/github/contributors`, page, size),
+      );
+      return normalizePaginatedPayload<ProjectGitHubContributor>(payload, page, size);
+    } catch (error) {
+      if (!shouldFallbackToDashboard(error)) {
+        throw error;
+      }
+
+      const dashboard = await this.getProjectGitHubDashboard(projectId);
+      return fallbackSlicePage<ProjectGitHubContributor>(dashboard.contributors ?? [], page, size);
     }
   },
 

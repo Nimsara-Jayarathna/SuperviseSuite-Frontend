@@ -1,5 +1,7 @@
 import { CalendarDays, Clock3, Users } from 'lucide-react';
+import { useCallback } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { env } from '@/app/config/env';
 import { ErrorState } from '@/components/feedback/ErrorState';
 import { buttonStyles } from '@/components/ui/Button';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -13,6 +15,7 @@ import { TeamTabSection } from '../components/ProjectDetail/TeamTabSection';
 import { useProjectDetailsPageState } from '../hooks/useProjectDetailsPageState';
 import { useSupervisorProjectCommits } from '../hooks/useSupervisorProjectCommits';
 import { useSupervisorProject } from '../hooks/useSupervisorProject';
+import { supervisorApi } from '../api/supervisorApi';
 import {
   LIFECYCLE_OPTIONS,
   TABS,
@@ -33,6 +36,24 @@ export function ProjectDetailsPage() {
     },
   );
   const commitState = useSupervisorProjectCommits(projectId);
+  const loadActivityPage = useCallback(
+    (page: number, size: number) => {
+      if (!projectId) {
+        return Promise.resolve({ items: [], hasMore: false, page, size });
+      }
+      return supervisorApi.getProjectGitHubActivityPage(projectId, page, size);
+    },
+    [projectId],
+  );
+  const loadContributorsPage = useCallback(
+    (page: number, size: number) => {
+      if (!projectId) {
+        return Promise.resolve({ items: [], hasMore: false, page, size });
+      }
+      return supervisorApi.getProjectGitHubContributorsPage(projectId, page, size);
+    },
+    [projectId],
+  );
 
   const requestedTab = searchParams.get('tab') as SupervisorProjectDetailTab | null;
   const activeTab = requestedTab && TABS.includes(requestedTab) ? requestedTab : 'overview';
@@ -174,6 +195,9 @@ export function ProjectDetailsPage() {
           error={commitState.error}
           data={commitState.data}
           onRetry={() => void commitState.reload()}
+          githubPageSize={env.githubPageSize}
+          loadActivityPage={loadActivityPage}
+          loadContributorsPage={loadContributorsPage}
         />
       ) : null}
     </div>
