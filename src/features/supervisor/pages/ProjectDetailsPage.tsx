@@ -126,10 +126,6 @@ function milestoneStatusLabel(status: MilestoneStatus) {
   return status.replace('_', ' ');
 }
 
-function isCancelledMilestone(status: MilestoneStatus) {
-  return status === 'CANCELLED';
-}
-
 // ─── Misc helpers ─────────────────────────────────────────────────────────────
 
 function memberDisplayName(member: SupervisorProjectDetailMember) {
@@ -676,36 +672,9 @@ export function ProjectDetailsPage() {
             {project.milestones.length > 0 ? (
               <div className="mt-4 space-y-3">
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <p
-                    className={[
-                      'font-medium',
-                      isCancelledMilestone(project.milestones[0].status)
-                        ? 'text-slate-400 line-through decoration-2'
-                        : 'text-foreground',
-                    ].join(' ')}
-                  >
-                    {project.milestones[0].title}
-                  </p>
-                  <p
-                    className={[
-                      'mt-2 text-sm',
-                      isCancelledMilestone(project.milestones[0].status)
-                        ? 'text-slate-400 line-through decoration-2'
-                        : 'text-muted-foreground',
-                    ].join(' ')}
-                  >
-                    Due {dateFormatter.format(new Date(project.milestones[0].dueDate))}
-                  </p>
-                  <p
-                    className={[
-                      'mt-2 text-sm leading-7',
-                      isCancelledMilestone(project.milestones[0].status)
-                        ? 'text-slate-400 line-through decoration-2'
-                        : 'text-muted-foreground',
-                    ].join(' ')}
-                  >
-                    {project.milestones[0].description ?? 'No description provided.'}
-                  </p>
+                  <p className="font-medium text-foreground">{project.milestones[0].title}</p>
+                  <p className="mt-2 text-sm text-muted-foreground">Due {dateFormatter.format(new Date(project.milestones[0].dueDate))}</p>
+                  <p className="mt-2 text-sm leading-7 text-muted-foreground">{project.milestones[0].description ?? 'No description provided.'}</p>
                 </div>
               </div>
             ) : (
@@ -891,71 +860,48 @@ export function ProjectDetailsPage() {
                   ) : (
                     /* ── Read view ── */
                     <>
-                      {/** Cancelled milestones are visually deprecated across all key text fields. */}
-                      {/* Row 1: sequence + title | status pill + quick status select + Edit button */}
-                      <div className="flex items-center justify-between gap-3">
-                        <p
-                          className={[
-                            'font-semibold',
-                            isCancelledMilestone(milestone.status)
-                              ? 'text-slate-400 line-through decoration-2'
-                              : 'text-foreground',
-                          ].join(' ')}
-                        >
+                      {/* Row 1: title | due date | status | edit — all in one row with fixed column widths */}
+                      <div className="flex items-center gap-3">
+                        {/* Title — takes remaining space */}
+                        <p className="min-w-0 flex-1 truncate font-semibold text-foreground">
                           {milestone.sequenceNo}. {milestone.title}
                         </p>
-                        <div className="flex shrink-0 items-center gap-2">
-                          {/* Status pill — acts as quick-change select */}
-                          <label className={`inline-flex cursor-pointer items-center rounded-full px-3 py-1 text-xs font-semibold tracking-wide transition-opacity ${milestoneStatusPill(milestone.status)} ${quickStatusUpdatingId === milestone.id ? 'opacity-50' : ''}`}>
-                            <select
-                              value={milestone.status}
-                              disabled={quickStatusUpdatingId === milestone.id}
-                              onChange={(e) => void submitQuickMilestoneStatus(milestone, e.target.value as MilestoneStatus)}
-                              className="cursor-pointer appearance-none bg-transparent outline-none"
-                              aria-label="Change milestone status"
-                            >
-                              {MILESTONE_STATUS_OPTIONS.map((s) => (
-                                <option key={s} value={s}>{milestoneStatusLabel(s)}</option>
-                              ))}
-                            </select>
-                            {/* Small chevron icon */}
-                            <svg className="ml-1 h-3 w-3 opacity-60" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-                              <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
-                          </label>
 
-                          {/* Edit button — proper button feel */}
-                          <button
-                            type="button"
-                            onClick={() => handleStartEditMilestone(milestone)}
-                            className="inline-flex h-8 items-center justify-center rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 shadow-sm transition-colors hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-200"
+                        {/* Due date — fixed width, right-aligned text */}
+                        <p className="w-36 shrink-0 text-right text-sm text-muted-foreground">
+                          Due {dateFormatter.format(new Date(milestone.dueDate))}
+                        </p>
+
+                        {/* Status pill — fixed width quick-change select */}
+                        <label className={`inline-flex w-36 shrink-0 cursor-pointer items-center justify-between rounded-full px-3 py-1.5 text-xs font-semibold tracking-wide transition-opacity ${milestoneStatusPill(milestone.status)} ${quickStatusUpdatingId === milestone.id ? 'opacity-50' : ''}`}>
+                          <select
+                            value={milestone.status}
+                            disabled={quickStatusUpdatingId === milestone.id}
+                            onChange={(e) => void submitQuickMilestoneStatus(milestone, e.target.value as MilestoneStatus)}
+                            className="w-full cursor-pointer appearance-none bg-transparent outline-none"
+                            aria-label="Change milestone status"
                           >
-                            Edit
-                          </button>
-                        </div>
+                            {MILESTONE_STATUS_OPTIONS.map((s) => (
+                              <option key={s} value={s}>{milestoneStatusLabel(s)}</option>
+                            ))}
+                          </select>
+                          <svg className="ml-1 h-3 w-3 shrink-0 opacity-60" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                            <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        </label>
+
+                        {/* Edit button — fixed width */}
+                        <button
+                          type="button"
+                          onClick={() => handleStartEditMilestone(milestone)}
+                          className="inline-flex h-8 w-16 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-700 shadow-sm transition-colors hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-200"
+                        >
+                          Edit
+                        </button>
                       </div>
 
-                      {/* Row 2: due date aligned left */}
-                      <p
-                        className={[
-                          'mt-2 text-sm',
-                          isCancelledMilestone(milestone.status)
-                            ? 'text-slate-400 line-through decoration-2'
-                            : 'text-muted-foreground',
-                        ].join(' ')}
-                      >
-                        Due {dateFormatter.format(new Date(milestone.dueDate))}
-                      </p>
-
-                      {/* Row 3: description */}
-                      <p
-                        className={[
-                          'mt-1.5 text-sm leading-6',
-                          isCancelledMilestone(milestone.status)
-                            ? 'text-slate-400 line-through decoration-2'
-                            : 'text-muted-foreground',
-                        ].join(' ')}
-                      >
+                      {/* Row 2: description */}
+                      <p className="mt-2 text-sm leading-6 text-muted-foreground">
                         {milestone.description ?? 'No description provided.'}
                       </p>
                     </>
