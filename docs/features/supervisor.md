@@ -2,7 +2,7 @@
 
 Supervisor workspace for dashboard monitoring, project listing, project creation, and project detail management.
 
-Related branch note: `docs/branches/feature-scrum-97-ui-workflow-improvements.md`
+Related major-fixes doc: `docs/branches/major-fixes-scrum-97-supervisor-ui-workflow.md`
 
 ## Routes
 
