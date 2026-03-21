@@ -4,6 +4,7 @@ import type {
   AddSupervisorProjectMilestoneRequest,
   CreateSupervisorProjectRequest,
   CreateSupervisorProjectResponse,
+  ProjectGitHubActivity,
   SupervisorDashboard,
   SupervisorProjectDetail,
   SupervisorProjectSummary,
@@ -12,39 +13,39 @@ import type {
   UpdateSupervisorProjectMilestoneRequest,
   UpdateSupervisorProjectRequest,
   UpdateSupervisorProjectStatusRequest,
-  ProjectCommitActivity,
 } from '../types';
 
 const cachedProjectsById: Partial<Record<string, SupervisorProjectDetail>> = {};
 const inFlightProjectRequests: Partial<Record<string, Promise<SupervisorProjectDetail>>> = {};
-const cachedProjectCommitsById: Partial<Record<string, ProjectCommitActivity>> = {};
-const inFlightProjectCommitRequests: Partial<Record<string, Promise<ProjectCommitActivity>>> = {};
+const cachedProjectGitHubById: Partial<Record<string, ProjectGitHubActivity>> = {};
+const inFlightProjectGitHubRequests: Partial<Record<string, Promise<ProjectGitHubActivity>>> = {};
 
 export const supervisorApi = {
   getDashboard(): Promise<SupervisorDashboard> {
     return apiClient.get<SupervisorDashboard>('/api/supervisor/dashboard');
   },
 
-  async getProjectCommits(projectId: string, forceRefresh = false): Promise<ProjectCommitActivity> {
-    if (!forceRefresh && cachedProjectCommitsById[projectId]) {
-      return cachedProjectCommitsById[projectId];
+  async getProjectGitHubDashboard(
+    projectId: string,
+    forceRefresh = false,
+  ): Promise<ProjectGitHubActivity> {
+    if (!forceRefresh && cachedProjectGitHubById[projectId]) {
+      return cachedProjectGitHubById[projectId];
     }
 
-    if (!forceRefresh && inFlightProjectCommitRequests[projectId]) {
-      return inFlightProjectCommitRequests[projectId];
+    if (!forceRefresh && inFlightProjectGitHubRequests[projectId]) {
+      return inFlightProjectGitHubRequests[projectId];
     }
 
-    const request = apiClient.get<ProjectCommitActivity>(
-      `/api/supervisor/projects/${projectId}/commits`,
-    );
-    inFlightProjectCommitRequests[projectId] = request;
+    const request = apiClient.get<ProjectGitHubActivity>(`/api/supervisor/projects/${projectId}/github`);
+    inFlightProjectGitHubRequests[projectId] = request;
 
     try {
-      const activity = await request;
-      cachedProjectCommitsById[projectId] = activity;
-      return activity;
+      const dashboard = await request;
+      cachedProjectGitHubById[projectId] = dashboard;
+      return dashboard;
     } finally {
-      delete inFlightProjectCommitRequests[projectId];
+      delete inFlightProjectGitHubRequests[projectId];
     }
   },
 

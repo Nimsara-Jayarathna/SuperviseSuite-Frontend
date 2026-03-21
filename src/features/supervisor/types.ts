@@ -1,3 +1,5 @@
+import type { ProjectGitHubDashboard } from '@/features/projects/types';
+
 export type SupervisorProjectLifecycle = 'PLANNING' | 'ACTIVE' | 'AT_RISK' | 'BEHIND' | 'COMPLETED';
 
 export type SupervisorProjectSummary = {
@@ -13,17 +15,7 @@ export type SupervisorProjectSummary = {
   memberCount: number;
 };
 
-export type ProjectCommit = {
-  sha: string | null;
-  message: string;
-  author: string;
-  committedAt: string | null;
-};
-
-export type ProjectCommitActivity = {
-  repositoryLinked: boolean;
-  commits: ProjectCommit[];
-};
+export type ProjectGitHubActivity = ProjectGitHubDashboard;
 
 export type SupervisorProjectDetailMember = {
   id: string;

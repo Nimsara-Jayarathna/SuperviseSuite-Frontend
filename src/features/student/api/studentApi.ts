@@ -1,36 +1,37 @@
 import { apiClient } from '@/services/apiClient';
-import type { StudentProjectDetail, StudentProjectSummary, ProjectCommitActivity } from '../types';
+import type { ProjectGitHubActivity, StudentProjectDetail, StudentProjectSummary } from '../types';
 
 const cachedProjectsById: Partial<Record<string, StudentProjectDetail>> = {};
 const inFlightProjectRequests: Partial<Record<string, Promise<StudentProjectDetail>>> = {};
-const cachedProjectCommitsById: Partial<Record<string, ProjectCommitActivity>> = {};
-const inFlightProjectCommitRequests: Partial<Record<string, Promise<ProjectCommitActivity>>> = {};
+const cachedProjectGitHubById: Partial<Record<string, ProjectGitHubActivity>> = {};
+const inFlightProjectGitHubRequests: Partial<Record<string, Promise<ProjectGitHubActivity>>> = {};
 
 export const studentApi = {
   getProjects(): Promise<StudentProjectSummary[]> {
     return apiClient.get<StudentProjectSummary[]>('/api/student/projects');
   },
 
-  async getProjectCommits(projectId: string, forceRefresh = false): Promise<ProjectCommitActivity> {
-    if (!forceRefresh && cachedProjectCommitsById[projectId]) {
-      return cachedProjectCommitsById[projectId];
+  async getProjectGitHubDashboard(
+    projectId: string,
+    forceRefresh = false,
+  ): Promise<ProjectGitHubActivity> {
+    if (!forceRefresh && cachedProjectGitHubById[projectId]) {
+      return cachedProjectGitHubById[projectId];
     }
 
-    if (!forceRefresh && inFlightProjectCommitRequests[projectId]) {
-      return inFlightProjectCommitRequests[projectId];
+    if (!forceRefresh && inFlightProjectGitHubRequests[projectId]) {
+      return inFlightProjectGitHubRequests[projectId];
     }
 
-    const request = apiClient.get<ProjectCommitActivity>(
-      `/api/student/projects/${projectId}/commits`,
-    );
-    inFlightProjectCommitRequests[projectId] = request;
+    const request = apiClient.get<ProjectGitHubActivity>(`/api/student/projects/${projectId}/github`);
+    inFlightProjectGitHubRequests[projectId] = request;
 
     try {
-      const activity = await request;
-      cachedProjectCommitsById[projectId] = activity;
-      return activity;
+      const dashboard = await request;
+      cachedProjectGitHubById[projectId] = dashboard;
+      return dashboard;
     } finally {
-      delete inFlightProjectCommitRequests[projectId];
+      delete inFlightProjectGitHubRequests[projectId];
     }
   },
 

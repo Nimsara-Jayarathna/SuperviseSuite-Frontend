@@ -3,10 +3,10 @@ import { useEffect, useState } from 'react';
 import { isApiException } from '@/services/apiClient';
 import type { ApiError } from '@/types';
 import { studentApi } from '../api/studentApi';
-import type { ProjectCommitActivity } from '../types';
+import type { ProjectGitHubActivity } from '../types';
 
 type StudentProjectCommitsState = {
-  data: ProjectCommitActivity | null;
+  data: ProjectGitHubActivity | null;
   isLoading: boolean;
   error: ApiError | null;
 };
@@ -31,7 +31,7 @@ export function useStudentProjectCommits(projectId: string | undefined) {
     setState((current) => ({ ...current, isLoading: true, error: null }));
 
     try {
-      const data = await studentApi.getProjectCommits(projectId, forceRefresh);
+      const data = await studentApi.getProjectGitHubDashboard(projectId, forceRefresh);
       setState({
         data,
         isLoading: false,
@@ -45,7 +45,7 @@ export function useStudentProjectCommits(projectId: string | undefined) {
           ? error.apiError
           : {
               code: 'INTERNAL_ERROR',
-              message: 'Unable to load commit activity right now.',
+              message: 'Unable to load GitHub dashboard right now.',
               details: [],
               timestamp: new Date().toISOString(),
               status: 0,
@@ -71,7 +71,7 @@ export function useStudentProjectCommits(projectId: string | undefined) {
     setState((current) => ({ ...current, isLoading: true, error: null }));
 
     void studentApi
-      .getProjectCommits(projectId)
+      .getProjectGitHubDashboard(projectId)
       .then((data) => {
         if (isCancelled) {
           return;
@@ -95,7 +95,7 @@ export function useStudentProjectCommits(projectId: string | undefined) {
             ? error.apiError
             : {
                 code: 'INTERNAL_ERROR',
-                message: 'Unable to load commit activity right now.',
+                message: 'Unable to load GitHub dashboard right now.',
                 details: [],
                 timestamp: new Date().toISOString(),
                 status: 0,
