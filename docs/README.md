@@ -14,6 +14,12 @@ Technical notes, architecture summaries, and feature guides for the SuperviseSui
 | [features/supervisor.md](features/supervisor.md) | Supervisor routes, dashboard, projects, create flow, and detail views |
 | [features/brand.md](features/brand.md) | Logo component and SVG asset usage |
 
+### Branch Notes
+
+| File | Description |
+|------|-------------|
+| [branches/feature-scrum-97-ui-workflow-improvements.md](branches/feature-scrum-97-ui-workflow-improvements.md) | Branch-level implementation notes for supervisor workflow improvements, leader assignment, and milestone UX updates |
+
 ### UI
 
 | File | Description |

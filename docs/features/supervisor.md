@@ -2,6 +2,8 @@
 
 Supervisor workspace for dashboard monitoring, project listing, project creation, and project detail management.
 
+Related branch note: `docs/branches/feature-scrum-97-ui-workflow-improvements.md`
+
 ## Routes
 
 | Path | Component | Layout |
@@ -119,7 +121,8 @@ Supervisor feature currently uses these APIs:
   - summary
   - batch
   - semester
-  - initial milestone (`title`, `description`, `dueDate`)
+  - optional project leader (`leaderStudentId`)
+  - milestones array (`title`, `description`, `dueDate`)
   - selected `studentIds`
 
 ### Student lookup flow
@@ -191,6 +194,10 @@ Supervisor feature currently uses these APIs:
   - submit selected additions
 - Submit calls `POST /api/supervisor/projects/{projectId}/members`.
 - Existing member deletion is intentionally not in scope.
+- Project leader assignment:
+  - shows current leader (if available)
+  - supports assigning/changing leader from currently assigned student members
+  - persists leader change via `PATCH /api/supervisor/projects/{projectId}` using `leaderStudentId`
 
 ### Milestones tab: add + edit
 
@@ -205,6 +212,10 @@ Supervisor feature currently uses these APIs:
   - due date
   - status
   - calls `PATCH /api/supervisor/projects/{projectId}/milestones/{milestoneId}`
+- Quick status update:
+  - milestone rows include direct status dropdown for one-click status changes
+  - updates are persisted through `PATCH /api/supervisor/projects/{projectId}/milestones/{milestoneId}`
+  - UI applies status-based color coding for readability
 
 ### Error/empty handling
 
