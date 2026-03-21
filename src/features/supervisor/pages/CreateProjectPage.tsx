@@ -596,7 +596,7 @@ export function CreateProjectPage() {
                     {isExpanded ? (
                       /* ── Expanded state ── */
                       <div className="p-5 sm:p-6">
-                        <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
+                        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
                           <button
                             type="button"
                             onClick={() => toggleMilestone(index)}
@@ -642,9 +642,10 @@ export function CreateProjectPage() {
 
                         {/* FIX 4: no redundant warning callout — removed */}
 
-                        <div className="space-y-4">
-                          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_260px]">
-                            <label className="block">
+                        <div className="space-y-5 pt-1">
+                          {/* Title + Due date — always horizontal, title gets more space */}
+                          <div className="flex gap-4">
+                            <label className="block flex-1 min-w-0">
                               <span className="mb-2 block text-sm font-medium text-slate-800">Title</span>
                               <input
                                 required
@@ -657,10 +658,8 @@ export function CreateProjectPage() {
                               />
                             </label>
 
-                            <label className="block">
-                              <span className="mb-2 block text-sm font-medium text-slate-800">
-                                Due date
-                              </span>
+                            <label className="block w-[200px] shrink-0">
+                              <span className="mb-2 block text-sm font-medium text-slate-800">Due date</span>
                               <input
                                 required
                                 type="date"
