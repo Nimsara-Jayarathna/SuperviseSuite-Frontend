@@ -22,6 +22,14 @@ export type SupervisorProjectDetailMember = {
   memberRole: 'SUPERVISOR' | 'STUDENT';
 };
 
+export type SupervisorProjectLeader = {
+  id: string;
+  firstName: string | null;
+  lastName: string | null;
+  email: string;
+  registrationNumber: string | null;
+};
+
 export type SupervisorProjectDetailMilestone = {
   id: string;
   title: string;
@@ -43,6 +51,7 @@ export type SupervisorProjectDetail = {
   healthNote: string | null;
   lastActivityAt: string | null;
   repositoryUrl?: string | null;
+  leader: SupervisorProjectLeader | null;
   members: SupervisorProjectDetailMember[];
   milestones: SupervisorProjectDetailMilestone[];
 };
@@ -185,6 +194,7 @@ export type CreateSupervisorProjectRequest = {
   batch: string;
   semester: string;
   studentIds: string[];
+  leaderStudentId?: string | null;
   milestones: Array<{
     title: string;
     description: string;
@@ -202,6 +212,7 @@ export type CreateSupervisorProjectResponse = {
   progressPercent: number;
   milestoneDate: string;
   students: SupervisorStudentSearchResult[];
+  leader: SupervisorProjectLeader | null;
   milestones: Array<{
     id: string;
     title: string;
@@ -219,6 +230,7 @@ export type UpdateSupervisorProjectRequest = {
   semester: string;
   lifecycleStatus: SupervisorProjectLifecycle;
   healthNote: string | null;
+  leaderStudentId?: string | null;
 };
 
 export type AddSupervisorProjectMembersRequest = {

@@ -128,7 +128,11 @@ function milestoneStatusLabel(status: MilestoneStatus) {
 
 // ─── Misc helpers ─────────────────────────────────────────────────────────────
 
-function memberDisplayName(member: SupervisorProjectDetailMember) {
+function memberDisplayName(member: {
+  firstName: string | null;
+  lastName: string | null;
+  email: string;
+}) {
   return `${member.firstName ?? ''} ${member.lastName ?? ''}`.trim() || member.email;
 }
 
@@ -196,6 +200,8 @@ export function ProjectDetailsPage() {
   const [studentSearchResults, setStudentSearchResults] = useState<SupervisorStudentSearchResult[]>([]);
   const [selectedStudentsToAdd, setSelectedStudentsToAdd] = useState<SupervisorStudentSearchResult[]>([]);
   const [isAddingStudents, setIsAddingStudents] = useState(false);
+  const [leaderDraftId, setLeaderDraftId] = useState<string>('');
+  const [isUpdatingLeader, setIsUpdatingLeader] = useState(false);
   const [isAddingMilestone, setIsAddingMilestone] = useState(false);
   const [isSavingMilestone, setIsSavingMilestone] = useState(false);
   const [editingMilestoneId, setEditingMilestoneId] = useState<string | null>(null);
@@ -247,6 +253,10 @@ export function ProjectDetailsPage() {
   useEffect(() => {
     if (project && !isUpdatingStatus) setQuickLifecycleStatus(project.lifecycleStatus);
   }, [project, isUpdatingStatus]);
+
+  useEffect(() => {
+    setLeaderDraftId(project?.leader?.id ?? '');
+  }, [project?.leader?.id]);
 
   useEffect(() => {
     const normalizedQuery = studentQuery.trim();
@@ -319,6 +329,7 @@ export function ProjectDetailsPage() {
         semester: overviewForm.semester.trim(),
         lifecycleStatus: overviewForm.lifecycleStatus,
         healthNote: toNullableTrimmed(overviewForm.healthNote),
+        leaderStudentId: project.leader?.id ?? null,
       });
       setProject(updatedProject);
       setIsEditingOverview(false);
@@ -357,6 +368,30 @@ export function ProjectDetailsPage() {
   function handleQuickStatusChange(nextStatus: SupervisorProjectLifecycle) {
     if (!project) return;
     void submitQuickStatusChange(nextStatus, project.lifecycleStatus);
+  }
+
+  async function submitLeaderUpdate() {
+    if (!projectId || !project || !leaderDraftId || leaderDraftId === project.leader?.id) return;
+    setIsUpdatingLeader(true);
+    showLoadingModal('Updating project leader', 'Assigning the selected student as project leader.');
+    try {
+      const updatedProject = await supervisorApi.updateProject(projectId, {
+        title: project.title,
+        summary: project.summary ?? '',
+        batch: project.batch ?? '',
+        semester: project.semester ?? '',
+        lifecycleStatus: project.lifecycleStatus,
+        healthNote: project.healthNote ?? null,
+        leaderStudentId: leaderDraftId,
+      });
+      setProject(updatedProject);
+      showSuccessModal('Project leader updated', 'The project leader was updated successfully.');
+    } catch (leaderException) {
+      const apiError = toApiError(leaderException, 'Unable to update project leader right now.');
+      showErrorModal('Unable to update leader', apiError.message, submitLeaderUpdate);
+    } finally {
+      setIsUpdatingLeader(false);
+    }
   }
 
   // ── Quick milestone status change (no full edit needed) ──
@@ -515,6 +550,8 @@ export function ProjectDetailsPage() {
   }
 
   if (!project) return null;
+
+  const studentMembers = project.members.filter((member) => member.memberRole === 'STUDENT');
 
   return (
     <div className="space-y-6">
@@ -695,6 +732,90 @@ export function ProjectDetailsPage() {
               </button>
             )}
           </div>
+
+          {project.leader ? (
+            <div className="mt-5 flex items-center gap-4 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-sm font-semibold text-emerald-800">
+                {memberDisplayName(project.leader).charAt(0).toUpperCase()}
+              </div>
+
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-semibold text-foreground">
+                  {memberDisplayName(project.leader)}
+                </p>
+                <p className="text-xs text-emerald-700">Project leader</p>
+              </div>
+
+              {studentMembers.length > 0 ? (
+                <div className="flex shrink-0 items-center gap-2">
+                  <select
+                    value={leaderDraftId}
+                    onChange={(e) => setLeaderDraftId(e.target.value)}
+                    disabled={isUpdatingLeader}
+                    className="h-8 rounded-xl border border-slate-200 bg-white px-3 text-xs text-slate-700 outline-none transition-colors focus:border-amber-300"
+                    aria-label="Select new leader"
+                  >
+                    {studentMembers.map((member) => (
+                      <option key={member.id} value={member.id}>
+                        {memberDisplayName(member)}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => void submitLeaderUpdate()}
+                    disabled={isUpdatingLeader || leaderDraftId === project.leader?.id}
+                    className="inline-flex h-8 items-center justify-center rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 shadow-sm transition-colors hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 focus:outline-none focus:ring-2 focus:ring-slate-200"
+                  >
+                    {isUpdatingLeader ? 'Saving...' : 'Change'}
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          ) : (
+            <div className="mt-5 flex items-center gap-4 rounded-2xl border border-dashed border-slate-300 bg-slate-50/60 p-4">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-dashed border-slate-300 bg-white text-slate-400">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <circle cx="8" cy="6" r="3" stroke="currentColor" strokeWidth="1.5" />
+                  <path d="M2 13c0-2.21 2.686-4 6-4s6 1.79 6 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                </svg>
+              </div>
+
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-slate-600">No project leader assigned</p>
+                <p className="text-xs text-muted-foreground">Assign a student to lead this project</p>
+              </div>
+
+              {studentMembers.length > 0 ? (
+                <div className="flex shrink-0 items-center gap-2">
+                  <select
+                    value={leaderDraftId}
+                    onChange={(e) => setLeaderDraftId(e.target.value)}
+                    disabled={isUpdatingLeader}
+                    className="h-8 rounded-xl border border-slate-200 bg-white px-3 text-xs text-slate-700 outline-none transition-colors focus:border-amber-300"
+                    aria-label="Select leader to assign"
+                  >
+                    <option value="">Pick a student</option>
+                    {studentMembers.map((member) => (
+                      <option key={member.id} value={member.id}>
+                        {memberDisplayName(member)}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => void submitLeaderUpdate()}
+                    disabled={isUpdatingLeader || !leaderDraftId}
+                    className="inline-flex h-8 items-center justify-center rounded-xl bg-slate-900 px-3 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-40 focus:outline-none focus:ring-2 focus:ring-slate-400"
+                  >
+                    {isUpdatingLeader ? 'Assigning...' : 'Assign leader'}
+                  </button>
+                </div>
+              ) : (
+                <p className="shrink-0 text-xs text-muted-foreground">Add students first</p>
+              )}
+            </div>
+          )}
 
           {isManagingStudents && (
             <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">

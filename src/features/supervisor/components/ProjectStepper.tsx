@@ -17,31 +17,9 @@ export function ProjectStepper({
   steps,
   onStepClick,
 }: ProjectStepperProps) {
-  const totalSteps = steps.length;
-  const trackInset = 100 / totalSteps / 2;
-  const trackWidth = 100 - trackInset * 2;
-  const progressPercent = totalSteps > 1 ? (currentStep - 1) / (totalSteps - 1) : 0;
-
   return (
-    <div className="relative rounded-3xl border border-border bg-white px-8 pb-5 pt-8 shadow-sm">
-      <div
-        className="absolute h-px bg-border"
-        style={{
-          left: `${trackInset}%`,
-          width: `${trackWidth}%`,
-          top: '2.25rem',
-        }}
-      />
-      <div
-        className="absolute h-px bg-slate-900 transition-all duration-500"
-        style={{
-          left: `${trackInset}%`,
-          width: `${progressPercent * trackWidth}%`,
-          top: '2.25rem',
-        }}
-      />
-
-      <div className="relative flex justify-between">
+    <div className="rounded-3xl border border-border bg-white px-8 pb-6 pt-6 shadow-sm">
+      <div className="flex justify-between">
         {steps.map((step) => {
           const isDone = step.id < currentStep;
           const isActive = step.id === currentStep;
@@ -100,6 +78,7 @@ export function ProjectStepper({
         })}
       </div>
 
+      {/* Bottom progress segments */}
       <div className="mt-4 flex gap-1">
         {steps.map((step) => (
           <div

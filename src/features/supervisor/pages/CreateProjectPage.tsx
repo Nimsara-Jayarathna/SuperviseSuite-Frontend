@@ -146,6 +146,7 @@ export function CreateProjectPage() {
 
   const [studentQuery, setStudentQuery] = useState('');
   const [selectedStudents, setSelectedStudents] = useState<SupervisorStudentSearchResult[]>([]);
+  const [selectedLeaderId, setSelectedLeaderId] = useState<string | null>(null);
   const [searchResults, setSearchResults] = useState<SupervisorStudentSearchResult[]>([]);
   const [searchState, setSearchState] = useState<SearchState>('idle');
   const [searchError, setSearchError] = useState<string | null>(null);
@@ -222,6 +223,7 @@ export function CreateProjectPage() {
 
   function removeStudent(id: string) {
     setSelectedStudents((prev) => prev.filter((s) => s.id !== id));
+    setSelectedLeaderId((current) => (current === id ? null : current));
   }
 
   function updateMilestone<F extends keyof MilestoneDraft>(
@@ -288,6 +290,7 @@ export function CreateProjectPage() {
         batch: draft.batch.trim(),
         semester: draft.semester.trim(),
         studentIds: selectedStudents.map((s) => s.id),
+        leaderStudentId: selectedLeaderId,
         milestones: milestones.map((milestone) => ({
           title: milestone.title.trim(),
           description: milestone.description.trim(),
@@ -299,6 +302,7 @@ export function CreateProjectPage() {
       invalidateSupervisorProjectsCache();
       setDraft(INITIAL_DRAFT);
       setSelectedStudents([]);
+      setSelectedLeaderId(null);
       setMilestones([{ ...INITIAL_MILESTONE }]);
       setExpandedMilestoneIndex(0);
       setStudentQuery('');
@@ -515,26 +519,58 @@ export function CreateProjectPage() {
                   </span>
                 </div>
                 {selectedStudents.length > 0 ? (
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {selectedStudents.map((student) => (
-                      <div
-                        key={student.id}
-                        className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm"
-                      >
-                        <span className="font-medium text-foreground">
-                          {buildStudentLabel(student)}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => removeStudent(student.id)}
-                          className="text-muted-foreground transition-colors hover:text-foreground"
-                          aria-label={`Remove ${buildStudentLabel(student)}`}
-                          disabled={isSubmitting}
+                  <div className="mt-3 space-y-4">
+                    <div className="flex flex-wrap gap-2">
+                      {selectedStudents.map((student) => (
+                        <div
+                          key={student.id}
+                          className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm"
                         >
-                          ×
-                        </button>
-                      </div>
-                    ))}
+                          <span className="font-medium text-foreground">
+                            {buildStudentLabel(student)}
+                          </span>
+                          {selectedLeaderId === student.id ? (
+                            <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-emerald-700">
+                              Leader
+                            </span>
+                          ) : null}
+                          <button
+                            type="button"
+                            onClick={() => removeStudent(student.id)}
+                            className="text-muted-foreground transition-colors hover:text-foreground"
+                            aria-label={`Remove ${buildStudentLabel(student)}`}
+                            disabled={isSubmitting}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+
+                    <label className="block">
+                      <span className="mb-2 block text-sm font-medium text-foreground">
+                        Project leader (optional)
+                      </span>
+                      <select
+                        value={selectedLeaderId ?? ''}
+                        onChange={(event) => {
+                          const nextValue = event.target.value;
+                          setSelectedLeaderId(nextValue.length > 0 ? nextValue : null);
+                        }}
+                        className="h-10 w-full rounded-2xl border border-border bg-white px-4 text-sm outline-none transition-colors focus:border-amber-300"
+                        disabled={isSubmitting}
+                      >
+                        <option value="">No leader selected</option>
+                        {selectedStudents.map((student) => (
+                          <option key={student.id} value={student.id}>
+                            {buildStudentLabel(student)} ({student.registrationNumber})
+                          </option>
+                        ))}
+                      </select>
+                      <p className="mt-2 text-xs text-muted-foreground">
+                        You can assign or change the leader later from Project Details.
+                      </p>
+                    </label>
                   </div>
                 ) : (
                   <p className="mt-3 text-sm text-muted-foreground">No students selected yet.</p>
