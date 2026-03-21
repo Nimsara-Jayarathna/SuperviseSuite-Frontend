@@ -25,10 +25,7 @@ export const supervisorApi = {
     return apiClient.get<SupervisorDashboard>('/api/supervisor/dashboard');
   },
 
-  async getProjectCommits(
-    projectId: string,
-    forceRefresh = false,
-  ): Promise<ProjectCommitActivity> {
+  async getProjectCommits(projectId: string, forceRefresh = false): Promise<ProjectCommitActivity> {
     if (!forceRefresh && cachedProjectCommitsById[projectId]) {
       return cachedProjectCommitsById[projectId];
     }
@@ -37,7 +34,9 @@ export const supervisorApi = {
       return inFlightProjectCommitRequests[projectId];
     }
 
-    const request = apiClient.get<ProjectCommitActivity>(`/api/supervisor/projects/${projectId}/commits`);
+    const request = apiClient.get<ProjectCommitActivity>(
+      `/api/supervisor/projects/${projectId}/commits`,
+    );
     inFlightProjectCommitRequests[projectId] = request;
 
     try {

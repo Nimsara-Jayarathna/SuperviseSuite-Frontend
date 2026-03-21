@@ -20,7 +20,9 @@ export const studentApi = {
       return inFlightProjectCommitRequests[projectId];
     }
 
-    const request = apiClient.get<ProjectCommitActivity>(`/api/student/projects/${projectId}/commits`);
+    const request = apiClient.get<ProjectCommitActivity>(
+      `/api/student/projects/${projectId}/commits`,
+    );
     inFlightProjectCommitRequests[projectId] = request;
 
     try {

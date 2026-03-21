@@ -280,13 +280,13 @@ export function StudentProjectDetailsPage() {
       ) : null}
 
       {activeTab === 'github' ? (
-  <CommitActivitySection
-    isLoading={commitState.isLoading}
-    error={commitState.error}
-    data={commitState.data}
-    onRetry={() => void commitState.reload()}
-  />
-) : null}
+        <CommitActivitySection
+          isLoading={commitState.isLoading}
+          error={commitState.error}
+          data={commitState.data}
+          onRetry={() => void commitState.reload()}
+        />
+      ) : null}
     </div>
   );
 }
