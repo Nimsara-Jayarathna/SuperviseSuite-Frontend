@@ -1,14 +1,14 @@
-type StepId = number;
+export type StepId = number;
 
-type ProjectStepperStep = {
+export type ProjectStepperStep = {
   id: StepId;
   label: string;
   description: string;
 };
 
-type ProjectStepperProps = {
+export type ProjectStepperProps = {
   currentStep: StepId;
-  steps: ProjectStepperStep[];
+  steps: readonly ProjectStepperStep[];
   onStepClick?: (step: StepId) => void;
 };
 
