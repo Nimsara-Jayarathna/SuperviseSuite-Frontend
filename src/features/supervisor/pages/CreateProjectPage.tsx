@@ -5,31 +5,74 @@ import { BlockingState } from '@/components/ui/BlockingState';
 import { Button, buttonStyles } from '@/components/ui/Button';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { RequestStateModal } from '@/components/ui/RequestStateModal';
+import { cn } from '@/lib/cn';
 import { isApiException } from '@/services/apiClient';
 import { supervisorApi } from '../api/supervisorApi';
 import { invalidateSupervisorProjectsCache } from '../hooks/useSupervisorProjects';
 import type { SupervisorStudentSearchResult } from '../types';
+
+type MilestoneDraft = {
+  id: string;
+  title: string;
+  description: string;
+  dueDate: string;
+};
 
 type DraftState = {
   title: string;
   batch: string;
   semester: string;
   summary: string;
-  milestoneTitle: string;
-  milestoneDescription: string;
-  milestoneDueDate: string;
+  milestones: MilestoneDraft[];
 };
 
 type SearchState = 'idle' | 'loading' | 'results' | 'empty' | 'error';
+type CreateProjectStep = 'basics' | 'students' | 'milestones';
+
+const CREATE_PROJECT_STEPS: Array<{
+  id: CreateProjectStep;
+  label: string;
+  title: string;
+  description: string;
+}> = [
+  {
+    id: 'basics',
+    label: 'Step 1',
+    title: 'Project basics',
+    description: 'Capture the core project information first.',
+  },
+  {
+    id: 'students',
+    label: 'Step 2',
+    title: 'Student assignment',
+    description: 'Choose the registered students assigned to this project.',
+  },
+  {
+    id: 'milestones',
+    label: 'Step 3',
+    title: 'Milestones',
+    description: 'Add every milestone now, then create the project in one final request.',
+  },
+];
+
+let milestoneDraftCounter = 0;
+
+function createMilestoneDraft(): MilestoneDraft {
+  milestoneDraftCounter += 1;
+  return {
+    id: `milestone-${milestoneDraftCounter}`,
+    title: '',
+    description: '',
+    dueDate: '',
+  };
+}
 
 const INITIAL_DRAFT: DraftState = {
   title: '',
   batch: '2026',
   semester: 'Semester 1',
   summary: '',
-  milestoneTitle: '',
-  milestoneDescription: '',
-  milestoneDueDate: '',
+  milestones: [createMilestoneDraft()],
 };
 
 const FIELD_LIMITS = {
@@ -47,6 +90,7 @@ function buildStudentLabel(student: SupervisorStudentSearchResult) {
 
 export function CreateProjectPage() {
   const navigate = useNavigate();
+  const [currentStep, setCurrentStep] = useState<CreateProjectStep>('basics');
   const [draft, setDraft] = useState<DraftState>(INITIAL_DRAFT);
   const [studentQuery, setStudentQuery] = useState('');
   const [selectedStudents, setSelectedStudents] = useState<SupervisorStudentSearchResult[]>([]);
@@ -116,8 +160,44 @@ export function CreateProjectPage() {
     };
   }, [studentQuery, selectedStudents]);
 
-  function updateDraft<Field extends keyof DraftState>(field: Field, value: DraftState[Field]) {
+  function updateDraft<Field extends Exclude<keyof DraftState, 'milestones'>>(
+    field: Field,
+    value: DraftState[Field],
+  ) {
     setDraft((current) => ({ ...current, [field]: value }));
+  }
+
+  function updateMilestone(
+    milestoneId: string,
+    field: Exclude<keyof MilestoneDraft, 'id'>,
+    value: string,
+  ) {
+    setDraft((current) => ({
+      ...current,
+      milestones: current.milestones.map((milestone) =>
+        milestone.id === milestoneId ? { ...milestone, [field]: value } : milestone,
+      ),
+    }));
+  }
+
+  function addMilestone() {
+    setDraft((current) => ({
+      ...current,
+      milestones: [...current.milestones, createMilestoneDraft()],
+    }));
+  }
+
+  function removeMilestone(milestoneId: string) {
+    setDraft((current) => {
+      if (current.milestones.length === 1) {
+        return current;
+      }
+
+      return {
+        ...current,
+        milestones: current.milestones.filter((milestone) => milestone.id !== milestoneId),
+      };
+    });
   }
 
   function selectStudent(student: SupervisorStudentSearchResult) {
@@ -131,18 +211,92 @@ export function CreateProjectPage() {
     setSearchResults([]);
     setSearchState('idle');
     setSearchError(null);
+    setSubmitError(null);
   }
 
   function removeStudent(studentId: string) {
     setSelectedStudents((current) => current.filter((student) => student.id !== studentId));
   }
 
+  function validateBasicsStep() {
+    if (!draft.title.trim()) {
+      setSubmitError('Enter a project title before moving to the next step.');
+      return false;
+    }
+    if (!draft.summary.trim()) {
+      setSubmitError('Enter a project summary before moving to the next step.');
+      return false;
+    }
+    if (!draft.batch.trim()) {
+      setSubmitError('Enter the batch before moving to the next step.');
+      return false;
+    }
+    if (!draft.semester.trim()) {
+      setSubmitError('Enter the semester before moving to the next step.');
+      return false;
+    }
+
+    setSubmitError(null);
+    return true;
+  }
+
+  function validateStudentsStep() {
+    if (selectedStudents.length === 0) {
+      setSubmitError('Select at least one registered student before moving to milestones.');
+      return false;
+    }
+
+    setSubmitError(null);
+    return true;
+  }
+
+  function validateMilestonesStep() {
+    if (draft.milestones.length === 0) {
+      setSubmitError('Add at least one milestone before creating the project.');
+      return false;
+    }
+
+    const invalidMilestoneIndex = draft.milestones.findIndex(
+      (milestone) => !milestone.title.trim() || !milestone.dueDate,
+    );
+    if (invalidMilestoneIndex >= 0) {
+      setSubmitError(
+        `Complete milestone ${invalidMilestoneIndex + 1} with a title and due date before creating the project.`,
+      );
+      return false;
+    }
+
+    setSubmitError(null);
+    return true;
+  }
+
+  function goToNextStep() {
+    const currentStepIndex = CREATE_PROJECT_STEPS.findIndex((step) => step.id === currentStep);
+
+    if (currentStep === 'basics' && !validateBasicsStep()) {
+      return;
+    }
+
+    if (currentStep === 'students' && !validateStudentsStep()) {
+      return;
+    }
+
+    setSubmitError(null);
+    setCurrentStep(CREATE_PROJECT_STEPS[currentStepIndex + 1]?.id ?? currentStep);
+  }
+
+  function goToPreviousStep() {
+    const currentStepIndex = CREATE_PROJECT_STEPS.findIndex((step) => step.id === currentStep);
+    setSubmitError(null);
+    setCurrentStep(CREATE_PROJECT_STEPS[currentStepIndex - 1]?.id ?? currentStep);
+  }
+
   async function submitProjectCreation() {
     if (isSubmitting) {
       return;
     }
-    if (selectedStudents.length === 0) {
-      setSubmitError('Select at least one registered student before creating the project.');
+
+    if (!validateBasicsStep() || !validateStudentsStep() || !validateMilestonesStep()) {
       return;
     }
 
@@ -153,7 +307,7 @@ export function CreateProjectPage() {
       isOpen: true,
       status: 'loading',
       title: 'Creating project',
-      message: 'Saving the project, assigning students, and creating the first milestone.',
+      message: 'Saving the project, assigning students, and creating all milestones.',
     });
 
     try {
@@ -163,20 +317,24 @@ export function CreateProjectPage() {
         batch: draft.batch.trim(),
         semester: draft.semester.trim(),
         studentIds: selectedStudents.map((student) => student.id),
-        milestone: {
-          title: draft.milestoneTitle.trim(),
-          description: draft.milestoneDescription.trim(),
-          dueDate: draft.milestoneDueDate,
-        },
+        milestones: draft.milestones.map((milestone) => ({
+          title: milestone.title.trim(),
+          description: milestone.description.trim(),
+          dueDate: milestone.dueDate,
+        })),
       });
 
       setCreatedProjectId(response.id);
       invalidateSupervisorProjectsCache();
-      setDraft(INITIAL_DRAFT);
+      setDraft({
+        ...INITIAL_DRAFT,
+        milestones: [createMilestoneDraft()],
+      });
       setSelectedStudents([]);
       setStudentQuery('');
       setSearchResults([]);
       setSearchState('idle');
+      setCurrentStep('basics');
       setRequestModal({
         isOpen: true,
         status: 'success',
@@ -201,6 +359,12 @@ export function CreateProjectPage() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    if (currentStep !== 'milestones') {
+      goToNextStep();
+      return;
+    }
+
     await submitProjectCreation();
   }
 
@@ -217,9 +381,6 @@ export function CreateProjectPage() {
     await submitProjectCreation();
   }
 
-  const shouldShowSearchPanel =
-    studentQuery.trim().length >= 3 || searchState === 'loading' || searchState === 'error';
-
   function renderLimit(currentLength: number, maxLength: number) {
     return (
       <span className="text-xs text-muted-foreground">
@@ -228,11 +389,16 @@ export function CreateProjectPage() {
     );
   }
 
+  const shouldShowSearchPanel =
+    studentQuery.trim().length >= 3 || searchState === 'loading' || searchState === 'error';
+  const currentStepIndex = CREATE_PROJECT_STEPS.findIndex((step) => step.id === currentStep);
+  const isFinalStep = currentStep === 'milestones';
+
   return (
     <div className="space-y-6">
       <PageHeader
         title="Create Project"
-        subtitle="Create a supervisor project, assign registered students, and capture the first milestone in one request."
+        subtitle="Move through project basics, student assignment, and milestones, then send everything in one final create request."
       />
 
       <RequestStateModal
@@ -245,13 +411,41 @@ export function CreateProjectPage() {
       />
 
       <section className="rounded-3xl border border-border bg-white p-6 shadow-sm">
-        <form className="space-y-8" onSubmit={handleSubmit}>
-          <div className="grid gap-8 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+        <div className="grid gap-3 md:grid-cols-3">
+          {CREATE_PROJECT_STEPS.map((step, index) => {
+            const isActive = step.id === currentStep;
+            const isComplete = index < currentStepIndex;
+
+            return (
+              <div
+                key={step.id}
+                className={cn(
+                  'rounded-2xl border px-4 py-4 transition-colors',
+                  isActive
+                    ? 'border-amber-300 bg-amber-50'
+                    : isComplete
+                      ? 'border-emerald-200 bg-emerald-50'
+                      : 'border-slate-200 bg-slate-50',
+                )}
+              >
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                  {step.label}
+                </p>
+                <h2 className="mt-2 text-base font-semibold text-foreground">{step.title}</h2>
+                <p className="mt-1 text-sm text-muted-foreground">{step.description}</p>
+              </div>
+            );
+          })}
+        </div>
+
+        <form className="mt-8 space-y-8" onSubmit={handleSubmit}>
+          {currentStep === 'basics' ? (
             <div className="space-y-6">
               <div>
                 <h2 className="text-lg font-semibold text-foreground">Project basics</h2>
                 <p className="mt-2 text-sm leading-7 text-muted-foreground">
-                  Capture the core project details the backend supports in this sprint.
+                  Enter the project details first. You will add the student team and milestones in
+                  the next steps.
                 </p>
               </div>
 
@@ -315,13 +509,15 @@ export function CreateProjectPage() {
                 </label>
               </div>
             </div>
+          ) : null}
 
+          {currentStep === 'students' ? (
             <div className="space-y-6">
               <div>
                 <h2 className="text-lg font-semibold text-foreground">Student assignment</h2>
                 <p className="mt-2 text-sm leading-7 text-muted-foreground">
-                  Search registered students by email. Only selected students from the lookup can be
-                  assigned in this sprint.
+                  Search registered students by email and build the project team before moving to
+                  milestones.
                 </p>
               </div>
 
@@ -420,68 +616,119 @@ export function CreateProjectPage() {
                 </div>
               </div>
             </div>
-          </div>
+          ) : null}
 
-          <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6">
-            <div>
-              <h2 className="text-lg font-semibold text-foreground">Initial milestone</h2>
-              <p className="mt-2 text-sm leading-7 text-muted-foreground">
-                This release stores one initial milestone. Future sprints can expand this into a
-                full milestone timeline.
-              </p>
+          {currentStep === 'milestones' ? (
+            <div className="space-y-6">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-semibold text-foreground">Project milestones</h2>
+                  <p className="mt-2 text-sm leading-7 text-muted-foreground">
+                    Add every milestone now. The full project, team assignment, and milestone list
+                    will be submitted together from this final step.
+                  </p>
+                </div>
+                <div className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-foreground">
+                  {draft.milestones.length} milestone{draft.milestones.length === 1 ? '' : 's'} added
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                {draft.milestones.map((milestone, index) => (
+                  <div
+                    key={milestone.id}
+                    className="rounded-3xl border border-slate-200 bg-slate-50 p-5"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                          Milestone {index + 1}
+                        </p>
+                        <h3 className="mt-1 text-base font-semibold text-foreground">
+                          Define a review checkpoint
+                        </h3>
+                      </div>
+                      {draft.milestones.length > 1 ? (
+                        <button
+                          type="button"
+                          className={buttonStyles({ variant: 'secondary', size: 'sm' })}
+                          onClick={() => removeMilestone(milestone.id)}
+                          disabled={isSubmitting}
+                        >
+                          Remove
+                        </button>
+                      ) : null}
+                    </div>
+
+                    <div className="mt-5 grid gap-4">
+                      <label className="block">
+                        <span className="mb-2 block text-sm font-medium text-foreground">
+                          Milestone title
+                        </span>
+                        <input
+                          required
+                          value={milestone.title}
+                          onChange={(event) =>
+                            updateMilestone(milestone.id, 'title', event.target.value)
+                          }
+                          maxLength={FIELD_LIMITS.milestoneTitle}
+                          placeholder="e.g. Proposal Submission"
+                          className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-amber-300"
+                          disabled={isSubmitting}
+                        />
+                      </label>
+
+                      <label className="block">
+                        <span className="mb-2 flex items-center justify-between gap-3 text-sm font-medium text-foreground">
+                          <span>Milestone description</span>
+                          {renderLimit(
+                            milestone.description.length,
+                            FIELD_LIMITS.milestoneDescription,
+                          )}
+                        </span>
+                        <textarea
+                          value={milestone.description}
+                          onChange={(event) =>
+                            updateMilestone(milestone.id, 'description', event.target.value)
+                          }
+                          maxLength={FIELD_LIMITS.milestoneDescription}
+                          placeholder="Add any context or review expectations for this milestone."
+                          rows={4}
+                          className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-amber-300"
+                          disabled={isSubmitting}
+                        />
+                      </label>
+
+                      <label className="block sm:max-w-xs">
+                        <span className="mb-2 block text-sm font-medium text-foreground">
+                          Due date
+                        </span>
+                        <input
+                          required
+                          type="date"
+                          value={milestone.dueDate}
+                          onChange={(event) =>
+                            updateMilestone(milestone.id, 'dueDate', event.target.value)
+                          }
+                          className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-amber-300"
+                          disabled={isSubmitting}
+                        />
+                      </label>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <button
+                type="button"
+                className={buttonStyles({ variant: 'secondary', size: 'md' })}
+                onClick={addMilestone}
+                disabled={isSubmitting}
+              >
+                Add another milestone
+              </button>
             </div>
-
-            <div className="mt-5 grid gap-4">
-              <label className="block">
-                <span className="mb-2 block text-sm font-medium text-foreground">
-                  Milestone title
-                </span>
-                <input
-                  required
-                  value={draft.milestoneTitle}
-                  onChange={(event) => updateDraft('milestoneTitle', event.target.value)}
-                  maxLength={FIELD_LIMITS.milestoneTitle}
-                  placeholder="e.g. Proposal Submission"
-                  className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-amber-300"
-                  disabled={isSubmitting}
-                />
-              </label>
-
-              <label className="block">
-                <span className="mb-2 flex items-center justify-between gap-3 text-sm font-medium text-foreground">
-                  <span>Milestone description</span>
-                  {renderLimit(
-                    draft.milestoneDescription.length,
-                    FIELD_LIMITS.milestoneDescription,
-                  )}
-                </span>
-                <textarea
-                  value={draft.milestoneDescription}
-                  onChange={(event) => updateDraft('milestoneDescription', event.target.value)}
-                  maxLength={FIELD_LIMITS.milestoneDescription}
-                  placeholder="Add any context or review expectations for this milestone."
-                  rows={4}
-                  className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-amber-300"
-                  disabled={isSubmitting}
-                />
-                <span className="mt-2 block text-xs text-muted-foreground">
-                  Keep milestone notes concise so the first review point stays clear.
-                </span>
-              </label>
-
-              <label className="block sm:max-w-xs">
-                <span className="mb-2 block text-sm font-medium text-foreground">Due date</span>
-                <input
-                  required
-                  type="date"
-                  value={draft.milestoneDueDate}
-                  onChange={(event) => updateDraft('milestoneDueDate', event.target.value)}
-                  className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-amber-300"
-                  disabled={isSubmitting}
-                />
-              </label>
-            </div>
-          </div>
+          ) : null}
 
           {submitError ? (
             <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
@@ -490,15 +737,23 @@ export function CreateProjectPage() {
           ) : null}
 
           <div className="flex flex-wrap justify-between gap-3">
-            <Link
-              to="/supervisor/projects"
-              className={buttonStyles({ variant: 'secondary', size: 'md' })}
-            >
-              Back to projects
-            </Link>
+            <div className="flex flex-wrap gap-3">
+              {currentStep === 'basics' ? (
+                <Link
+                  to="/supervisor/projects"
+                  className={buttonStyles({ variant: 'secondary', size: 'md' })}
+                >
+                  Back to projects
+                </Link>
+              ) : (
+                <Button type="button" variant="secondary" size="md" onClick={goToPreviousStep}>
+                  Back
+                </Button>
+              )}
+            </div>
 
             <Button type="submit" variant="primary" size="md" disabled={isSubmitting}>
-              Create project
+              {isFinalStep ? 'Create project' : 'Next'}
             </Button>
           </div>
         </form>

@@ -185,11 +185,11 @@ export type CreateSupervisorProjectRequest = {
   batch: string;
   semester: string;
   studentIds: string[];
-  milestone: {
+  milestones: Array<{
     title: string;
     description: string;
     dueDate: string;
-  };
+  }>;
 };
 
 export type CreateSupervisorProjectResponse = {
@@ -202,14 +202,14 @@ export type CreateSupervisorProjectResponse = {
   progressPercent: number;
   milestoneDate: string;
   students: SupervisorStudentSearchResult[];
-  milestone: {
+  milestones: Array<{
     id: string;
     title: string;
     description: string | null;
     dueDate: string;
     status: 'PLANNED' | 'IN_PROGRESS' | 'COMPLETED' | 'MISSED' | 'CANCELLED';
     sequenceNo: number;
-  };
+  }>;
 };
 
 export type UpdateSupervisorProjectRequest = {
