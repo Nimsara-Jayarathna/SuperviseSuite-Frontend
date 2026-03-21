@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { BlockingState } from '@/components/ui/BlockingState';
@@ -52,6 +52,12 @@ const FIELD_LIMITS = {
   milestoneDescription: 250,
 } as const;
 
+const dateFormatter = new Intl.DateTimeFormat('en', {
+  month: 'short',
+  day: 'numeric',
+  year: 'numeric',
+});
+
 // ─── Stepper config ───────────────────────────────────────────────────────────
 
 const STEPS = [
@@ -80,6 +86,43 @@ function buildStudentLabel(student: SupervisorStudentSearchResult) {
   return `${student.firstName} ${student.lastName}`.trim() || student.email;
 }
 
+function isMilestoneComplete(milestone: MilestoneDraft) {
+  return milestone.title.trim().length > 0 && milestone.dueDate.length > 0;
+}
+
+function milestoneSummaryTitle(milestone: MilestoneDraft) {
+  const title = milestone.title.trim();
+  return title.length > 0 ? title : 'Untitled milestone';
+}
+
+function milestoneSummaryDescription(milestone: MilestoneDraft) {
+  const description = milestone.description.trim();
+  if (description.length > 0) return description;
+  return isMilestoneComplete(milestone) ? 'No description added.' : 'Needs a title and due date.';
+}
+
+// FIX 2: Don't render date in uppercase alarming style — return null if empty
+function milestoneSummaryDate(milestone: MilestoneDraft): string | null {
+  if (!milestone.dueDate) return null;
+  return dateFormatter.format(new Date(milestone.dueDate));
+}
+
+function collapsePreview(text: string, maxChars = 60) {
+  if (text.length <= maxChars) return text;
+  return `${text.slice(0, maxChars).trimEnd()}...`;
+}
+
+function earliestMilestone(
+  milestones: CreateSupervisorProjectResponse['milestones'],
+): CreateSupervisorProjectResponse['milestones'][number] | null {
+  if (milestones.length === 0) return null;
+  return milestones.reduce((earliest, milestone) =>
+    new Date(milestone.dueDate).getTime() < new Date(earliest.dueDate).getTime()
+      ? milestone
+      : earliest,
+  );
+}
+
 function CharLimit({ current, max }: { current: number; max: number }) {
   return (
     <span className="text-xs text-muted-foreground">
@@ -96,6 +139,10 @@ export function CreateProjectPage() {
   const [currentStep, setCurrentStep] = useState<StepId>(1);
   const [draft, setDraft] = useState<DraftState>(INITIAL_DRAFT);
   const [milestones, setMilestones] = useState<MilestoneDraft[]>([{ ...INITIAL_MILESTONE }]);
+  const [expandedMilestoneIndex, setExpandedMilestoneIndex] = useState<number | null>(0);
+
+  // FIX 3: ref map for scroll-into-view on new milestone
+  const milestoneRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   const [studentQuery, setStudentQuery] = useState('');
   const [selectedStudents, setSelectedStudents] = useState<SupervisorStudentSearchResult[]>([]);
@@ -105,6 +152,7 @@ export function CreateProjectPage() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [showIncompleteHint, setShowIncompleteHint] = useState(false); // FIX 7
   const [createdProject, setCreatedProject] = useState<CreateSupervisorProjectResponse | null>(null);
   const [requestModal, setRequestModal] = useState<{
     isOpen: boolean;
@@ -115,7 +163,8 @@ export function CreateProjectPage() {
 
   const step1Valid = draft.title.trim().length > 0 && draft.summary.trim().length > 0;
   const step2Valid = selectedStudents.length > 0;
-  const step3Valid = milestones.every((m) => m.title.trim().length > 0 && m.dueDate.length > 0);
+  const step3Valid = milestones.every(isMilestoneComplete);
+  const incompleteMilestoneCount = milestones.filter((m) => !isMilestoneComplete(m)).length;
 
   // ── Student search ──
   useEffect(() => {
@@ -184,20 +233,46 @@ export function CreateProjectPage() {
   }
 
   function addMilestone() {
+    const newIndex = milestones.length;
     setMilestones((prev) => [...prev, { ...INITIAL_MILESTONE }]);
+    setExpandedMilestoneIndex(newIndex);
+    // FIX 3: scroll new milestone into view after render
+    setTimeout(() => {
+      milestoneRefs.current[newIndex]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 50);
   }
 
   function removeMilestone(index: number) {
     if (milestones.length === 1) return;
     setMilestones((prev) => prev.filter((_, i) => i !== index));
+    setExpandedMilestoneIndex((current) => {
+      if (current === null) return null;
+      if (current === index) {
+        if (index === milestones.length - 1) return Math.max(0, index - 1);
+        return index;
+      }
+      if (current > index) return current - 1;
+      return current;
+    });
+  }
+
+  // FIX 6: toggle expand/collapse on same index
+  function toggleMilestone(index: number) {
+    setExpandedMilestoneIndex((current) => (current === index ? null : index));
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!step1Valid || !step2Valid || !step3Valid) return;
+
+    // FIX 7: show hint instead of just being silently disabled
+    if (!step3Valid) {
+      setShowIncompleteHint(true);
+      return;
+    }
 
     setIsSubmitting(true);
     setSubmitError(null);
+    setShowIncompleteHint(false);
     setCreatedProject(null);
     setRequestModal({
       isOpen: true,
@@ -207,18 +282,17 @@ export function CreateProjectPage() {
     });
 
     try {
-      const primary = milestones[0];
       const response = await supervisorApi.createProject({
         title: draft.title.trim(),
         summary: draft.summary.trim(),
         batch: draft.batch.trim(),
         semester: draft.semester.trim(),
         studentIds: selectedStudents.map((s) => s.id),
-        milestone: {
-          title: primary.title.trim(),
-          description: primary.description.trim(),
-          dueDate: primary.dueDate,
-        },
+        milestones: milestones.map((milestone) => ({
+          title: milestone.title.trim(),
+          description: milestone.description.trim(),
+          dueDate: milestone.dueDate,
+        })),
       });
 
       setCreatedProject(response);
@@ -226,6 +300,7 @@ export function CreateProjectPage() {
       setDraft(INITIAL_DRAFT);
       setSelectedStudents([]);
       setMilestones([{ ...INITIAL_MILESTONE }]);
+      setExpandedMilestoneIndex(0);
       setStudentQuery('');
       setRequestModal({
         isOpen: true,
@@ -257,6 +332,9 @@ export function CreateProjectPage() {
 
   const shouldShowSearchPanel =
     studentQuery.trim().length >= 3 || searchState === 'loading' || searchState === 'error';
+  const primaryCreatedMilestone = createdProject
+    ? earliestMilestone(createdProject.milestones)
+    : null;
 
   // ─────────────────────────────────────────────────────────────────────────────
 
@@ -280,7 +358,7 @@ export function CreateProjectPage() {
         currentStep={currentStep}
         steps={STEPS}
         onStepClick={(step) => {
-          if (step < currentStep) setCurrentStep(step);
+          if (step < currentStep) setCurrentStep(step as StepId);
         }}
       />
 
@@ -496,82 +574,195 @@ export function CreateProjectPage() {
               </span>
             </div>
 
-            <div className="space-y-4">
-              {milestones.map((milestone, index) => (
-                <div key={index} className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
-                  <div className="mb-4 flex items-center justify-between gap-3">
-                    <span className="text-sm font-semibold text-foreground">
-                      Milestone {index + 1}
-                    </span>
-                    {milestones.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => removeMilestone(index)}
-                        className="inline-flex h-9 items-center justify-center rounded-xl border border-rose-200 bg-rose-50 px-3 text-xs font-semibold text-rose-700 transition-colors hover:bg-rose-100 hover:text-rose-800 focus:outline-none focus:ring-2 focus:ring-rose-200"
-                        disabled={isSubmitting}
-                      >
-                        Remove
-                      </button>
+            <div className="space-y-3">
+              {milestones.map((milestone, index) => {
+                const isExpanded = expandedMilestoneIndex === index;
+                const isComplete = isMilestoneComplete(milestone);
+                const date = milestoneSummaryDate(milestone);
+
+                return (
+                  <div
+                    key={index}
+                    ref={(el) => { milestoneRefs.current[index] = el; }}
+                    className={[
+                      'rounded-3xl border bg-white transition-all duration-200',
+                      isExpanded
+                        ? 'border-slate-300 shadow-[0_10px_24px_rgba(15,23,42,0.08)]'
+                        : isComplete
+                          ? 'border-slate-200 hover:border-slate-300 hover:shadow-[0_4px_12px_rgba(15,23,42,0.06)]'
+                          : 'border-amber-200 bg-amber-50/30',
+                    ].join(' ')}
+                  >
+                    {isExpanded ? (
+                      /* ── Expanded state ── */
+                      <div className="p-5 sm:p-6">
+                        <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
+                          <button
+                            type="button"
+                            onClick={() => toggleMilestone(index)}
+                            className="flex items-center gap-2.5 text-left"
+                            aria-label="Collapse milestone"
+                          >
+                            <span className="inline-flex h-8 items-center rounded-lg bg-slate-100 px-2.5 text-xs font-semibold tracking-[0.12em] text-slate-700">
+                              {String(index + 1).padStart(2, '0')}
+                            </span>
+                            <span className="text-sm font-semibold text-slate-900">
+                              Milestone {index + 1}
+                            </span>
+                            {/* FIX 4: only show INCOMPLETE badge, remove redundant warning callout */}
+                            {!isComplete && (
+                              <span className="rounded-full border border-amber-300 bg-amber-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-amber-700">
+                                Incomplete
+                              </span>
+                            )}
+                            {/* FIX 1: green complete badge */}
+                            {isComplete && (
+                              <span className="flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-700">
+                                <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
+                                  <path d="M1.5 5L3.5 7L8.5 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                                Complete
+                              </span>
+                            )}
+                          </button>
+
+                          <div className="flex items-center gap-2">
+                            {milestones.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => removeMilestone(index)}
+                                className="inline-flex h-8 items-center justify-center rounded-xl border border-rose-200 bg-white px-3 text-xs font-semibold text-rose-600 transition-colors hover:bg-rose-50 hover:text-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-200"
+                                disabled={isSubmitting}
+                              >
+                                Remove
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* FIX 4: no redundant warning callout — removed */}
+
+                        <div className="space-y-4">
+                          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_260px]">
+                            <label className="block">
+                              <span className="mb-2 block text-sm font-medium text-slate-800">Title</span>
+                              <input
+                                required
+                                value={milestone.title}
+                                onChange={(e) => updateMilestone(index, 'title', e.target.value)}
+                                maxLength={FIELD_LIMITS.milestoneTitle}
+                                placeholder="e.g. Proposal Submission"
+                                className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm outline-none transition-colors focus:border-slate-400"
+                                disabled={isSubmitting}
+                              />
+                            </label>
+
+                            <label className="block">
+                              <span className="mb-2 block text-sm font-medium text-slate-800">
+                                Due date
+                              </span>
+                              <input
+                                required
+                                type="date"
+                                value={milestone.dueDate}
+                                onChange={(e) => updateMilestone(index, 'dueDate', e.target.value)}
+                                className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm outline-none transition-colors focus:border-slate-400"
+                                disabled={isSubmitting}
+                              />
+                            </label>
+                          </div>
+
+                          <label className="block">
+                            <span className="mb-2 flex items-center justify-between text-sm font-medium text-slate-800">
+                              <span>Description</span>
+                              <CharLimit
+                                current={milestone.description.length}
+                                max={FIELD_LIMITS.milestoneDescription}
+                              />
+                            </span>
+                            <textarea
+                              value={milestone.description}
+                              onChange={(e) => updateMilestone(index, 'description', e.target.value)}
+                              maxLength={FIELD_LIMITS.milestoneDescription}
+                              placeholder="Add context or review expectations."
+                              rows={3}
+                              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-slate-400"
+                              disabled={isSubmitting}
+                            />
+                          </label>
+                        </div>
+                      </div>
+                    ) : (
+                      /* ── Collapsed state ── */
+                      <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+                        <button
+                          type="button"
+                          onClick={() => toggleMilestone(index)}
+                          className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                          disabled={isSubmitting}
+                          aria-label={`Expand milestone ${index + 1}`}
+                        >
+                          {/* FIX 1: green check icon for complete, amber dot for incomplete */}
+                          <div className={[
+                            'flex h-9 shrink-0 items-center justify-center rounded-lg px-2.5 text-xs font-semibold tracking-[0.12em]',
+                            isComplete ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-700',
+                          ].join(' ')}>
+                            {isComplete ? (
+                              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                                <path d="M2.5 7L5.5 10L11.5 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                              </svg>
+                            ) : (
+                              String(index + 1).padStart(2, '0')
+                            )}
+                          </div>
+
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="truncate text-sm font-semibold text-slate-900">
+                                {milestoneSummaryTitle(milestone)}
+                              </span>
+                              {/* FIX 2: date shown softly, only if set */}
+                              {date && (
+                                <span className="text-xs text-slate-400">
+                                  {date}
+                                </span>
+                              )}
+                              {!isComplete && (
+                                <span className="w-fit rounded-full border border-amber-300 bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-amber-700">
+                                  Incomplete
+                                </span>
+                              )}
+                            </div>
+                            <p className="mt-0.5 truncate text-xs text-slate-500">
+                              {collapsePreview(milestoneSummaryDescription(milestone))}
+                            </p>
+                          </div>
+                        </button>
+
+                        <div className="flex items-center gap-2 self-end sm:self-auto">
+                          {milestones.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => removeMilestone(index)}
+                              className="inline-flex h-8 items-center justify-center rounded-xl border border-rose-200 bg-white px-3 text-xs font-semibold text-rose-600 transition-colors hover:bg-rose-50 hover:text-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-200"
+                              disabled={isSubmitting}
+                            >
+                              Remove
+                            </button>
+                          )}
+                        </div>
+                      </div>
                     )}
                   </div>
-
-                  <div className="space-y-4">
-                    <div className="flex items-end gap-4">
-                      <label className="block flex-1">
-                        <span className="mb-2 block text-sm font-medium text-foreground">Title</span>
-                        <input
-                          required
-                          value={milestone.title}
-                          onChange={(e) => updateMilestone(index, 'title', e.target.value)}
-                          maxLength={FIELD_LIMITS.milestoneTitle}
-                          placeholder="e.g. Proposal Submission"
-                          className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-amber-300"
-                          disabled={isSubmitting}
-                        />
-                      </label>
-
-                      <label className="block w-[420px] shrink-0">
-                        <span className="mb-2 block text-sm font-medium text-foreground">
-                          Due date
-                        </span>
-                        <input
-                          required
-                          type="date"
-                          value={milestone.dueDate}
-                          onChange={(e) => updateMilestone(index, 'dueDate', e.target.value)}
-                          className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-amber-300"
-                          disabled={isSubmitting}
-                        />
-                      </label>
-                    </div>
-
-                    <label className="block">
-                      <span className="mb-2 flex items-center justify-between text-sm font-medium text-foreground">
-                        <span>Description</span>
-                        <CharLimit
-                          current={milestone.description.length}
-                          max={FIELD_LIMITS.milestoneDescription}
-                        />
-                      </span>
-                      <textarea
-                        value={milestone.description}
-                        onChange={(e) => updateMilestone(index, 'description', e.target.value)}
-                        maxLength={FIELD_LIMITS.milestoneDescription}
-                        placeholder="Add context or review expectations."
-                        rows={3}
-                        className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-amber-300"
-                        disabled={isSubmitting}
-                      />
-                    </label>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
+            {/* FIX 5: slightly more prominent add button */}
             <button
               type="button"
               onClick={addMilestone}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-slate-300 py-3 text-sm text-muted-foreground transition-colors hover:border-slate-400 hover:text-foreground"
+              className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-slate-300 py-4 text-sm font-medium text-muted-foreground transition-colors hover:border-slate-400 hover:bg-slate-50 hover:text-foreground"
               disabled={isSubmitting}
             >
               <span className="text-base leading-none">+</span>
@@ -584,7 +775,7 @@ export function CreateProjectPage() {
               </div>
             )}
 
-            <div className="flex flex-wrap justify-between gap-3">
+            <div className="flex flex-wrap items-end justify-between gap-3">
               <Button
                 type="button"
                 variant="secondary"
@@ -594,21 +785,30 @@ export function CreateProjectPage() {
               >
                 ← Back
               </Button>
-              <div className="flex gap-3">
-                <Link
-                  to="/supervisor/projects"
-                  className={buttonStyles({ variant: 'secondary', size: 'md' })}
-                >
-                  Cancel
-                </Link>
-                <Button
-                  type="submit"
-                  variant="primary"
-                  size="md"
-                  disabled={isSubmitting || !step3Valid}
-                >
-                  {isSubmitting ? 'Creating...' : 'Create project'}
-                </Button>
+              <div className="flex flex-col items-end gap-2">
+                {/* FIX 7: show incomplete hint instead of just a disabled button */}
+                {showIncompleteHint && !step3Valid && (
+                  <p className="text-xs text-amber-700">
+                    Complete {incompleteMilestoneCount} milestone{incompleteMilestoneCount === 1 ? '' : 's'} before creating the project.
+                  </p>
+                )}
+                <div className="flex gap-3">
+                  <Link
+                    to="/supervisor/projects"
+                    className={buttonStyles({ variant: 'secondary', size: 'md' })}
+                  >
+                    Cancel
+                  </Link>
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    size="md"
+                    disabled={isSubmitting}
+                    onClick={() => { if (!step3Valid) setShowIncompleteHint(true); }}
+                  >
+                    {isSubmitting ? 'Creating...' : 'Create project'}
+                  </Button>
+                </div>
               </div>
             </div>
           </section>
@@ -622,7 +822,11 @@ export function CreateProjectPage() {
           <p className="mt-2 text-sm leading-7 text-emerald-800">
             {createdProject.title} was created with {createdProject.students.length} assigned
             student{createdProject.students.length === 1 ? '' : 's'} and the first milestone
-            scheduled for {createdProject.milestone.dueDate}.
+            scheduled for{' '}
+            {dateFormatter.format(
+              new Date(primaryCreatedMilestone?.dueDate ?? createdProject.milestoneDate),
+            )}
+            .
           </p>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <div className="rounded-2xl border border-emerald-200 bg-white px-4 py-4">
@@ -634,7 +838,7 @@ export function CreateProjectPage() {
             <div className="rounded-2xl border border-emerald-200 bg-white px-4 py-4">
               <p className="text-xs uppercase tracking-[0.2em] text-emerald-700">Milestone</p>
               <p className="mt-2 font-semibold text-emerald-950">
-                {createdProject.milestone.title}
+                {primaryCreatedMilestone?.title ?? 'No milestone returned'}
               </p>
             </div>
           </div>
