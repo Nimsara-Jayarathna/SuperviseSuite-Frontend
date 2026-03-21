@@ -1,6 +1,10 @@
+import { useState } from 'react';
 import type { ApiError } from '@/types';
 import { buttonStyles } from '@/components/ui/Button';
 import type { ProjectGitHubDashboard, ProjectGitHubRecentCommit } from '../types';
+import { GithubDetailsModal } from './GithubDetailsModal';
+import { GithubActivityModalContent } from './GithubActivityModalContent';
+import { GithubContributorsModalContent } from './GithubContributorsModalContent';
 
 type CommitActivitySectionProps = {
   isLoading: boolean;
@@ -138,6 +142,8 @@ export function CommitActivitySection({
   data,
   onRetry,
 }: CommitActivitySectionProps) {
+  const [openModal, setOpenModal] = useState<'activity' | 'contributors' | null>(null);
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -260,7 +266,11 @@ export function CommitActivitySection({
       <section className="rounded-3xl border border-border bg-white p-6 shadow-sm">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-lg font-semibold text-foreground">Contributors Preview</h2>
-          <button type="button" className="text-sm font-medium text-primary">
+          <button
+            type="button"
+            className="text-sm font-medium text-primary"
+            onClick={() => setOpenModal('contributors')}
+          >
             View all contributors →
           </button>
         </div>
@@ -286,7 +296,11 @@ export function CommitActivitySection({
       <section className="rounded-3xl border border-border bg-white p-6 shadow-sm">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-lg font-semibold text-foreground">Activity Feed</h2>
-          <button type="button" className="text-sm font-medium text-primary">
+          <button
+            type="button"
+            className="text-sm font-medium text-primary"
+            onClick={() => setOpenModal('activity')}
+          >
             View full activity →
           </button>
         </div>
@@ -298,6 +312,22 @@ export function CommitActivitySection({
           <p className="mt-4 text-sm text-muted-foreground">No recent activity found.</p>
         )}
       </section>
+
+      <GithubDetailsModal
+        isOpen={openModal === 'contributors'}
+        title="GitHub Contributors"
+        onClose={() => setOpenModal(null)}
+      >
+        <GithubContributorsModalContent contributors={normalized.contributors} />
+      </GithubDetailsModal>
+
+      <GithubDetailsModal
+        isOpen={openModal === 'activity'}
+        title="GitHub Activity"
+        onClose={() => setOpenModal(null)}
+      >
+        <GithubActivityModalContent commits={normalized.recentCommits} />
+      </GithubDetailsModal>
     </div>
   );
 }
