@@ -4,7 +4,7 @@ import { buttonStyles } from '@/components/ui/Button';
 import type {
   PaginatedListResult,
   ProjectGitHubContributor,
-  ProjectGitHubDashboard,
+  ProjectGitHubPreview,
   ProjectGitHubRecentCommit,
 } from '../types';
 import { GithubDetailsModal } from './GithubDetailsModal';
@@ -14,7 +14,7 @@ import { GithubContributorsModalContent } from './GithubContributorsModalContent
 type CommitActivitySectionProps = {
   isLoading: boolean;
   error: ApiError | null;
-  data: ProjectGitHubDashboard | null;
+  data: ProjectGitHubPreview | null;
   onRetry: () => void;
   githubPageSize: number;
   loadActivityPage: (
@@ -25,6 +25,9 @@ type CommitActivitySectionProps = {
     page: number,
     size: number,
   ) => Promise<PaginatedListResult<ProjectGitHubContributor>>;
+  canRefresh: boolean;
+  isRefreshing: boolean;
+  onRefresh?: () => void;
 };
 
 const dateTimeFormatter = new Intl.DateTimeFormat('en', {
@@ -98,33 +101,58 @@ function renderCommitCard(commit: ProjectGitHubRecentCommit, index: number) {
 
 type LegacyCommitPayload = {
   repositoryLinked?: boolean;
+  repository?: {
+    name?: string;
+    url?: string;
+    defaultBranch?: string;
+  } | null;
+  repositories?: Array<{
+    id?: string | null;
+    name?: string;
+    url?: string;
+    defaultBranch?: string;
+    lastSyncedAt?: string | null;
+  }>;
+  contributorsPreview?: Array<{ name: string; commitCount: number }>;
+  recentCommitsPreview?: ProjectGitHubRecentCommit[];
+  activitySummary?: {
+    totalCommits?: number;
+    lastActivityAt?: string | null;
+    status?: string;
+  };
   commits?: Array<{
     sha?: string | null;
     message?: string;
     author?: string;
     committedAt?: string | null;
   }>;
+  contributors?: Array<{ name: string; commitCount: number }>;
+  recentCommits?: ProjectGitHubRecentCommit[];
 };
 
-function normalizeDashboardPayload(raw: ProjectGitHubDashboard | LegacyCommitPayload): ProjectGitHubDashboard {
-  const maybeDashboard = raw as ProjectGitHubDashboard;
+function normalizeDashboardPayload(raw: ProjectGitHubPreview | LegacyCommitPayload): ProjectGitHubPreview {
+  const maybeDashboard = raw as ProjectGitHubPreview;
   if (
     maybeDashboard &&
     typeof maybeDashboard === 'object' &&
     'activitySummary' in maybeDashboard &&
-    'contributors' in maybeDashboard &&
-    'recentCommits' in maybeDashboard
+    'contributorsPreview' in maybeDashboard &&
+    'recentCommitsPreview' in maybeDashboard
   ) {
     return {
       repositoryLinked: Boolean(maybeDashboard.repositoryLinked),
-      repository: maybeDashboard.repository ?? null,
+      repositories: Array.isArray(maybeDashboard.repositories) ? maybeDashboard.repositories : [],
       activitySummary: {
         totalCommits: Number(maybeDashboard.activitySummary?.totalCommits ?? 0),
         lastActivityAt: maybeDashboard.activitySummary?.lastActivityAt ?? null,
         status: maybeDashboard.activitySummary?.status === 'active' ? 'active' : 'idle',
       },
-      contributors: Array.isArray(maybeDashboard.contributors) ? maybeDashboard.contributors : [],
-      recentCommits: Array.isArray(maybeDashboard.recentCommits) ? maybeDashboard.recentCommits : [],
+      contributorsPreview: Array.isArray(maybeDashboard.contributorsPreview)
+        ? maybeDashboard.contributorsPreview
+        : [],
+      recentCommitsPreview: Array.isArray(maybeDashboard.recentCommitsPreview)
+        ? maybeDashboard.recentCommitsPreview
+        : [],
     };
   }
 
@@ -139,14 +167,45 @@ function normalizeDashboardPayload(raw: ProjectGitHubDashboard | LegacyCommitPay
 
   return {
     repositoryLinked: Boolean(legacy.repositoryLinked),
-    repository: null,
+    repositories: Array.isArray(legacy.repositories)
+      ? legacy.repositories.map((repository) => ({
+          id: repository.id ?? null,
+          name: repository.name ?? 'Repository',
+          url: repository.url ?? '',
+          defaultBranch: repository.defaultBranch ?? 'main',
+          lastSyncedAt: repository.lastSyncedAt ?? null,
+        }))
+      : legacy.repository
+        ? [
+            {
+              id: null,
+              name: legacy.repository.name ?? 'Repository',
+              url: legacy.repository.url ?? '',
+              defaultBranch: legacy.repository.defaultBranch ?? 'main',
+              lastSyncedAt: null,
+            },
+          ]
+        : [],
     activitySummary: {
-      totalCommits: normalizedCommits.length,
-      lastActivityAt: normalizedCommits[0]?.committedAt ?? null,
-      status: normalizedCommits.length > 0 ? 'active' : 'idle',
+      totalCommits: Number(legacy.activitySummary?.totalCommits ?? normalizedCommits.length),
+      lastActivityAt: legacy.activitySummary?.lastActivityAt ?? normalizedCommits[0]?.committedAt ?? null,
+      status:
+        legacy.activitySummary?.status === 'active' || legacy.activitySummary?.status === 'idle'
+          ? legacy.activitySummary.status
+          : normalizedCommits.length > 0
+            ? 'active'
+            : 'idle',
     },
-    contributors: [],
-    recentCommits: normalizedCommits,
+    contributorsPreview: Array.isArray(legacy.contributorsPreview)
+      ? legacy.contributorsPreview
+      : Array.isArray(legacy.contributors)
+        ? legacy.contributors
+        : [],
+    recentCommitsPreview: Array.isArray(legacy.recentCommitsPreview)
+      ? legacy.recentCommitsPreview
+      : Array.isArray(legacy.recentCommits)
+        ? legacy.recentCommits
+        : normalizedCommits,
   };
 }
 
@@ -158,6 +217,9 @@ export function CommitActivitySection({
   githubPageSize,
   loadActivityPage,
   loadContributorsPage,
+  canRefresh,
+  isRefreshing,
+  onRefresh,
 }: CommitActivitySectionProps) {
   const [openModal, setOpenModal] = useState<'activity' | 'contributors' | null>(null);
 
@@ -215,14 +277,26 @@ export function CommitActivitySection({
   }
 
   const normalized = normalizeDashboardPayload(data);
-  const repositoryItems = normalized.repositoryLinked && normalized.repository ? [normalized.repository] : [];
-  const topContributors = normalized.contributors.slice(0, 5);
-  const recentCommits = normalized.recentCommits.slice(0, 6);
+  const repositoryItems = normalized.repositoryLinked ? normalized.repositories.slice(0, 1) : [];
+  const topContributors = normalized.contributorsPreview.slice(0, 4);
+  const recentCommits = normalized.recentCommitsPreview.slice(0, 6);
 
   return (
     <div className="space-y-6">
       <section className="rounded-3xl border border-border bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-foreground">Repository Overview</h2>
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold text-foreground">Repository Overview</h2>
+          {canRefresh ? (
+            <button
+              type="button"
+              className={buttonStyles({ variant: 'secondary', size: 'sm' })}
+              onClick={onRefresh}
+              disabled={isRefreshing}
+            >
+              {isRefreshing ? 'Refreshing...' : 'Refresh'}
+            </button>
+          ) : null}
+        </div>
         {repositoryItems.length > 0 ? (
           <div className="mt-4 space-y-3">
             {repositoryItems.map((repository) => (
@@ -241,6 +315,9 @@ export function CommitActivitySection({
                 </a>
                 <p className="mt-2 text-xs text-muted-foreground">
                   Default branch: {repository.defaultBranch || 'main'}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Last synced: {formatDateTime(repository.lastSyncedAt)}
                 </p>
               </article>
             ))}

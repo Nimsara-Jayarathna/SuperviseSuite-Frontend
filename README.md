@@ -20,10 +20,15 @@ Default example:
 
 `VITE_API_BASE_URL=http://localhost:8081`
 
+GitHub modal pagination example:
+
+`VITE_GITHUB_PAGE_SIZE=10`
+
 Local auth/refresh reliability notes:
 
 - Ensure backend `APP_PORT=8081` and frontend `VITE_API_BASE_URL` points to the same port.
 - Ensure backend `CORS_ALLOWED_ORIGINS=http://localhost:5173`.
+- Keep `VITE_GITHUB_PAGE_SIZE` within backend limits (`GITHUB_DEFAULT_PAGE_SIZE` / `GITHUB_MAX_PAGE_SIZE`).
 - Use `localhost` consistently in FE and BE (do not mix with `127.0.0.1`).
 
 ### Install and Run

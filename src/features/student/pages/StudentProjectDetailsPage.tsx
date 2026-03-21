@@ -1,7 +1,6 @@
 import { CalendarDays, Clock3, Users } from 'lucide-react';
 import { useCallback } from 'react';
 import { CommitActivitySection } from '@/features/projects/components/CommitActivitySection';
-import { useStudentProjectCommits } from '../hooks/useStudentProjectCommits';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { env } from '@/app/config/env';
 import { ErrorState } from '@/components/feedback/ErrorState';
@@ -51,7 +50,6 @@ export function StudentProjectDetailsPage() {
   const { projectId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const { project, isLoading, error, reload } = useStudentProject(projectId);
-  const commitState = useStudentProjectCommits(projectId);
   const loadActivityPage = useCallback(
     (page: number, size: number) => {
       if (!projectId) {
@@ -302,13 +300,15 @@ export function StudentProjectDetailsPage() {
 
       {activeTab === 'github' ? (
         <CommitActivitySection
-          isLoading={commitState.isLoading}
-          error={commitState.error}
-          data={commitState.data}
-          onRetry={() => void commitState.reload()}
+          isLoading={isLoading}
+          error={null}
+          data={project.github}
+          onRetry={() => void reload()}
           githubPageSize={env.githubPageSize}
           loadActivityPage={loadActivityPage}
           loadContributorsPage={loadContributorsPage}
+          canRefresh={false}
+          isRefreshing={false}
         />
       ) : null}
     </div>

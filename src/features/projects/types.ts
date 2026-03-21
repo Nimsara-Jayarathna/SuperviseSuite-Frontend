@@ -1,7 +1,9 @@
-export type ProjectGitHubRepository = {
+export type ProjectGitHubRepositoryPreview = {
+  id: string | null;
   name: string;
   url: string;
   defaultBranch: string;
+  lastSyncedAt: string | null;
 };
 
 export type ProjectGitHubActivitySummary = {
@@ -20,14 +22,15 @@ export type ProjectGitHubRecentCommit = {
   message: string;
   author: string;
   committedAt: string | null;
+  type?: string | null;
 };
 
-export type ProjectGitHubDashboard = {
+export type ProjectGitHubPreview = {
   repositoryLinked: boolean;
-  repository: ProjectGitHubRepository | null;
+  repositories: ProjectGitHubRepositoryPreview[];
   activitySummary: ProjectGitHubActivitySummary;
-  contributors: ProjectGitHubContributor[];
-  recentCommits: ProjectGitHubRecentCommit[];
+  contributorsPreview: ProjectGitHubContributor[];
+  recentCommitsPreview: ProjectGitHubRecentCommit[];
 };
 
 export type PaginatedListResult<T> = {
@@ -35,4 +38,5 @@ export type PaginatedListResult<T> = {
   hasMore: boolean;
   page: number;
   size: number;
+  total?: number;
 };

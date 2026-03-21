@@ -1,4 +1,4 @@
-import type { ProjectGitHubDashboard } from '@/features/projects/types';
+import type { ProjectGitHubPreview } from '@/features/projects/types';
 
 export type SupervisorProjectLifecycle = 'PLANNING' | 'ACTIVE' | 'AT_RISK' | 'BEHIND' | 'COMPLETED';
 
@@ -15,7 +15,7 @@ export type SupervisorProjectSummary = {
   memberCount: number;
 };
 
-export type ProjectGitHubActivity = ProjectGitHubDashboard;
+export type ProjectGitHubActivity = ProjectGitHubPreview;
 
 export type SupervisorProjectDetailMember = {
   id: string;
@@ -55,6 +55,7 @@ export type SupervisorProjectDetail = {
   healthNote: string | null;
   lastActivityAt: string | null;
   repositoryUrl?: string | null;
+  github: ProjectGitHubPreview;
   leader: SupervisorProjectLeader | null;
   members: SupervisorProjectDetailMember[];
   milestones: SupervisorProjectDetailMilestone[];

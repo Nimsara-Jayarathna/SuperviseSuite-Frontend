@@ -62,7 +62,7 @@ export const studentApi = {
       }
 
       const dashboard = await this.getProjectGitHubDashboard(projectId);
-      return fallbackSlicePage<ProjectGitHubRecentCommit>(dashboard.recentCommits ?? [], page, size);
+      return fallbackSlicePage<ProjectGitHubRecentCommit>(dashboard.recentCommitsPreview ?? [], page, size);
     }
   },
 
@@ -82,7 +82,7 @@ export const studentApi = {
       }
 
       const dashboard = await this.getProjectGitHubDashboard(projectId);
-      return fallbackSlicePage<ProjectGitHubContributor>(dashboard.contributors ?? [], page, size);
+      return fallbackSlicePage<ProjectGitHubContributor>(dashboard.contributorsPreview ?? [], page, size);
     }
   },
 

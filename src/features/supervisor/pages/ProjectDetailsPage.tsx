@@ -1,5 +1,5 @@
 import { CalendarDays, Clock3, Users } from 'lucide-react';
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { env } from '@/app/config/env';
 import { ErrorState } from '@/components/feedback/ErrorState';
@@ -13,7 +13,6 @@ import { MilestonesTabSection } from '../components/ProjectDetail/MilestonesTabS
 import { OverviewTabSection } from '../components/ProjectDetail/OverviewTabSection';
 import { TeamTabSection } from '../components/ProjectDetail/TeamTabSection';
 import { useProjectDetailsPageState } from '../hooks/useProjectDetailsPageState';
-import { useSupervisorProjectCommits } from '../hooks/useSupervisorProjectCommits';
 import { useSupervisorProject } from '../hooks/useSupervisorProject';
 import { supervisorApi } from '../api/supervisorApi';
 import {
@@ -35,7 +34,7 @@ export function ProjectDetailsPage() {
       loadedProject,
     },
   );
-  const commitState = useSupervisorProjectCommits(projectId);
+  const [isRefreshingGitHub, setIsRefreshingGitHub] = useState(false);
   const loadActivityPage = useCallback(
     (page: number, size: number) => {
       if (!projectId) {
@@ -54,6 +53,20 @@ export function ProjectDetailsPage() {
     },
     [projectId],
   );
+
+  async function handleGitHubRefresh() {
+    if (!projectId) {
+      return;
+    }
+
+    setIsRefreshingGitHub(true);
+    try {
+      await supervisorApi.refreshProjectGitHub(projectId);
+      await reload();
+    } finally {
+      setIsRefreshingGitHub(false);
+    }
+  }
 
   const requestedTab = searchParams.get('tab') as SupervisorProjectDetailTab | null;
   const activeTab = requestedTab && TABS.includes(requestedTab) ? requestedTab : 'overview';
@@ -191,13 +204,16 @@ export function ProjectDetailsPage() {
 
       {activeTab === 'github' ? (
         <CommitActivitySection
-          isLoading={commitState.isLoading}
-          error={commitState.error}
-          data={commitState.data}
-          onRetry={() => void commitState.reload()}
+          isLoading={isLoading}
+          error={null}
+          data={project.github}
+          onRetry={() => void reload()}
           githubPageSize={env.githubPageSize}
           loadActivityPage={loadActivityPage}
           loadContributorsPage={loadContributorsPage}
+          canRefresh
+          isRefreshing={isRefreshingGitHub}
+          onRefresh={() => void handleGitHubRefresh()}
         />
       ) : null}
     </div>
