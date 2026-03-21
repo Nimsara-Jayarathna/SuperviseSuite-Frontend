@@ -16,7 +16,6 @@ import { ProjectDetailsSkeleton } from '../components/ProjectDetailsSkeleton';
 import { useSupervisorProject } from '../hooks/useSupervisorProject';
 import type {
   SupervisorProjectDetail,
-  SupervisorProjectDetailMember,
   SupervisorProjectDetailMilestone,
   SupervisorProjectDetailTab,
   SupervisorProjectLifecycle,
@@ -96,12 +95,18 @@ type MilestoneStatus = SupervisorProjectDetailMilestone['status'];
 
 function milestoneStatusBg(status: MilestoneStatus) {
   switch (status) {
-    case 'COMPLETED':  return 'bg-emerald-50 border-emerald-200';
-    case 'IN_PROGRESS': return 'bg-sky-50 border-sky-200';
-    case 'PLANNED':    return 'bg-white border-slate-200';
-    case 'MISSED':     return 'bg-rose-50 border-rose-200';
-    case 'CANCELLED':  return 'bg-slate-50 border-slate-200';
-    default:           return 'bg-white border-slate-200';
+    case 'COMPLETED':
+      return 'bg-emerald-50 border-emerald-200';
+    case 'IN_PROGRESS':
+      return 'bg-sky-50 border-sky-200';
+    case 'PLANNED':
+      return 'bg-white border-slate-200';
+    case 'MISSED':
+      return 'bg-rose-50 border-rose-200';
+    case 'CANCELLED':
+      return 'bg-slate-50 border-slate-200';
+    default:
+      return 'bg-white border-slate-200';
   }
 }
 
@@ -197,8 +202,12 @@ export function ProjectDetailsPage() {
   const [studentQuery, setStudentQuery] = useState('');
   const [studentSearchState, setStudentSearchState] = useState<SearchState>('idle');
   const [studentSearchError, setStudentSearchError] = useState<ApiError | null>(null);
-  const [studentSearchResults, setStudentSearchResults] = useState<SupervisorStudentSearchResult[]>([]);
-  const [selectedStudentsToAdd, setSelectedStudentsToAdd] = useState<SupervisorStudentSearchResult[]>([]);
+  const [studentSearchResults, setStudentSearchResults] = useState<SupervisorStudentSearchResult[]>(
+    [],
+  );
+  const [selectedStudentsToAdd, setSelectedStudentsToAdd] = useState<
+    SupervisorStudentSearchResult[]
+  >([]);
   const [isAddingStudents, setIsAddingStudents] = useState(false);
   const [leaderDraftId, setLeaderDraftId] = useState<string>('');
   const [isUpdatingLeader, setIsUpdatingLeader] = useState(false);
@@ -213,7 +222,9 @@ export function ProjectDetailsPage() {
     status: 'PLANNED',
   });
   const [editMilestoneForm, setEditMilestoneForm] = useState<MilestoneForm | null>(null);
-  const [initialEditMilestoneForm, setInitialEditMilestoneForm] = useState<MilestoneForm | null>(null);
+  const [initialEditMilestoneForm, setInitialEditMilestoneForm] = useState<MilestoneForm | null>(
+    null,
+  );
   const [requestModal, setRequestModal] = useState<RequestModalState>({
     isOpen: false,
     status: 'loading',
@@ -244,7 +255,9 @@ export function ProjectDetailsPage() {
     );
   }, [editMilestoneForm, initialEditMilestoneForm]);
 
-  useEffect(() => { setProject(loadedProject); }, [loadedProject]);
+  useEffect(() => {
+    setProject(loadedProject);
+  }, [loadedProject]);
 
   useEffect(() => {
     if (project && !isEditingOverview) setOverviewForm(buildOverviewEditForm(project));
@@ -290,21 +303,40 @@ export function ProjectDetailsPage() {
       }
     }, 300);
 
-    return () => { isCancelled = true; window.clearTimeout(timeoutId); };
+    return () => {
+      isCancelled = true;
+      window.clearTimeout(timeoutId);
+    };
   }, [isManagingStudents, project, selectedStudentsToAdd, studentQuery]);
 
   function handleTabChange(tab: SupervisorProjectDetailTab) {
     const nextParams = new URLSearchParams(searchParams);
-    if (tab === 'overview') { nextParams.delete('tab'); } else { nextParams.set('tab', tab); }
+    if (tab === 'overview') {
+      nextParams.delete('tab');
+    } else {
+      nextParams.set('tab', tab);
+    }
     setSearchParams(nextParams, { replace: true });
   }
 
-  function handleProjectUpdate(updatedProject: SupervisorProjectDetail) { setProject(updatedProject); }
-  function closeRequestModal() { setRequestModal((c) => ({ ...c, isOpen: false, retryAction: null })); }
-  function showLoadingModal(title: string, message: string) { setRequestModal({ isOpen: true, status: 'loading', title, message, retryAction: null }); }
-  function showSuccessModal(title: string, message: string) { setRequestModal({ isOpen: true, status: 'success', title, message, retryAction: null }); }
-  function showErrorModal(title: string, message: string, retryAction: () => Promise<void>) { setRequestModal({ isOpen: true, status: 'error', title, message, retryAction }); }
-  function retryLastRequest() { if (requestModal.retryAction) void requestModal.retryAction(); }
+  function handleProjectUpdate(updatedProject: SupervisorProjectDetail) {
+    setProject(updatedProject);
+  }
+  function closeRequestModal() {
+    setRequestModal((c) => ({ ...c, isOpen: false, retryAction: null }));
+  }
+  function showLoadingModal(title: string, message: string) {
+    setRequestModal({ isOpen: true, status: 'loading', title, message, retryAction: null });
+  }
+  function showSuccessModal(title: string, message: string) {
+    setRequestModal({ isOpen: true, status: 'success', title, message, retryAction: null });
+  }
+  function showErrorModal(title: string, message: string, retryAction: () => Promise<void>) {
+    setRequestModal({ isOpen: true, status: 'error', title, message, retryAction });
+  }
+  function retryLastRequest() {
+    if (requestModal.retryAction) void requestModal.retryAction();
+  }
 
   function handleStartOverviewEdit() {
     if (!project) return;
@@ -333,7 +365,10 @@ export function ProjectDetailsPage() {
       });
       setProject(updatedProject);
       setIsEditingOverview(false);
-      showSuccessModal('Project details updated', 'The project summary and overview details were updated successfully.');
+      showSuccessModal(
+        'Project details updated',
+        'The project summary and overview details were updated successfully.',
+      );
     } catch (saveException) {
       const apiError = toApiError(saveException, 'Unable to update the project right now.');
       showErrorModal('Unable to save project details', apiError.message, submitOverviewUpdate);
@@ -347,19 +382,26 @@ export function ProjectDetailsPage() {
     await submitOverviewUpdate();
   }
 
-  async function submitQuickStatusChange(nextStatus: SupervisorProjectLifecycle, previousStatus: SupervisorProjectLifecycle) {
+  async function submitQuickStatusChange(
+    nextStatus: SupervisorProjectLifecycle,
+    previousStatus: SupervisorProjectLifecycle,
+  ) {
     if (!projectId || !project) return;
     setQuickLifecycleStatus(nextStatus);
     setIsUpdatingStatus(true);
     showLoadingModal('Updating project status', `Switching lifecycle status to ${nextStatus}.`);
     try {
-      const updatedProject = await supervisorApi.updateProjectStatus(projectId, { lifecycleStatus: nextStatus });
+      const updatedProject = await supervisorApi.updateProjectStatus(projectId, {
+        lifecycleStatus: nextStatus,
+      });
       setProject(updatedProject);
       showSuccessModal('Project status updated', `Lifecycle status is now ${nextStatus}.`);
     } catch (statusException) {
       setQuickLifecycleStatus(previousStatus);
       const apiError = toApiError(statusException, 'Unable to update project status right now.');
-      showErrorModal('Unable to update project status', apiError.message, async () => submitQuickStatusChange(nextStatus, previousStatus));
+      showErrorModal('Unable to update project status', apiError.message, async () =>
+        submitQuickStatusChange(nextStatus, previousStatus),
+      );
     } finally {
       setIsUpdatingStatus(false);
     }
@@ -373,7 +415,10 @@ export function ProjectDetailsPage() {
   async function submitLeaderUpdate() {
     if (!projectId || !project || !leaderDraftId || leaderDraftId === project.leader?.id) return;
     setIsUpdatingLeader(true);
-    showLoadingModal('Updating project leader', 'Assigning the selected student as project leader.');
+    showLoadingModal(
+      'Updating project leader',
+      'Assigning the selected student as project leader.',
+    );
     try {
       const updatedProject = await supervisorApi.updateProject(projectId, {
         title: project.title,
@@ -419,7 +464,9 @@ export function ProjectDetailsPage() {
     }
   }
 
-  function handleStartStudentManagement() { setIsManagingStudents(true); }
+  function handleStartStudentManagement() {
+    setIsManagingStudents(true);
+  }
   function handleCancelStudentManagement() {
     setIsManagingStudents(false);
     setStudentQuery('');
@@ -430,7 +477,7 @@ export function ProjectDetailsPage() {
   }
 
   function handleSelectStudentToAdd(student: SupervisorStudentSearchResult) {
-    setSelectedStudentsToAdd((c) => c.some((s) => s.id === student.id) ? c : [...c, student]);
+    setSelectedStudentsToAdd((c) => (c.some((s) => s.id === student.id) ? c : [...c, student]));
     setStudentQuery('');
     setStudentSearchResults([]);
     setStudentSearchState('idle');
@@ -459,9 +506,18 @@ export function ProjectDetailsPage() {
     }
   }
 
-  function handleAddStudents() { void submitAddStudents(); }
-  function handleStartAddMilestone() { setEditingMilestoneId(null); setEditMilestoneForm(null); setIsAddingMilestone(true); }
-  function handleCancelAddMilestone() { setIsAddingMilestone(false); setNewMilestoneForm({ title: '', description: '', dueDate: '', status: 'PLANNED' }); }
+  function handleAddStudents() {
+    void submitAddStudents();
+  }
+  function handleStartAddMilestone() {
+    setEditingMilestoneId(null);
+    setEditMilestoneForm(null);
+    setIsAddingMilestone(true);
+  }
+  function handleCancelAddMilestone() {
+    setIsAddingMilestone(false);
+    setNewMilestoneForm({ title: '', description: '', dueDate: '', status: 'PLANNED' });
+  }
 
   async function submitMilestoneCreate() {
     if (!projectId) return;
@@ -508,12 +564,16 @@ export function ProjectDetailsPage() {
     setIsSavingMilestone(true);
     showLoadingModal('Saving milestone', 'Updating milestone details and current status.');
     try {
-      const updatedProject = await supervisorApi.updateProjectMilestone(projectId, editingMilestoneId, {
-        title: editMilestoneForm.title.trim(),
-        description: toNullableTrimmed(editMilestoneForm.description),
-        dueDate: editMilestoneForm.dueDate,
-        status: editMilestoneForm.status,
-      });
+      const updatedProject = await supervisorApi.updateProjectMilestone(
+        projectId,
+        editingMilestoneId,
+        {
+          title: editMilestoneForm.title.trim(),
+          description: toNullableTrimmed(editMilestoneForm.description),
+          dueDate: editMilestoneForm.dueDate,
+          status: editMilestoneForm.status,
+        },
+      );
       setProject(updatedProject);
       handleCancelEditMilestone();
       showSuccessModal('Milestone updated', 'Milestone changes were saved successfully.');
@@ -540,7 +600,10 @@ export function ProjectDetailsPage() {
           <p className="mt-3 text-sm text-muted-foreground">
             The requested supervisor project could not be found or is not available to your account.
           </p>
-          <Link to="/supervisor/projects" className={buttonStyles({ variant: 'primary', size: 'md', className: 'mt-6' })}>
+          <Link
+            to="/supervisor/projects"
+            className={buttonStyles({ variant: 'primary', size: 'md', className: 'mt-6' })}
+          >
             Back to projects
           </Link>
         </div>
@@ -573,18 +636,24 @@ export function ProjectDetailsPage() {
         <label className="inline-flex items-center rounded-full border border-slate-200 bg-slate-100 px-3 py-2 text-sm shadow-sm">
           <select
             value={quickLifecycleStatus}
-            onChange={(e) => void handleQuickStatusChange(e.target.value as SupervisorProjectLifecycle)}
+            onChange={(e) =>
+              void handleQuickStatusChange(e.target.value as SupervisorProjectLifecycle)
+            }
             disabled={isUpdatingStatus}
             className="bg-transparent font-semibold tracking-[0.08em] text-foreground outline-none"
           >
             {LIFECYCLE_OPTIONS.map((status) => (
-              <option key={status} value={status}>{status.replace('_', ' ')}</option>
+              <option key={status} value={status}>
+                {status.replace('_', ' ')}
+              </option>
             ))}
           </select>
         </label>
         <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-2 text-sm text-muted-foreground shadow-sm">
           <CalendarDays className="h-4 w-4" />
-          {project.milestoneDate ? `Milestone ${dateFormatter.format(new Date(project.milestoneDate))}` : 'Milestone not set'}
+          {project.milestoneDate
+            ? `Milestone ${dateFormatter.format(new Date(project.milestoneDate))}`
+            : 'Milestone not set'}
         </span>
         <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-2 text-sm text-muted-foreground shadow-sm">
           <Users className="h-4 w-4" />
@@ -603,13 +672,22 @@ export function ProjectDetailsPage() {
           { label: 'Milestones', value: String(project.milestones.length) },
           {
             label: 'Last Activity',
-            value: project.lastActivityAt ? dateTimeFormatter.format(new Date(project.lastActivityAt)) : 'Not recorded',
+            value: project.lastActivityAt
+              ? dateTimeFormatter.format(new Date(project.lastActivityAt))
+              : 'Not recorded',
             small: true,
           },
         ].map(({ label, value, small }) => (
-          <div key={label} className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
-            <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">{label}</p>
-            <p className={`mt-2 font-semibold text-foreground ${small ? 'text-sm' : 'text-2xl'}`}>{value}</p>
+          <div
+            key={label}
+            className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm"
+          >
+            <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
+              {label}
+            </p>
+            <p className={`mt-2 font-semibold text-foreground ${small ? 'text-sm' : 'text-2xl'}`}>
+              {value}
+            </p>
           </div>
         ))}
       </section>
@@ -629,7 +707,11 @@ export function ProjectDetailsPage() {
               <div className="flex items-center justify-between gap-3">
                 <h2 className="text-lg font-semibold text-foreground">Project summary</h2>
                 {!isEditingOverview && (
-                  <button type="button" className={buttonStyles({ variant: 'secondary', size: 'sm' })} onClick={handleStartOverviewEdit}>
+                  <button
+                    type="button"
+                    className={buttonStyles({ variant: 'secondary', size: 'sm' })}
+                    onClick={handleStartOverviewEdit}
+                  >
                     Edit details
                   </button>
                 )}
@@ -639,57 +721,152 @@ export function ProjectDetailsPage() {
                 <form className="mt-5 space-y-4" onSubmit={handleSaveOverview}>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <label className="space-y-1.5">
-                      <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Title</span>
-                      <input required maxLength={FIELD_LIMITS.title} value={overviewForm.title}
-                        onChange={(e) => setOverviewForm((c) => c ? { ...c, title: e.target.value } : c)}
-                        className="h-10 w-full rounded-2xl border border-border bg-white px-4 text-sm outline-none transition-colors focus:border-amber-300" />
+                      <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                        Title
+                      </span>
+                      <input
+                        required
+                        maxLength={FIELD_LIMITS.title}
+                        value={overviewForm.title}
+                        onChange={(e) =>
+                          setOverviewForm((c) => (c ? { ...c, title: e.target.value } : c))
+                        }
+                        className="h-10 w-full rounded-2xl border border-border bg-white px-4 text-sm outline-none transition-colors focus:border-amber-300"
+                      />
                     </label>
                     <label className="space-y-1.5">
-                      <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Lifecycle</span>
-                      <select value={overviewForm.lifecycleStatus}
-                        onChange={(e) => setOverviewForm((c) => c ? { ...c, lifecycleStatus: e.target.value as SupervisorProjectLifecycle } : c)}
-                        className="h-10 w-full rounded-2xl border border-border bg-white px-4 text-sm outline-none transition-colors focus:border-amber-300">
-                        {LIFECYCLE_OPTIONS.map((o) => <option key={o} value={o}>{o.replace('_', ' ')}</option>)}
+                      <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                        Lifecycle
+                      </span>
+                      <select
+                        value={overviewForm.lifecycleStatus}
+                        onChange={(e) =>
+                          setOverviewForm((c) =>
+                            c
+                              ? {
+                                  ...c,
+                                  lifecycleStatus: e.target.value as SupervisorProjectLifecycle,
+                                }
+                              : c,
+                          )
+                        }
+                        className="h-10 w-full rounded-2xl border border-border bg-white px-4 text-sm outline-none transition-colors focus:border-amber-300"
+                      >
+                        {LIFECYCLE_OPTIONS.map((o) => (
+                          <option key={o} value={o}>
+                            {o.replace('_', ' ')}
+                          </option>
+                        ))}
                       </select>
                     </label>
                     <label className="space-y-1.5">
-                      <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Batch</span>
-                      <input required maxLength={FIELD_LIMITS.batch} value={overviewForm.batch}
-                        onChange={(e) => setOverviewForm((c) => c ? { ...c, batch: e.target.value } : c)}
-                        className="h-10 w-full rounded-2xl border border-border bg-white px-4 text-sm outline-none transition-colors focus:border-amber-300" />
+                      <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                        Batch
+                      </span>
+                      <input
+                        required
+                        maxLength={FIELD_LIMITS.batch}
+                        value={overviewForm.batch}
+                        onChange={(e) =>
+                          setOverviewForm((c) => (c ? { ...c, batch: e.target.value } : c))
+                        }
+                        className="h-10 w-full rounded-2xl border border-border bg-white px-4 text-sm outline-none transition-colors focus:border-amber-300"
+                      />
                     </label>
                     <label className="space-y-1.5">
-                      <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Semester</span>
-                      <input required maxLength={FIELD_LIMITS.semester} value={overviewForm.semester}
-                        onChange={(e) => setOverviewForm((c) => c ? { ...c, semester: e.target.value } : c)}
-                        className="h-10 w-full rounded-2xl border border-border bg-white px-4 text-sm outline-none transition-colors focus:border-amber-300" />
+                      <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                        Semester
+                      </span>
+                      <input
+                        required
+                        maxLength={FIELD_LIMITS.semester}
+                        value={overviewForm.semester}
+                        onChange={(e) =>
+                          setOverviewForm((c) => (c ? { ...c, semester: e.target.value } : c))
+                        }
+                        className="h-10 w-full rounded-2xl border border-border bg-white px-4 text-sm outline-none transition-colors focus:border-amber-300"
+                      />
                     </label>
                     <label className="space-y-1.5 sm:col-span-2">
-                      <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Summary</span>
-                      <textarea required maxLength={FIELD_LIMITS.summary} rows={4} value={overviewForm.summary}
-                        onChange={(e) => setOverviewForm((c) => c ? { ...c, summary: e.target.value } : c)}
-                        className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-amber-300" />
+                      <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                        Summary
+                      </span>
+                      <textarea
+                        required
+                        maxLength={FIELD_LIMITS.summary}
+                        rows={4}
+                        value={overviewForm.summary}
+                        onChange={(e) =>
+                          setOverviewForm((c) => (c ? { ...c, summary: e.target.value } : c))
+                        }
+                        className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-amber-300"
+                      />
                     </label>
                     <label className="space-y-1.5 sm:col-span-2">
-                      <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Health note</span>
-                      <textarea maxLength={FIELD_LIMITS.healthNote} rows={3} value={overviewForm.healthNote}
-                        onChange={(e) => setOverviewForm((c) => c ? { ...c, healthNote: e.target.value } : c)}
-                        className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-amber-300" />
+                      <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                        Health note
+                      </span>
+                      <textarea
+                        maxLength={FIELD_LIMITS.healthNote}
+                        rows={3}
+                        value={overviewForm.healthNote}
+                        onChange={(e) =>
+                          setOverviewForm((c) => (c ? { ...c, healthNote: e.target.value } : c))
+                        }
+                        className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-amber-300"
+                      />
                     </label>
                   </div>
                   <div className="flex flex-wrap justify-end gap-2">
-                    <button type="button" disabled={isSavingOverview} className={buttonStyles({ variant: 'secondary', size: 'md' })} onClick={handleCancelOverviewEdit}>Cancel</button>
-                    <button type="submit" disabled={isSavingOverview || !isOverviewDirty} className={buttonStyles({ variant: 'primary', size: 'md' })}>
+                    <button
+                      type="button"
+                      disabled={isSavingOverview}
+                      className={buttonStyles({ variant: 'secondary', size: 'md' })}
+                      onClick={handleCancelOverviewEdit}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isSavingOverview || !isOverviewDirty}
+                      className={buttonStyles({ variant: 'primary', size: 'md' })}
+                    >
                       {isSavingOverview ? 'Saving...' : 'Save changes'}
                     </button>
                   </div>
                 </form>
               ) : (
                 <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                  <div><p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Batch</p><p className="mt-1 font-medium text-foreground">{project.batch ?? 'Not set'}</p></div>
-                  <div><p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Semester</p><p className="mt-1 font-medium text-foreground">{project.semester ?? 'Not set'}</p></div>
-                  <div className="sm:col-span-2"><p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Summary</p><p className="mt-1 text-sm leading-7 text-muted-foreground">{project.summary ?? 'No summary recorded yet.'}</p></div>
-                  <div className="sm:col-span-2"><p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Health note</p><p className="mt-1 text-sm leading-7 text-muted-foreground">{project.healthNote ?? 'No health note recorded yet.'}</p></div>
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                      Batch
+                    </p>
+                    <p className="mt-1 font-medium text-foreground">{project.batch ?? 'Not set'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                      Semester
+                    </p>
+                    <p className="mt-1 font-medium text-foreground">
+                      {project.semester ?? 'Not set'}
+                    </p>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                      Summary
+                    </p>
+                    <p className="mt-1 text-sm leading-7 text-muted-foreground">
+                      {project.summary ?? 'No summary recorded yet.'}
+                    </p>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                      Health note
+                    </p>
+                    <p className="mt-1 text-sm leading-7 text-muted-foreground">
+                      {project.healthNote ?? 'No health note recorded yet.'}
+                    </p>
+                  </div>
                 </div>
               )}
             </div>
@@ -699,7 +876,9 @@ export function ProjectDetailsPage() {
             <div className="rounded-3xl border border-border bg-white p-6 shadow-sm">
               <h2 className="text-lg font-semibold text-foreground">Current scope</h2>
               <p className="mt-3 text-sm leading-7 text-muted-foreground">
-                This detail view currently shows only backend-backed project data: core project fields, assigned members, and milestone records. Workflow features such as meetings, files, action items, and integrations are not part of this endpoint yet.
+                This detail view currently shows only backend-backed project data: core project
+                fields, assigned members, and milestone records. Workflow features such as meetings,
+                files, action items, and integrations are not part of this endpoint yet.
               </p>
             </div>
           </section>
@@ -710,8 +889,12 @@ export function ProjectDetailsPage() {
               <div className="mt-4 space-y-3">
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                   <p className="font-medium text-foreground">{project.milestones[0].title}</p>
-                  <p className="mt-2 text-sm text-muted-foreground">Due {dateFormatter.format(new Date(project.milestones[0].dueDate))}</p>
-                  <p className="mt-2 text-sm leading-7 text-muted-foreground">{project.milestones[0].description ?? 'No description provided.'}</p>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Due {dateFormatter.format(new Date(project.milestones[0].dueDate))}
+                  </p>
+                  <p className="mt-2 text-sm leading-7 text-muted-foreground">
+                    {project.milestones[0].description ?? 'No description provided.'}
+                  </p>
                 </div>
               </div>
             ) : (
@@ -727,7 +910,11 @@ export function ProjectDetailsPage() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-lg font-semibold text-foreground">Team</h2>
             {!isManagingStudents && (
-              <button type="button" className={buttonStyles({ variant: 'secondary', size: 'sm' })} onClick={handleStartStudentManagement}>
+              <button
+                type="button"
+                className={buttonStyles({ variant: 'secondary', size: 'sm' })}
+                onClick={handleStartStudentManagement}
+              >
                 Manage students
               </button>
             )}
@@ -777,13 +964,20 @@ export function ProjectDetailsPage() {
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-dashed border-slate-300 bg-white text-slate-400">
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                   <circle cx="8" cy="6" r="3" stroke="currentColor" strokeWidth="1.5" />
-                  <path d="M2 13c0-2.21 2.686-4 6-4s6 1.79 6 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                  <path
+                    d="M2 13c0-2.21 2.686-4 6-4s6 1.79 6 4"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                  />
                 </svg>
               </div>
 
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium text-slate-600">No project leader assigned</p>
-                <p className="text-xs text-muted-foreground">Assign a student to lead this project</p>
+                <p className="text-xs text-muted-foreground">
+                  Assign a student to lead this project
+                </p>
               </div>
 
               {studentMembers.length > 0 ? (
@@ -820,27 +1014,48 @@ export function ProjectDetailsPage() {
           {isManagingStudents && (
             <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
               <label className="block">
-                <span className="mb-2 block text-sm font-medium text-foreground">Search student email</span>
-                <input value={studentQuery} onChange={(e) => setStudentQuery(e.target.value)}
+                <span className="mb-2 block text-sm font-medium text-foreground">
+                  Search student email
+                </span>
+                <input
+                  value={studentQuery}
+                  onChange={(e) => setStudentQuery(e.target.value)}
                   placeholder="Type at least 3 characters from a student email"
                   className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-amber-300"
-                  disabled={isAddingStudents} />
+                  disabled={isAddingStudents}
+                />
               </label>
 
               {studentQuery.trim().length >= 3 && (
                 <div className="mt-3 rounded-2xl border border-slate-200 bg-white p-3">
-                  {studentSearchState === 'loading' && <p className="text-sm text-muted-foreground">Searching students...</p>}
-                  {studentSearchState === 'error' && <p className="text-sm text-rose-600">{studentSearchError?.message ?? 'Unable to search students right now.'}</p>}
-                  {studentSearchState === 'empty' && <p className="text-sm text-muted-foreground">No available students found.</p>}
+                  {studentSearchState === 'loading' && (
+                    <p className="text-sm text-muted-foreground">Searching students...</p>
+                  )}
+                  {studentSearchState === 'error' && (
+                    <p className="text-sm text-rose-600">
+                      {studentSearchError?.message ?? 'Unable to search students right now.'}
+                    </p>
+                  )}
+                  {studentSearchState === 'empty' && (
+                    <p className="text-sm text-muted-foreground">No available students found.</p>
+                  )}
                   {studentSearchState === 'results' && (
                     <div className="space-y-2">
                       {studentSearchResults.map((student) => (
-                        <button key={student.id} type="button"
+                        <button
+                          key={student.id}
+                          type="button"
                           className="flex w-full items-start justify-between rounded-2xl border border-slate-200 bg-white px-3 py-2 text-left transition-colors hover:bg-slate-50"
-                          onClick={() => handleSelectStudentToAdd(student)}>
+                          onClick={() => handleSelectStudentToAdd(student)}
+                        >
                           <span>
-                            <span className="block text-sm font-medium text-foreground">{`${student.firstName} ${student.lastName}`.trim() || student.email}</span>
-                            <span className="block text-xs text-muted-foreground">{student.email}{student.registrationNumber ? ` • ${student.registrationNumber}` : ''}</span>
+                            <span className="block text-sm font-medium text-foreground">
+                              {`${student.firstName} ${student.lastName}`.trim() || student.email}
+                            </span>
+                            <span className="block text-xs text-muted-foreground">
+                              {student.email}
+                              {student.registrationNumber ? ` • ${student.registrationNumber}` : ''}
+                            </span>
                           </span>
                           <span className="text-xs text-slate-500">Add</span>
                         </button>
@@ -852,12 +1067,26 @@ export function ProjectDetailsPage() {
 
               {selectedStudentsToAdd.length > 0 && (
                 <div className="mt-3 space-y-2">
-                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Selected students</p>
+                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                    Selected students
+                  </p>
                   <div className="flex flex-wrap gap-2">
                     {selectedStudentsToAdd.map((student) => (
-                      <div key={student.id} className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-sm">
-                        <span className="text-foreground">{`${student.firstName} ${student.lastName}`.trim() || student.email}</span>
-                        <button type="button" className="text-xs text-slate-500 hover:text-slate-700" onClick={() => handleRemoveSelectedStudent(student.id)} disabled={isAddingStudents}>Remove</button>
+                      <div
+                        key={student.id}
+                        className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-sm"
+                      >
+                        <span className="text-foreground">
+                          {`${student.firstName} ${student.lastName}`.trim() || student.email}
+                        </span>
+                        <button
+                          type="button"
+                          className="text-xs text-slate-500 hover:text-slate-700"
+                          onClick={() => handleRemoveSelectedStudent(student.id)}
+                          disabled={isAddingStudents}
+                        >
+                          Remove
+                        </button>
                       </div>
                     ))}
                   </div>
@@ -865,8 +1094,20 @@ export function ProjectDetailsPage() {
               )}
 
               <div className="mt-4 flex flex-wrap justify-end gap-2">
-                <button type="button" className={buttonStyles({ variant: 'secondary', size: 'sm' })} onClick={handleCancelStudentManagement} disabled={isAddingStudents}>Cancel</button>
-                <button type="button" className={buttonStyles({ variant: 'primary', size: 'sm' })} onClick={handleAddStudents} disabled={isAddingStudents || selectedStudentsToAdd.length === 0}>
+                <button
+                  type="button"
+                  className={buttonStyles({ variant: 'secondary', size: 'sm' })}
+                  onClick={handleCancelStudentManagement}
+                  disabled={isAddingStudents}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className={buttonStyles({ variant: 'primary', size: 'sm' })}
+                  onClick={handleAddStudents}
+                  disabled={isAddingStudents || selectedStudentsToAdd.length === 0}
+                >
                   {isAddingStudents ? 'Adding...' : 'Add selected students'}
                 </button>
               </div>
@@ -875,12 +1116,19 @@ export function ProjectDetailsPage() {
 
           <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {project.members.map((member) => (
-              <div key={member.id} className={`rounded-2xl border p-4 ${member.memberRole === 'SUPERVISOR' ? 'border-indigo-200 bg-indigo-50/40' : 'border-slate-200 bg-slate-50'}`}>
+              <div
+                key={member.id}
+                className={`rounded-2xl border p-4 ${member.memberRole === 'SUPERVISOR' ? 'border-indigo-200 bg-indigo-50/40' : 'border-slate-200 bg-slate-50'}`}
+              >
                 <p className="font-medium text-foreground">{memberDisplayName(member)}</p>
                 <p className="mt-1 text-sm text-muted-foreground">{member.email}</p>
                 <div className="mt-2 flex flex-wrap items-center gap-2">
                   <RoleBadge role={member.memberRole} />
-                  {member.registrationNumber && <span className="text-xs text-muted-foreground">• {member.registrationNumber}</span>}
+                  {member.registrationNumber && (
+                    <span className="text-xs text-muted-foreground">
+                      • {member.registrationNumber}
+                    </span>
+                  )}
                 </div>
               </div>
             ))}
@@ -894,7 +1142,11 @@ export function ProjectDetailsPage() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-lg font-semibold text-foreground">Milestones</h2>
             {!isAddingMilestone && (
-              <button type="button" className={buttonStyles({ variant: 'secondary', size: 'sm' })} onClick={handleStartAddMilestone}>
+              <button
+                type="button"
+                className={buttonStyles({ variant: 'secondary', size: 'sm' })}
+                onClick={handleStartAddMilestone}
+              >
                 Add milestone
               </button>
             )}
@@ -902,30 +1154,66 @@ export function ProjectDetailsPage() {
 
           {/* Add milestone form */}
           {isAddingMilestone && (
-            <form className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4" onSubmit={handleCreateMilestone}>
+            <form
+              className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4"
+              onSubmit={handleCreateMilestone}
+            >
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className="space-y-1.5">
-                  <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Title</span>
-                  <input required maxLength={FIELD_LIMITS.milestoneTitle} value={newMilestoneForm.title}
+                  <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                    Title
+                  </span>
+                  <input
+                    required
+                    maxLength={FIELD_LIMITS.milestoneTitle}
+                    value={newMilestoneForm.title}
                     onChange={(e) => setNewMilestoneForm((c) => ({ ...c, title: e.target.value }))}
-                    className="h-10 w-full rounded-2xl border border-border bg-white px-4 text-sm outline-none transition-colors focus:border-amber-300" />
+                    className="h-10 w-full rounded-2xl border border-border bg-white px-4 text-sm outline-none transition-colors focus:border-amber-300"
+                  />
                 </label>
                 <label className="space-y-1.5">
-                  <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Due date</span>
-                  <input required type="date" value={newMilestoneForm.dueDate}
-                    onChange={(e) => setNewMilestoneForm((c) => ({ ...c, dueDate: e.target.value }))}
-                    className="h-10 w-full rounded-2xl border border-border bg-white px-4 text-sm outline-none transition-colors focus:border-amber-300" />
+                  <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                    Due date
+                  </span>
+                  <input
+                    required
+                    type="date"
+                    value={newMilestoneForm.dueDate}
+                    onChange={(e) =>
+                      setNewMilestoneForm((c) => ({ ...c, dueDate: e.target.value }))
+                    }
+                    className="h-10 w-full rounded-2xl border border-border bg-white px-4 text-sm outline-none transition-colors focus:border-amber-300"
+                  />
                 </label>
                 <label className="space-y-1.5 sm:col-span-2">
-                  <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Description</span>
-                  <textarea maxLength={FIELD_LIMITS.milestoneDescription} rows={3} value={newMilestoneForm.description}
-                    onChange={(e) => setNewMilestoneForm((c) => ({ ...c, description: e.target.value }))}
-                    className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-amber-300" />
+                  <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                    Description
+                  </span>
+                  <textarea
+                    maxLength={FIELD_LIMITS.milestoneDescription}
+                    rows={3}
+                    value={newMilestoneForm.description}
+                    onChange={(e) =>
+                      setNewMilestoneForm((c) => ({ ...c, description: e.target.value }))
+                    }
+                    className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-amber-300"
+                  />
                 </label>
               </div>
               <div className="mt-4 flex flex-wrap justify-end gap-2">
-                <button type="button" className={buttonStyles({ variant: 'secondary', size: 'sm' })} onClick={handleCancelAddMilestone} disabled={isSavingMilestone}>Cancel</button>
-                <button type="submit" className={buttonStyles({ variant: 'primary', size: 'sm' })} disabled={isSavingMilestone}>
+                <button
+                  type="button"
+                  className={buttonStyles({ variant: 'secondary', size: 'sm' })}
+                  onClick={handleCancelAddMilestone}
+                  disabled={isSavingMilestone}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className={buttonStyles({ variant: 'primary', size: 'sm' })}
+                  disabled={isSavingMilestone}
+                >
                   {isSavingMilestone ? 'Saving...' : 'Add milestone'}
                 </button>
               </div>
@@ -945,35 +1233,86 @@ export function ProjectDetailsPage() {
                     <form className="space-y-3" onSubmit={handleSaveMilestone}>
                       <div className="grid gap-3 sm:grid-cols-2">
                         <label className="space-y-1">
-                          <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Title</span>
-                          <input required maxLength={FIELD_LIMITS.milestoneTitle} value={editMilestoneForm.title}
-                            onChange={(e) => setEditMilestoneForm((c) => c ? { ...c, title: e.target.value } : c)}
-                            className="h-10 w-full rounded-2xl border border-border bg-white px-4 text-sm outline-none transition-colors focus:border-amber-300" />
+                          <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                            Title
+                          </span>
+                          <input
+                            required
+                            maxLength={FIELD_LIMITS.milestoneTitle}
+                            value={editMilestoneForm.title}
+                            onChange={(e) =>
+                              setEditMilestoneForm((c) => (c ? { ...c, title: e.target.value } : c))
+                            }
+                            className="h-10 w-full rounded-2xl border border-border bg-white px-4 text-sm outline-none transition-colors focus:border-amber-300"
+                          />
                         </label>
                         <label className="space-y-1">
-                          <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Due date</span>
-                          <input required type="date" value={editMilestoneForm.dueDate}
-                            onChange={(e) => setEditMilestoneForm((c) => c ? { ...c, dueDate: e.target.value } : c)}
-                            className="h-10 w-full rounded-2xl border border-border bg-white px-4 text-sm outline-none transition-colors focus:border-amber-300" />
+                          <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                            Due date
+                          </span>
+                          <input
+                            required
+                            type="date"
+                            value={editMilestoneForm.dueDate}
+                            onChange={(e) =>
+                              setEditMilestoneForm((c) =>
+                                c ? { ...c, dueDate: e.target.value } : c,
+                              )
+                            }
+                            className="h-10 w-full rounded-2xl border border-border bg-white px-4 text-sm outline-none transition-colors focus:border-amber-300"
+                          />
                         </label>
                         <label className="space-y-1 sm:col-span-2">
-                          <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Status</span>
-                          <select value={editMilestoneForm.status}
-                            onChange={(e) => setEditMilestoneForm((c) => c ? { ...c, status: e.target.value as MilestoneStatus } : c)}
-                            className="h-10 w-full rounded-2xl border border-border bg-white px-4 text-sm outline-none transition-colors focus:border-amber-300">
-                            {MILESTONE_STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s.replace('_', ' ')}</option>)}
+                          <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                            Status
+                          </span>
+                          <select
+                            value={editMilestoneForm.status}
+                            onChange={(e) =>
+                              setEditMilestoneForm((c) =>
+                                c ? { ...c, status: e.target.value as MilestoneStatus } : c,
+                              )
+                            }
+                            className="h-10 w-full rounded-2xl border border-border bg-white px-4 text-sm outline-none transition-colors focus:border-amber-300"
+                          >
+                            {MILESTONE_STATUS_OPTIONS.map((s) => (
+                              <option key={s} value={s}>
+                                {s.replace('_', ' ')}
+                              </option>
+                            ))}
                           </select>
                         </label>
                         <label className="space-y-1 sm:col-span-2">
-                          <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Description</span>
-                          <textarea maxLength={FIELD_LIMITS.milestoneDescription} rows={3} value={editMilestoneForm.description}
-                            onChange={(e) => setEditMilestoneForm((c) => c ? { ...c, description: e.target.value } : c)}
-                            className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-amber-300" />
+                          <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                            Description
+                          </span>
+                          <textarea
+                            maxLength={FIELD_LIMITS.milestoneDescription}
+                            rows={3}
+                            value={editMilestoneForm.description}
+                            onChange={(e) =>
+                              setEditMilestoneForm((c) =>
+                                c ? { ...c, description: e.target.value } : c,
+                              )
+                            }
+                            className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-amber-300"
+                          />
                         </label>
                       </div>
                       <div className="flex flex-wrap justify-end gap-2">
-                        <button type="button" className={buttonStyles({ variant: 'secondary', size: 'sm' })} onClick={handleCancelEditMilestone} disabled={isSavingMilestone}>Cancel</button>
-                        <button type="submit" className={buttonStyles({ variant: 'primary', size: 'sm' })} disabled={isSavingMilestone || !isEditMilestoneDirty}>
+                        <button
+                          type="button"
+                          className={buttonStyles({ variant: 'secondary', size: 'sm' })}
+                          onClick={handleCancelEditMilestone}
+                          disabled={isSavingMilestone}
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="submit"
+                          className={buttonStyles({ variant: 'primary', size: 'sm' })}
+                          disabled={isSavingMilestone || !isEditMilestoneDirty}
+                        >
                           {isSavingMilestone ? 'Saving...' : 'Save milestone'}
                         </button>
                       </div>
@@ -994,20 +1333,40 @@ export function ProjectDetailsPage() {
                         </p>
 
                         {/* Status pill — fixed width quick-change select */}
-                        <label className={`inline-flex w-36 shrink-0 cursor-pointer items-center justify-between rounded-full px-3 py-1.5 text-xs font-semibold tracking-wide transition-opacity ${milestoneStatusPill(milestone.status)} ${quickStatusUpdatingId === milestone.id ? 'opacity-50' : ''}`}>
+                        <label
+                          className={`inline-flex w-36 shrink-0 cursor-pointer items-center justify-between rounded-full px-3 py-1.5 text-xs font-semibold tracking-wide transition-opacity ${milestoneStatusPill(milestone.status)} ${quickStatusUpdatingId === milestone.id ? 'opacity-50' : ''}`}
+                        >
                           <select
                             value={milestone.status}
                             disabled={quickStatusUpdatingId === milestone.id}
-                            onChange={(e) => void submitQuickMilestoneStatus(milestone, e.target.value as MilestoneStatus)}
+                            onChange={(e) =>
+                              void submitQuickMilestoneStatus(
+                                milestone,
+                                e.target.value as MilestoneStatus,
+                              )
+                            }
                             className="w-full cursor-pointer appearance-none bg-transparent outline-none"
                             aria-label="Change milestone status"
                           >
                             {MILESTONE_STATUS_OPTIONS.map((s) => (
-                              <option key={s} value={s}>{milestoneStatusLabel(s)}</option>
+                              <option key={s} value={s}>
+                                {milestoneStatusLabel(s)}
+                              </option>
                             ))}
                           </select>
-                          <svg className="ml-1 h-3 w-3 shrink-0 opacity-60" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-                            <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                          <svg
+                            className="ml-1 h-3 w-3 shrink-0 opacity-60"
+                            viewBox="0 0 12 12"
+                            fill="none"
+                            aria-hidden="true"
+                          >
+                            <path
+                              d="M3 4.5L6 7.5L9 4.5"
+                              stroke="currentColor"
+                              strokeWidth="1.5"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
                           </svg>
                         </label>
 

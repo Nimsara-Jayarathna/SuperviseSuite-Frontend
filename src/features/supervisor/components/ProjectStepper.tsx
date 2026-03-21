@@ -12,11 +12,7 @@ type ProjectStepperProps = {
   onStepClick?: (step: StepId) => void;
 };
 
-export function ProjectStepper({
-  currentStep,
-  steps,
-  onStepClick,
-}: ProjectStepperProps) {
+export function ProjectStepper({ currentStep, steps, onStepClick }: ProjectStepperProps) {
   return (
     <div className="rounded-3xl border border-border bg-white px-8 pb-6 pt-6 shadow-sm">
       <div className="flex justify-between">
@@ -64,7 +60,9 @@ export function ProjectStepper({
                 <p
                   className={[
                     'text-sm transition-colors',
-                    isActive ? 'font-semibold text-foreground' : 'font-normal text-muted-foreground',
+                    isActive
+                      ? 'font-semibold text-foreground'
+                      : 'font-normal text-muted-foreground',
                   ].join(' ')}
                 >
                   {step.label}

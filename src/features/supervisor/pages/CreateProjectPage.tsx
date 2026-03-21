@@ -154,7 +154,9 @@ export function CreateProjectPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [showIncompleteHint, setShowIncompleteHint] = useState(false); // FIX 7
-  const [createdProject, setCreatedProject] = useState<CreateSupervisorProjectResponse | null>(null);
+  const [createdProject, setCreatedProject] = useState<CreateSupervisorProjectResponse | null>(
+    null,
+  );
   const [requestModal, setRequestModal] = useState<{
     isOpen: boolean;
     status: 'loading' | 'success' | 'error';
@@ -367,7 +369,6 @@ export function CreateProjectPage() {
       />
 
       <form onSubmit={handleSubmit}>
-
         {/* ── Step 1: Project basics ── */}
         {currentStep === 1 && (
           <section className="space-y-6 rounded-3xl border border-border bg-white p-6 shadow-sm">
@@ -489,7 +490,9 @@ export function CreateProjectPage() {
                           className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-left transition-colors hover:bg-slate-50"
                           disabled={isSubmitting}
                         >
-                          <p className="font-medium text-foreground">{buildStudentLabel(student)}</p>
+                          <p className="font-medium text-foreground">
+                            {buildStudentLabel(student)}
+                          </p>
                           <p className="mt-1 text-sm text-muted-foreground">{student.email}</p>
                           <p className="mt-1 text-xs uppercase tracking-[0.2em] text-muted-foreground">
                             {student.registrationNumber}
@@ -602,7 +605,8 @@ export function CreateProjectPage() {
               <div>
                 <h2 className="text-lg font-semibold text-foreground">Project milestones</h2>
                 <p className="mt-1 text-sm leading-7 text-muted-foreground">
-                  Add all milestones now. The project will be created in one request when you submit.
+                  Add all milestones now. The project will be created in one request when you
+                  submit.
                 </p>
               </div>
               <span className="shrink-0 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-muted-foreground">
@@ -619,7 +623,9 @@ export function CreateProjectPage() {
                 return (
                   <div
                     key={index}
-                    ref={(el) => { milestoneRefs.current[index] = el; }}
+                    ref={(el) => {
+                      milestoneRefs.current[index] = el;
+                    }}
                     className={[
                       'rounded-3xl border bg-white transition-all duration-200',
                       isExpanded
@@ -654,8 +660,20 @@ export function CreateProjectPage() {
                             {/* FIX 1: green complete badge */}
                             {isComplete && (
                               <span className="flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-700">
-                                <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
-                                  <path d="M1.5 5L3.5 7L8.5 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                <svg
+                                  width="10"
+                                  height="10"
+                                  viewBox="0 0 10 10"
+                                  fill="none"
+                                  aria-hidden="true"
+                                >
+                                  <path
+                                    d="M1.5 5L3.5 7L8.5 3"
+                                    stroke="currentColor"
+                                    strokeWidth="1.5"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  />
                                 </svg>
                                 Complete
                               </span>
@@ -682,7 +700,9 @@ export function CreateProjectPage() {
                           {/* Title + Due date — always horizontal, title gets more space */}
                           <div className="flex gap-4">
                             <label className="block flex-1 min-w-0">
-                              <span className="mb-2 block text-sm font-medium text-slate-800">Title</span>
+                              <span className="mb-2 block text-sm font-medium text-slate-800">
+                                Title
+                              </span>
                               <input
                                 required
                                 value={milestone.title}
@@ -695,7 +715,9 @@ export function CreateProjectPage() {
                             </label>
 
                             <label className="block w-[200px] shrink-0">
-                              <span className="mb-2 block text-sm font-medium text-slate-800">Due date</span>
+                              <span className="mb-2 block text-sm font-medium text-slate-800">
+                                Due date
+                              </span>
                               <input
                                 required
                                 type="date"
@@ -717,7 +739,9 @@ export function CreateProjectPage() {
                             </span>
                             <textarea
                               value={milestone.description}
-                              onChange={(e) => updateMilestone(index, 'description', e.target.value)}
+                              onChange={(e) =>
+                                updateMilestone(index, 'description', e.target.value)
+                              }
                               maxLength={FIELD_LIMITS.milestoneDescription}
                               placeholder="Add context or review expectations."
                               rows={3}
@@ -738,13 +762,29 @@ export function CreateProjectPage() {
                           aria-label={`Expand milestone ${index + 1}`}
                         >
                           {/* FIX 1: green check icon for complete, amber dot for incomplete */}
-                          <div className={[
-                            'flex h-9 shrink-0 items-center justify-center rounded-lg px-2.5 text-xs font-semibold tracking-[0.12em]',
-                            isComplete ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-700',
-                          ].join(' ')}>
+                          <div
+                            className={[
+                              'flex h-9 shrink-0 items-center justify-center rounded-lg px-2.5 text-xs font-semibold tracking-[0.12em]',
+                              isComplete
+                                ? 'bg-emerald-50 text-emerald-700'
+                                : 'bg-slate-100 text-slate-700',
+                            ].join(' ')}
+                          >
                             {isComplete ? (
-                              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-                                <path d="M2.5 7L5.5 10L11.5 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                              <svg
+                                width="14"
+                                height="14"
+                                viewBox="0 0 14 14"
+                                fill="none"
+                                aria-hidden="true"
+                              >
+                                <path
+                                  d="M2.5 7L5.5 10L11.5 4"
+                                  stroke="currentColor"
+                                  strokeWidth="1.8"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                />
                               </svg>
                             ) : (
                               String(index + 1).padStart(2, '0')
@@ -757,11 +797,7 @@ export function CreateProjectPage() {
                                 {milestoneSummaryTitle(milestone)}
                               </span>
                               {/* FIX 2: date shown softly, only if set */}
-                              {date && (
-                                <span className="text-xs text-slate-400">
-                                  {date}
-                                </span>
-                              )}
+                              {date && <span className="text-xs text-slate-400">{date}</span>}
                               {!isComplete && (
                                 <span className="w-fit rounded-full border border-amber-300 bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-amber-700">
                                   Incomplete
@@ -824,7 +860,8 @@ export function CreateProjectPage() {
                 {/* FIX 7: show incomplete hint instead of just a disabled button */}
                 {showIncompleteHint && !step3Valid && (
                   <p className="text-xs text-amber-700">
-                    Complete {incompleteMilestoneCount} milestone{incompleteMilestoneCount === 1 ? '' : 's'} before creating the project.
+                    Complete {incompleteMilestoneCount} milestone
+                    {incompleteMilestoneCount === 1 ? '' : 's'} before creating the project.
                   </p>
                 )}
                 <div className="flex gap-3">
@@ -839,7 +876,9 @@ export function CreateProjectPage() {
                     variant="primary"
                     size="md"
                     disabled={isSubmitting}
-                    onClick={() => { if (!step3Valid) setShowIncompleteHint(true); }}
+                    onClick={() => {
+                      if (!step3Valid) setShowIncompleteHint(true);
+                    }}
                   >
                     {isSubmitting ? 'Creating...' : 'Create project'}
                   </Button>
