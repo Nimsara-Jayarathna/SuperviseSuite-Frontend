@@ -13,6 +13,18 @@ export type StudentProjectSummary = {
   supervisorName: string | null;
 };
 
+export type ProjectCommit = {
+  sha: string | null;
+  message: string;
+  author: string;
+  committedAt: string | null;
+};
+
+export type ProjectCommitActivity = {
+  repositoryLinked: boolean;
+  commits: ProjectCommit[];
+};
+
 export type StudentProjectDetailMember = {
   id: string;
   firstName: string | null;

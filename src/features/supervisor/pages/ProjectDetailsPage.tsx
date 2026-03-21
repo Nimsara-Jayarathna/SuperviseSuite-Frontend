@@ -5,11 +5,13 @@ import { buttonStyles } from '@/components/ui/Button';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { PageTabs } from '@/components/ui/PageTabs';
 import { RequestStateModal } from '@/components/ui/RequestStateModal';
+import { CommitActivitySection } from '@/features/projects/components/CommitActivitySection';
 import { ProjectDetailsSkeleton } from '../components/ProjectDetailsSkeleton';
 import { MilestonesTabSection } from '../components/ProjectDetail/MilestonesTabSection';
 import { OverviewTabSection } from '../components/ProjectDetail/OverviewTabSection';
 import { TeamTabSection } from '../components/ProjectDetail/TeamTabSection';
 import { useProjectDetailsPageState } from '../hooks/useProjectDetailsPageState';
+import { useSupervisorProjectCommits } from '../hooks/useSupervisorProjectCommits';
 import { useSupervisorProject } from '../hooks/useSupervisorProject';
 import {
   LIFECYCLE_OPTIONS,
@@ -30,6 +32,7 @@ export function ProjectDetailsPage() {
       loadedProject,
     },
   );
+  const commitState = useSupervisorProjectCommits(projectId);
 
   const requestedTab = searchParams.get('tab') as SupervisorProjectDetailTab | null;
   const activeTab = requestedTab && TABS.includes(requestedTab) ? requestedTab : 'overview';
@@ -163,6 +166,15 @@ export function ProjectDetailsPage() {
 
       {activeTab === 'milestones' ? (
         <MilestonesTabSection project={project} milestones={milestones} />
+      ) : null}
+
+      {activeTab === 'github' ? (
+        <CommitActivitySection
+          isLoading={commitState.isLoading}
+          error={commitState.error}
+          data={commitState.data}
+          onRetry={() => void commitState.reload()}
+        />
       ) : null}
     </div>
   );

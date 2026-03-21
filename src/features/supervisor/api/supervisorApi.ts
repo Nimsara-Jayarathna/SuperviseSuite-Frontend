@@ -12,14 +12,40 @@ import type {
   UpdateSupervisorProjectMilestoneRequest,
   UpdateSupervisorProjectRequest,
   UpdateSupervisorProjectStatusRequest,
+  ProjectCommitActivity,
 } from '../types';
 
 const cachedProjectsById: Partial<Record<string, SupervisorProjectDetail>> = {};
 const inFlightProjectRequests: Partial<Record<string, Promise<SupervisorProjectDetail>>> = {};
+const cachedProjectCommitsById: Partial<Record<string, ProjectCommitActivity>> = {};
+const inFlightProjectCommitRequests: Partial<Record<string, Promise<ProjectCommitActivity>>> = {};
 
 export const supervisorApi = {
   getDashboard(): Promise<SupervisorDashboard> {
     return apiClient.get<SupervisorDashboard>('/api/supervisor/dashboard');
+  },
+
+  async getProjectCommits(projectId: string, forceRefresh = false): Promise<ProjectCommitActivity> {
+    if (!forceRefresh && cachedProjectCommitsById[projectId]) {
+      return cachedProjectCommitsById[projectId];
+    }
+
+    if (!forceRefresh && inFlightProjectCommitRequests[projectId]) {
+      return inFlightProjectCommitRequests[projectId];
+    }
+
+    const request = apiClient.get<ProjectCommitActivity>(
+      `/api/supervisor/projects/${projectId}/commits`,
+    );
+    inFlightProjectCommitRequests[projectId] = request;
+
+    try {
+      const activity = await request;
+      cachedProjectCommitsById[projectId] = activity;
+      return activity;
+    } finally {
+      delete inFlightProjectCommitRequests[projectId];
+    }
   },
 
   getProjects(): Promise<SupervisorProjectSummary[]> {
