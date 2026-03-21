@@ -31,8 +31,8 @@ export function ProjectDetailsPage() {
       projectId,
       loadedProject,
     },
-  const commitState = useSupervisorProjectCommits(projectId);
   );
+  const commitState = useSupervisorProjectCommits(projectId);
 
   const requestedTab = searchParams.get('tab') as SupervisorProjectDetailTab | null;
   const activeTab = requestedTab && TABS.includes(requestedTab) ? requestedTab : 'overview';
