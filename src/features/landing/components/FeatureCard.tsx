@@ -11,7 +11,7 @@ export function FeatureCard({ icon: Icon, title, description, onClick }: Feature
     <Card
       surface="frosted"
       className={cn(
-        'group relative flex h-full flex-col rounded-2xl border-transparent transition-all duration-300 ease-out hover:scale-[1.015] hover:shadow-[0_24px_52px_rgba(14,116,144,0.18)]',
+        'relative flex h-full flex-col rounded-2xl border-transparent',
         onClick && 'cursor-pointer',
       )}
       padding="md"
@@ -28,7 +28,7 @@ export function FeatureCard({ icon: Icon, title, description, onClick }: Feature
     >
       <div className="pointer-events-none absolute inset-0 rounded-[inherit] bg-[linear-gradient(145deg,rgba(255,255,255,0.8)_0%,rgba(255,255,255,0.45)_56%,rgba(14,165,233,0.14)_100%)]" />
       <div className="relative z-10">
-        <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+        <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
           <Icon size={20} />
         </div>
         <h3 className="mb-1.5 text-sm font-semibold text-foreground">{title}</h3>

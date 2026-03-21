@@ -14,6 +14,12 @@ Technical notes, architecture summaries, and feature guides for the SuperviseSui
 | [features/supervisor.md](features/supervisor.md) | Supervisor routes, dashboard, projects, create flow, and detail views |
 | [features/brand.md](features/brand.md) | Logo component and SVG asset usage |
 
+### Major Fixes
+
+| File | Description |
+|------|-------------|
+| [branches/major-fixes-scrum-97-supervisor-ui-workflow.md](branches/major-fixes-scrum-97-supervisor-ui-workflow.md) | Major frontend fixes for supervisor workflow: guided creation, milestone UX, leader management, and landing card interaction stabilization |
+
 ### UI
 
 | File | Description |
