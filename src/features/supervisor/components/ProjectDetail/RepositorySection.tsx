@@ -68,8 +68,16 @@ export function RepositorySection({
   const [activeInstallationId, setActiveInstallationId] = useState<number | null>(null);
   const [installationRepositories, setInstallationRepositories] = useState<GitHubInstallationRepository[]>([]);
   const [isLoadingInstallationRepositories, setIsLoadingInstallationRepositories] = useState(false);
+  const [isLoadingMoreInstallationRepositories, setIsLoadingMoreInstallationRepositories] =
+    useState(false);
+  const [installationRepositoriesNextPage, setInstallationRepositoriesNextPage] = useState<number | null>(null);
+  const [installationRepositoriesHasNext, setInstallationRepositoriesHasNext] = useState(false);
+  const [installationRepositoriesTotalCount, setInstallationRepositoriesTotalCount] = useState<number | null>(
+    null,
+  );
   const [selectedInstallationRepositoryId, setSelectedInstallationRepositoryId] = useState<number | null>(null);
   const [repositorySelectionError, setRepositorySelectionError] = useState<string | null>(null);
+  const [repositoryLoadMoreError, setRepositoryLoadMoreError] = useState<string | null>(null);
 
   const hasRepository = project.github.repositoryLinked || Boolean(displayRepositoryUrl);
 
@@ -83,7 +91,12 @@ export function RepositorySection({
       setInstallationRepositories([]);
       setSelectedInstallationRepositoryId(null);
       setIsLoadingInstallationRepositories(false);
+      setIsLoadingMoreInstallationRepositories(false);
       setActiveInstallationId(null);
+      setInstallationRepositoriesNextPage(null);
+      setInstallationRepositoriesHasNext(false);
+      setInstallationRepositoriesTotalCount(null);
+      setRepositoryLoadMoreError(null);
     }
   }, [displayRepositoryUrl, isLinkModalOpen]);
 
@@ -133,14 +146,26 @@ export function RepositorySection({
     setLinkModalStep('installation-selection');
     setActiveInstallationId(installationId);
     setIsLoadingInstallationRepositories(true);
+    setIsLoadingMoreInstallationRepositories(false);
     setRepositorySelectionError(null);
+    setRepositoryLoadMoreError(null);
     setInstallationRepositories([]);
     setSelectedInstallationRepositoryId(null);
+    setInstallationRepositoriesNextPage(null);
+    setInstallationRepositoriesHasNext(false);
+    setInstallationRepositoriesTotalCount(null);
 
     try {
-      const repositories = await supervisorApi.getInstallationRepositories(project.id, installationId);
-      setInstallationRepositories(repositories);
-      const selectable = repositories[0] ?? null;
+      const repositoriesPage = await supervisorApi.getInstallationRepositories(
+        project.id,
+        installationId,
+        1,
+      );
+      setInstallationRepositories(repositoriesPage.items);
+      setInstallationRepositoriesNextPage(repositoriesPage.nextPage);
+      setInstallationRepositoriesHasNext(repositoriesPage.hasNext);
+      setInstallationRepositoriesTotalCount(repositoriesPage.totalCount);
+      const selectable = repositoriesPage.items[0] ?? null;
       setSelectedInstallationRepositoryId(selectable ? selectable.repositoryId : null);
     } catch (error) {
       const message = isApiException(error)
@@ -149,6 +174,38 @@ export function RepositorySection({
       setRepositorySelectionError(message);
     } finally {
       setIsLoadingInstallationRepositories(false);
+    }
+  }
+
+  async function handleLoadMoreInstallationRepositories() {
+    if (!activeInstallationId || !installationRepositoriesNextPage || isLoadingMoreInstallationRepositories) {
+      return;
+    }
+
+    setIsLoadingMoreInstallationRepositories(true);
+    setRepositoryLoadMoreError(null);
+
+    try {
+      const repositoriesPage = await supervisorApi.getInstallationRepositories(
+        project.id,
+        activeInstallationId,
+        installationRepositoriesNextPage,
+      );
+      setInstallationRepositories((previous) => {
+        const seen = new Set(previous.map((item) => item.repositoryId));
+        const nextItems = repositoriesPage.items.filter((item) => !seen.has(item.repositoryId));
+        return [...previous, ...nextItems];
+      });
+      setInstallationRepositoriesNextPage(repositoriesPage.nextPage);
+      setInstallationRepositoriesHasNext(repositoriesPage.hasNext);
+      setInstallationRepositoriesTotalCount(repositoriesPage.totalCount);
+    } catch (error) {
+      const message = isApiException(error)
+        ? error.apiError.message
+        : 'Unable to load more repositories right now.';
+      setRepositoryLoadMoreError(message);
+    } finally {
+      setIsLoadingMoreInstallationRepositories(false);
     }
   }
 
@@ -389,6 +446,11 @@ export function RepositorySection({
               void openInstallationSelection(activeInstallationId);
             }
           }}
+          hasMoreRepositories={installationRepositoriesHasNext}
+          totalRepositoryCount={installationRepositoriesTotalCount}
+          isLoadingMoreRepositories={isLoadingMoreInstallationRepositories}
+          onLoadMoreRepositories={() => void handleLoadMoreInstallationRepositories()}
+          loadMoreError={repositoryLoadMoreError}
         />
       </GithubDetailsModal>
 

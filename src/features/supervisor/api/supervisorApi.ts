@@ -13,9 +13,9 @@ import type {
 import type {
   AddSupervisorProjectMembersRequest,
   AddSupervisorProjectMilestoneRequest,
+  GitHubInstallationRepositoriesPage,
   CreateSupervisorProjectRequest,
   CreateSupervisorProjectResponse,
-  GitHubInstallationRepository,
   LinkProjectGitHubRepositoryRequest,
   ProjectGitHubActivity,
   ProjectGitHubRepositoryLink,
@@ -113,9 +113,17 @@ export const supervisorApi = {
   getInstallationRepositories(
     projectId: string,
     installationId: number,
-  ): Promise<GitHubInstallationRepository[]> {
-    return apiClient.get<GitHubInstallationRepository[]>(
-      `/api/supervisor/projects/${projectId}/github/installations/${installationId}/repositories`,
+    page = 1,
+    size?: number,
+  ): Promise<GitHubInstallationRepositoriesPage> {
+    const params = new URLSearchParams();
+    params.set('page', String(page));
+    if (typeof size === 'number' && Number.isFinite(size) && size > 0) {
+      params.set('size', String(Math.floor(size)));
+    }
+
+    return apiClient.get<GitHubInstallationRepositoriesPage>(
+      `/api/supervisor/projects/${projectId}/github/installations/${installationId}/repositories?${params.toString()}`,
     );
   },
 

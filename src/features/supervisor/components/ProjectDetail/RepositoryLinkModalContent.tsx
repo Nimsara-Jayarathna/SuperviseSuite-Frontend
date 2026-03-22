@@ -22,6 +22,11 @@ type RepositoryLinkModalContentProps = {
   onConfirmRepositorySelection: () => void;
   onBackToEntry: () => void;
   onRetryLoadRepositories: () => void;
+  hasMoreRepositories: boolean;
+  totalRepositoryCount: number | null;
+  isLoadingMoreRepositories: boolean;
+  onLoadMoreRepositories: () => void;
+  loadMoreError: string | null;
 };
 
 function RepositorySelectionSkeleton() {
@@ -71,6 +76,11 @@ export function RepositoryLinkModalContent({
   onConfirmRepositorySelection,
   onBackToEntry,
   onRetryLoadRepositories,
+  hasMoreRepositories,
+  totalRepositoryCount,
+  isLoadingMoreRepositories,
+  onLoadMoreRepositories,
+  loadMoreError,
 }: RepositoryLinkModalContentProps) {
   if (step === 'installation-selection') {
     return (
@@ -101,46 +111,68 @@ export function RepositoryLinkModalContent({
             No repositories are available in this installation.
           </div>
         ) : (
-          <div className="max-h-80 space-y-2 overflow-y-auto pr-1">
-            {repositories.map((repository) => {
-              const isChecked = selectedRepositoryId === repository.repositoryId;
-              return (
-                <label
-                  key={repository.repositoryId}
-                  className={`block rounded-2xl border p-3 transition-colors ${
-                    isChecked
-                      ? 'border-amber-300 bg-amber-50'
-                      : 'border-slate-200 bg-white hover:border-slate-300'
-                  } cursor-pointer`}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-medium text-foreground">{repository.fullName}</p>
-                      <a
-                        href={repository.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        onClick={(event) => event.stopPropagation()}
-                        className="mt-1 block text-xs text-sky-700 underline-offset-2 hover:underline"
-                      >
-                        {repository.url}
-                      </a>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        Default branch: {repository.defaultBranch || 'main'}
-                      </p>
+          <div className="space-y-3">
+            <div className="max-h-80 space-y-2 overflow-y-auto pr-1">
+              {repositories.map((repository) => {
+                const isChecked = selectedRepositoryId === repository.repositoryId;
+                return (
+                  <label
+                    key={repository.repositoryId}
+                    className={`block rounded-2xl border p-3 transition-colors ${
+                      isChecked
+                        ? 'border-amber-300 bg-amber-50'
+                        : 'border-slate-200 bg-white hover:border-slate-300'
+                    } cursor-pointer`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-medium text-foreground">{repository.fullName}</p>
+                        <a
+                          href={repository.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          onClick={(event) => event.stopPropagation()}
+                          className="mt-1 block text-xs text-sky-700 underline-offset-2 hover:underline"
+                        >
+                          {repository.url}
+                        </a>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Default branch: {repository.defaultBranch || 'main'}
+                        </p>
+                      </div>
+                      <input
+                        type="radio"
+                        name="github-installation-repository"
+                        checked={isChecked}
+                        onChange={() => onSelectRepository(repository.repositoryId)}
+                        disabled={isSaving || isLoadingMoreRepositories}
+                        className="mt-1 h-4 w-4"
+                      />
                     </div>
-                    <input
-                      type="radio"
-                      name="github-installation-repository"
-                      checked={isChecked}
-                      onChange={() => onSelectRepository(repository.repositoryId)}
-                      disabled={isSaving}
-                      className="mt-1 h-4 w-4"
-                    />
-                  </div>
-                </label>
-              );
-            })}
+                  </label>
+                );
+              })}
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground">
+                Showing {repositories.length}
+                {totalRepositoryCount != null ? ` of ${totalRepositoryCount}` : ''} repositories.
+              </p>
+              {loadMoreError ? (
+                <p className="text-xs text-rose-600">{loadMoreError}</p>
+              ) : null}
+              {hasMoreRepositories ? (
+                <button
+                  type="button"
+                  className={buttonStyles({ variant: 'secondary', size: 'sm' })}
+                  onClick={onLoadMoreRepositories}
+                  disabled={isSaving || isLoadingMoreRepositories}
+                >
+                  {isLoadingMoreRepositories ? 'Loading more...' : 'Load more'}
+                </button>
+              ) : null}
+            </div>
           </div>
         )}
 

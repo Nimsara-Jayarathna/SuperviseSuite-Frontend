@@ -272,6 +272,17 @@ export type GitHubInstallationRepository = {
   defaultBranch: string;
 };
 
+export type GitHubInstallationRepositoriesPage = {
+  items: GitHubInstallationRepository[];
+  page: number;
+  size: number;
+  returnedCount: number;
+  totalCount: number | null;
+  hasNext: boolean;
+  hasPrevious: boolean;
+  nextPage: number | null;
+};
+
 export type LinkProjectGitHubRepositoryRequest = {
   installationId: number;
   repositoryId: number;
