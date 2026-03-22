@@ -95,6 +95,32 @@ Commit range: `432ec4c` -> `9c1d20a`
   - merge, feat, fix, refactor, chore, docs, ci, test, perf, build, revert, style
 - Applied the same card behavior in activity preview and activity modal.
 
+## Post-Branch Updates (2026-03-22): Project-Scoped GitHub Access + Explicit Repo Selection
+
+### Why this follow-up was needed
+
+- GitHub App installation authorization and project-to-repository linkage had to be separated.
+- Supervisors needed explicit repository selection under authorized installations.
+- Requesting more GitHub repository access needed a backend-verified project-scoped flow.
+
+### What was changed
+
+- Added public callback/request routes:
+  - `/github/request-access?token=...`
+  - `/github/access-updated?token=...`
+- Updated supervisor overview repository UX:
+  - guided method-first linking modal (`Repository URL` vs `GitHub App`)
+  - explicit installation repository selection screen with single-select behavior
+  - pagination-aware repository list + `Load more`
+  - animated loading skeleton for repository selection state
+- Added request-access modal flow:
+  - creates project-scoped access request link
+  - presents copyable link in success modal
+  - callback summary modal confirms updated repository visibility
+- Added project-level access-authorization management block in repository card when installation is already authorized:
+  - configure repository
+  - remove access linkage
+
 ## Changed Files (`dev...HEAD`)
 
 - `.env.example`
