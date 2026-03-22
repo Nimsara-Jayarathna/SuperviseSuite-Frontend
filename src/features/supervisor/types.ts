@@ -270,8 +270,6 @@ export type GitHubInstallationRepository = {
   url: string;
   ownerLogin: string;
   defaultBranch: string;
-  alreadyLinked: boolean;
-  linkedProjectId: string | null;
 };
 
 export type LinkProjectGitHubRepositoryRequest = {

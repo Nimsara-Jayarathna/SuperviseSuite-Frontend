@@ -140,16 +140,8 @@ export function RepositorySection({
     try {
       const repositories = await supervisorApi.getInstallationRepositories(installationId);
       setInstallationRepositories(repositories);
-      const selectable = repositories.find((repository) => !repository.alreadyLinked);
+      const selectable = repositories[0] ?? null;
       setSelectedInstallationRepositoryId(selectable ? selectable.repositoryId : null);
-
-      if (repositories.length === 0) {
-        setRepositorySelectionError('No repositories are available under this GitHub installation.');
-      } else if (!selectable) {
-        setRepositorySelectionError(
-          'All repositories under this installation are already linked to other projects.',
-        );
-      }
     } catch (error) {
       const message = isApiException(error)
         ? error.apiError.message
@@ -385,7 +377,6 @@ export function RepositorySection({
           onUseConnectedInstallation={(installationId) => {
             void openInstallationSelection(installationId);
           }}
-          installationId={activeInstallationId}
           repositories={installationRepositories}
           selectedRepositoryId={selectedInstallationRepositoryId}
           isLoadingRepositories={isLoadingInstallationRepositories}
@@ -393,6 +384,11 @@ export function RepositorySection({
           onSelectRepository={setSelectedInstallationRepositoryId}
           onConfirmRepositorySelection={() => void handleConfirmRepositorySelection()}
           onBackToEntry={() => setLinkModalStep('entry')}
+          onRetryLoadRepositories={() => {
+            if (activeInstallationId) {
+              void openInstallationSelection(activeInstallationId);
+            }
+          }}
         />
       </GithubDetailsModal>
 

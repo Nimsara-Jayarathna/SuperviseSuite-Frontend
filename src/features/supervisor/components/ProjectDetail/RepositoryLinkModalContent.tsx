@@ -14,7 +14,6 @@ type RepositoryLinkModalContentProps = {
   onConnectGitHubApp: () => void;
   connectedInstallationId: number | null;
   onUseConnectedInstallation: (installationId: number) => void;
-  installationId: number | null;
   repositories: GitHubInstallationRepository[];
   selectedRepositoryId: number | null;
   isLoadingRepositories: boolean;
@@ -22,7 +21,34 @@ type RepositoryLinkModalContentProps = {
   onSelectRepository: (repositoryId: number) => void;
   onConfirmRepositorySelection: () => void;
   onBackToEntry: () => void;
+  onRetryLoadRepositories: () => void;
 };
+
+function RepositorySelectionSkeleton() {
+  return (
+    <div
+      className="min-h-80 space-y-2 rounded-2xl border border-slate-200 bg-slate-50/50 p-2"
+      aria-live="polite"
+      aria-busy="true"
+    >
+      {Array.from({ length: 5 }).map((_, index) => (
+        <div
+          key={`repository-skeleton-${index}`}
+          className="rounded-2xl border border-slate-200 bg-white p-3 animate-pulse"
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1 space-y-2">
+              <div className="h-4 w-7/12 rounded bg-slate-200" />
+              <div className="h-3 w-10/12 rounded bg-slate-200" />
+              <div className="h-3 w-4/12 rounded bg-slate-200" />
+            </div>
+            <div className="mt-0.5 h-4 w-4 rounded-full bg-slate-200" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export function RepositoryLinkModalContent({
   step,
@@ -37,7 +63,6 @@ export function RepositoryLinkModalContent({
   onConnectGitHubApp,
   connectedInstallationId,
   onUseConnectedInstallation,
-  installationId,
   repositories,
   selectedRepositoryId,
   isLoadingRepositories,
@@ -45,34 +70,39 @@ export function RepositoryLinkModalContent({
   onSelectRepository,
   onConfirmRepositorySelection,
   onBackToEntry,
+  onRetryLoadRepositories,
 }: RepositoryLinkModalContentProps) {
   if (step === 'installation-selection') {
     return (
       <div className="space-y-5">
         <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
           <h4 className="text-sm font-semibold text-foreground">Select repository</h4>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Choose exactly one repository for this project under installation{' '}
-            <span className="font-medium text-foreground">#{installationId}</span>.
-          </p>
+          <p className="mt-1 text-xs text-muted-foreground">Select a repository for this project.</p>
         </div>
 
-        {repositorySelectionError ? (
-          <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
-            {repositorySelectionError}
-          </div>
-        ) : null}
-
         {isLoadingRepositories ? (
-          <p className="text-sm text-muted-foreground">Loading repositories...</p>
+          <RepositorySelectionSkeleton />
+        ) : repositorySelectionError ? (
+          <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
+            <p>{repositorySelectionError}</p>
+            <div className="mt-3">
+              <button
+                type="button"
+                className={buttonStyles({ variant: 'secondary', size: 'sm' })}
+                onClick={onRetryLoadRepositories}
+                disabled={isSaving}
+              >
+                Retry
+              </button>
+            </div>
+          </div>
         ) : repositories.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-muted-foreground">
             No repositories are available in this installation.
-          </p>
+          </div>
         ) : (
           <div className="max-h-80 space-y-2 overflow-y-auto pr-1">
             {repositories.map((repository) => {
-              const isDisabled = repository.alreadyLinked;
               const isChecked = selectedRepositoryId === repository.repositoryId;
               return (
                 <label
@@ -81,7 +111,7 @@ export function RepositoryLinkModalContent({
                     isChecked
                       ? 'border-amber-300 bg-amber-50'
                       : 'border-slate-200 bg-white hover:border-slate-300'
-                  } ${isDisabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
+                  } cursor-pointer`}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
@@ -98,18 +128,13 @@ export function RepositoryLinkModalContent({
                       <p className="mt-1 text-xs text-muted-foreground">
                         Default branch: {repository.defaultBranch || 'main'}
                       </p>
-                      {repository.alreadyLinked ? (
-                        <p className="mt-1 text-xs font-medium text-rose-700">
-                          Already linked{repository.linkedProjectId ? ` to project ${repository.linkedProjectId}` : ''}
-                        </p>
-                      ) : null}
                     </div>
                     <input
                       type="radio"
                       name="github-installation-repository"
                       checked={isChecked}
                       onChange={() => onSelectRepository(repository.repositoryId)}
-                      disabled={isDisabled || isSaving}
+                      disabled={isSaving}
                       className="mt-1 h-4 w-4"
                     />
                   </div>
