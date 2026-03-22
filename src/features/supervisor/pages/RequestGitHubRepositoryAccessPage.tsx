@@ -2,7 +2,14 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { buttonStyles } from '@/components/ui/Button';
 import { isApiException } from '@/services/apiClient';
-import { AlertTriangle, CheckCircle2, ExternalLink, FolderGit2, Github, ShieldCheck } from 'lucide-react';
+import {
+  AlertTriangle,
+  CheckCircle2,
+  ExternalLink,
+  FolderGit2,
+  Github,
+  ShieldCheck,
+} from 'lucide-react';
 import { supervisorApi } from '../api/supervisorApi';
 import type { GitHubRepositoryAccessRequestValidation } from '../types';
 
@@ -15,7 +22,9 @@ export function RequestGitHubRepositoryAccessPage() {
 
   const [isLoading, setIsLoading] = useState(true);
   const [isContinuing, setIsContinuing] = useState(false);
-  const [validation, setValidation] = useState<GitHubRepositoryAccessRequestValidation | null>(null);
+  const [validation, setValidation] = useState<GitHubRepositoryAccessRequestValidation | null>(
+    null,
+  );
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -101,9 +110,9 @@ export function RequestGitHubRepositoryAccessPage() {
             Request More Repository Access
           </h1>
           <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-600 sm:text-base">
-            You are about to continue to GitHub to update repository access for this project.
-            Choose only the repositories needed for this specific project. You can remove access
-            later anytime from GitHub App settings.
+            You are about to continue to GitHub to update repository access for this project. Choose
+            only the repositories needed for this specific project. You can remove access later
+            anytime from GitHub App settings.
           </p>
 
           <div className="mt-7 grid gap-3 sm:grid-cols-3">
@@ -155,9 +164,12 @@ export function RequestGitHubRepositoryAccessPage() {
           ) : validation ? (
             <div className="mt-7 rounded-2xl border border-slate-200 bg-slate-50/80 p-5">
               <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Project</p>
-              <p className="mt-2 text-base font-semibold text-foreground">{validation.projectTitle}</p>
+              <p className="mt-2 text-base font-semibold text-foreground">
+                {validation.projectTitle}
+              </p>
               <p className="mt-3 text-xs text-muted-foreground">
-                This secure request link expires at {new Date(validation.expiresAt).toLocaleString()}.
+                This secure request link expires at{' '}
+                {new Date(validation.expiresAt).toLocaleString()}.
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
                 On GitHub, use “Only select repositories” unless broader access is truly required.

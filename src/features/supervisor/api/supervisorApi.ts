@@ -132,7 +132,9 @@ export const supervisorApi = {
     );
   },
 
-  createGitHubRepositoryAccessRequest(projectId: string): Promise<GitHubRepositoryAccessRequestCreate> {
+  createGitHubRepositoryAccessRequest(
+    projectId: string,
+  ): Promise<GitHubRepositoryAccessRequestCreate> {
     return apiClient.post<GitHubRepositoryAccessRequestCreate>(
       `/api/supervisor/projects/${projectId}/github/access-requests`,
       {},
@@ -179,18 +181,14 @@ export const supervisorApi = {
     );
   },
 
-  getPublicGitHubAccessUpdatedSummary(
-    token: string,
-  ): Promise<GitHubAccessUpdatedSummary> {
+  getPublicGitHubAccessUpdatedSummary(token: string): Promise<GitHubAccessUpdatedSummary> {
     const params = new URLSearchParams({ token });
     return apiClient.get<GitHubAccessUpdatedSummary>(
       `/api/github/access-updated/summary?${params.toString()}`,
     );
   },
 
-  acknowledgePublicGitHubAccessUpdated(
-    token: string,
-  ): Promise<GitHubAccessUpdatedAcknowledge> {
+  acknowledgePublicGitHubAccessUpdated(token: string): Promise<GitHubAccessUpdatedAcknowledge> {
     const params = new URLSearchParams({ token });
     return apiClient.post<GitHubAccessUpdatedAcknowledge>(
       `/api/github/access-updated/acknowledge?${params.toString()}`,

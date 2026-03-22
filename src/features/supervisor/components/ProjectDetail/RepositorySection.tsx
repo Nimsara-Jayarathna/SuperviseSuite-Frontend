@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { env } from '@/app/config/env';
 import { buttonStyles } from '@/components/ui/Button';
 import { RequestStateModal } from '@/components/ui/RequestStateModal';
@@ -30,7 +30,10 @@ function isValidGithubRepositoryUrl(value: string): boolean {
   return GITHUB_REPOSITORY_URL_PATTERN.test(value);
 }
 
-function toAccessScopeLabel(accessScope: string | null | undefined, count: number | null | undefined): string | null {
+function toAccessScopeLabel(
+  accessScope: string | null | undefined,
+  count: number | null | undefined,
+): string | null {
   if (accessScope === 'SINGLE_REPOSITORY') {
     return 'GitHub access: 1 repository available';
   }
@@ -85,23 +88,29 @@ export function RepositorySection({
   const [linkModalStep, setLinkModalStep] = useState<LinkModalStep>('entry');
   const [connectedInstallationId, setConnectedInstallationId] = useState<number | null>(null);
   const [activeInstallationId, setActiveInstallationId] = useState<number | null>(null);
-  const [installationRepositories, setInstallationRepositories] = useState<GitHubInstallationRepository[]>([]);
+  const [installationRepositories, setInstallationRepositories] = useState<
+    GitHubInstallationRepository[]
+  >([]);
   const [isLoadingInstallationRepositories, setIsLoadingInstallationRepositories] = useState(false);
   const [isLoadingMoreInstallationRepositories, setIsLoadingMoreInstallationRepositories] =
     useState(false);
-  const [installationRepositoriesNextPage, setInstallationRepositoriesNextPage] = useState<number | null>(null);
+  const [installationRepositoriesNextPage, setInstallationRepositoriesNextPage] = useState<
+    number | null
+  >(null);
   const [installationRepositoriesHasNext, setInstallationRepositoriesHasNext] = useState(false);
-  const [installationRepositoriesTotalCount, setInstallationRepositoriesTotalCount] = useState<number | null>(
-    null,
-  );
-  const [selectedInstallationRepositoryId, setSelectedInstallationRepositoryId] = useState<number | null>(null);
+  const [installationRepositoriesTotalCount, setInstallationRepositoriesTotalCount] = useState<
+    number | null
+  >(null);
+  const [selectedInstallationRepositoryId, setSelectedInstallationRepositoryId] = useState<
+    number | null
+  >(null);
   const [repositorySelectionError, setRepositorySelectionError] = useState<string | null>(null);
   const [repositoryLoadMoreError, setRepositoryLoadMoreError] = useState<string | null>(null);
   const [isPreparingAccessRequest, setIsPreparingAccessRequest] = useState(false);
   const [generatedAccessRequestUrl, setGeneratedAccessRequestUrl] = useState<string | null>(null);
-  const [generatedAccessRequestExpiresAt, setGeneratedAccessRequestExpiresAt] = useState<string | null>(
-    null,
-  );
+  const [generatedAccessRequestExpiresAt, setGeneratedAccessRequestExpiresAt] = useState<
+    string | null
+  >(null);
   const [accessRequestLinkNotice, setAccessRequestLinkNotice] = useState<string | null>(null);
   const [isAccessRequestLinkCopied, setIsAccessRequestLinkCopied] = useState(false);
   const copyFeedbackTimeoutRef = useRef<number | null>(null);
@@ -202,51 +211,58 @@ export function RepositorySection({
     setConnectModal((current) => ({ ...current, isOpen: false }));
   }
 
-  async function openInstallationSelection(installationId: number) {
-    if (!Number.isFinite(installationId) || installationId < 1) {
-      setRepositorySelectionError('Invalid installation id received from GitHub setup.');
+  const openInstallationSelection = useCallback(
+    async (installationId: number) => {
+      if (!Number.isFinite(installationId) || installationId < 1) {
+        setRepositorySelectionError('Invalid installation id received from GitHub setup.');
+        setLinkModalStep('installation-selection');
+        setSelectedLinkMethod(null);
+        return;
+      }
+
       setLinkModalStep('installation-selection');
       setSelectedLinkMethod(null);
-      return;
-    }
+      setActiveInstallationId(installationId);
+      setIsLoadingInstallationRepositories(true);
+      setIsLoadingMoreInstallationRepositories(false);
+      setRepositorySelectionError(null);
+      setRepositoryLoadMoreError(null);
+      setInstallationRepositories([]);
+      setSelectedInstallationRepositoryId(null);
+      setInstallationRepositoriesNextPage(null);
+      setInstallationRepositoriesHasNext(false);
+      setInstallationRepositoriesTotalCount(null);
 
-    setLinkModalStep('installation-selection');
-    setSelectedLinkMethod(null);
-    setActiveInstallationId(installationId);
-    setIsLoadingInstallationRepositories(true);
-    setIsLoadingMoreInstallationRepositories(false);
-    setRepositorySelectionError(null);
-    setRepositoryLoadMoreError(null);
-    setInstallationRepositories([]);
-    setSelectedInstallationRepositoryId(null);
-    setInstallationRepositoriesNextPage(null);
-    setInstallationRepositoriesHasNext(false);
-    setInstallationRepositoriesTotalCount(null);
-
-    try {
-      const repositoriesPage = await supervisorApi.getInstallationRepositories(
-        project.id,
-        installationId,
-        1,
-      );
-      setInstallationRepositories(repositoriesPage.items);
-      setInstallationRepositoriesNextPage(repositoriesPage.nextPage);
-      setInstallationRepositoriesHasNext(repositoriesPage.hasNext);
-      setInstallationRepositoriesTotalCount(repositoriesPage.totalCount);
-      const selectable = repositoriesPage.items[0] ?? null;
-      setSelectedInstallationRepositoryId(selectable ? selectable.repositoryId : null);
-    } catch (error) {
-      const message = isApiException(error)
-        ? error.apiError.message
-        : 'Unable to load repositories for this installation.';
-      setRepositorySelectionError(message);
-    } finally {
-      setIsLoadingInstallationRepositories(false);
-    }
-  }
+      try {
+        const repositoriesPage = await supervisorApi.getInstallationRepositories(
+          project.id,
+          installationId,
+          1,
+        );
+        setInstallationRepositories(repositoriesPage.items);
+        setInstallationRepositoriesNextPage(repositoriesPage.nextPage);
+        setInstallationRepositoriesHasNext(repositoriesPage.hasNext);
+        setInstallationRepositoriesTotalCount(repositoriesPage.totalCount);
+        const selectable = repositoriesPage.items[0] ?? null;
+        setSelectedInstallationRepositoryId(selectable ? selectable.repositoryId : null);
+      } catch (error) {
+        const message = isApiException(error)
+          ? error.apiError.message
+          : 'Unable to load repositories for this installation.';
+        setRepositorySelectionError(message);
+      } finally {
+        setIsLoadingInstallationRepositories(false);
+      }
+    },
+    [project.id],
+  );
 
   async function handleLoadMoreInstallationRepositories() {
-    if (!activeInstallationId || !installationRepositoriesNextPage || isLoadingMoreInstallationRepositories) {
+    if (
+      !activeInstallationId ||
+      !installationRepositoriesNextPage ||
+      isLoadingMoreInstallationRepositories
+    ) {
       return;
     }
 
@@ -576,12 +592,10 @@ export function RepositorySection({
       void openInstallationSelection(pendingInstallationId);
     }
     onPendingInstallationHandled?.();
-  }, [hasRepository, onPendingInstallationHandled, pendingInstallationId]);
+  }, [hasRepository, onPendingInstallationHandled, openInstallationSelection, pendingInstallationId]);
 
   const showAccessRequestLinkInModal =
-    requestModal.isOpen &&
-    requestModal.status === 'success' &&
-    Boolean(generatedAccessRequestUrl);
+    requestModal.isOpen && requestModal.status === 'success' && Boolean(generatedAccessRequestUrl);
 
   return (
     <section className="rounded-3xl border border-border bg-white p-6 shadow-sm">
@@ -666,7 +680,6 @@ export function RepositorySection({
           hasInputChanged={hasInputChanged}
           isInputValid={isInputValid}
           onUrlChange={handleUrlInputChange}
-          onClose={closeLinkModal}
           onSave={() => void handleSaveRepository()}
           onConnectGitHubApp={handleConnectGitHubApp}
           onRequestMoreRepositoryAccess={() => void handleRequestMoreRepositoryAccess()}
@@ -713,7 +726,7 @@ export function RepositorySection({
                 ? 'Remove the current repository before selecting another one.'
                 : canConfigureRepositorySelection
                   ? 'Use Configure repository in the access-authorization block below.'
-                : undefined
+                  : undefined
             }
           >
             <span className="inline-flex items-center gap-2">

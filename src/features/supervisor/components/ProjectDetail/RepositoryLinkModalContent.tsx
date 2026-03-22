@@ -13,7 +13,6 @@ type RepositoryLinkModalContentProps = {
   hasInputChanged: boolean;
   isInputValid: boolean;
   onUrlChange: (nextValue: string) => void;
-  onClose: () => void;
   onSave: () => void;
   onConnectGitHubApp: () => void;
   onRequestMoreRepositoryAccess: () => void;
@@ -72,7 +71,6 @@ export function RepositoryLinkModalContent({
   hasInputChanged,
   isInputValid,
   onUrlChange,
-  onClose,
   onSave,
   onConnectGitHubApp,
   onRequestMoreRepositoryAccess,
@@ -100,7 +98,9 @@ export function RepositoryLinkModalContent({
       <div className="space-y-5">
         <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
           <h4 className="text-sm font-semibold text-foreground">Select repository</h4>
-          <p className="mt-1 text-xs text-muted-foreground">Select a repository for this project.</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Select a repository for this project.
+          </p>
         </div>
 
         {isLoadingRepositories ? (
@@ -172,9 +172,7 @@ export function RepositoryLinkModalContent({
                 Showing {repositories.length}
                 {totalRepositoryCount != null ? ` of ${totalRepositoryCount}` : ''} repositories.
               </p>
-              {loadMoreError ? (
-                <p className="text-xs text-rose-600">{loadMoreError}</p>
-              ) : null}
+              {loadMoreError ? <p className="text-xs text-rose-600">{loadMoreError}</p> : null}
               {hasMoreRepositories ? (
                 <button
                   type="button"

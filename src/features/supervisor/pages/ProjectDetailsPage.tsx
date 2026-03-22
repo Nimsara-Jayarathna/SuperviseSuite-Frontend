@@ -131,7 +131,9 @@ export function ProjectDetailsPage() {
         setRefreshRequestModal({
           isOpen: true,
           status: 'success',
-          title: githubAccessUpdated ? 'GitHub access updated successfully' : 'GitHub App connected',
+          title: githubAccessUpdated
+            ? 'GitHub access updated successfully'
+            : 'GitHub App connected',
           message: githubAccessUpdated
             ? 'Your available repositories have been refreshed. Select one repository in Overview to finish linking this project. You can remove repository access anytime from GitHub App settings.'
             : 'GitHub installation is ready. Select one repository in Overview to finish linking this project.',
