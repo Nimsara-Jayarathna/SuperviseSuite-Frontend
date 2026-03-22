@@ -51,28 +51,113 @@ function toDisplayStatus(value: 'active' | 'idle') {
   return value === 'active' ? 'Active' : 'Idle';
 }
 
-function getCommitType(message: string): 'merge' | 'feat' | 'fix' | null {
-  const normalized = message.trim().toLowerCase();
-  if (normalized.startsWith('merge')) {
+type CommitType =
+  | 'merge'
+  | 'feat'
+  | 'fix'
+  | 'refactor'
+  | 'chore'
+  | 'docs'
+  | 'ci'
+  | 'test'
+  | 'perf'
+  | 'build'
+  | 'revert'
+  | 'style';
+
+function getCommitType(message: string): CommitType | null {
+  const subject = message
+    .split('\n')
+    .map((line) => line.trim())
+    .find((line) => line.length > 0)
+    ?.toLowerCase() ?? '';
+
+  if (
+    /^merge(\s|$)/.test(subject) ||
+    subject.includes('merge pull request') ||
+    subject.includes('merge branch')
+  ) {
     return 'merge';
   }
-  if (normalized.startsWith('feat') || normalized.startsWith('feature')) {
-    return 'feat';
+
+  const conventionalType = subject.match(/^([a-z]+)(?:\([^)]+\))?!?:\s*/)?.[1] ?? null;
+  if (conventionalType) {
+    const normalizedType = conventionalType.toLowerCase();
+    const typeAliasMap: Record<string, CommitType> = {
+      feat: 'feat',
+      feature: 'feat',
+      fix: 'fix',
+      bugfix: 'fix',
+      hotfix: 'fix',
+      refactor: 'refactor',
+      chore: 'chore',
+      docs: 'docs',
+      doc: 'docs',
+      ci: 'ci',
+      test: 'test',
+      perf: 'perf',
+      build: 'build',
+      revert: 'revert',
+      style: 'style',
+    };
+    if (typeAliasMap[normalizedType]) {
+      return typeAliasMap[normalizedType];
+    }
   }
-  if (normalized.startsWith('fix')) {
-    return 'fix';
+
+  const fallbackPatterns: Array<[CommitType, RegExp]> = [
+    ['feat', /^(feat|feature)\b/],
+    ['fix', /^(fix|bugfix|hotfix)\b/],
+    ['refactor', /^refactor\b/],
+    ['docs', /^(docs|doc)\b/],
+    ['chore', /^chore\b/],
+    ['ci', /^(ci|pipeline|workflow)\b/],
+    ['test', /^test\b/],
+    ['perf', /^perf\b/],
+    ['build', /^build\b/],
+    ['revert', /^revert\b/],
+    ['style', /^style\b/],
+  ];
+  for (const [type, pattern] of fallbackPatterns) {
+    if (pattern.test(subject)) {
+      return type;
+    }
   }
   return null;
 }
 
-function commitTypeBadgeClass(type: 'merge' | 'feat' | 'fix') {
+function commitTypeBadgeClass(type: CommitType) {
   if (type === 'merge') {
     return 'bg-slate-200 text-slate-700';
   }
   if (type === 'feat') {
     return 'bg-emerald-100 text-emerald-700';
   }
-  return 'bg-sky-100 text-sky-700';
+  if (type === 'fix') {
+    return 'bg-sky-100 text-sky-700';
+  }
+  if (type === 'refactor') {
+    return 'bg-violet-100 text-violet-700';
+  }
+  if (type === 'ci' || type === 'build') {
+    return 'bg-cyan-100 text-cyan-700';
+  }
+  if (type === 'docs') {
+    return 'bg-amber-100 text-amber-700';
+  }
+  if (type === 'test') {
+    return 'bg-fuchsia-100 text-fuchsia-700';
+  }
+  if (type === 'perf') {
+    return 'bg-teal-100 text-teal-700';
+  }
+  if (type === 'revert') {
+    return 'bg-rose-100 text-rose-700';
+  }
+  if (type === 'style') {
+    return 'bg-lime-100 text-lime-700';
+  }
+  return 'bg-zinc-100 text-zinc-700';
 }
 
 function renderCommitCard(commit: ProjectGitHubRecentCommit, index: number) {
@@ -84,7 +169,7 @@ function renderCommitCard(commit: ProjectGitHubRecentCommit, index: number) {
       key={`${commit.sha ?? 'commit'}-${index}`}
       className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
     >
-      <div className="flex flex-wrap items-start justify-between gap-2">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2">
         <p
           className="text-sm font-medium text-foreground break-words [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2] overflow-hidden"
           title={commit.message || 'No message'}
@@ -92,7 +177,9 @@ function renderCommitCard(commit: ProjectGitHubRecentCommit, index: number) {
           {commit.message || 'No message'}
         </p>
         {type ? (
-          <span className={`rounded-full px-2 py-1 text-[11px] font-semibold uppercase ${commitTypeBadgeClass(type)}`}>
+          <span
+            className={`justify-self-end self-start whitespace-nowrap rounded-full px-2 py-1 text-[11px] font-semibold uppercase ${commitTypeBadgeClass(type)}`}
+          >
             {type}
           </span>
         ) : null}

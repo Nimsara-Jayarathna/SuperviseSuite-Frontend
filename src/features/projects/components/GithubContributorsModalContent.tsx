@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { ChevronDown } from 'lucide-react';
 import { buttonStyles } from '@/components/ui/Button';
 import { isApiException } from '@/services/apiClient';
 import type { ProjectGitHubContributor } from '../types';
@@ -154,14 +155,21 @@ export function GithubContributorsModalContent({
       ) : null}
 
       {hasMore ? (
-        <div className="pt-2">
+        <div className="flex justify-center pt-3">
           <button
             type="button"
             onClick={() => void handleLoadMore()}
-            className={buttonStyles({ variant: 'secondary', size: 'sm' })}
+            className={buttonStyles({
+              variant: 'secondary',
+              size: 'sm',
+              className: 'rounded-full px-4 font-medium',
+            })}
             disabled={isInitialLoading || isLoadingMore}
           >
-            Load more
+            <span className="inline-flex items-center gap-1.5">
+              View more contributors
+              <ChevronDown className="h-4 w-4" />
+            </span>
           </button>
         </div>
       ) : null}

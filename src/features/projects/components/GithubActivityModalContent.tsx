@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { ChevronDown } from 'lucide-react';
 import { buttonStyles } from '@/components/ui/Button';
 import { isApiException } from '@/services/apiClient';
 import type { ProjectGitHubRecentCommit } from '../types';
@@ -19,18 +20,93 @@ function formatDateTime(value: string | null) {
   return dateTimeFormatter.format(new Date(value));
 }
 
-function getCommitType(message: string): 'merge' | 'feat' | 'fix' | null {
-  const normalized = message.trim().toLowerCase();
-  if (normalized.startsWith('merge')) return 'merge';
-  if (normalized.startsWith('feat') || normalized.startsWith('feature')) return 'feat';
-  if (normalized.startsWith('fix')) return 'fix';
+type CommitType =
+  | 'merge'
+  | 'feat'
+  | 'fix'
+  | 'refactor'
+  | 'chore'
+  | 'docs'
+  | 'ci'
+  | 'test'
+  | 'perf'
+  | 'build'
+  | 'revert'
+  | 'style';
+
+function getCommitType(message: string): CommitType | null {
+  const subject = message
+    .split('\n')
+    .map((line) => line.trim())
+    .find((line) => line.length > 0)
+    ?.toLowerCase() ?? '';
+
+  if (
+    /^merge(\s|$)/.test(subject) ||
+    subject.includes('merge pull request') ||
+    subject.includes('merge branch')
+  ) {
+    return 'merge';
+  }
+
+  const conventionalType = subject.match(/^([a-z]+)(?:\([^)]+\))?!?:\s*/)?.[1] ?? null;
+  if (conventionalType) {
+    const normalizedType = conventionalType.toLowerCase();
+    const typeAliasMap: Record<string, CommitType> = {
+      feat: 'feat',
+      feature: 'feat',
+      fix: 'fix',
+      bugfix: 'fix',
+      hotfix: 'fix',
+      refactor: 'refactor',
+      chore: 'chore',
+      docs: 'docs',
+      doc: 'docs',
+      ci: 'ci',
+      test: 'test',
+      perf: 'perf',
+      build: 'build',
+      revert: 'revert',
+      style: 'style',
+    };
+    if (typeAliasMap[normalizedType]) {
+      return typeAliasMap[normalizedType];
+    }
+  }
+
+  const fallbackPatterns: Array<[CommitType, RegExp]> = [
+    ['feat', /^(feat|feature)\b/],
+    ['fix', /^(fix|bugfix|hotfix)\b/],
+    ['refactor', /^refactor\b/],
+    ['docs', /^(docs|doc)\b/],
+    ['chore', /^chore\b/],
+    ['ci', /^(ci|pipeline|workflow)\b/],
+    ['test', /^test\b/],
+    ['perf', /^perf\b/],
+    ['build', /^build\b/],
+    ['revert', /^revert\b/],
+    ['style', /^style\b/],
+  ];
+  for (const [type, pattern] of fallbackPatterns) {
+    if (pattern.test(subject)) {
+      return type;
+    }
+  }
   return null;
 }
 
-function commitTypeBadgeClass(type: 'merge' | 'feat' | 'fix') {
+function commitTypeBadgeClass(type: CommitType) {
   if (type === 'merge') return 'bg-slate-200 text-slate-700';
   if (type === 'feat') return 'bg-emerald-100 text-emerald-700';
-  return 'bg-sky-100 text-sky-700';
+  if (type === 'fix') return 'bg-sky-100 text-sky-700';
+  if (type === 'refactor') return 'bg-violet-100 text-violet-700';
+  if (type === 'ci' || type === 'build') return 'bg-cyan-100 text-cyan-700';
+  if (type === 'docs') return 'bg-amber-100 text-amber-700';
+  if (type === 'test') return 'bg-fuchsia-100 text-fuchsia-700';
+  if (type === 'perf') return 'bg-teal-100 text-teal-700';
+  if (type === 'revert') return 'bg-rose-100 text-rose-700';
+  if (type === 'style') return 'bg-lime-100 text-lime-700';
+  return 'bg-zinc-100 text-zinc-700';
 }
 
 type GithubActivityModalContentProps = {
@@ -149,7 +225,7 @@ export function GithubActivityModalContent({
             key={`${commit.sha ?? 'commit'}-${index}`}
             className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
           >
-            <div className="flex flex-wrap items-start justify-between gap-2">
+            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2">
               <p
                 className="text-sm font-medium text-foreground break-words [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:3] overflow-hidden"
                 title={commit.message || 'No message'}
@@ -158,7 +234,7 @@ export function GithubActivityModalContent({
               </p>
               {type ? (
                 <span
-                  className={`rounded-full px-2 py-1 text-[11px] font-semibold uppercase ${commitTypeBadgeClass(type)}`}
+                  className={`justify-self-end self-start whitespace-nowrap rounded-full px-2 py-1 text-[11px] font-semibold uppercase ${commitTypeBadgeClass(type)}`}
                 >
                   {type}
                 </span>
@@ -193,14 +269,21 @@ export function GithubActivityModalContent({
       ) : null}
 
       {hasMore ? (
-        <div className="pt-2">
+        <div className="flex justify-center pt-3">
           <button
             type="button"
             onClick={() => void handleLoadMore()}
-            className={buttonStyles({ variant: 'secondary', size: 'sm' })}
+            className={buttonStyles({
+              variant: 'secondary',
+              size: 'sm',
+              className: 'rounded-full px-4 font-medium',
+            })}
             disabled={isInitialLoading || isLoadingMore}
           >
-            Load more
+            <span className="inline-flex items-center gap-1.5">
+              View more activity
+              <ChevronDown className="h-4 w-4" />
+            </span>
           </button>
         </div>
       ) : null}
