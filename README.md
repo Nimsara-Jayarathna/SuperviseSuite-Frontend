@@ -33,6 +33,13 @@ Local auth/refresh reliability notes:
 - Ensure backend `CORS_ALLOWED_ORIGINS=http://localhost:5173`.
 - Use `localhost` consistently in FE and BE (do not mix with `127.0.0.1`).
 
+Docker/CI note:
+
+- Pass each Vite variable as a separate build argument.
+- Example:
+  `docker build --build-arg VITE_API_BASE_URL=https://stg.supervisesuite.blipzo.xyz --build-arg VITE_GITHUB_APP_INSTALL_URL=https://github.com/apps/<your-app-slug>/installations/new .`
+- Do not concatenate multiple assignments into one argument/value.
+
 ### Install and Run
 
 1. `npm ci`
