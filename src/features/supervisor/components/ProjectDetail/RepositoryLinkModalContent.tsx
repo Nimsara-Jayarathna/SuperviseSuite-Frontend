@@ -1,4 +1,5 @@
 import { buttonStyles } from '@/components/ui/Button';
+import { Github } from 'lucide-react';
 import type { GitHubInstallationRepository } from '../../types';
 
 type RepositoryLinkModalContentProps = {
@@ -299,7 +300,10 @@ export function RepositoryLinkModalContent({
             onClick={onConnectGitHubApp}
             disabled={isSaving}
           >
-            Connect GitHub App
+            <span className="inline-flex items-center gap-2">
+              <Github className="h-4 w-4" />
+              <span>Connect GitHub App</span>
+            </span>
           </button>
         </div>
       </section>

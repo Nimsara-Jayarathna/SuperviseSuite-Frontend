@@ -747,9 +747,6 @@ export function RepositorySection({
       ) : (
         <div className="mt-5 space-y-2">
           <p className="text-sm text-muted-foreground">No GitHub repository linked yet.</p>
-          <p className="text-xs text-muted-foreground">
-            Use Link repository to choose Manual URL or GitHub App connection.
-          </p>
           {canConfigureRepositorySelection ? (
             <div className="mt-3 rounded-2xl border border-amber-300 bg-amber-50/70 p-4">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-800">
