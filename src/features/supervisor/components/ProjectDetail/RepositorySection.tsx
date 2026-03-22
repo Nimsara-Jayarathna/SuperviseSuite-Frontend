@@ -138,7 +138,7 @@ export function RepositorySection({
     setSelectedInstallationRepositoryId(null);
 
     try {
-      const repositories = await supervisorApi.getInstallationRepositories(installationId);
+      const repositories = await supervisorApi.getInstallationRepositories(project.id, installationId);
       setInstallationRepositories(repositories);
       const selectable = repositories[0] ?? null;
       setSelectedInstallationRepositoryId(selectable ? selectable.repositoryId : null);
@@ -446,8 +446,7 @@ export function RepositorySection({
           </p>
           {connectedInstallationId ? (
             <p className="text-xs text-amber-700">
-              Installation #{connectedInstallationId} is connected. Open Link repository to select a
-              repository.
+              GitHub App is connected for this project. Open Link repository to select a repository.
             </p>
           ) : null}
         </div>

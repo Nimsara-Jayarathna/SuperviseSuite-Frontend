@@ -110,9 +110,12 @@ export const supervisorApi = {
     return apiClient.post<void>(`/api/supervisor/projects/${projectId}/github/refresh`, {});
   },
 
-  getInstallationRepositories(installationId: number): Promise<GitHubInstallationRepository[]> {
+  getInstallationRepositories(
+    projectId: string,
+    installationId: number,
+  ): Promise<GitHubInstallationRepository[]> {
     return apiClient.get<GitHubInstallationRepository[]>(
-      `/api/supervisor/github/installations/${installationId}/repositories`,
+      `/api/supervisor/projects/${projectId}/github/installations/${installationId}/repositories`,
     );
   },
 
