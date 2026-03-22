@@ -5,6 +5,7 @@ import { LandingPage } from '@/features/landing';
 import { StudentProjectDetailsPage, StudentProjectsPage } from '@/features/student';
 import {
   CreateProjectPage,
+  GitHubAccessUpdatedPage,
   ProjectDetailsPage,
   RequestGitHubRepositoryAccessPage,
   SupervisorDashboardPage,
@@ -87,6 +88,7 @@ export function AppRoutes() {
       {/* Public */}
       <Route path="/" element={<RootRoute />} />
       <Route path="/github/request-access" element={<RequestGitHubRepositoryAccessPage />} />
+      <Route path="/github/access-updated" element={<GitHubAccessUpdatedPage />} />
 
       {/* Guest-only — redirect authenticated users to their dashboard */}
       <Route element={<RequireGuest />}>

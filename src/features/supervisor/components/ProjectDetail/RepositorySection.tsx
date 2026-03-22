@@ -28,6 +28,22 @@ function isValidGithubRepositoryUrl(value: string): boolean {
   return GITHUB_REPOSITORY_URL_PATTERN.test(value);
 }
 
+function toAccessScopeLabel(accessScope: string | null | undefined, count: number | null | undefined): string | null {
+  if (accessScope === 'SINGLE_REPOSITORY') {
+    return 'GitHub access: 1 repository available';
+  }
+  if (accessScope === 'MULTIPLE_REPOSITORIES') {
+    return `GitHub access: ${typeof count === 'number' ? count : 'multiple'} repositories available`;
+  }
+  if (accessScope === 'NO_REPOSITORIES') {
+    return 'GitHub access: no repositories selected yet';
+  }
+  if (accessScope === 'ACCESS_UNAVAILABLE') {
+    return 'GitHub access is connected. Repository list will be resolved when needed.';
+  }
+  return null;
+}
+
 export function RepositorySection({
   project,
   onUpdate,
@@ -86,6 +102,17 @@ export function RepositorySection({
   const [accessRequestLinkNotice, setAccessRequestLinkNotice] = useState<string | null>(null);
 
   const hasRepository = project.github.repositoryLinked || Boolean(displayRepositoryUrl);
+  const authorizedInstallationId = project.github.authorizedInstallationId ?? null;
+  const effectiveInstallationId = connectedInstallationId ?? authorizedInstallationId;
+  const accessScopeLabel = toAccessScopeLabel(
+    project.github.accessScope,
+    project.github.accessibleRepositoryCount,
+  );
+  const canConfigureRepositorySelection =
+    !hasRepository &&
+    typeof effectiveInstallationId === 'number' &&
+    Number.isFinite(effectiveInstallationId) &&
+    effectiveInstallationId > 0;
 
   useEffect(() => {
     if (!isLinkModalOpen) {
@@ -106,6 +133,15 @@ export function RepositorySection({
     }
   }, [displayRepositoryUrl, isLinkModalOpen]);
 
+  useEffect(() => {
+    if (
+      typeof project.github.authorizedInstallationId === 'number' &&
+      project.github.authorizedInstallationId > 0
+    ) {
+      setConnectedInstallationId(project.github.authorizedInstallationId);
+    }
+  }, [project.github.authorizedInstallationId]);
+
   const hasInputChanged = useMemo(
     () => urlInput !== initialEditValue,
     [initialEditValue, urlInput],
@@ -123,6 +159,14 @@ export function RepositorySection({
     setValidationError(null);
     setLinkModalStep('entry');
     setIsLinkModalOpen(true);
+    if (
+      !hasRepository &&
+      typeof effectiveInstallationId === 'number' &&
+      Number.isFinite(effectiveInstallationId) &&
+      effectiveInstallationId > 0
+    ) {
+      void openInstallationSelection(effectiveInstallationId);
+    }
   }
 
   function closeLinkModal() {
@@ -457,20 +501,10 @@ export function RepositorySection({
 
     setConnectedInstallationId(pendingInstallationId);
 
-    if (hasRepository) {
-      setConnectModal({
-        isOpen: true,
-        status: 'error',
-        title: 'Repository already linked',
-        message:
-          'A repository is already linked to this project. Remove it first if you want to link a different repository.',
-      });
-      onPendingInstallationHandled?.();
-      return;
+    if (!hasRepository) {
+      setIsLinkModalOpen(true);
+      void openInstallationSelection(pendingInstallationId);
     }
-
-    setIsLinkModalOpen(true);
-    void openInstallationSelection(pendingInstallationId);
     onPendingInstallationHandled?.();
   }, [hasRepository, onPendingInstallationHandled, pendingInstallationId]);
 
@@ -603,12 +637,14 @@ export function RepositorySection({
             type="button"
             className={buttonStyles({ variant: 'primary', size: 'sm' })}
             onClick={openLinkModal}
-            disabled={hasRepository || isSaving}
+            disabled={isSaving || hasRepository}
             title={
-              hasRepository ? 'Remove the current repository before adding a new one.' : undefined
+              hasRepository
+                ? 'Remove the current repository before selecting another one.'
+                : undefined
             }
           >
-            Link repository
+            {canConfigureRepositorySelection ? 'Configure repository' : 'Link repository'}
           </button>
         </div>
       </div>
@@ -637,6 +673,11 @@ export function RepositorySection({
               Remove
             </button>
           </div>
+          {accessScopeLabel ? (
+            <p className="inline-flex rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs text-amber-800">
+              {accessScopeLabel}
+            </p>
+          ) : null}
           <p className="text-xs text-muted-foreground">
             Linked via repository URL or GitHub App integration.
           </p>
@@ -650,9 +691,15 @@ export function RepositorySection({
           <p className="text-xs text-muted-foreground">
             Use Link repository to choose Manual URL or GitHub App connection.
           </p>
-          {connectedInstallationId ? (
+          {accessScopeLabel ? (
+            <p className="inline-flex rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs text-amber-800">
+              {accessScopeLabel}
+            </p>
+          ) : null}
+          {canConfigureRepositorySelection ? (
             <p className="text-xs text-amber-700">
-              GitHub App is connected for this project. Open Link repository to select a repository.
+              GitHub App access is already authorized for this project. Click Configure repository
+              to select one repository.
             </p>
           ) : null}
         </div>

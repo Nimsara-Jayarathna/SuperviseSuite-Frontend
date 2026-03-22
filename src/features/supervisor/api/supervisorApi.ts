@@ -13,6 +13,8 @@ import type {
 import type {
   AddSupervisorProjectMembersRequest,
   AddSupervisorProjectMilestoneRequest,
+  GitHubAccessUpdatedAcknowledge,
+  GitHubAccessUpdatedSummary,
   GitHubRepositoryAccessRequestContinue,
   GitHubRepositoryAccessRequestCreate,
   GitHubRepositoryAccessRequestValidation,
@@ -173,6 +175,25 @@ export const supervisorApi = {
     const params = new URLSearchParams({ token });
     return apiClient.post<GitHubRepositoryAccessRequestContinue>(
       `/api/github/access-requests/continue?${params.toString()}`,
+      {},
+    );
+  },
+
+  getPublicGitHubAccessUpdatedSummary(
+    token: string,
+  ): Promise<GitHubAccessUpdatedSummary> {
+    const params = new URLSearchParams({ token });
+    return apiClient.get<GitHubAccessUpdatedSummary>(
+      `/api/github/access-updated/summary?${params.toString()}`,
+    );
+  },
+
+  acknowledgePublicGitHubAccessUpdated(
+    token: string,
+  ): Promise<GitHubAccessUpdatedAcknowledge> {
+    const params = new URLSearchParams({ token });
+    return apiClient.post<GitHubAccessUpdatedAcknowledge>(
+      `/api/github/access-updated/acknowledge?${params.toString()}`,
       {},
     );
   },

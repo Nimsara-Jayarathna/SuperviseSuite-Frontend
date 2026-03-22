@@ -290,7 +290,7 @@ export function RepositoryLinkModalContent({
               onClick={() => onUseConnectedInstallation(connectedInstallationId)}
               disabled={isSaving}
             >
-              Select repository
+              Configure repository link
             </button>
           ) : null}
           <button

@@ -318,3 +318,16 @@ export type GitHubRepositoryAccessRequestContinue = {
   projectId: string;
   githubAuthorizeUrl: string;
 };
+
+export type GitHubAccessUpdatedSummary = {
+  projectId: string;
+  projectTitle: string;
+  installationId: number;
+  accessScope: string;
+  accessibleRepositoryCount: number;
+  repositories: GitHubInstallationRepository[];
+};
+
+export type GitHubAccessUpdatedAcknowledge = {
+  projectId: string;
+};

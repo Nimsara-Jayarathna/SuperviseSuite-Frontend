@@ -27,6 +27,9 @@ export type ProjectGitHubRecentCommit = {
 
 export type ProjectGitHubPreview = {
   repositoryLinked: boolean;
+  authorizedInstallationId?: number | null;
+  accessibleRepositoryCount?: number | null;
+  accessScope?: 'NOT_AUTHORIZED' | 'NO_REPOSITORIES' | 'SINGLE_REPOSITORY' | 'MULTIPLE_REPOSITORIES' | 'ACCESS_UNAVAILABLE' | string | null;
   repositories: ProjectGitHubRepositoryPreview[];
   activitySummary: ProjectGitHubActivitySummary;
   contributorsPreview: ProjectGitHubContributor[];

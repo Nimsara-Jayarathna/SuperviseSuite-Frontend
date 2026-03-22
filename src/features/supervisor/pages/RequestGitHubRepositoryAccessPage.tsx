@@ -83,9 +83,7 @@ export function RequestGitHubRepositoryAccessPage() {
     }
   }
 
-  const backHref = validation?.projectId
-    ? `/supervisor/projects/${validation.projectId}`
-    : '/supervisor/projects';
+  const backHref = '/';
 
   return (
     <div className="mx-auto w-full max-w-2xl space-y-6">
@@ -123,7 +121,7 @@ export function RequestGitHubRepositoryAccessPage() {
 
         <div className="mt-8 flex flex-wrap justify-end gap-2">
           <Link to={backHref} className={buttonStyles({ variant: 'secondary', size: 'md' })}>
-            Back to project
+            Back
           </Link>
           <button
             type="button"
