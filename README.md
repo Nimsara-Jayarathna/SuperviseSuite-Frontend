@@ -24,6 +24,10 @@ GitHub modal pagination example:
 
 `VITE_GITHUB_PAGE_SIZE=10`
 
+GitHub App install entrypoint example:
+
+`VITE_GITHUB_APP_INSTALL_URL=https://github.com/apps/<your-app-slug>/installations/new`
+
 Local auth/refresh reliability notes:
 
 - Ensure backend `APP_PORT=8081` and frontend `VITE_API_BASE_URL` points to the same port.

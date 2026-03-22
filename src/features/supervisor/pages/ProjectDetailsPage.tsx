@@ -1,5 +1,5 @@
 import { CalendarDays, Clock3, Users } from 'lucide-react';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { env } from '@/app/config/env';
 import { ErrorState } from '@/components/feedback/ErrorState';
@@ -15,6 +15,7 @@ import { TeamTabSection } from '../components/ProjectDetail/TeamTabSection';
 import { useProjectDetailsPageState } from '../hooks/useProjectDetailsPageState';
 import { useSupervisorProject } from '../hooks/useSupervisorProject';
 import { supervisorApi } from '../api/supervisorApi';
+import { isApiException } from '@/services/apiClient';
 import {
   LIFECYCLE_OPTIONS,
   TABS,
@@ -35,6 +36,18 @@ export function ProjectDetailsPage() {
     },
   );
   const [isRefreshingGitHub, setIsRefreshingGitHub] = useState(false);
+  const hasHandledGithubSetupRef = useRef(false);
+  const [refreshRequestModal, setRefreshRequestModal] = useState<{
+    isOpen: boolean;
+    status: 'loading' | 'success' | 'error';
+    title: string;
+    message: string;
+  }>({
+    isOpen: false,
+    status: 'loading',
+    title: '',
+    message: '',
+  });
   const loadActivityPage = useCallback(
     (page: number, size: number) => {
       if (!projectId) {
@@ -60,13 +73,103 @@ export function ProjectDetailsPage() {
     }
 
     setIsRefreshingGitHub(true);
+    setRefreshRequestModal({
+      isOpen: true,
+      status: 'loading',
+      title: 'Refreshing GitHub data',
+      message: 'Syncing latest repository metadata, commits, and contributors.',
+    });
     try {
       await supervisorApi.refreshProjectGitHub(projectId);
       await reload();
+      setRefreshRequestModal({
+        isOpen: true,
+        status: 'success',
+        title: 'GitHub data refreshed',
+        message: 'Latest GitHub data was synced and loaded successfully.',
+      });
+    } catch (error) {
+      const message = isApiException(error)
+        ? error.apiError.message
+        : 'Unable to refresh GitHub data right now. Please try again.';
+      setRefreshRequestModal({
+        isOpen: true,
+        status: 'error',
+        title: 'GitHub refresh failed',
+        message,
+      });
     } finally {
       setIsRefreshingGitHub(false);
     }
   }
+
+  function closeRefreshRequestModal() {
+    setRefreshRequestModal((current) => ({ ...current, isOpen: false }));
+  }
+
+  useEffect(() => {
+    if (!projectId) {
+      return;
+    }
+
+    const githubSetup = searchParams.get('githubSetup');
+    if (!githubSetup || hasHandledGithubSetupRef.current) {
+      return;
+    }
+
+    hasHandledGithubSetupRef.current = true;
+
+    if (githubSetup === 'success') {
+      void (async () => {
+        setIsRefreshingGitHub(true);
+        setRefreshRequestModal({
+          isOpen: true,
+          status: 'loading',
+          title: 'Finalizing GitHub setup',
+          message: 'Syncing repository data after GitHub App connection.',
+        });
+
+        try {
+          await supervisorApi.refreshProjectGitHub(projectId);
+          await reload();
+          setRefreshRequestModal({
+            isOpen: true,
+            status: 'success',
+            title: 'GitHub connected',
+            message: 'GitHub App connected and project activity synced successfully.',
+          });
+        } catch (error) {
+          const message = isApiException(error)
+            ? error.apiError.message
+            : 'GitHub was connected, but initial sync failed. Please try refresh again.';
+          setRefreshRequestModal({
+            isOpen: true,
+            status: 'error',
+            title: 'GitHub sync failed',
+            message,
+          });
+        } finally {
+          setIsRefreshingGitHub(false);
+          const nextParams = new URLSearchParams(searchParams);
+          nextParams.delete('githubSetup');
+          setSearchParams(nextParams, { replace: true });
+        }
+      })();
+      return;
+    }
+
+    if (githubSetup === 'failed') {
+      setRefreshRequestModal({
+        isOpen: true,
+        status: 'error',
+        title: 'GitHub setup failed',
+        message: 'GitHub App connection did not complete. Please try connecting again.',
+      });
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.delete('githubSetup');
+      setSearchParams(nextParams, { replace: true });
+    }
+  }, [projectId, reload, searchParams, setSearchParams]);
 
   const requestedTab = searchParams.get('tab') as SupervisorProjectDetailTab | null;
   const activeTab = requestedTab && TABS.includes(requestedTab) ? requestedTab : 'overview';
@@ -114,6 +217,14 @@ export function ProjectDetailsPage() {
         message={requestModal.state.message}
         onClose={requestModal.state.status === 'loading' ? undefined : requestModal.close}
         onRetry={requestModal.state.status === 'error' ? requestModal.retryLastRequest : undefined}
+      />
+      <RequestStateModal
+        isOpen={refreshRequestModal.isOpen}
+        status={refreshRequestModal.status}
+        title={refreshRequestModal.title}
+        message={refreshRequestModal.message}
+        onClose={refreshRequestModal.status === 'loading' ? undefined : closeRefreshRequestModal}
+        onRetry={refreshRequestModal.status === 'error' ? () => void handleGitHubRefresh() : undefined}
       />
 
       <PageHeader

@@ -14,4 +14,5 @@ function parsePositiveInt(value: string | undefined, fallback: number) {
 export const env = {
   apiBaseUrl: import.meta.env.VITE_API_BASE_URL ?? '',
   githubPageSize: parsePositiveInt(import.meta.env.VITE_GITHUB_PAGE_SIZE, 10),
+  githubAppInstallUrl: import.meta.env.VITE_GITHUB_APP_INSTALL_URL ?? '',
 };
