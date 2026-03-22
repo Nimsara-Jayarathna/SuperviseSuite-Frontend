@@ -19,6 +19,7 @@ Technical notes, architecture summaries, and feature guides for the SuperviseSui
 | File | Description |
 |------|-------------|
 | [branches/major-fixes-scrum-97-supervisor-ui-workflow.md](branches/major-fixes-scrum-97-supervisor-ui-workflow.md) | Major frontend fixes for supervisor workflow: guided creation, milestone UX, leader management, and landing card interaction stabilization |
+| [branches/major-fixes-scrum-80-github-dashboard-integration.md](branches/major-fixes-scrum-80-github-dashboard-integration.md) | GitHub dashboard integration: shared read-only tab, paginated modals, env-driven page size, and supervisor overview linking UX |
 
 ### UI
 

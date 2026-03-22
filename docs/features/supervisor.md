@@ -3,6 +3,7 @@
 Supervisor workspace for dashboard monitoring, project listing, project creation, and project detail management.
 
 Related major-fixes doc: `docs/branches/major-fixes-scrum-97-supervisor-ui-workflow.md`
+Related GitHub integration doc: `docs/branches/major-fixes-scrum-80-github-dashboard-integration.md`
 
 ## Routes
 
@@ -31,6 +32,10 @@ Supervisor feature currently uses these APIs:
 - `GET /api/supervisor/dashboard`
 - `GET /api/supervisor/projects`
 - `GET /api/supervisor/projects/{projectId}`
+- `GET /api/supervisor/projects/{projectId}/github`
+- `GET /api/supervisor/projects/{projectId}/github/activity?page=...&size=...`
+- `GET /api/supervisor/projects/{projectId}/github/contributors?page=...&size=...`
+- `POST /api/supervisor/projects/{projectId}/github/refresh`
 - `GET /api/supervisor/students/search?q=...`
 - `POST /api/supervisor/projects`
 - `PATCH /api/supervisor/projects/{projectId}`
@@ -49,8 +54,9 @@ Supervisor feature currently uses these APIs:
 | `src/features/supervisor/pages/SupervisorDashboardPage.tsx` | API-backed supervisor dashboard with project-health search table and client-side pagination (5 rows/page) |
 | `src/features/supervisor/pages/SupervisorProjectsPage.tsx` | API-backed project list with lifecycle filter and skeleton/error/empty states |
 | `src/features/supervisor/pages/CreateProjectPage.tsx` | API-backed project creation with student lookup and request-state modal |
-| `src/features/supervisor/pages/ProjectDetailsPage.tsx` | API-backed detail page with overview edit, team student-add flow, and milestone add/edit |
-| `src/features/supervisor/components/ProjectDetail/RepositorySection.tsx` | GitHub repository link add/edit/remove section with validation and request feedback |
+| `src/features/supervisor/pages/ProjectDetailsPage.tsx` | API-backed detail page with overview edit, shared GitHub tab, team student-add flow, and milestone add/edit |
+| `src/features/supervisor/components/ProjectDetail/RepositorySection.tsx` | Supervisor Overview repository management card (single-link action, remove action, GitHub App/manual link entrypoint) |
+| `src/features/supervisor/components/ProjectDetail/RepositoryLinkModalContent.tsx` | Repository linking modal content for manual URL and GitHub App connect entry |
 | `src/features/supervisor/components/SupervisorProjectCard.tsx` | Clickable summary card (full-card navigation) with compact status/progress layout |
 | `src/features/supervisor/components/SupervisorProjectCardSkeleton.tsx` | List loading placeholder |
 | `src/features/supervisor/components/ProjectDetailsSkeleton.tsx` | Detail loading placeholder |
@@ -157,6 +163,7 @@ Supervisor feature currently uses these APIs:
 ### Tabs
 
 - `Overview`
+- `GitHub`
 - `Team`
 - `Milestones`
 
@@ -181,10 +188,31 @@ Supervisor feature currently uses these APIs:
 
 ### Overview tab: GitHub repository link management
 
-- Dedicated repository section supports add/edit/remove.
+- Repository card uses a single `Link repository` button.
+- Clicking opens a modal with two options in one flow:
+  - manual URL link
+  - GitHub App connect action
 - Save calls `PATCH /api/supervisor/projects/{projectId}/repository`.
-- Client-side validation allows only `https://github.com/{owner}/{repo}`.
-- Empty input is treated as remove (`repositoryUrl = null`).
+- Client-side validation allows only `https://github.com/{owner}/{repo}` for manual URL path.
+- When one repository is linked, `Link repository` is disabled (current one-repo scope).
+- `Remove` action clears repository/app linkage from the project.
+
+### GitHub tab: shared read-only dashboard
+
+- Uses the same `CommitActivitySection` component as student view.
+- Preview data is sourced from project detail `github` block.
+- Shows:
+  - Repository overview (with last synced + refresh)
+  - Activity summary
+  - Contributors preview
+  - Activity feed preview
+- Opens shared paginated modals:
+  - full activity
+  - full contributors
+- Refresh action:
+  - supervisor-only
+  - calls `POST /api/supervisor/projects/{projectId}/github/refresh`
+  - then re-fetches project detail payload
 
 ### Team tab: add-student management (add-only)
 
@@ -241,4 +269,5 @@ Summary and milestone description show visible counters where applicable in crea
 ## Notes
 
 - Supervisor dashboard, projects list, create flow, and detail management are all backend-connected.
+- GitHub tab is intentionally read-only; repository management remains in Overview card.
 - Route guards are still UI-level and not a backend security boundary.
