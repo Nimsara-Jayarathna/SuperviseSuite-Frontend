@@ -140,7 +140,10 @@ export function RepositoryLinkModalContent({
           </div>
         ) : (
           <div className="space-y-3">
-            <div ref={repositoriesScrollContainerRef} className="max-h-80 space-y-2 overflow-y-auto pr-1">
+            <div
+              ref={repositoriesScrollContainerRef}
+              className="max-h-80 space-y-2 overflow-y-auto pr-1"
+            >
               {repositories.map((repository) => {
                 const isChecked = selectedRepositoryId === repository.repositoryId;
                 return (
