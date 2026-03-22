@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const setUser = vi.hoisted(() => vi.fn());
 const clearAll = vi.hoisted(() => vi.fn());
+const clearSessionCaches = vi.hoisted(() => vi.fn());
 
 vi.mock('@/app/config/env', () => ({
   env: { apiBaseUrl: 'http://localhost:8081' },
@@ -14,6 +15,10 @@ vi.mock('@/services/tokenStorage', () => ({
     clearUser: vi.fn(),
     clearAll,
   },
+}));
+
+vi.mock('@/services/sessionCache', () => ({
+  clearSessionCaches,
 }));
 
 import { ApiException, apiClient } from '@/services/apiClient';
@@ -228,6 +233,7 @@ describe('apiClient response normalization', () => {
     } as ApiException);
 
     expect(fetch).toHaveBeenCalledTimes(2);
+    expect(clearSessionCaches).toHaveBeenCalledOnce();
     expect(clearAll).toHaveBeenCalledOnce();
   });
 

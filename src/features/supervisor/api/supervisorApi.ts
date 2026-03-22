@@ -5,6 +5,7 @@ import {
   normalizePaginatedPayload,
   shouldFallbackToDashboard,
 } from '@/features/projects/api/githubPagination';
+import { registerSessionCacheClearer } from '@/services/sessionCache';
 import type {
   PaginatedListResult,
   ProjectGitHubContributor,
@@ -39,7 +40,26 @@ const inFlightProjectRequests: Partial<Record<string, Promise<SupervisorProjectD
 const cachedProjectGitHubById: Partial<Record<string, ProjectGitHubActivity>> = {};
 const inFlightProjectGitHubRequests: Partial<Record<string, Promise<ProjectGitHubActivity>>> = {};
 
+function clearRecord(record: Partial<Record<string, unknown>>) {
+  for (const key of Object.keys(record)) {
+    delete record[key];
+  }
+}
+
+function clearSupervisorApiCache() {
+  clearRecord(cachedProjectsById);
+  clearRecord(inFlightProjectRequests);
+  clearRecord(cachedProjectGitHubById);
+  clearRecord(inFlightProjectGitHubRequests);
+}
+
+registerSessionCacheClearer(clearSupervisorApiCache);
+
 export const supervisorApi = {
+  clearCache(): void {
+    clearSupervisorApiCache();
+  },
+
   getDashboard(): Promise<SupervisorDashboard> {
     return apiClient.get<SupervisorDashboard>('/api/supervisor/dashboard');
   },
