@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { buttonStyles } from '@/components/ui/Button';
 import { RequestStateModal } from '@/components/ui/RequestStateModal';
@@ -38,7 +38,7 @@ export function GitHubAccessUpdatedPage() {
 
   const showFailedStatus = setupStatus.toLowerCase() === 'failed';
 
-  async function loadSummary() {
+  const loadSummary = useCallback(async () => {
     if (!token) {
       setSummary(null);
       setStatus('error');
@@ -66,7 +66,7 @@ export function GitHubAccessUpdatedPage() {
       setTitle('GitHub access update failed');
       setMessage(nextMessage || INVALID_LINK_MESSAGE);
     }
-  }
+  }, [token]);
 
   useEffect(() => {
     if (showFailedStatus && !token) {
@@ -77,7 +77,7 @@ export function GitHubAccessUpdatedPage() {
       return;
     }
     void loadSummary();
-  }, [showFailedStatus, token]);
+  }, [showFailedStatus, token, loadSummary]);
 
   async function handleConfirmAndContinue() {
     if (!token) {

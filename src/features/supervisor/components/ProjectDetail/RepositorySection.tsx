@@ -592,7 +592,12 @@ export function RepositorySection({
       void openInstallationSelection(pendingInstallationId);
     }
     onPendingInstallationHandled?.();
-  }, [hasRepository, onPendingInstallationHandled, openInstallationSelection, pendingInstallationId]);
+  }, [
+    hasRepository,
+    onPendingInstallationHandled,
+    openInstallationSelection,
+    pendingInstallationId,
+  ]);
 
   const showAccessRequestLinkInModal =
     requestModal.isOpen && requestModal.status === 'success' && Boolean(generatedAccessRequestUrl);
