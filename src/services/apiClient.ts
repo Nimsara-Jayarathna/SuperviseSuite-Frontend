@@ -1,5 +1,6 @@
 import { env } from '@/app/config/env';
 import type { ApiError, ApiErrorBody, ApiMeta, ApiResponse } from '@/types';
+import { clearSessionCaches } from './sessionCache';
 import { tokenStorage } from './tokenStorage';
 import type { StoredUser } from './tokenStorage';
 
@@ -248,6 +249,7 @@ async function request<T>(path: string, init: RequestInit = {}, isRetry = false)
       return request<T>(path, init, true);
     }
     // Refresh also failed — session is fully expired.
+    clearSessionCaches();
     tokenStorage.clearAll();
     window.location.href = '/login';
     throw new ApiException({

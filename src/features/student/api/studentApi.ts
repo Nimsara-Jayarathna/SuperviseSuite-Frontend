@@ -5,6 +5,7 @@ import {
   normalizePaginatedPayload,
   shouldFallbackToDashboard,
 } from '@/features/projects/api/githubPagination';
+import { registerSessionCacheClearer } from '@/services/sessionCache';
 import type {
   PaginatedListResult,
   ProjectGitHubContributor,
@@ -17,7 +18,26 @@ const inFlightProjectRequests: Partial<Record<string, Promise<StudentProjectDeta
 const cachedProjectGitHubById: Partial<Record<string, ProjectGitHubActivity>> = {};
 const inFlightProjectGitHubRequests: Partial<Record<string, Promise<ProjectGitHubActivity>>> = {};
 
+function clearRecord(record: Partial<Record<string, unknown>>) {
+  for (const key of Object.keys(record)) {
+    delete record[key];
+  }
+}
+
+function clearStudentApiCache() {
+  clearRecord(cachedProjectsById);
+  clearRecord(inFlightProjectRequests);
+  clearRecord(cachedProjectGitHubById);
+  clearRecord(inFlightProjectGitHubRequests);
+}
+
+registerSessionCacheClearer(clearStudentApiCache);
+
 export const studentApi = {
+  clearCache(): void {
+    clearStudentApiCache();
+  },
+
   getProjects(): Promise<StudentProjectSummary[]> {
     return apiClient.get<StudentProjectSummary[]>('/api/student/projects');
   },

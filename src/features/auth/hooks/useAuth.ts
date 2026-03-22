@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { isApiException } from '@/services/apiClient';
+import { clearSessionCaches } from '@/services/sessionCache';
 import { tokenStorage } from '@/services/tokenStorage';
 import type { ApiError } from '@/types';
 import { authApi } from '../api/authApi';
@@ -49,6 +50,7 @@ export function useAuth() {
     setLoading();
     try {
       const res: LoginResponse = await authApi.login(body);
+      clearSessionCaches();
       tokenStorage.setUser(res.user);
       setUser(res.user);
       navigate(ROLE_HOME[res.user.role] ?? '/');
@@ -69,6 +71,7 @@ export function useAuth() {
       // Swallow errors — even if the server call fails the browser will have
       // cleared the cookies (Max-Age=0) and we still wipe local state.
     }
+    clearSessionCaches();
     tokenStorage.clearAll();
     setState({ user: null, isLoading: false, error: null });
     navigate('/');
