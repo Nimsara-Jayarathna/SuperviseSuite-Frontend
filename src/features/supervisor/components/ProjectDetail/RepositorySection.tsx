@@ -4,6 +4,7 @@ import { buttonStyles } from '@/components/ui/Button';
 import { RequestStateModal } from '@/components/ui/RequestStateModal';
 import { GithubDetailsModal } from '@/features/projects/components/GithubDetailsModal';
 import { isApiException } from '@/services/apiClient';
+import { Github } from 'lucide-react';
 import { supervisorApi } from '../../api/supervisorApi';
 import type { GitHubInstallationRepository, SupervisorProjectDetail } from '../../types';
 import { RepositoryLinkModalContent } from './RepositoryLinkModalContent';
@@ -18,6 +19,7 @@ type RepositorySectionProps = {
 const GITHUB_REPOSITORY_URL_PATTERN = /^https:\/\/github\.com\/[a-zA-Z0-9_-]+\/[a-zA-Z0-9_-]+$/;
 
 type LinkModalStep = 'entry' | 'installation-selection';
+type LinkMethod = 'url' | 'github_app';
 
 function toRepositoryPayload(value: string): string | null {
   const trimmed = value.trim();
@@ -77,6 +79,7 @@ export function RepositorySection({
     message: '',
   });
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
+  const [selectedLinkMethod, setSelectedLinkMethod] = useState<LinkMethod | null>(null);
   const [urlInput, setUrlInput] = useState(displayRepositoryUrl ?? '');
   const [initialEditValue, setInitialEditValue] = useState(displayRepositoryUrl ?? '');
   const [linkModalStep, setLinkModalStep] = useState<LinkModalStep>('entry');
@@ -122,6 +125,7 @@ export function RepositorySection({
       setInitialEditValue(displayRepositoryUrl ?? '');
       setValidationError(null);
       setLinkModalStep('entry');
+      setSelectedLinkMethod(null);
       setRepositorySelectionError(null);
       setInstallationRepositories([]);
       setSelectedInstallationRepositoryId(null);
@@ -161,6 +165,7 @@ export function RepositorySection({
     setInitialEditValue(displayRepositoryUrl ?? '');
     setValidationError(null);
     setLinkModalStep('entry');
+    setSelectedLinkMethod(null);
     setIsLinkModalOpen(true);
     if (
       !hasRepository &&
@@ -201,10 +206,12 @@ export function RepositorySection({
     if (!Number.isFinite(installationId) || installationId < 1) {
       setRepositorySelectionError('Invalid installation id received from GitHub setup.');
       setLinkModalStep('installation-selection');
+      setSelectedLinkMethod(null);
       return;
     }
 
     setLinkModalStep('installation-selection');
+    setSelectedLinkMethod(null);
     setActiveInstallationId(installationId);
     setIsLoadingInstallationRepositories(true);
     setIsLoadingMoreInstallationRepositories(false);
@@ -652,6 +659,7 @@ export function RepositorySection({
       <GithubDetailsModal isOpen={isLinkModalOpen} title="Link repository" onClose={closeLinkModal}>
         <RepositoryLinkModalContent
           step={linkModalStep}
+          selectedMethod={selectedLinkMethod}
           urlInput={urlInput}
           validationError={validationError}
           isSaving={isSaving}
@@ -673,7 +681,10 @@ export function RepositorySection({
           repositorySelectionError={repositorySelectionError}
           onSelectRepository={setSelectedInstallationRepositoryId}
           onConfirmRepositorySelection={() => void handleConfirmRepositorySelection()}
-          onBackToEntry={() => setLinkModalStep('entry')}
+          onBackToEntry={() => {
+            setLinkModalStep('entry');
+            setSelectedLinkMethod(null);
+          }}
           onRetryLoadRepositories={() => {
             if (activeInstallationId) {
               void openInstallationSelection(activeInstallationId);
@@ -684,6 +695,8 @@ export function RepositorySection({
           isLoadingMoreRepositories={isLoadingMoreInstallationRepositories}
           onLoadMoreRepositories={() => void handleLoadMoreInstallationRepositories()}
           loadMoreError={repositoryLoadMoreError}
+          onSelectMethod={setSelectedLinkMethod}
+          onChangeMethod={() => setSelectedLinkMethod(null)}
         />
       </GithubDetailsModal>
 
@@ -703,7 +716,10 @@ export function RepositorySection({
                 : undefined
             }
           >
-            Link repository
+            <span className="inline-flex items-center gap-2">
+              <Github className="h-4 w-4" />
+              <span>Link repository</span>
+            </span>
           </button>
         </div>
       </div>

@@ -2,8 +2,11 @@ import { buttonStyles } from '@/components/ui/Button';
 import { Github } from 'lucide-react';
 import type { GitHubInstallationRepository } from '../../types';
 
+type RepositoryLinkMethod = 'url' | 'github_app';
+
 type RepositoryLinkModalContentProps = {
   step: 'entry' | 'installation-selection';
+  selectedMethod: RepositoryLinkMethod | null;
   urlInput: string;
   validationError: string | null;
   isSaving: boolean;
@@ -30,6 +33,8 @@ type RepositoryLinkModalContentProps = {
   isLoadingMoreRepositories: boolean;
   onLoadMoreRepositories: () => void;
   loadMoreError: string | null;
+  onSelectMethod: (method: RepositoryLinkMethod) => void;
+  onChangeMethod: () => void;
 };
 
 function RepositorySelectionSkeleton() {
@@ -60,6 +65,7 @@ function RepositorySelectionSkeleton() {
 
 export function RepositoryLinkModalContent({
   step,
+  selectedMethod,
   urlInput,
   validationError,
   isSaving,
@@ -86,6 +92,8 @@ export function RepositoryLinkModalContent({
   isLoadingMoreRepositories,
   onLoadMoreRepositories,
   loadMoreError,
+  onSelectMethod,
+  onChangeMethod,
 }: RepositoryLinkModalContentProps) {
   if (step === 'installation-selection') {
     return (
@@ -209,104 +217,183 @@ export function RepositoryLinkModalContent({
   }
 
   return (
-    <div className="space-y-6">
-      <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
-        <p className="text-sm text-slate-700">
-          Linking by URL works best for public repositories with limited integration scope. For
-          private repositories and full secure sync, use GitHub App connection.
-        </p>
-      </div>
-
-      <section className="space-y-3">
-        <div>
-          <h4 className="text-sm font-semibold text-foreground">Basic repository link</h4>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Use this if your repo is public and URL-based integration is enough.
+    <div className="space-y-6 min-h-[460px]">
+      {selectedMethod === null ? (
+        <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+          <p className="text-sm font-semibold text-foreground">Choose linking method</p>
+          <p className="text-sm text-slate-700">
+            Choose how you want to connect a repository to this project.
           </p>
         </div>
+      ) : null}
 
-        <label className="block space-y-1.5">
-          <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-            Repository URL
-          </span>
-          <input
-            value={urlInput}
-            onChange={(event) => onUrlChange(event.target.value)}
-            placeholder="https://github.com/owner/repo"
-            className="h-10 w-full rounded-2xl border border-border bg-white px-4 text-sm outline-none transition-colors focus:border-amber-300 focus:ring-2 focus:ring-amber-100"
-            disabled={isSaving}
-          />
-        </label>
-
-        <p className="text-xs text-muted-foreground">
-          Use <code>https://github.com/owner/repo</code>.
-        </p>
-
-        {validationError ? <p className="text-sm text-rose-600">{validationError}</p> : null}
-
-        <div className="flex flex-wrap justify-end gap-2">
+      {selectedMethod === null ? (
+        <section className="grid gap-4 sm:grid-cols-2">
           <button
             type="button"
-            className={buttonStyles({ variant: 'secondary', size: 'sm' })}
-            onClick={onClose}
-            disabled={isSaving}
+            onClick={() => onSelectMethod('url')}
+            className="h-full min-h-[160px] rounded-2xl border border-slate-200 bg-white p-5 text-left transition-all hover:border-slate-300 hover:bg-slate-50"
           >
-            Cancel
+            <div className="flex h-full flex-col gap-2.5">
+              <div className="flex items-start justify-between gap-3">
+                <p className="text-sm font-semibold text-foreground leading-6">
+                  Link via Repository URL
+                </p>
+                <span className="inline-flex whitespace-nowrap rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-600">
+                  Quick/Public
+                </span>
+              </div>
+              <p className="max-w-[28ch] text-xs leading-6 text-muted-foreground">
+                Best for public repositories and quick linking.
+              </p>
+            </div>
           </button>
-          <button
-            type="button"
-            className={buttonStyles({ variant: 'primary', size: 'sm' })}
-            onClick={onSave}
-            disabled={isSaving || !hasInputChanged || !isInputValid}
-          >
-            {isSaving ? 'Saving...' : 'Save repository link'}
-          </button>
-        </div>
-      </section>
 
-      <section className="rounded-2xl border border-border bg-slate-50/70 p-4">
-        <h4 className="text-sm font-semibold text-foreground">Advanced: GitHub App integration</h4>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Recommended for private repositories and stronger access control with secure token flow.
-        </p>
-        <p className="mt-2 text-xs text-muted-foreground">
-          Need more repositories than currently visible? Request more repository access first, then
-          continue to GitHub and grant only the repositories required for this project.
-        </p>
-        <div className="mt-3 flex flex-wrap justify-end gap-2">
           <button
             type="button"
-            className={buttonStyles({ variant: 'secondary', size: 'sm' })}
-            onClick={onRequestMoreRepositoryAccess}
-            disabled={isSaving || isRequestingMoreRepositoryAccess}
+            onClick={() => onSelectMethod('github_app')}
+            className="h-full min-h-[160px] rounded-2xl border border-amber-300 bg-amber-50/60 p-5 text-left transition-all hover:border-amber-400 hover:bg-amber-50"
           >
-            {isRequestingMoreRepositoryAccess
-              ? 'Preparing request...'
-              : 'Request More Repository Access'}
+            <div className="flex h-full flex-col gap-2.5">
+              <div className="flex items-start justify-between gap-3">
+                <p className="text-sm font-semibold text-foreground leading-6">
+                  Link using GitHub App
+                </p>
+                <span className="inline-flex whitespace-nowrap rounded-full border border-amber-300 bg-white px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-amber-800">
+                  Recommended
+                </span>
+              </div>
+              <p className="max-w-[30ch] text-xs leading-6 text-muted-foreground">
+                Recommended for private repositories and secure access.
+              </p>
+            </div>
           </button>
-          {connectedInstallationId ? (
+        </section>
+      ) : null}
+
+      {selectedMethod === 'url' ? (
+        <section className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4 transition-all duration-200 ease-out">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+              Method 1 of 2
+            </p>
+            <h4 className="mt-1 text-sm font-semibold text-foreground">Link via Repository URL</h4>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Use this when the repository is public and you want the fastest setup.
+            </p>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Enter URL in format: <code>https://github.com/owner/repo</code>.
+            </p>
+            <p className="mt-2 text-xs text-slate-600">
+              Need private repository access and secure authorization? Click{' '}
+              <span className="font-semibold">Change method</span> and choose GitHub App.
+            </p>
+          </div>
+
+          <label className="block space-y-1.5">
+            <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+              Repository URL
+            </span>
+            <input
+              value={urlInput}
+              onChange={(event) => onUrlChange(event.target.value)}
+              placeholder="https://github.com/owner/repo"
+              className="h-10 w-full rounded-2xl border border-border bg-white px-4 text-sm outline-none transition-colors focus:border-amber-300 focus:ring-2 focus:ring-amber-100"
+              disabled={isSaving}
+            />
+          </label>
+
+          {validationError ? <p className="text-sm text-rose-600">{validationError}</p> : null}
+
+          <div className="flex flex-wrap justify-between gap-2">
             <button
               type="button"
-              className={buttonStyles({ variant: 'secondary', size: 'sm' })}
-              onClick={() => onUseConnectedInstallation(connectedInstallationId)}
+              className="text-xs font-medium text-sky-700 underline-offset-2 hover:underline"
+              onClick={onChangeMethod}
               disabled={isSaving}
             >
-              Configure repository link
+              Change method
             </button>
-          ) : null}
-          <button
-            type="button"
-            className={buttonStyles({ variant: 'primary', size: 'sm' })}
-            onClick={onConnectGitHubApp}
-            disabled={isSaving}
-          >
-            <span className="inline-flex items-center gap-2">
-              <Github className="h-4 w-4" />
-              <span>Connect GitHub App</span>
-            </span>
-          </button>
-        </div>
-      </section>
+            <button
+              type="button"
+              className={buttonStyles({ variant: 'primary', size: 'sm' })}
+              onClick={onSave}
+              disabled={isSaving || !hasInputChanged || !isInputValid}
+            >
+              {isSaving ? 'Saving...' : 'Save repository link'}
+            </button>
+          </div>
+        </section>
+      ) : null}
+
+      {selectedMethod === 'github_app' ? (
+        <section className="rounded-2xl border border-border bg-slate-50/70 p-4 transition-all duration-200 ease-out">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+            Method 2 of 2 (Recommended)
+          </p>
+          <h4 className="mt-1 text-sm font-semibold text-foreground">Link using GitHub App</h4>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Use this when your repository is private or you need secure project-scoped access.
+          </p>
+          <p className="mt-2 text-xs text-muted-foreground">
+            If you are the repository owner (or organization admin), click Connect GitHub App.
+          </p>
+          <p className="mt-2 text-xs text-muted-foreground">
+            If you are not the owner and need access granted, click Request More Repository Access.
+            After access is granted on GitHub, come back here and continue linking.
+          </p>
+          <p className="mt-2 text-xs text-amber-700">
+            Grant access only to repositories needed for this project.
+          </p>
+          <p className="mt-2 text-xs text-slate-600">
+            Need a quick public-repository link instead? Click{' '}
+            <span className="font-semibold">Change method</span> and choose Repository URL.
+          </p>
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
+            <button
+              type="button"
+              className="text-xs font-medium text-sky-700 underline-offset-2 hover:underline"
+              onClick={onChangeMethod}
+              disabled={isSaving || isRequestingMoreRepositoryAccess}
+            >
+              Change method
+            </button>
+            <div className="flex flex-wrap justify-end gap-2">
+              <button
+                type="button"
+                className={buttonStyles({ variant: 'secondary', size: 'sm' })}
+                onClick={onRequestMoreRepositoryAccess}
+                disabled={isSaving || isRequestingMoreRepositoryAccess}
+              >
+                {isRequestingMoreRepositoryAccess
+                  ? 'Preparing request...'
+                  : 'Request More Repository Access'}
+              </button>
+              {connectedInstallationId ? (
+                <button
+                  type="button"
+                  className={buttonStyles({ variant: 'secondary', size: 'sm' })}
+                  onClick={() => onUseConnectedInstallation(connectedInstallationId)}
+                  disabled={isSaving}
+                >
+                  Configure repository link
+                </button>
+              ) : null}
+              <button
+                type="button"
+                className={buttonStyles({ variant: 'primary', size: 'sm' })}
+                onClick={onConnectGitHubApp}
+                disabled={isSaving}
+              >
+                <span className="inline-flex items-center gap-2">
+                  <Github className="h-4 w-4" />
+                  <span>Connect GitHub App</span>
+                </span>
+              </button>
+            </div>
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }
