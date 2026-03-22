@@ -28,6 +28,7 @@ type CommitActivitySectionProps = {
   canRefresh: boolean;
   isRefreshing: boolean;
   onRefresh?: () => void;
+  onNavigateToOverview?: () => void;
 };
 
 const dateTimeFormatter = new Intl.DateTimeFormat('en', {
@@ -220,6 +221,7 @@ export function CommitActivitySection({
   canRefresh,
   isRefreshing,
   onRefresh,
+  onNavigateToOverview,
 }: CommitActivitySectionProps) {
   const [openModal, setOpenModal] = useState<'activity' | 'contributors' | null>(null);
 
@@ -278,6 +280,7 @@ export function CommitActivitySection({
 
   const normalized = normalizeDashboardPayload(data);
   const repositoryItems = normalized.repositoryLinked ? normalized.repositories.slice(0, 1) : [];
+  const hasLinkedRepository = repositoryItems.length > 0;
   const topContributors = normalized.contributorsPreview.slice(0, 4);
   const recentCommits = normalized.recentCommitsPreview.slice(0, 6);
 
@@ -286,7 +289,7 @@ export function CommitActivitySection({
       <section className="rounded-3xl border border-border bg-white p-6 shadow-sm">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-lg font-semibold text-foreground">Repository Overview</h2>
-          {canRefresh ? (
+          {canRefresh && hasLinkedRepository ? (
             <button
               type="button"
               className={buttonStyles({ variant: 'secondary', size: 'sm' })}
@@ -323,7 +326,21 @@ export function CommitActivitySection({
             ))}
           </div>
         ) : (
-          <p className="mt-3 text-sm text-muted-foreground">No repository connected.</p>
+          <div className="mt-3 space-y-3">
+            <p className="text-sm text-muted-foreground">No repository connected.</p>
+            <p className="text-sm text-muted-foreground">
+              Link a repository to start tracking GitHub activity.
+            </p>
+            {onNavigateToOverview ? (
+              <button
+                type="button"
+                className={buttonStyles({ variant: 'secondary', size: 'sm' })}
+                onClick={onNavigateToOverview}
+              >
+                Go to Overview
+              </button>
+            ) : null}
+          </div>
         )}
       </section>
 

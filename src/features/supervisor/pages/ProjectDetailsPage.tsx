@@ -325,6 +325,7 @@ export function ProjectDetailsPage() {
           canRefresh
           isRefreshing={isRefreshingGitHub}
           onRefresh={() => void handleGitHubRefresh()}
+          onNavigateToOverview={() => handleTabChange('overview')}
         />
       ) : null}
     </div>

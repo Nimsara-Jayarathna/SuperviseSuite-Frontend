@@ -309,6 +309,7 @@ export function StudentProjectDetailsPage() {
           loadContributorsPage={loadContributorsPage}
           canRefresh={false}
           isRefreshing={false}
+          onNavigateToOverview={() => handleTabChange('overview')}
         />
       ) : null}
     </div>
