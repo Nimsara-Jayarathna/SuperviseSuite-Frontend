@@ -354,8 +354,7 @@ export function RepositorySection({
         isOpen: true,
         status: 'error',
         title: 'Invalid API configuration',
-        message:
-          'VITE_API_BASE_URL is invalid. Please update frontend environment configuration.',
+        message: 'VITE_API_BASE_URL is invalid. Please update frontend environment configuration.',
       });
     }
   }
