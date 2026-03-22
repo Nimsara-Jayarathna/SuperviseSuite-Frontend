@@ -112,11 +112,7 @@ function commitTypeBadgeClass(type: CommitType) {
 
 type GithubActivityModalContentProps = {
   isOpen: boolean;
-  pageSize: number;
-  fetchPage: (
-    page: number,
-    size: number,
-  ) => Promise<PaginatedListResult<ProjectGitHubRecentCommit>>;
+  fetchPage: (page: number) => Promise<PaginatedListResult<ProjectGitHubRecentCommit>>;
 };
 
 function ActivityItemSkeleton() {
@@ -129,11 +125,7 @@ function ActivityItemSkeleton() {
   );
 }
 
-export function GithubActivityModalContent({
-  isOpen,
-  pageSize,
-  fetchPage,
-}: GithubActivityModalContentProps) {
+export function GithubActivityModalContent({ isOpen, fetchPage }: GithubActivityModalContentProps) {
   const [items, setItems] = useState<ProjectGitHubRecentCommit[]>([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
@@ -151,7 +143,7 @@ export function GithubActivityModalContent({
       setErrorMessage(null);
 
       try {
-        const result = await fetchPage(targetPage, pageSize);
+        const result = await fetchPage(targetPage);
         setItems((current) => (append ? [...current, ...result.items] : result.items));
         setPage(result.page);
         setHasMore(result.hasMore);
@@ -169,7 +161,7 @@ export function GithubActivityModalContent({
         }
       }
     },
-    [fetchPage, pageSize],
+    [fetchPage],
   );
 
   useEffect(() => {

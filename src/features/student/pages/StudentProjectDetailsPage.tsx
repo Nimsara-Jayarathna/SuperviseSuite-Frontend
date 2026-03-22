@@ -2,7 +2,6 @@ import { CalendarDays, Clock3, Users } from 'lucide-react';
 import { useCallback } from 'react';
 import { CommitActivitySection } from '@/features/projects/components/CommitActivitySection';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
-import { env } from '@/app/config/env';
 import { ErrorState } from '@/components/feedback/ErrorState';
 import { buttonStyles } from '@/components/ui/Button';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -59,20 +58,20 @@ export function StudentProjectDetailsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { project, isLoading, error, reload } = useStudentProject(projectId);
   const loadActivityPage = useCallback(
-    (page: number, size: number) => {
+    (page: number) => {
       if (!projectId) {
-        return Promise.resolve({ items: [], hasMore: false, page, size });
+        return Promise.resolve({ items: [], hasMore: false, page, size: 10 });
       }
-      return studentApi.getProjectGitHubActivityPage(projectId, page, size);
+      return studentApi.getProjectGitHubActivityPage(projectId, page);
     },
     [projectId],
   );
   const loadContributorsPage = useCallback(
-    (page: number, size: number) => {
+    (page: number) => {
       if (!projectId) {
-        return Promise.resolve({ items: [], hasMore: false, page, size });
+        return Promise.resolve({ items: [], hasMore: false, page, size: 10 });
       }
-      return studentApi.getProjectGitHubContributorsPage(projectId, page, size);
+      return studentApi.getProjectGitHubContributorsPage(projectId, page);
     },
     [projectId],
   );
@@ -325,7 +324,6 @@ export function StudentProjectDetailsPage() {
           error={null}
           data={project.github}
           onRetry={() => void reload()}
-          githubPageSize={env.githubPageSize}
           loadActivityPage={loadActivityPage}
           loadContributorsPage={loadContributorsPage}
           canRefresh={false}

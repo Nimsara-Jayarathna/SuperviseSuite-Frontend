@@ -51,13 +51,12 @@ export const studentApi = {
   async getProjectGitHubActivityPage(
     projectId: string,
     page: number,
-    size: number,
   ): Promise<PaginatedListResult<ProjectGitHubRecentCommit>> {
     try {
       const payload = await apiClient.get<unknown>(
-        buildPagedUrl(`/api/student/projects/${projectId}/github/activity`, page, size),
+        buildPagedUrl(`/api/student/projects/${projectId}/github/activity`, page),
       );
-      return normalizePaginatedPayload<ProjectGitHubRecentCommit>(payload, page, size);
+      return normalizePaginatedPayload<ProjectGitHubRecentCommit>(payload, page);
     } catch (error) {
       if (!shouldFallbackToDashboard(error)) {
         throw error;
@@ -67,7 +66,6 @@ export const studentApi = {
       return fallbackSlicePage<ProjectGitHubRecentCommit>(
         dashboard.recentCommitsPreview ?? [],
         page,
-        size,
       );
     }
   },
@@ -75,24 +73,19 @@ export const studentApi = {
   async getProjectGitHubContributorsPage(
     projectId: string,
     page: number,
-    size: number,
   ): Promise<PaginatedListResult<ProjectGitHubContributor>> {
     try {
       const payload = await apiClient.get<unknown>(
-        buildPagedUrl(`/api/student/projects/${projectId}/github/contributors`, page, size),
+        buildPagedUrl(`/api/student/projects/${projectId}/github/contributors`, page),
       );
-      return normalizePaginatedPayload<ProjectGitHubContributor>(payload, page, size);
+      return normalizePaginatedPayload<ProjectGitHubContributor>(payload, page);
     } catch (error) {
       if (!shouldFallbackToDashboard(error)) {
         throw error;
       }
 
       const dashboard = await this.getProjectGitHubDashboard(projectId);
-      return fallbackSlicePage<ProjectGitHubContributor>(
-        dashboard.contributorsPreview ?? [],
-        page,
-        size,
-      );
+      return fallbackSlicePage<ProjectGitHubContributor>(dashboard.contributorsPreview ?? [], page);
     }
   },
 

@@ -1,7 +1,6 @@
 import { CalendarDays, Clock3, Users } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
-import { env } from '@/app/config/env';
 import { ErrorState } from '@/components/feedback/ErrorState';
 import { buttonStyles } from '@/components/ui/Button';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -49,20 +48,20 @@ export function ProjectDetailsPage() {
     message: '',
   });
   const loadActivityPage = useCallback(
-    (page: number, size: number) => {
+    (page: number) => {
       if (!projectId) {
-        return Promise.resolve({ items: [], hasMore: false, page, size });
+        return Promise.resolve({ items: [], hasMore: false, page, size: 10 });
       }
-      return supervisorApi.getProjectGitHubActivityPage(projectId, page, size);
+      return supervisorApi.getProjectGitHubActivityPage(projectId, page);
     },
     [projectId],
   );
   const loadContributorsPage = useCallback(
-    (page: number, size: number) => {
+    (page: number) => {
       if (!projectId) {
-        return Promise.resolve({ items: [], hasMore: false, page, size });
+        return Promise.resolve({ items: [], hasMore: false, page, size: 10 });
       }
-      return supervisorApi.getProjectGitHubContributorsPage(projectId, page, size);
+      return supervisorApi.getProjectGitHubContributorsPage(projectId, page);
     },
     [projectId],
   );
@@ -321,7 +320,6 @@ export function ProjectDetailsPage() {
           error={null}
           data={project.github}
           onRetry={() => void reload()}
-          githubPageSize={env.githubPageSize}
           loadActivityPage={loadActivityPage}
           loadContributorsPage={loadContributorsPage}
           canRefresh

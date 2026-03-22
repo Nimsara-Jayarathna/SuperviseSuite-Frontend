@@ -16,15 +16,8 @@ type CommitActivitySectionProps = {
   error: ApiError | null;
   data: ProjectGitHubPreview | null;
   onRetry: () => void;
-  githubPageSize: number;
-  loadActivityPage: (
-    page: number,
-    size: number,
-  ) => Promise<PaginatedListResult<ProjectGitHubRecentCommit>>;
-  loadContributorsPage: (
-    page: number,
-    size: number,
-  ) => Promise<PaginatedListResult<ProjectGitHubContributor>>;
+  loadActivityPage: (page: number) => Promise<PaginatedListResult<ProjectGitHubRecentCommit>>;
+  loadContributorsPage: (page: number) => Promise<PaginatedListResult<ProjectGitHubContributor>>;
   canRefresh: boolean;
   isRefreshing: boolean;
   onRefresh?: () => void;
@@ -323,7 +316,6 @@ export function CommitActivitySection({
   error,
   data,
   onRetry,
-  githubPageSize,
   loadActivityPage,
   loadContributorsPage,
   canRefresh,
@@ -535,7 +527,6 @@ export function CommitActivitySection({
       >
         <GithubContributorsModalContent
           isOpen={openModal === 'contributors'}
-          pageSize={githubPageSize}
           fetchPage={loadContributorsPage}
         />
       </GithubDetailsModal>
@@ -547,7 +538,6 @@ export function CommitActivitySection({
       >
         <GithubActivityModalContent
           isOpen={openModal === 'activity'}
-          pageSize={githubPageSize}
           fetchPage={loadActivityPage}
         />
       </GithubDetailsModal>

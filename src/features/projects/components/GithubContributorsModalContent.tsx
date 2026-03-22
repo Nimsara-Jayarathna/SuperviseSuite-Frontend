@@ -22,8 +22,7 @@ function initialsOf(name: string) {
 
 type GithubContributorsModalContentProps = {
   isOpen: boolean;
-  pageSize: number;
-  fetchPage: (page: number, size: number) => Promise<PaginatedListResult<ProjectGitHubContributor>>;
+  fetchPage: (page: number) => Promise<PaginatedListResult<ProjectGitHubContributor>>;
 };
 
 function ContributorItemSkeleton() {
@@ -40,7 +39,6 @@ function ContributorItemSkeleton() {
 
 export function GithubContributorsModalContent({
   isOpen,
-  pageSize,
   fetchPage,
 }: GithubContributorsModalContentProps) {
   const [items, setItems] = useState<ProjectGitHubContributor[]>([]);
@@ -60,7 +58,7 @@ export function GithubContributorsModalContent({
       setErrorMessage(null);
 
       try {
-        const result = await fetchPage(targetPage, pageSize);
+        const result = await fetchPage(targetPage);
         setItems((current) => (append ? [...current, ...result.items] : result.items));
         setPage(result.page);
         setHasMore(result.hasMore);
@@ -78,7 +76,7 @@ export function GithubContributorsModalContent({
         }
       }
     },
-    [fetchPage, pageSize],
+    [fetchPage],
   );
 
   useEffect(() => {
