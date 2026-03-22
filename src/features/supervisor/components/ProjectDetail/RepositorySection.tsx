@@ -332,31 +332,30 @@ export function RepositorySection({
   }
 
   function handleConnectGitHubApp() {
-    if (!env.githubAppInstallUrl) {
+    if (!env.apiBaseUrl) {
       setConnectModal({
         isOpen: true,
         status: 'error',
         title: 'GitHub App setup unavailable',
         message:
-          'GitHub App install URL is not configured yet. Set VITE_GITHUB_APP_INSTALL_URL to enable connection.',
+          'API base URL is not configured yet. Set VITE_API_BASE_URL to enable GitHub setup.',
       });
       return;
     }
 
     try {
-      const url = new URL(env.githubAppInstallUrl);
-      const statePayload = JSON.stringify({
-        projectId: project.id,
-      });
-      url.searchParams.set('state', window.btoa(statePayload));
-      window.location.assign(url.toString());
+      const setupStartUrl = new URL(
+        `/api/supervisor/projects/${project.id}/github/setup/start`,
+        `${env.apiBaseUrl}/`,
+      );
+      window.location.assign(setupStartUrl.toString());
     } catch {
       setConnectModal({
         isOpen: true,
         status: 'error',
-        title: 'Invalid GitHub App URL',
+        title: 'Invalid API configuration',
         message:
-          'VITE_GITHUB_APP_INSTALL_URL is invalid. Please update frontend environment configuration.',
+          'VITE_API_BASE_URL is invalid. Please update frontend environment configuration.',
       });
     }
   }
@@ -699,10 +698,6 @@ export function RepositorySection({
           repositorySelectionError={repositorySelectionError}
           onSelectRepository={setSelectedInstallationRepositoryId}
           onConfirmRepositorySelection={() => void handleConfirmRepositorySelection()}
-          onBackToEntry={() => {
-            setLinkModalStep('entry');
-            setSelectedLinkMethod(null);
-          }}
           onRetryLoadRepositories={() => {
             if (activeInstallationId) {
               void openInstallationSelection(activeInstallationId);

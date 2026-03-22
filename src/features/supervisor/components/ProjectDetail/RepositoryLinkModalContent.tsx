@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { buttonStyles } from '@/components/ui/Button';
 import { Github } from 'lucide-react';
 import type { GitHubInstallationRepository } from '../../types';
@@ -25,7 +26,6 @@ type RepositoryLinkModalContentProps = {
   repositorySelectionError: string | null;
   onSelectRepository: (repositoryId: number) => void;
   onConfirmRepositorySelection: () => void;
-  onBackToEntry: () => void;
   onRetryLoadRepositories: () => void;
   hasMoreRepositories: boolean;
   totalRepositoryCount: number | null;
@@ -83,7 +83,6 @@ export function RepositoryLinkModalContent({
   repositorySelectionError,
   onSelectRepository,
   onConfirmRepositorySelection,
-  onBackToEntry,
   onRetryLoadRepositories,
   hasMoreRepositories,
   totalRepositoryCount,
@@ -93,6 +92,22 @@ export function RepositoryLinkModalContent({
   onSelectMethod,
   onChangeMethod,
 }: RepositoryLinkModalContentProps) {
+  const repositoriesScrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const previousFirstRepositoryIdRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (step !== 'installation-selection' || repositories.length === 0) {
+      previousFirstRepositoryIdRef.current = null;
+      return;
+    }
+
+    const firstRepositoryId = repositories[0].repositoryId;
+    if (previousFirstRepositoryIdRef.current !== firstRepositoryId) {
+      repositoriesScrollContainerRef.current?.scrollTo({ top: 0 });
+      previousFirstRepositoryIdRef.current = firstRepositoryId;
+    }
+  }, [repositories, step]);
+
   if (step === 'installation-selection') {
     return (
       <div className="space-y-5">
@@ -125,7 +140,7 @@ export function RepositoryLinkModalContent({
           </div>
         ) : (
           <div className="space-y-3">
-            <div className="max-h-80 space-y-2 overflow-y-auto pr-1">
+            <div ref={repositoriesScrollContainerRef} className="max-h-80 space-y-2 overflow-y-auto pr-1">
               {repositories.map((repository) => {
                 const isChecked = selectedRepositoryId === repository.repositoryId;
                 return (
@@ -173,29 +188,23 @@ export function RepositoryLinkModalContent({
                 {totalRepositoryCount != null ? ` of ${totalRepositoryCount}` : ''} repositories.
               </p>
               {loadMoreError ? <p className="text-xs text-rose-600">{loadMoreError}</p> : null}
-              {hasMoreRepositories ? (
-                <button
-                  type="button"
-                  className={buttonStyles({ variant: 'secondary', size: 'sm' })}
-                  onClick={onLoadMoreRepositories}
-                  disabled={isSaving || isLoadingMoreRepositories}
-                >
-                  {isLoadingMoreRepositories ? 'Loading more...' : 'Load more'}
-                </button>
-              ) : null}
             </div>
           </div>
         )}
 
-        <div className="flex flex-wrap justify-end gap-2">
-          <button
-            type="button"
-            className={buttonStyles({ variant: 'secondary', size: 'sm' })}
-            onClick={onBackToEntry}
-            disabled={isSaving}
-          >
-            Back
-          </button>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex min-h-9 items-center">
+            {hasMoreRepositories ? (
+              <button
+                type="button"
+                className={buttonStyles({ variant: 'secondary', size: 'sm' })}
+                onClick={onLoadMoreRepositories}
+                disabled={isSaving || isLoadingMoreRepositories}
+              >
+                {isLoadingMoreRepositories ? 'Loading more...' : 'Load more'}
+              </button>
+            ) : null}
+          </div>
           <button
             type="button"
             className={buttonStyles({ variant: 'primary', size: 'sm' })}

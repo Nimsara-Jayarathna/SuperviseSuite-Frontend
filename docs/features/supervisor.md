@@ -210,7 +210,9 @@ Supervisor feature currently uses these APIs:
   - validates `https://github.com/{owner}/{repo}`
   - saves via `PATCH /api/supervisor/projects/{projectId}/repository`
 - GitHub App method:
-  - `Connect GitHub App` sends user to app install URL with project-aware `state`
+  - `Connect GitHub App` redirects to backend start endpoint:
+    - `GET /api/supervisor/projects/{projectId}/github/setup/start`
+    - backend generates project-aware `state` and redirects to GitHub install URL
   - `Request More Repository Access` creates short-lived project-scoped request link
   - modal success shows copyable access-request link (no direct auto-open)
 - If installation is already authorized for the project and no repo is linked:

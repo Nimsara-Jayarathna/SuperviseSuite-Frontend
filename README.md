@@ -20,12 +20,8 @@ Default example:
 
 `VITE_API_BASE_URL=http://localhost:8081`
 
-GitHub App install entrypoint example:
-
-`VITE_GITHUB_APP_INSTALL_URL=https://github.com/apps/<your-app-slug>/installations/new`
-
-Project-scoped "Request More Repository Access" flow does not use this frontend variable directly.
-That flow uses backend-managed redirect via `GITHUB_APP_INSTALL_URL`.
+GitHub App setup/install links are now backend-managed via `GITHUB_APP_INSTALL_URL`
+in the backend environment.
 
 Local auth/refresh reliability notes:
 
@@ -35,10 +31,9 @@ Local auth/refresh reliability notes:
 
 Docker/CI note:
 
-- Pass each Vite variable as a separate build argument.
+- Pass `VITE_API_BASE_URL` as a single build argument.
 - Example:
-  `docker build --build-arg VITE_API_BASE_URL=https://stg.supervisesuite.blipzo.xyz --build-arg VITE_GITHUB_APP_INSTALL_URL=https://github.com/apps/<your-app-slug>/installations/new .`
-- Do not concatenate multiple assignments into one argument/value.
+  `docker build --build-arg VITE_API_BASE_URL=https://stg.supervisesuite.blipzo.xyz .`
 
 ### Install and Run
 

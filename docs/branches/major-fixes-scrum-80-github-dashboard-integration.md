@@ -121,6 +121,25 @@ Commit range: `432ec4c` -> `9c1d20a`
   - configure repository
   - remove access linkage
 
+## Post-Branch Updates (2026-03-23): Backend-Managed Setup Start + Repository Selection Alignment
+
+### Why this follow-up was needed
+
+- Frontend-side GitHub install URL env coupling (`VITE_GITHUB_APP_INSTALL_URL`) increased deployment fragility.
+- Repository selection modal could reopen with stale internal scroll position, causing top-item visual misalignment.
+
+### What was changed
+
+- Updated supervisor `Connect GitHub App` action to call backend start endpoint instead of building GitHub URL in FE:
+  - `GET /api/supervisor/projects/{projectId}/github/setup/start`
+  - backend now owns state generation and GitHub redirect construction.
+- Simplified frontend env surface for this flow:
+  - removed `VITE_GITHUB_APP_INSTALL_URL` usage from FE runtime/config docs
+  - FE setup path now depends only on `VITE_API_BASE_URL`.
+- Improved repository selection modal behavior:
+  - selection list scroll position resets to top when a new repository dataset is loaded
+  - avoids clipped/offset first-card rendering after reconnect/reopen flow.
+
 ## Changed Files (`dev...HEAD`)
 
 - `.env.example`
