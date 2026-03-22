@@ -15,7 +15,10 @@ import type {
   AddSupervisorProjectMilestoneRequest,
   CreateSupervisorProjectRequest,
   CreateSupervisorProjectResponse,
+  GitHubInstallationRepository,
+  LinkProjectGitHubRepositoryRequest,
   ProjectGitHubActivity,
+  ProjectGitHubRepositoryLink,
   SupervisorDashboard,
   SupervisorProjectDetail,
   SupervisorProjectSummary,
@@ -105,6 +108,25 @@ export const supervisorApi = {
 
   refreshProjectGitHub(projectId: string): Promise<void> {
     return apiClient.post<void>(`/api/supervisor/projects/${projectId}/github/refresh`, {});
+  },
+
+  getInstallationRepositories(installationId: number): Promise<GitHubInstallationRepository[]> {
+    return apiClient.get<GitHubInstallationRepository[]>(
+      `/api/supervisor/github/installations/${installationId}/repositories`,
+    );
+  },
+
+  async linkProjectGitHubRepository(
+    projectId: string,
+    body: LinkProjectGitHubRepositoryRequest,
+  ): Promise<ProjectGitHubRepositoryLink> {
+    const linked = await apiClient.post<ProjectGitHubRepositoryLink>(
+      `/api/supervisor/projects/${projectId}/github/link`,
+      body,
+    );
+    delete cachedProjectsById[projectId];
+    delete cachedProjectGitHubById[projectId];
+    return linked;
   },
 
   getProjects(): Promise<SupervisorProjectSummary[]> {

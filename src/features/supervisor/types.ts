@@ -262,3 +262,31 @@ export type UpdateSupervisorProjectStatusRequest = {
 export type UpdateRepositoryRequest = {
   repositoryUrl: string | null;
 };
+
+export type GitHubInstallationRepository = {
+  repositoryId: number;
+  name: string;
+  fullName: string;
+  url: string;
+  ownerLogin: string;
+  defaultBranch: string;
+  alreadyLinked: boolean;
+  linkedProjectId: string | null;
+};
+
+export type LinkProjectGitHubRepositoryRequest = {
+  installationId: number;
+  repositoryId: number;
+};
+
+export type ProjectGitHubRepositoryLink = {
+  projectId: string;
+  installationId: number;
+  repositoryId: number;
+  name: string;
+  fullName: string;
+  url: string;
+  ownerLogin: string;
+  defaultBranch: string;
+  lastSyncedAt: string | null;
+};

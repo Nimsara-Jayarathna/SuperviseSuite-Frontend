@@ -5,15 +5,19 @@ import { RequestStateModal } from '@/components/ui/RequestStateModal';
 import { GithubDetailsModal } from '@/features/projects/components/GithubDetailsModal';
 import { isApiException } from '@/services/apiClient';
 import { supervisorApi } from '../../api/supervisorApi';
-import type { SupervisorProjectDetail } from '../../types';
+import type { GitHubInstallationRepository, SupervisorProjectDetail } from '../../types';
 import { RepositoryLinkModalContent } from './RepositoryLinkModalContent';
 
 type RepositorySectionProps = {
   project: SupervisorProjectDetail;
   onUpdate: (updatedProject: SupervisorProjectDetail) => void;
+  pendingInstallationId?: number | null;
+  onPendingInstallationHandled?: () => void;
 };
 
 const GITHUB_REPOSITORY_URL_PATTERN = /^https:\/\/github\.com\/[a-zA-Z0-9_-]+\/[a-zA-Z0-9_-]+$/;
+
+type LinkModalStep = 'entry' | 'installation-selection';
 
 function toRepositoryPayload(value: string): string | null {
   const trimmed = value.trim();
@@ -24,7 +28,12 @@ function isValidGithubRepositoryUrl(value: string): boolean {
   return GITHUB_REPOSITORY_URL_PATTERN.test(value);
 }
 
-export function RepositorySection({ project, onUpdate }: RepositorySectionProps) {
+export function RepositorySection({
+  project,
+  onUpdate,
+  pendingInstallationId,
+  onPendingInstallationHandled,
+}: RepositorySectionProps) {
   const linkedRepository = project.github.repositories[0];
   const displayRepositoryUrl = linkedRepository?.url ?? project.repositoryUrl ?? null;
   const [isSaving, setIsSaving] = useState(false);
@@ -54,6 +63,13 @@ export function RepositorySection({ project, onUpdate }: RepositorySectionProps)
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
   const [urlInput, setUrlInput] = useState(displayRepositoryUrl ?? '');
   const [initialEditValue, setInitialEditValue] = useState(displayRepositoryUrl ?? '');
+  const [linkModalStep, setLinkModalStep] = useState<LinkModalStep>('entry');
+  const [connectedInstallationId, setConnectedInstallationId] = useState<number | null>(null);
+  const [activeInstallationId, setActiveInstallationId] = useState<number | null>(null);
+  const [installationRepositories, setInstallationRepositories] = useState<GitHubInstallationRepository[]>([]);
+  const [isLoadingInstallationRepositories, setIsLoadingInstallationRepositories] = useState(false);
+  const [selectedInstallationRepositoryId, setSelectedInstallationRepositoryId] = useState<number | null>(null);
+  const [repositorySelectionError, setRepositorySelectionError] = useState<string | null>(null);
 
   const hasRepository = project.github.repositoryLinked || Boolean(displayRepositoryUrl);
 
@@ -62,6 +78,12 @@ export function RepositorySection({ project, onUpdate }: RepositorySectionProps)
       setUrlInput(displayRepositoryUrl ?? '');
       setInitialEditValue(displayRepositoryUrl ?? '');
       setValidationError(null);
+      setLinkModalStep('entry');
+      setRepositorySelectionError(null);
+      setInstallationRepositories([]);
+      setSelectedInstallationRepositoryId(null);
+      setIsLoadingInstallationRepositories(false);
+      setActiveInstallationId(null);
     }
   }, [displayRepositoryUrl, isLinkModalOpen]);
 
@@ -80,15 +102,17 @@ export function RepositorySection({ project, onUpdate }: RepositorySectionProps)
     setUrlInput(displayRepositoryUrl ?? '');
     setInitialEditValue(displayRepositoryUrl ?? '');
     setValidationError(null);
+    setLinkModalStep('entry');
     setIsLinkModalOpen(true);
   }
 
   function closeLinkModal() {
-    if (isSaving) {
+    if (isSaving || isLoadingInstallationRepositories) {
       return;
     }
     setIsLinkModalOpen(false);
     setValidationError(null);
+    setRepositorySelectionError(null);
   }
 
   function closeRequestModal() {
@@ -97,6 +121,43 @@ export function RepositorySection({ project, onUpdate }: RepositorySectionProps)
 
   function closeConnectModal() {
     setConnectModal((current) => ({ ...current, isOpen: false }));
+  }
+
+  async function openInstallationSelection(installationId: number) {
+    if (!Number.isFinite(installationId) || installationId < 1) {
+      setRepositorySelectionError('Invalid installation id received from GitHub setup.');
+      setLinkModalStep('installation-selection');
+      return;
+    }
+
+    setLinkModalStep('installation-selection');
+    setActiveInstallationId(installationId);
+    setIsLoadingInstallationRepositories(true);
+    setRepositorySelectionError(null);
+    setInstallationRepositories([]);
+    setSelectedInstallationRepositoryId(null);
+
+    try {
+      const repositories = await supervisorApi.getInstallationRepositories(installationId);
+      setInstallationRepositories(repositories);
+      const selectable = repositories.find((repository) => !repository.alreadyLinked);
+      setSelectedInstallationRepositoryId(selectable ? selectable.repositoryId : null);
+
+      if (repositories.length === 0) {
+        setRepositorySelectionError('No repositories are available under this GitHub installation.');
+      } else if (!selectable) {
+        setRepositorySelectionError(
+          'All repositories under this installation are already linked to other projects.',
+        );
+      }
+    } catch (error) {
+      const message = isApiException(error)
+        ? error.apiError.message
+        : 'Unable to load repositories for this installation.';
+      setRepositorySelectionError(message);
+    } finally {
+      setIsLoadingInstallationRepositories(false);
+    }
   }
 
   function handleConnectGitHubApp() {
@@ -115,7 +176,6 @@ export function RepositorySection({ project, onUpdate }: RepositorySectionProps)
       const url = new URL(env.githubAppInstallUrl);
       const statePayload = JSON.stringify({
         projectId: project.id,
-        repositoryUrl: displayRepositoryUrl ?? null,
       });
       url.searchParams.set('state', window.btoa(statePayload));
       window.location.assign(url.toString());
@@ -127,6 +187,50 @@ export function RepositorySection({ project, onUpdate }: RepositorySectionProps)
         message:
           'VITE_GITHUB_APP_INSTALL_URL is invalid. Please update frontend environment configuration.',
       });
+    }
+  }
+
+  async function handleConfirmRepositorySelection() {
+    if (!activeInstallationId || !selectedInstallationRepositoryId) {
+      setRepositorySelectionError('Select one repository to continue.');
+      return;
+    }
+
+    setIsSaving(true);
+    setRequestModal({
+      isOpen: true,
+      status: 'loading',
+      title: 'Linking repository',
+      message: 'Saving selected repository and syncing GitHub data for this project.',
+    });
+
+    try {
+      await supervisorApi.linkProjectGitHubRepository(project.id, {
+        installationId: activeInstallationId,
+        repositoryId: selectedInstallationRepositoryId,
+      });
+      const updatedProject = await supervisorApi.getProjectById(project.id, true);
+      onUpdate(updatedProject);
+
+      setIsLinkModalOpen(false);
+      setRequestModal({
+        isOpen: true,
+        status: 'success',
+        title: 'Repository linked',
+        message: 'Selected GitHub repository was linked and synced successfully.',
+      });
+    } catch (error) {
+      const message = isApiException(error)
+        ? error.apiError.message
+        : 'Unable to link selected repository. Please try again.';
+      setRequestModal({
+        isOpen: true,
+        status: 'error',
+        title: 'Repository link failed',
+        message,
+      });
+    } finally {
+      setIsSaving(false);
     }
   }
 
@@ -224,6 +328,30 @@ export function RepositorySection({ project, onUpdate }: RepositorySectionProps)
     }
   }
 
+  useEffect(() => {
+    if (!pendingInstallationId) {
+      return;
+    }
+
+    setConnectedInstallationId(pendingInstallationId);
+
+    if (hasRepository) {
+      setConnectModal({
+        isOpen: true,
+        status: 'error',
+        title: 'Repository already linked',
+        message:
+          'A repository is already linked to this project. Remove it first if you want to link a different repository.',
+      });
+      onPendingInstallationHandled?.();
+      return;
+    }
+
+    setIsLinkModalOpen(true);
+    void openInstallationSelection(pendingInstallationId);
+    onPendingInstallationHandled?.();
+  }, [hasRepository, onPendingInstallationHandled, pendingInstallationId]);
+
   return (
     <section className="rounded-3xl border border-border bg-white p-6 shadow-sm">
       <RequestStateModal
@@ -232,7 +360,6 @@ export function RepositorySection({ project, onUpdate }: RepositorySectionProps)
         title={requestModal.title}
         message={requestModal.message}
         onClose={requestModal.status === 'loading' ? undefined : closeRequestModal}
-        onRetry={requestModal.status === 'error' ? () => void handleSaveRepository() : undefined}
       />
       <RequestStateModal
         isOpen={connectModal.isOpen}
@@ -244,6 +371,7 @@ export function RepositorySection({ project, onUpdate }: RepositorySectionProps)
 
       <GithubDetailsModal isOpen={isLinkModalOpen} title="Link repository" onClose={closeLinkModal}>
         <RepositoryLinkModalContent
+          step={linkModalStep}
           urlInput={urlInput}
           validationError={validationError}
           isSaving={isSaving}
@@ -253,6 +381,18 @@ export function RepositorySection({ project, onUpdate }: RepositorySectionProps)
           onClose={closeLinkModal}
           onSave={() => void handleSaveRepository()}
           onConnectGitHubApp={handleConnectGitHubApp}
+          connectedInstallationId={connectedInstallationId}
+          onUseConnectedInstallation={(installationId) => {
+            void openInstallationSelection(installationId);
+          }}
+          installationId={activeInstallationId}
+          repositories={installationRepositories}
+          selectedRepositoryId={selectedInstallationRepositoryId}
+          isLoadingRepositories={isLoadingInstallationRepositories}
+          repositorySelectionError={repositorySelectionError}
+          onSelectRepository={setSelectedInstallationRepositoryId}
+          onConfirmRepositorySelection={() => void handleConfirmRepositorySelection()}
+          onBackToEntry={() => setLinkModalStep('entry')}
         />
       </GithubDetailsModal>
 
@@ -308,6 +448,12 @@ export function RepositorySection({ project, onUpdate }: RepositorySectionProps)
           <p className="text-xs text-muted-foreground">
             Use Link repository to choose Manual URL or GitHub App connection.
           </p>
+          {connectedInstallationId ? (
+            <p className="text-xs text-amber-700">
+              Installation #{connectedInstallationId} is connected. Open Link repository to select a
+              repository.
+            </p>
+          ) : null}
         </div>
       )}
     </section>

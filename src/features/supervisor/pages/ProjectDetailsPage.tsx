@@ -1,5 +1,5 @@
 import { CalendarDays, Clock3, Users } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { ErrorState } from '@/components/feedback/ErrorState';
 import { buttonStyles } from '@/components/ui/Button';
@@ -35,7 +35,12 @@ export function ProjectDetailsPage() {
     },
   );
   const [isRefreshingGitHub, setIsRefreshingGitHub] = useState(false);
-  const hasHandledGithubSetupRef = useRef(false);
+  const [pendingGitHubInstallationId, setPendingGitHubInstallationId] = useState<number | null>(
+    null,
+  );
+  const handlePendingGitHubInstallationHandled = useCallback(() => {
+    setPendingGitHubInstallationId(null);
+  }, []);
   const [refreshRequestModal, setRefreshRequestModal] = useState<{
     isOpen: boolean;
     status: 'loading' | 'success' | 'error';
@@ -112,48 +117,38 @@ export function ProjectDetailsPage() {
     }
 
     const githubSetup = searchParams.get('githubSetup');
-    if (!githubSetup || hasHandledGithubSetupRef.current) {
+    if (!githubSetup) {
       return;
     }
 
-    hasHandledGithubSetupRef.current = true;
-
     if (githubSetup === 'success') {
-      void (async () => {
-        setIsRefreshingGitHub(true);
+      const installationIdRaw = searchParams.get('installationId');
+      const parsedInstallationId = installationIdRaw ? Number(installationIdRaw) : Number.NaN;
+
+      if (Number.isFinite(parsedInstallationId) && parsedInstallationId > 0) {
+        setPendingGitHubInstallationId(parsedInstallationId);
         setRefreshRequestModal({
           isOpen: true,
-          status: 'loading',
-          title: 'Finalizing GitHub setup',
-          message: 'Syncing repository data after GitHub App connection.',
+          status: 'success',
+          title: 'GitHub App connected',
+          message:
+            'GitHub installation is ready. Select one repository in Overview to finish linking this project.',
         });
+      } else {
+        setRefreshRequestModal({
+          isOpen: true,
+          status: 'error',
+          title: 'Setup incomplete',
+          message:
+            'GitHub App was connected, but installation id was not returned. Reconnect GitHub App and try again.',
+        });
+      }
 
-        try {
-          await supervisorApi.refreshProjectGitHub(projectId);
-          await reload();
-          setRefreshRequestModal({
-            isOpen: true,
-            status: 'success',
-            title: 'GitHub connected',
-            message: 'GitHub App connected and project activity synced successfully.',
-          });
-        } catch (error) {
-          const message = isApiException(error)
-            ? error.apiError.message
-            : 'GitHub was connected, but initial sync failed. Please try refresh again.';
-          setRefreshRequestModal({
-            isOpen: true,
-            status: 'error',
-            title: 'GitHub sync failed',
-            message,
-          });
-        } finally {
-          setIsRefreshingGitHub(false);
-          const nextParams = new URLSearchParams(searchParams);
-          nextParams.delete('githubSetup');
-          setSearchParams(nextParams, { replace: true });
-        }
-      })();
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.delete('githubSetup');
+      nextParams.delete('installationId');
+      nextParams.delete('tab');
+      setSearchParams(nextParams, { replace: true });
       return;
     }
 
@@ -166,9 +161,10 @@ export function ProjectDetailsPage() {
       });
       const nextParams = new URLSearchParams(searchParams);
       nextParams.delete('githubSetup');
+      nextParams.delete('installationId');
       setSearchParams(nextParams, { replace: true });
     }
-  }, [projectId, reload, searchParams, setSearchParams]);
+  }, [projectId, searchParams, setSearchParams]);
 
   const requestedTab = searchParams.get('tab') as SupervisorProjectDetailTab | null;
   const activeTab = requestedTab && TABS.includes(requestedTab) ? requestedTab : 'overview';
@@ -305,6 +301,8 @@ export function ProjectDetailsPage() {
           project={project}
           overview={overview}
           onProjectUpdate={actions.handleProjectUpdate}
+          pendingGitHubInstallationId={pendingGitHubInstallationId}
+          onPendingGitHubInstallationHandled={handlePendingGitHubInstallationHandled}
         />
       ) : null}
 
