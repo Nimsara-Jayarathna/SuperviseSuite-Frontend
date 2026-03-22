@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { env } from '@/app/config/env';
 import { buttonStyles } from '@/components/ui/Button';
 import { RequestStateModal } from '@/components/ui/RequestStateModal';
@@ -100,6 +100,8 @@ export function RepositorySection({
     null,
   );
   const [accessRequestLinkNotice, setAccessRequestLinkNotice] = useState<string | null>(null);
+  const [isAccessRequestLinkCopied, setIsAccessRequestLinkCopied] = useState(false);
+  const copyFeedbackTimeoutRef = useRef<number | null>(null);
 
   const hasRepository = project.github.repositoryLinked || Boolean(displayRepositoryUrl);
   const authorizedInstallationId = project.github.authorizedInstallationId ?? null;
@@ -134,12 +136,13 @@ export function RepositorySection({
   }, [displayRepositoryUrl, isLinkModalOpen]);
 
   useEffect(() => {
-    if (
+    const nextAuthorizedInstallationId =
       typeof project.github.authorizedInstallationId === 'number' &&
       project.github.authorizedInstallationId > 0
-    ) {
-      setConnectedInstallationId(project.github.authorizedInstallationId);
-    }
+        ? project.github.authorizedInstallationId
+        : null;
+
+    setConnectedInstallationId(nextAuthorizedInstallationId);
   }, [project.github.authorizedInstallationId]);
 
   const hasInputChanged = useMemo(
@@ -179,6 +182,11 @@ export function RepositorySection({
   }
 
   function closeRequestModal() {
+    if (copyFeedbackTimeoutRef.current) {
+      window.clearTimeout(copyFeedbackTimeoutRef.current);
+      copyFeedbackTimeoutRef.current = null;
+    }
+    setIsAccessRequestLinkCopied(false);
     setAccessRequestLinkNotice(null);
     setGeneratedAccessRequestUrl(null);
     setGeneratedAccessRequestExpiresAt(null);
@@ -262,6 +270,44 @@ export function RepositorySection({
     }
   }
 
+  async function handleRemoveAccessAuthorization() {
+    setIsSaving(true);
+    setRequestModal({
+      isOpen: true,
+      status: 'loading',
+      title: 'Removing GitHub access authorization',
+      message: 'Clearing project-level GitHub authorization and repository linkage data.',
+    });
+
+    try {
+      const updatedProject = await supervisorApi.removeProjectGitHubAccessAuthorization(project.id);
+      onUpdate(updatedProject);
+      setConnectedInstallationId(null);
+      setActiveInstallationId(null);
+      setLinkModalStep('entry');
+      setIsLinkModalOpen(false);
+      setRequestModal({
+        isOpen: true,
+        status: 'success',
+        title: 'GitHub access authorization removed',
+        message:
+          'Project-level GitHub authorization was removed. You can now link a repository again using the regular flow.',
+      });
+    } catch (error) {
+      const message = isApiException(error)
+        ? error.apiError.message
+        : 'Unable to remove GitHub access authorization right now. Please try again.';
+      setRequestModal({
+        isOpen: true,
+        status: 'error',
+        title: 'Failed to remove GitHub access authorization',
+        message,
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
   function handleConnectGitHubApp() {
     if (!env.githubAppInstallUrl) {
       setConnectModal({
@@ -341,11 +387,28 @@ export function RepositorySection({
     }
     try {
       await navigator.clipboard.writeText(generatedAccessRequestUrl);
-      setAccessRequestLinkNotice('Access request link copied.');
+      setAccessRequestLinkNotice(null);
+      setIsAccessRequestLinkCopied(true);
+      if (copyFeedbackTimeoutRef.current) {
+        window.clearTimeout(copyFeedbackTimeoutRef.current);
+      }
+      copyFeedbackTimeoutRef.current = window.setTimeout(() => {
+        setIsAccessRequestLinkCopied(false);
+        copyFeedbackTimeoutRef.current = null;
+      }, 1200);
     } catch {
+      setIsAccessRequestLinkCopied(false);
       setAccessRequestLinkNotice('Unable to copy automatically. Copy the link manually.');
     }
   }
+
+  useEffect(() => {
+    return () => {
+      if (copyFeedbackTimeoutRef.current) {
+        window.clearTimeout(copyFeedbackTimeoutRef.current);
+      }
+    };
+  }, []);
 
   async function handleConfirmRepositorySelection() {
     if (!activeInstallationId || !selectedInstallationRepositoryId) {
@@ -549,20 +612,22 @@ export function RepositorySection({
         footer={
           showAccessRequestLinkInModal && generatedAccessRequestUrl ? (
             <div className="flex flex-wrap justify-center gap-3">
-              <a
-                href={generatedAccessRequestUrl}
-                target="_blank"
-                rel="noreferrer"
-                className={buttonStyles({ variant: 'secondary', size: 'md' })}
-              >
-                Open link
-              </a>
               <button
                 type="button"
                 className={buttonStyles({ variant: 'secondary', size: 'md' })}
                 onClick={() => void handleCopyAccessRequestLink()}
               >
-                Copy link
+                <span className="inline-flex items-center gap-2">
+                  <span>{isAccessRequestLinkCopied ? 'Copied' : 'Copy link'}</span>
+                  <span
+                    aria-hidden="true"
+                    className={`inline-flex text-emerald-600 transition-all duration-200 ${
+                      isAccessRequestLinkCopied ? 'scale-100 opacity-100' : 'scale-75 opacity-0'
+                    }`}
+                  >
+                    ✓
+                  </span>
+                </span>
               </button>
               <button
                 type="button"
@@ -627,24 +692,18 @@ export function RepositorySection({
         <div className="flex flex-wrap justify-end gap-2">
           <button
             type="button"
-            className={buttonStyles({ variant: 'secondary', size: 'sm' })}
-            onClick={() => void handleRequestMoreRepositoryAccess()}
-            disabled={isSaving || isPreparingAccessRequest}
-          >
-            {isPreparingAccessRequest ? 'Preparing request...' : 'Request More Repository Access'}
-          </button>
-          <button
-            type="button"
             className={buttonStyles({ variant: 'primary', size: 'sm' })}
             onClick={openLinkModal}
-            disabled={isSaving || hasRepository}
+            disabled={isSaving || hasRepository || canConfigureRepositorySelection}
             title={
               hasRepository
                 ? 'Remove the current repository before selecting another one.'
+                : canConfigureRepositorySelection
+                  ? 'Use Configure repository in the access-authorization block below.'
                 : undefined
             }
           >
-            {canConfigureRepositorySelection ? 'Configure repository' : 'Link repository'}
+            Link repository
           </button>
         </div>
       </div>
@@ -691,15 +750,46 @@ export function RepositorySection({
           <p className="text-xs text-muted-foreground">
             Use Link repository to choose Manual URL or GitHub App connection.
           </p>
-          {accessScopeLabel ? (
+          {canConfigureRepositorySelection ? (
+            <div className="mt-3 rounded-2xl border border-amber-300 bg-amber-50/70 p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-800">
+                Existing GitHub Access Authorization
+              </p>
+              <p className="mt-2 text-sm text-amber-900">
+                This project already has GitHub App access authorization. The actions below manage
+                that existing authorization and repository linkage for this project.
+              </p>
+              {accessScopeLabel ? (
+                <p className="mt-3 inline-flex rounded-full border border-amber-300 bg-white/70 px-2.5 py-1 text-xs text-amber-900">
+                  {accessScopeLabel}
+                </p>
+              ) : null}
+              <div className="mt-4 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  className={buttonStyles({ variant: 'primary', size: 'sm' })}
+                  onClick={openLinkModal}
+                  disabled={isSaving}
+                >
+                  Configure repository
+                </button>
+                <button
+                  type="button"
+                  className={buttonStyles({
+                    variant: 'secondary',
+                    size: 'sm',
+                    className: 'text-rose-700 hover:text-rose-800',
+                  })}
+                  onClick={() => void handleRemoveAccessAuthorization()}
+                  disabled={isSaving}
+                >
+                  Remove access linkage
+                </button>
+              </div>
+            </div>
+          ) : accessScopeLabel ? (
             <p className="inline-flex rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs text-amber-800">
               {accessScopeLabel}
-            </p>
-          ) : null}
-          {canConfigureRepositorySelection ? (
-            <p className="text-xs text-amber-700">
-              GitHub App access is already authorized for this project. Click Configure repository
-              to select one repository.
             </p>
           ) : null}
         </div>

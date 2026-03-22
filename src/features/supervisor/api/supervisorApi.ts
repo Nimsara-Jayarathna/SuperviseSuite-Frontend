@@ -211,6 +211,18 @@ export const supervisorApi = {
     return linked;
   },
 
+  async removeProjectGitHubAccessAuthorization(
+    projectId: string,
+  ): Promise<SupervisorProjectDetail> {
+    const updated = await apiClient.post<SupervisorProjectDetail>(
+      `/api/supervisor/projects/${projectId}/github/access/remove`,
+      {},
+    );
+    cachedProjectsById[projectId] = updated;
+    delete cachedProjectGitHubById[projectId];
+    return updated;
+  },
+
   getProjects(): Promise<SupervisorProjectSummary[]> {
     return apiClient.get<SupervisorProjectSummary[]>('/api/supervisor/projects');
   },
