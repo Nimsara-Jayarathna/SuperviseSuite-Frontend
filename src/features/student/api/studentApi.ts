@@ -1,36 +1,91 @@
 import { apiClient } from '@/services/apiClient';
-import type { StudentProjectDetail, StudentProjectSummary, ProjectCommitActivity } from '../types';
+import {
+  buildPagedUrl,
+  fallbackSlicePage,
+  normalizePaginatedPayload,
+  shouldFallbackToDashboard,
+} from '@/features/projects/api/githubPagination';
+import type {
+  PaginatedListResult,
+  ProjectGitHubContributor,
+  ProjectGitHubRecentCommit,
+} from '@/features/projects/types';
+import type { ProjectGitHubActivity, StudentProjectDetail, StudentProjectSummary } from '../types';
 
 const cachedProjectsById: Partial<Record<string, StudentProjectDetail>> = {};
 const inFlightProjectRequests: Partial<Record<string, Promise<StudentProjectDetail>>> = {};
-const cachedProjectCommitsById: Partial<Record<string, ProjectCommitActivity>> = {};
-const inFlightProjectCommitRequests: Partial<Record<string, Promise<ProjectCommitActivity>>> = {};
+const cachedProjectGitHubById: Partial<Record<string, ProjectGitHubActivity>> = {};
+const inFlightProjectGitHubRequests: Partial<Record<string, Promise<ProjectGitHubActivity>>> = {};
 
 export const studentApi = {
   getProjects(): Promise<StudentProjectSummary[]> {
     return apiClient.get<StudentProjectSummary[]>('/api/student/projects');
   },
 
-  async getProjectCommits(projectId: string, forceRefresh = false): Promise<ProjectCommitActivity> {
-    if (!forceRefresh && cachedProjectCommitsById[projectId]) {
-      return cachedProjectCommitsById[projectId];
+  async getProjectGitHubDashboard(
+    projectId: string,
+    forceRefresh = false,
+  ): Promise<ProjectGitHubActivity> {
+    if (!forceRefresh && cachedProjectGitHubById[projectId]) {
+      return cachedProjectGitHubById[projectId];
     }
 
-    if (!forceRefresh && inFlightProjectCommitRequests[projectId]) {
-      return inFlightProjectCommitRequests[projectId];
+    if (!forceRefresh && inFlightProjectGitHubRequests[projectId]) {
+      return inFlightProjectGitHubRequests[projectId];
     }
 
-    const request = apiClient.get<ProjectCommitActivity>(
-      `/api/student/projects/${projectId}/commits`,
+    const request = apiClient.get<ProjectGitHubActivity>(
+      `/api/student/projects/${projectId}/github`,
     );
-    inFlightProjectCommitRequests[projectId] = request;
+    inFlightProjectGitHubRequests[projectId] = request;
 
     try {
-      const activity = await request;
-      cachedProjectCommitsById[projectId] = activity;
-      return activity;
+      const dashboard = await request;
+      cachedProjectGitHubById[projectId] = dashboard;
+      return dashboard;
     } finally {
-      delete inFlightProjectCommitRequests[projectId];
+      delete inFlightProjectGitHubRequests[projectId];
+    }
+  },
+
+  async getProjectGitHubActivityPage(
+    projectId: string,
+    page: number,
+  ): Promise<PaginatedListResult<ProjectGitHubRecentCommit>> {
+    try {
+      const payload = await apiClient.get<unknown>(
+        buildPagedUrl(`/api/student/projects/${projectId}/github/activity`, page),
+      );
+      return normalizePaginatedPayload<ProjectGitHubRecentCommit>(payload, page);
+    } catch (error) {
+      if (!shouldFallbackToDashboard(error)) {
+        throw error;
+      }
+
+      const dashboard = await this.getProjectGitHubDashboard(projectId);
+      return fallbackSlicePage<ProjectGitHubRecentCommit>(
+        dashboard.recentCommitsPreview ?? [],
+        page,
+      );
+    }
+  },
+
+  async getProjectGitHubContributorsPage(
+    projectId: string,
+    page: number,
+  ): Promise<PaginatedListResult<ProjectGitHubContributor>> {
+    try {
+      const payload = await apiClient.get<unknown>(
+        buildPagedUrl(`/api/student/projects/${projectId}/github/contributors`, page),
+      );
+      return normalizePaginatedPayload<ProjectGitHubContributor>(payload, page);
+    } catch (error) {
+      if (!shouldFallbackToDashboard(error)) {
+        throw error;
+      }
+
+      const dashboard = await this.getProjectGitHubDashboard(projectId);
+      return fallbackSlicePage<ProjectGitHubContributor>(dashboard.contributorsPreview ?? [], page);
     }
   },
 

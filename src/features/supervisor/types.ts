@@ -1,3 +1,5 @@
+import type { ProjectGitHubPreview } from '@/features/projects/types';
+
 export type SupervisorProjectLifecycle = 'PLANNING' | 'ACTIVE' | 'AT_RISK' | 'BEHIND' | 'COMPLETED';
 
 export type SupervisorProjectSummary = {
@@ -13,17 +15,7 @@ export type SupervisorProjectSummary = {
   memberCount: number;
 };
 
-export type ProjectCommit = {
-  sha: string | null;
-  message: string;
-  author: string;
-  committedAt: string | null;
-};
-
-export type ProjectCommitActivity = {
-  repositoryLinked: boolean;
-  commits: ProjectCommit[];
-};
+export type ProjectGitHubActivity = ProjectGitHubPreview;
 
 export type SupervisorProjectDetailMember = {
   id: string;
@@ -63,6 +55,7 @@ export type SupervisorProjectDetail = {
   healthNote: string | null;
   lastActivityAt: string | null;
   repositoryUrl?: string | null;
+  github: ProjectGitHubPreview;
   leader: SupervisorProjectLeader | null;
   members: SupervisorProjectDetailMember[];
   milestones: SupervisorProjectDetailMilestone[];
@@ -268,4 +261,73 @@ export type UpdateSupervisorProjectStatusRequest = {
 
 export type UpdateRepositoryRequest = {
   repositoryUrl: string | null;
+};
+
+export type GitHubInstallationRepository = {
+  repositoryId: number;
+  name: string;
+  fullName: string;
+  url: string;
+  ownerLogin: string;
+  defaultBranch: string;
+};
+
+export type GitHubInstallationRepositoriesPage = {
+  items: GitHubInstallationRepository[];
+  page: number;
+  size: number;
+  returnedCount: number;
+  totalCount: number | null;
+  hasNext: boolean;
+  hasPrevious: boolean;
+  nextPage: number | null;
+};
+
+export type LinkProjectGitHubRepositoryRequest = {
+  installationId: number;
+  repositoryId: number;
+};
+
+export type ProjectGitHubRepositoryLink = {
+  projectId: string;
+  installationId: number;
+  repositoryId: number;
+  name: string;
+  fullName: string;
+  url: string;
+  ownerLogin: string;
+  defaultBranch: string;
+  lastSyncedAt: string | null;
+};
+
+export type GitHubRepositoryAccessRequestCreate = {
+  projectId: string;
+  requestToken: string;
+  requestUrl: string;
+  expiresAt: string;
+};
+
+export type GitHubRepositoryAccessRequestValidation = {
+  projectId: string;
+  projectTitle: string;
+  status: string;
+  expiresAt: string;
+};
+
+export type GitHubRepositoryAccessRequestContinue = {
+  projectId: string;
+  githubAuthorizeUrl: string;
+};
+
+export type GitHubAccessUpdatedSummary = {
+  projectId: string;
+  projectTitle: string;
+  installationId: number;
+  accessScope: string;
+  accessibleRepositoryCount: number;
+  repositories: GitHubInstallationRepository[];
+};
+
+export type GitHubAccessUpdatedAcknowledge = {
+  projectId: string;
 };

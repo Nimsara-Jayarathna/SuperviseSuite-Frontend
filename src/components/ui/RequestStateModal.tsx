@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/cn';
 import { CheckCircle, Loader2, XCircle } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 
 type RequestStateModalProps = {
@@ -11,6 +11,9 @@ type RequestStateModalProps = {
   message: string;
   onClose?: () => void;
   onRetry?: () => void;
+  content?: ReactNode;
+  footer?: ReactNode;
+  autoCloseOnSuccess?: boolean;
 };
 
 const STATUS_STYLES: Record<
@@ -82,6 +85,9 @@ export function RequestStateModal({
   message,
   onClose,
   onRetry,
+  content,
+  footer,
+  autoCloseOnSuccess = true,
 }: RequestStateModalProps) {
   const [isMounted, setIsMounted] = useState(false);
   const styles = STATUS_STYLES[status];
@@ -100,7 +106,7 @@ export function RequestStateModal({
   }, [isOpen]);
 
   useEffect(() => {
-    if (!isOpen || status !== 'success' || !onClose) {
+    if (!isOpen || status !== 'success' || !onClose || !autoCloseOnSuccess) {
       return;
     }
 
@@ -109,13 +115,13 @@ export function RequestStateModal({
     }, 3000);
 
     return () => window.clearTimeout(timeoutId);
-  }, [isOpen, status, onClose, title, message]);
+  }, [isOpen, status, onClose, title, message, autoCloseOnSuccess]);
 
   if (!isOpen) {
     return null;
   }
 
-  const content = (
+  const modalContent = (
     <div
       className={cn(
         'fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 px-4 backdrop-blur-md transition-opacity duration-250',
@@ -139,9 +145,12 @@ export function RequestStateModal({
           <StatusIcon status={status} />
           <h2 className="mt-5 text-xl font-semibold text-foreground">{title}</h2>
           <p className="mt-3 text-sm leading-7 text-muted-foreground">{message}</p>
+          {content ? <div className="mt-4 w-full">{content}</div> : null}
         </div>
 
-        {status !== 'loading' ? (
+        {footer ? (
+          <div className="relative z-10 mt-6">{footer}</div>
+        ) : status !== 'loading' ? (
           <div className="relative z-10 mt-6 flex flex-wrap justify-center gap-3">
             {status === 'error' && onRetry ? (
               <Button type="button" variant="primary" size="md" onClick={onRetry}>
@@ -160,8 +169,8 @@ export function RequestStateModal({
   );
 
   if (typeof document === 'undefined') {
-    return content;
+    return modalContent;
   }
 
-  return createPortal(content, document.body);
+  return createPortal(modalContent, document.body);
 }

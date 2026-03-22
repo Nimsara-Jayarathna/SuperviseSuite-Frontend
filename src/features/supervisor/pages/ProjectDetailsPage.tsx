@@ -1,4 +1,5 @@
 import { CalendarDays, Clock3, Users } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { ErrorState } from '@/components/feedback/ErrorState';
 import { buttonStyles } from '@/components/ui/Button';
@@ -11,8 +12,9 @@ import { MilestonesTabSection } from '../components/ProjectDetail/MilestonesTabS
 import { OverviewTabSection } from '../components/ProjectDetail/OverviewTabSection';
 import { TeamTabSection } from '../components/ProjectDetail/TeamTabSection';
 import { useProjectDetailsPageState } from '../hooks/useProjectDetailsPageState';
-import { useSupervisorProjectCommits } from '../hooks/useSupervisorProjectCommits';
 import { useSupervisorProject } from '../hooks/useSupervisorProject';
+import { supervisorApi } from '../api/supervisorApi';
+import { isApiException } from '@/services/apiClient';
 import {
   LIFECYCLE_OPTIONS,
   TABS,
@@ -32,7 +34,143 @@ export function ProjectDetailsPage() {
       loadedProject,
     },
   );
-  const commitState = useSupervisorProjectCommits(projectId);
+  const [isRefreshingGitHub, setIsRefreshingGitHub] = useState(false);
+  const [pendingGitHubInstallationId, setPendingGitHubInstallationId] = useState<number | null>(
+    null,
+  );
+  const handlePendingGitHubInstallationHandled = useCallback(() => {
+    setPendingGitHubInstallationId(null);
+  }, []);
+  const [refreshRequestModal, setRefreshRequestModal] = useState<{
+    isOpen: boolean;
+    status: 'loading' | 'success' | 'error';
+    title: string;
+    message: string;
+  }>({
+    isOpen: false,
+    status: 'loading',
+    title: '',
+    message: '',
+  });
+  const loadActivityPage = useCallback(
+    (page: number) => {
+      if (!projectId) {
+        return Promise.resolve({ items: [], hasMore: false, page, size: 10 });
+      }
+      return supervisorApi.getProjectGitHubActivityPage(projectId, page);
+    },
+    [projectId],
+  );
+  const loadContributorsPage = useCallback(
+    (page: number) => {
+      if (!projectId) {
+        return Promise.resolve({ items: [], hasMore: false, page, size: 10 });
+      }
+      return supervisorApi.getProjectGitHubContributorsPage(projectId, page);
+    },
+    [projectId],
+  );
+
+  async function handleGitHubRefresh() {
+    if (!projectId) {
+      return;
+    }
+
+    setIsRefreshingGitHub(true);
+    setRefreshRequestModal({
+      isOpen: true,
+      status: 'loading',
+      title: 'Refreshing GitHub data',
+      message: 'Syncing latest repository metadata, commits, and contributors.',
+    });
+    try {
+      await supervisorApi.refreshProjectGitHub(projectId);
+      await reload();
+      setRefreshRequestModal({
+        isOpen: true,
+        status: 'success',
+        title: 'GitHub data refreshed',
+        message: 'Latest GitHub data was synced and loaded successfully.',
+      });
+    } catch (error) {
+      const message = isApiException(error)
+        ? error.apiError.message
+        : 'Unable to refresh GitHub data right now. Please try again.';
+      setRefreshRequestModal({
+        isOpen: true,
+        status: 'error',
+        title: 'GitHub refresh failed',
+        message,
+      });
+    } finally {
+      setIsRefreshingGitHub(false);
+    }
+  }
+
+  function closeRefreshRequestModal() {
+    setRefreshRequestModal((current) => ({ ...current, isOpen: false }));
+  }
+
+  useEffect(() => {
+    if (!projectId) {
+      return;
+    }
+
+    const githubSetup = searchParams.get('githubSetup');
+    if (!githubSetup) {
+      return;
+    }
+
+    if (githubSetup === 'success') {
+      const installationIdRaw = searchParams.get('installationId');
+      const parsedInstallationId = installationIdRaw ? Number(installationIdRaw) : Number.NaN;
+      const githubAccessUpdated = searchParams.get('githubAccessUpdated') === 'true';
+
+      if (Number.isFinite(parsedInstallationId) && parsedInstallationId > 0) {
+        setPendingGitHubInstallationId(parsedInstallationId);
+        setRefreshRequestModal({
+          isOpen: true,
+          status: 'success',
+          title: githubAccessUpdated
+            ? 'GitHub access updated successfully'
+            : 'GitHub App connected',
+          message: githubAccessUpdated
+            ? 'Your available repositories have been refreshed. Select one repository in Overview to finish linking this project. You can remove repository access anytime from GitHub App settings.'
+            : 'GitHub installation is ready. Select one repository in Overview to finish linking this project.',
+        });
+      } else {
+        setRefreshRequestModal({
+          isOpen: true,
+          status: 'error',
+          title: 'Setup incomplete',
+          message:
+            'GitHub App was connected, but installation id was not returned. Reconnect GitHub App and try again.',
+        });
+      }
+
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.delete('githubSetup');
+      nextParams.delete('installationId');
+      nextParams.delete('githubAccessUpdated');
+      nextParams.delete('tab');
+      setSearchParams(nextParams, { replace: true });
+      return;
+    }
+
+    if (githubSetup === 'failed') {
+      setRefreshRequestModal({
+        isOpen: true,
+        status: 'error',
+        title: 'GitHub setup failed',
+        message: 'GitHub App connection did not complete. Please try connecting again.',
+      });
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.delete('githubSetup');
+      nextParams.delete('installationId');
+      nextParams.delete('githubAccessUpdated');
+      setSearchParams(nextParams, { replace: true });
+    }
+  }, [projectId, searchParams, setSearchParams]);
 
   const requestedTab = searchParams.get('tab') as SupervisorProjectDetailTab | null;
   const activeTab = requestedTab && TABS.includes(requestedTab) ? requestedTab : 'overview';
@@ -80,6 +218,16 @@ export function ProjectDetailsPage() {
         message={requestModal.state.message}
         onClose={requestModal.state.status === 'loading' ? undefined : requestModal.close}
         onRetry={requestModal.state.status === 'error' ? requestModal.retryLastRequest : undefined}
+      />
+      <RequestStateModal
+        isOpen={refreshRequestModal.isOpen}
+        status={refreshRequestModal.status}
+        title={refreshRequestModal.title}
+        message={refreshRequestModal.message}
+        onClose={refreshRequestModal.status === 'loading' ? undefined : closeRefreshRequestModal}
+        onRetry={
+          refreshRequestModal.status === 'error' ? () => void handleGitHubRefresh() : undefined
+        }
       />
 
       <PageHeader
@@ -159,6 +307,8 @@ export function ProjectDetailsPage() {
           project={project}
           overview={overview}
           onProjectUpdate={actions.handleProjectUpdate}
+          pendingGitHubInstallationId={pendingGitHubInstallationId}
+          onPendingGitHubInstallationHandled={handlePendingGitHubInstallationHandled}
         />
       ) : null}
 
@@ -170,10 +320,16 @@ export function ProjectDetailsPage() {
 
       {activeTab === 'github' ? (
         <CommitActivitySection
-          isLoading={commitState.isLoading}
-          error={commitState.error}
-          data={commitState.data}
-          onRetry={() => void commitState.reload()}
+          isLoading={isLoading}
+          error={null}
+          data={project.github}
+          onRetry={() => void reload()}
+          loadActivityPage={loadActivityPage}
+          loadContributorsPage={loadContributorsPage}
+          canRefresh
+          isRefreshing={isRefreshingGitHub}
+          onRefresh={() => void handleGitHubRefresh()}
+          onNavigateToOverview={() => handleTabChange('overview')}
         />
       ) : null}
     </div>

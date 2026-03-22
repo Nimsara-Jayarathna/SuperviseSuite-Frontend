@@ -1,6 +1,6 @@
 import { CalendarDays, Clock3, Users } from 'lucide-react';
+import { useCallback } from 'react';
 import { CommitActivitySection } from '@/features/projects/components/CommitActivitySection';
-import { useStudentProjectCommits } from '../hooks/useStudentProjectCommits';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { ErrorState } from '@/components/feedback/ErrorState';
 import { buttonStyles } from '@/components/ui/Button';
@@ -10,7 +10,12 @@ import { RoleBadge } from '@/components/ui/RoleBadge';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { StudentProjectDetailsSkeleton } from '../components/StudentProjectDetailsSkeleton';
 import { useStudentProject } from '../hooks/useStudentProject';
-import type { StudentProjectDetailMember, StudentProjectDetailTab } from '../types';
+import { studentApi } from '../api/studentApi';
+import type {
+  StudentProjectDetailLeader,
+  StudentProjectDetailMember,
+  StudentProjectDetailTab,
+} from '../types';
 
 const dateFormatter = new Intl.DateTimeFormat('en', {
   month: 'short',
@@ -32,6 +37,10 @@ function memberDisplayName(member: StudentProjectDetailMember) {
   return `${member.firstName ?? ''} ${member.lastName ?? ''}`.trim() || member.email;
 }
 
+function leaderDisplayName(leader: StudentProjectDetailLeader) {
+  return `${leader.firstName ?? ''} ${leader.lastName ?? ''}`.trim() || leader.email;
+}
+
 function statusTone(status: string) {
   if (status === 'ACTIVE') return 'success';
   if (status === 'AT_RISK') return 'warning';
@@ -48,7 +57,24 @@ export function StudentProjectDetailsPage() {
   const { projectId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const { project, isLoading, error, reload } = useStudentProject(projectId);
-  const commitState = useStudentProjectCommits(projectId);
+  const loadActivityPage = useCallback(
+    (page: number) => {
+      if (!projectId) {
+        return Promise.resolve({ items: [], hasMore: false, page, size: 10 });
+      }
+      return studentApi.getProjectGitHubActivityPage(projectId, page);
+    },
+    [projectId],
+  );
+  const loadContributorsPage = useCallback(
+    (page: number) => {
+      if (!projectId) {
+        return Promise.resolve({ items: [], hasMore: false, page, size: 10 });
+      }
+      return studentApi.getProjectGitHubContributorsPage(projectId, page);
+    },
+    [projectId],
+  );
 
   function handleTabChange(tab: StudentProjectDetailTab) {
     const nextParams = new URLSearchParams(searchParams);
@@ -194,6 +220,14 @@ export function StudentProjectDetailsPage() {
                     {project.healthNote ?? 'No health note recorded yet.'}
                   </p>
                 </div>
+                <div className="sm:col-span-2">
+                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                    Project leader
+                  </p>
+                  <p className="mt-1 font-medium text-foreground">
+                    {project.leader ? leaderDisplayName(project.leader) : 'No leader assigned'}
+                  </p>
+                </div>
               </div>
             </div>
           </section>
@@ -236,6 +270,11 @@ export function StudentProjectDetailsPage() {
                 <p className="mt-1 text-sm text-muted-foreground">{member.email}</p>
                 <div className="mt-2 flex flex-wrap items-center gap-2">
                   <RoleBadge role={member.memberRole} />
+                  {project.leader?.id === member.id ? (
+                    <span className="inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-amber-700">
+                      Leader
+                    </span>
+                  ) : null}
                   {member.registrationNumber ? (
                     <span className="text-xs text-muted-foreground">
                       • {member.registrationNumber}
@@ -281,10 +320,15 @@ export function StudentProjectDetailsPage() {
 
       {activeTab === 'github' ? (
         <CommitActivitySection
-          isLoading={commitState.isLoading}
-          error={commitState.error}
-          data={commitState.data}
-          onRetry={() => void commitState.reload()}
+          isLoading={isLoading}
+          error={null}
+          data={project.github}
+          onRetry={() => void reload()}
+          loadActivityPage={loadActivityPage}
+          loadContributorsPage={loadContributorsPage}
+          canRefresh={false}
+          isRefreshing={false}
+          onNavigateToOverview={() => handleTabChange('overview')}
         />
       ) : null}
     </div>

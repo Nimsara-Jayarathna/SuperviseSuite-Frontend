@@ -20,6 +20,13 @@ Default example:
 
 `VITE_API_BASE_URL=http://localhost:8081`
 
+GitHub App install entrypoint example:
+
+`VITE_GITHUB_APP_INSTALL_URL=https://github.com/apps/<your-app-slug>/installations/new`
+
+Project-scoped "Request More Repository Access" flow does not use this frontend variable directly.
+That flow uses backend-managed redirect via `GITHUB_APP_INSTALL_URL`.
+
 Local auth/refresh reliability notes:
 
 - Ensure backend `APP_PORT=8081` and frontend `VITE_API_BASE_URL` points to the same port.

@@ -3,6 +3,7 @@
 Supervisor workspace for dashboard monitoring, project listing, project creation, and project detail management.
 
 Related major-fixes doc: `docs/branches/major-fixes-scrum-97-supervisor-ui-workflow.md`
+Related GitHub integration doc: `docs/branches/major-fixes-scrum-80-github-dashboard-integration.md`
 
 ## Routes
 
@@ -13,6 +14,8 @@ Related major-fixes doc: `docs/branches/major-fixes-scrum-97-supervisor-ui-workf
 | `/supervisor/projects` | `SupervisorProjectsPage` | `SupervisorLayout` |
 | `/supervisor/projects/new` | `CreateProjectPage` | `SupervisorLayout` |
 | `/supervisor/projects/:projectId` | `ProjectDetailsPage` | `SupervisorLayout` |
+| `/github/request-access` | `RequestGitHubRepositoryAccessPage` | Public (no auth guard) |
+| `/github/access-updated` | `GitHubAccessUpdatedPage` | Public (no auth guard) |
 
 ## Alias Support
 
@@ -31,6 +34,20 @@ Supervisor feature currently uses these APIs:
 - `GET /api/supervisor/dashboard`
 - `GET /api/supervisor/projects`
 - `GET /api/supervisor/projects/{projectId}`
+- `GET /api/supervisor/projects/{projectId}/github`
+- `GET /api/supervisor/projects/{projectId}/github/activity?page=...&size=...`
+- `GET /api/supervisor/projects/{projectId}/github/contributors?page=...&size=...`
+- `GET /api/supervisor/projects/{projectId}/github/installations/{installationId}/repositories?page=...&size=...`
+- `POST /api/supervisor/projects/{projectId}/github/link`
+- `POST /api/supervisor/projects/{projectId}/github/access/remove`
+- `POST /api/supervisor/projects/{projectId}/github/access-requests`
+- `GET /api/supervisor/projects/{projectId}/github/access-requests/validate?token=...`
+- `POST /api/supervisor/projects/{projectId}/github/access-requests/continue?token=...`
+- `POST /api/supervisor/projects/{projectId}/github/refresh`
+- `GET /api/github/access-requests/validate?token=...`
+- `POST /api/github/access-requests/continue?token=...`
+- `GET /api/github/access-updated/summary?token=...`
+- `POST /api/github/access-updated/acknowledge?token=...`
 - `GET /api/supervisor/students/search?q=...`
 - `POST /api/supervisor/projects`
 - `PATCH /api/supervisor/projects/{projectId}`
@@ -49,8 +66,11 @@ Supervisor feature currently uses these APIs:
 | `src/features/supervisor/pages/SupervisorDashboardPage.tsx` | API-backed supervisor dashboard with project-health search table and client-side pagination (5 rows/page) |
 | `src/features/supervisor/pages/SupervisorProjectsPage.tsx` | API-backed project list with lifecycle filter and skeleton/error/empty states |
 | `src/features/supervisor/pages/CreateProjectPage.tsx` | API-backed project creation with student lookup and request-state modal |
-| `src/features/supervisor/pages/ProjectDetailsPage.tsx` | API-backed detail page with overview edit, team student-add flow, and milestone add/edit |
-| `src/features/supervisor/components/ProjectDetail/RepositorySection.tsx` | GitHub repository link add/edit/remove section with validation and request feedback |
+| `src/features/supervisor/pages/ProjectDetailsPage.tsx` | API-backed detail page with overview edit, shared GitHub tab, team student-add flow, and milestone add/edit |
+| `src/features/supervisor/pages/RequestGitHubRepositoryAccessPage.tsx` | Public request-access landing page that validates token and continues to backend-managed GitHub redirect |
+| `src/features/supervisor/pages/GitHubAccessUpdatedPage.tsx` | Public callback result page that shows updated accessible repositories and acknowledges completion |
+| `src/features/supervisor/components/ProjectDetail/RepositorySection.tsx` | Supervisor Overview repository management card (single-link action, remove action, GitHub App/manual link entrypoint) |
+| `src/features/supervisor/components/ProjectDetail/RepositoryLinkModalContent.tsx` | Guided modal with method-first UX, installation repository selection, loading skeletons, and GitHub App/request-access actions |
 | `src/features/supervisor/components/SupervisorProjectCard.tsx` | Clickable summary card (full-card navigation) with compact status/progress layout |
 | `src/features/supervisor/components/SupervisorProjectCardSkeleton.tsx` | List loading placeholder |
 | `src/features/supervisor/components/ProjectDetailsSkeleton.tsx` | Detail loading placeholder |
@@ -157,6 +177,7 @@ Supervisor feature currently uses these APIs:
 ### Tabs
 
 - `Overview`
+- `GitHub`
 - `Team`
 - `Milestones`
 
@@ -181,10 +202,58 @@ Supervisor feature currently uses these APIs:
 
 ### Overview tab: GitHub repository link management
 
-- Dedicated repository section supports add/edit/remove.
+- Repository card uses a single `Link repository` button.
+- Clicking opens a guided modal:
+  - Step 1: choose connection method (`Repository URL` or `GitHub App`)
+  - Step 2: show only relevant content for selected method
+- Repository URL method:
+  - validates `https://github.com/{owner}/{repo}`
+  - saves via `PATCH /api/supervisor/projects/{projectId}/repository`
+- GitHub App method:
+  - `Connect GitHub App` sends user to app install URL with project-aware `state`
+  - `Request More Repository Access` creates short-lived project-scoped request link
+  - modal success shows copyable access-request link (no direct auto-open)
+- If installation is already authorized for the project and no repo is linked:
+  - card shows `Existing GitHub Access Authorization` block
+  - `Configure repository` opens explicit repository selection
+  - `Remove access linkage` clears project-level authorization + cached linkage
+- Repository selection step:
+  - loads via `GET /api/supervisor/projects/{projectId}/github/installations/{installationId}/repositories`
+  - supports backend pagination (`Load more`)
+  - includes animated blocking skeleton while loading
+  - list is single-select and always selectable
+  - confirm links selected repo via `POST /api/supervisor/projects/{projectId}/github/link`
 - Save calls `PATCH /api/supervisor/projects/{projectId}/repository`.
-- Client-side validation allows only `https://github.com/{owner}/{repo}`.
-- Empty input is treated as remove (`repositoryUrl = null`).
+- When one repository is linked, `Link repository` is disabled (current one-repo scope).
+- `Remove` action clears repository/app linkage from the project.
+
+### Public request-access callback flow
+
+- Route: `/github/request-access?token=...`
+  - validates token through backend public endpoint
+  - explains project-scoped GitHub access update before redirect
+  - continues via backend endpoint that returns GitHub authorize/install URL
+- Route: `/github/access-updated?token=...`
+  - loads summary of installation repository scope after callback
+  - shows current accessible repositories
+  - acknowledges completion and returns to app root
+
+### GitHub tab: shared read-only dashboard
+
+- Uses the same `CommitActivitySection` component as student view.
+- Preview data is sourced from project detail `github` block.
+- Shows:
+  - Repository overview (with last synced + refresh)
+  - Activity summary
+  - Contributors preview
+  - Activity feed preview
+- Opens shared paginated modals:
+  - full activity
+  - full contributors
+- Refresh action:
+  - supervisor-only
+  - calls `POST /api/supervisor/projects/{projectId}/github/refresh`
+  - then re-fetches project detail payload
 
 ### Team tab: add-student management (add-only)
 
@@ -241,4 +310,5 @@ Summary and milestone description show visible counters where applicable in crea
 ## Notes
 
 - Supervisor dashboard, projects list, create flow, and detail management are all backend-connected.
+- GitHub tab is intentionally read-only; repository management remains in Overview card.
 - Route guards are still UI-level and not a backend security boundary.

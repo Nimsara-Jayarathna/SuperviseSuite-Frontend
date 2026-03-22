@@ -24,6 +24,9 @@ Student pages currently use:
 
 - `GET /api/student/projects`
 - `GET /api/student/projects/{projectId}`
+- `GET /api/student/projects/{projectId}/github`
+- `GET /api/student/projects/{projectId}/github/activity?page=...&size=...`
+- `GET /api/student/projects/{projectId}/github/contributors?page=...&size=...`
 
 ---
 
@@ -82,7 +85,7 @@ Student pages currently use:
 - `Overview`
 - `Team`
 - `Milestones`
-- `GitHub` (shown only when `repositoryUrl` exists in the project detail payload)
+- `GitHub`
 
 ### Header chips
 
@@ -97,12 +100,12 @@ Student pages currently use:
   - assigned member cards (name/email/member role/registration number)
 - Milestones:
   - milestone list with sequence, status, due date, description
-- GitHub (read-only):
-  - shown only when `project.repositoryUrl` exists
-  - displays clickable repository link
-  - link opens in a new tab (`target="_blank"`, `rel="noopener noreferrer"`)
-  - helper note: `Repository managed by supervisor`
-  - no add/edit/remove controls are rendered for students
+- GitHub (read-only shared dashboard):
+  - uses same layout/components as supervisor GitHub tab
+  - shows repository overview, activity summary, contributors preview, activity preview
+  - supports paginated full-list modals for commits/contributors
+  - no add/edit/remove/refresh controls are rendered for students
+  - when no repository is linked, shows a read-only CTA to navigate to Overview tab guidance
 
 ### UX states
 
@@ -116,3 +119,4 @@ Student pages currently use:
 
 - Student list and detail routes are backend-connected.
 - Student mock project seed data is removed from active list/detail rendering.
+- GitHub tab is always present in detail tabs, but displays role-safe empty state when no repository is linked.

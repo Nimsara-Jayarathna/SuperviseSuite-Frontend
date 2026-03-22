@@ -8,12 +8,16 @@ type OverviewTabSectionProps = {
   project: SupervisorProjectDetail;
   overview: OverviewState;
   onProjectUpdate: (updatedProject: SupervisorProjectDetail) => void;
+  pendingGitHubInstallationId?: number | null;
+  onPendingGitHubInstallationHandled?: () => void;
 };
 
 export function OverviewTabSection({
   project,
   overview,
   onProjectUpdate,
+  pendingGitHubInstallationId,
+  onPendingGitHubInstallationHandled,
 }: OverviewTabSectionProps) {
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
@@ -164,7 +168,12 @@ export function OverviewTabSection({
           )}
         </div>
 
-        <RepositorySection project={project} onUpdate={onProjectUpdate} />
+        <RepositorySection
+          project={project}
+          onUpdate={onProjectUpdate}
+          pendingInstallationId={pendingGitHubInstallationId}
+          onPendingInstallationHandled={onPendingGitHubInstallationHandled}
+        />
 
         <div className="rounded-3xl border border-border bg-white p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-foreground">Current scope</h2>

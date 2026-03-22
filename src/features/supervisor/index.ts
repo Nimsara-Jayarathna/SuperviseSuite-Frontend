@@ -11,3 +11,5 @@ export * from './pages/SupervisorDashboardPage';
 export * from './pages/SupervisorProjectsPage';
 export * from './pages/CreateProjectPage';
 export * from './pages/ProjectDetailsPage';
+export * from './pages/RequestGitHubRepositoryAccessPage';
+export * from './pages/GitHubAccessUpdatedPage';

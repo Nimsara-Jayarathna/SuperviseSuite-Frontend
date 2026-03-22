@@ -1,9 +1,29 @@
 import { apiClient } from '@/services/apiClient';
+import {
+  buildPagedUrl,
+  fallbackSlicePage,
+  normalizePaginatedPayload,
+  shouldFallbackToDashboard,
+} from '@/features/projects/api/githubPagination';
+import type {
+  PaginatedListResult,
+  ProjectGitHubContributor,
+  ProjectGitHubRecentCommit,
+} from '@/features/projects/types';
 import type {
   AddSupervisorProjectMembersRequest,
   AddSupervisorProjectMilestoneRequest,
+  GitHubAccessUpdatedAcknowledge,
+  GitHubAccessUpdatedSummary,
+  GitHubRepositoryAccessRequestContinue,
+  GitHubRepositoryAccessRequestCreate,
+  GitHubRepositoryAccessRequestValidation,
+  GitHubInstallationRepositoriesPage,
   CreateSupervisorProjectRequest,
   CreateSupervisorProjectResponse,
+  LinkProjectGitHubRepositoryRequest,
+  ProjectGitHubActivity,
+  ProjectGitHubRepositoryLink,
   SupervisorDashboard,
   SupervisorProjectDetail,
   SupervisorProjectSummary,
@@ -12,40 +32,193 @@ import type {
   UpdateSupervisorProjectMilestoneRequest,
   UpdateSupervisorProjectRequest,
   UpdateSupervisorProjectStatusRequest,
-  ProjectCommitActivity,
 } from '../types';
 
 const cachedProjectsById: Partial<Record<string, SupervisorProjectDetail>> = {};
 const inFlightProjectRequests: Partial<Record<string, Promise<SupervisorProjectDetail>>> = {};
-const cachedProjectCommitsById: Partial<Record<string, ProjectCommitActivity>> = {};
-const inFlightProjectCommitRequests: Partial<Record<string, Promise<ProjectCommitActivity>>> = {};
+const cachedProjectGitHubById: Partial<Record<string, ProjectGitHubActivity>> = {};
+const inFlightProjectGitHubRequests: Partial<Record<string, Promise<ProjectGitHubActivity>>> = {};
 
 export const supervisorApi = {
   getDashboard(): Promise<SupervisorDashboard> {
     return apiClient.get<SupervisorDashboard>('/api/supervisor/dashboard');
   },
 
-  async getProjectCommits(projectId: string, forceRefresh = false): Promise<ProjectCommitActivity> {
-    if (!forceRefresh && cachedProjectCommitsById[projectId]) {
-      return cachedProjectCommitsById[projectId];
+  async getProjectGitHubDashboard(
+    projectId: string,
+    forceRefresh = false,
+  ): Promise<ProjectGitHubActivity> {
+    if (!forceRefresh && cachedProjectGitHubById[projectId]) {
+      return cachedProjectGitHubById[projectId];
     }
 
-    if (!forceRefresh && inFlightProjectCommitRequests[projectId]) {
-      return inFlightProjectCommitRequests[projectId];
+    if (!forceRefresh && inFlightProjectGitHubRequests[projectId]) {
+      return inFlightProjectGitHubRequests[projectId];
     }
 
-    const request = apiClient.get<ProjectCommitActivity>(
-      `/api/supervisor/projects/${projectId}/commits`,
+    const request = apiClient.get<ProjectGitHubActivity>(
+      `/api/supervisor/projects/${projectId}/github`,
     );
-    inFlightProjectCommitRequests[projectId] = request;
+    inFlightProjectGitHubRequests[projectId] = request;
 
     try {
-      const activity = await request;
-      cachedProjectCommitsById[projectId] = activity;
-      return activity;
+      const dashboard = await request;
+      cachedProjectGitHubById[projectId] = dashboard;
+      return dashboard;
     } finally {
-      delete inFlightProjectCommitRequests[projectId];
+      delete inFlightProjectGitHubRequests[projectId];
     }
+  },
+
+  async getProjectGitHubActivityPage(
+    projectId: string,
+    page: number,
+  ): Promise<PaginatedListResult<ProjectGitHubRecentCommit>> {
+    try {
+      const payload = await apiClient.get<unknown>(
+        buildPagedUrl(`/api/supervisor/projects/${projectId}/github/activity`, page),
+      );
+      return normalizePaginatedPayload<ProjectGitHubRecentCommit>(payload, page);
+    } catch (error) {
+      if (!shouldFallbackToDashboard(error)) {
+        throw error;
+      }
+
+      const dashboard = await this.getProjectGitHubDashboard(projectId);
+      return fallbackSlicePage<ProjectGitHubRecentCommit>(
+        dashboard.recentCommitsPreview ?? [],
+        page,
+      );
+    }
+  },
+
+  async getProjectGitHubContributorsPage(
+    projectId: string,
+    page: number,
+  ): Promise<PaginatedListResult<ProjectGitHubContributor>> {
+    try {
+      const payload = await apiClient.get<unknown>(
+        buildPagedUrl(`/api/supervisor/projects/${projectId}/github/contributors`, page),
+      );
+      return normalizePaginatedPayload<ProjectGitHubContributor>(payload, page);
+    } catch (error) {
+      if (!shouldFallbackToDashboard(error)) {
+        throw error;
+      }
+
+      const dashboard = await this.getProjectGitHubDashboard(projectId);
+      return fallbackSlicePage<ProjectGitHubContributor>(dashboard.contributorsPreview ?? [], page);
+    }
+  },
+
+  refreshProjectGitHub(projectId: string): Promise<void> {
+    return apiClient.post<void>(`/api/supervisor/projects/${projectId}/github/refresh`, {});
+  },
+
+  getInstallationRepositories(
+    projectId: string,
+    installationId: number,
+    page = 1,
+    size?: number,
+  ): Promise<GitHubInstallationRepositoriesPage> {
+    const params = new URLSearchParams();
+    params.set('page', String(page));
+    if (typeof size === 'number' && Number.isFinite(size) && size > 0) {
+      params.set('size', String(Math.floor(size)));
+    }
+
+    return apiClient.get<GitHubInstallationRepositoriesPage>(
+      `/api/supervisor/projects/${projectId}/github/installations/${installationId}/repositories?${params.toString()}`,
+    );
+  },
+
+  createGitHubRepositoryAccessRequest(
+    projectId: string,
+  ): Promise<GitHubRepositoryAccessRequestCreate> {
+    return apiClient.post<GitHubRepositoryAccessRequestCreate>(
+      `/api/supervisor/projects/${projectId}/github/access-requests`,
+      {},
+    );
+  },
+
+  validateGitHubRepositoryAccessRequest(
+    projectId: string,
+    token: string,
+  ): Promise<GitHubRepositoryAccessRequestValidation> {
+    const params = new URLSearchParams({ token });
+    return apiClient.get<GitHubRepositoryAccessRequestValidation>(
+      `/api/supervisor/projects/${projectId}/github/access-requests/validate?${params.toString()}`,
+    );
+  },
+
+  validatePublicGitHubRepositoryAccessRequest(
+    token: string,
+  ): Promise<GitHubRepositoryAccessRequestValidation> {
+    const params = new URLSearchParams({ token });
+    return apiClient.get<GitHubRepositoryAccessRequestValidation>(
+      `/api/github/access-requests/validate?${params.toString()}`,
+    );
+  },
+
+  continueGitHubRepositoryAccessRequest(
+    projectId: string,
+    token: string,
+  ): Promise<GitHubRepositoryAccessRequestContinue> {
+    const params = new URLSearchParams({ token });
+    return apiClient.post<GitHubRepositoryAccessRequestContinue>(
+      `/api/supervisor/projects/${projectId}/github/access-requests/continue?${params.toString()}`,
+      {},
+    );
+  },
+
+  continuePublicGitHubRepositoryAccessRequest(
+    token: string,
+  ): Promise<GitHubRepositoryAccessRequestContinue> {
+    const params = new URLSearchParams({ token });
+    return apiClient.post<GitHubRepositoryAccessRequestContinue>(
+      `/api/github/access-requests/continue?${params.toString()}`,
+      {},
+    );
+  },
+
+  getPublicGitHubAccessUpdatedSummary(token: string): Promise<GitHubAccessUpdatedSummary> {
+    const params = new URLSearchParams({ token });
+    return apiClient.get<GitHubAccessUpdatedSummary>(
+      `/api/github/access-updated/summary?${params.toString()}`,
+    );
+  },
+
+  acknowledgePublicGitHubAccessUpdated(token: string): Promise<GitHubAccessUpdatedAcknowledge> {
+    const params = new URLSearchParams({ token });
+    return apiClient.post<GitHubAccessUpdatedAcknowledge>(
+      `/api/github/access-updated/acknowledge?${params.toString()}`,
+      {},
+    );
+  },
+
+  async linkProjectGitHubRepository(
+    projectId: string,
+    body: LinkProjectGitHubRepositoryRequest,
+  ): Promise<ProjectGitHubRepositoryLink> {
+    const linked = await apiClient.post<ProjectGitHubRepositoryLink>(
+      `/api/supervisor/projects/${projectId}/github/link`,
+      body,
+    );
+    delete cachedProjectsById[projectId];
+    delete cachedProjectGitHubById[projectId];
+    return linked;
+  },
+
+  async removeProjectGitHubAccessAuthorization(
+    projectId: string,
+  ): Promise<SupervisorProjectDetail> {
+    const updated = await apiClient.post<SupervisorProjectDetail>(
+      `/api/supervisor/projects/${projectId}/github/access/remove`,
+      {},
+    );
+    cachedProjectsById[projectId] = updated;
+    delete cachedProjectGitHubById[projectId];
+    return updated;
   },
 
   getProjects(): Promise<SupervisorProjectSummary[]> {
