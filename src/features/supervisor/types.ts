@@ -299,3 +299,22 @@ export type ProjectGitHubRepositoryLink = {
   defaultBranch: string;
   lastSyncedAt: string | null;
 };
+
+export type GitHubRepositoryAccessRequestCreate = {
+  projectId: string;
+  requestToken: string;
+  requestUrl: string;
+  expiresAt: string;
+};
+
+export type GitHubRepositoryAccessRequestValidation = {
+  projectId: string;
+  projectTitle: string;
+  status: string;
+  expiresAt: string;
+};
+
+export type GitHubRepositoryAccessRequestContinue = {
+  projectId: string;
+  githubAuthorizeUrl: string;
+};

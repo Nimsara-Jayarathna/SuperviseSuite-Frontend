@@ -6,6 +6,7 @@ import { StudentProjectDetailsPage, StudentProjectsPage } from '@/features/stude
 import {
   CreateProjectPage,
   ProjectDetailsPage,
+  RequestGitHubRepositoryAccessPage,
   SupervisorDashboardPage,
   SupervisorProjectsPage,
 } from '@/features/supervisor';
@@ -85,6 +86,7 @@ export function AppRoutes() {
     <Routes>
       {/* Public */}
       <Route path="/" element={<RootRoute />} />
+      <Route path="/github/request-access" element={<RequestGitHubRepositoryAccessPage />} />
 
       {/* Guest-only — redirect authenticated users to their dashboard */}
       <Route element={<RequireGuest />}>

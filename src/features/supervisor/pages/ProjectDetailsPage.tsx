@@ -124,15 +124,17 @@ export function ProjectDetailsPage() {
     if (githubSetup === 'success') {
       const installationIdRaw = searchParams.get('installationId');
       const parsedInstallationId = installationIdRaw ? Number(installationIdRaw) : Number.NaN;
+      const githubAccessUpdated = searchParams.get('githubAccessUpdated') === 'true';
 
       if (Number.isFinite(parsedInstallationId) && parsedInstallationId > 0) {
         setPendingGitHubInstallationId(parsedInstallationId);
         setRefreshRequestModal({
           isOpen: true,
           status: 'success',
-          title: 'GitHub App connected',
-          message:
-            'GitHub installation is ready. Select one repository in Overview to finish linking this project.',
+          title: githubAccessUpdated ? 'GitHub access updated successfully' : 'GitHub App connected',
+          message: githubAccessUpdated
+            ? 'Your available repositories have been refreshed. Select one repository in Overview to finish linking this project. You can remove repository access anytime from GitHub App settings.'
+            : 'GitHub installation is ready. Select one repository in Overview to finish linking this project.',
         });
       } else {
         setRefreshRequestModal({
@@ -147,6 +149,7 @@ export function ProjectDetailsPage() {
       const nextParams = new URLSearchParams(searchParams);
       nextParams.delete('githubSetup');
       nextParams.delete('installationId');
+      nextParams.delete('githubAccessUpdated');
       nextParams.delete('tab');
       setSearchParams(nextParams, { replace: true });
       return;
@@ -162,6 +165,7 @@ export function ProjectDetailsPage() {
       const nextParams = new URLSearchParams(searchParams);
       nextParams.delete('githubSetup');
       nextParams.delete('installationId');
+      nextParams.delete('githubAccessUpdated');
       setSearchParams(nextParams, { replace: true });
     }
   }, [projectId, searchParams, setSearchParams]);

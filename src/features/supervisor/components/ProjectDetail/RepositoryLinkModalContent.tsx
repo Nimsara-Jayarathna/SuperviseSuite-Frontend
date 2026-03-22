@@ -12,6 +12,8 @@ type RepositoryLinkModalContentProps = {
   onClose: () => void;
   onSave: () => void;
   onConnectGitHubApp: () => void;
+  onRequestMoreRepositoryAccess: () => void;
+  isRequestingMoreRepositoryAccess: boolean;
   connectedInstallationId: number | null;
   onUseConnectedInstallation: (installationId: number) => void;
   repositories: GitHubInstallationRepository[];
@@ -66,6 +68,8 @@ export function RepositoryLinkModalContent({
   onClose,
   onSave,
   onConnectGitHubApp,
+  onRequestMoreRepositoryAccess,
+  isRequestingMoreRepositoryAccess,
   connectedInstallationId,
   onUseConnectedInstallation,
   repositories,
@@ -264,7 +268,21 @@ export function RepositoryLinkModalContent({
         <p className="mt-1 text-xs text-muted-foreground">
           Recommended for private repositories and stronger access control with secure token flow.
         </p>
+        <p className="mt-2 text-xs text-muted-foreground">
+          Need more repositories than currently visible? Request more repository access first, then
+          continue to GitHub and grant only the repositories required for this project.
+        </p>
         <div className="mt-3 flex flex-wrap justify-end gap-2">
+          <button
+            type="button"
+            className={buttonStyles({ variant: 'secondary', size: 'sm' })}
+            onClick={onRequestMoreRepositoryAccess}
+            disabled={isSaving || isRequestingMoreRepositoryAccess}
+          >
+            {isRequestingMoreRepositoryAccess
+              ? 'Preparing request...'
+              : 'Request More Repository Access'}
+          </button>
           {connectedInstallationId ? (
             <button
               type="button"

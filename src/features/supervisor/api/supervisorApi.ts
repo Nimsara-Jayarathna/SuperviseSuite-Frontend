@@ -13,6 +13,9 @@ import type {
 import type {
   AddSupervisorProjectMembersRequest,
   AddSupervisorProjectMilestoneRequest,
+  GitHubRepositoryAccessRequestContinue,
+  GitHubRepositoryAccessRequestCreate,
+  GitHubRepositoryAccessRequestValidation,
   GitHubInstallationRepositoriesPage,
   CreateSupervisorProjectRequest,
   CreateSupervisorProjectResponse,
@@ -124,6 +127,53 @@ export const supervisorApi = {
 
     return apiClient.get<GitHubInstallationRepositoriesPage>(
       `/api/supervisor/projects/${projectId}/github/installations/${installationId}/repositories?${params.toString()}`,
+    );
+  },
+
+  createGitHubRepositoryAccessRequest(projectId: string): Promise<GitHubRepositoryAccessRequestCreate> {
+    return apiClient.post<GitHubRepositoryAccessRequestCreate>(
+      `/api/supervisor/projects/${projectId}/github/access-requests`,
+      {},
+    );
+  },
+
+  validateGitHubRepositoryAccessRequest(
+    projectId: string,
+    token: string,
+  ): Promise<GitHubRepositoryAccessRequestValidation> {
+    const params = new URLSearchParams({ token });
+    return apiClient.get<GitHubRepositoryAccessRequestValidation>(
+      `/api/supervisor/projects/${projectId}/github/access-requests/validate?${params.toString()}`,
+    );
+  },
+
+  validatePublicGitHubRepositoryAccessRequest(
+    token: string,
+  ): Promise<GitHubRepositoryAccessRequestValidation> {
+    const params = new URLSearchParams({ token });
+    return apiClient.get<GitHubRepositoryAccessRequestValidation>(
+      `/api/github/access-requests/validate?${params.toString()}`,
+    );
+  },
+
+  continueGitHubRepositoryAccessRequest(
+    projectId: string,
+    token: string,
+  ): Promise<GitHubRepositoryAccessRequestContinue> {
+    const params = new URLSearchParams({ token });
+    return apiClient.post<GitHubRepositoryAccessRequestContinue>(
+      `/api/supervisor/projects/${projectId}/github/access-requests/continue?${params.toString()}`,
+      {},
+    );
+  },
+
+  continuePublicGitHubRepositoryAccessRequest(
+    token: string,
+  ): Promise<GitHubRepositoryAccessRequestContinue> {
+    const params = new URLSearchParams({ token });
+    return apiClient.post<GitHubRepositoryAccessRequestContinue>(
+      `/api/github/access-requests/continue?${params.toString()}`,
+      {},
     );
   },
 

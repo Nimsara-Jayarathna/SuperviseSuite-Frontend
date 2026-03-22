@@ -78,6 +78,12 @@ export function RepositorySection({
   const [selectedInstallationRepositoryId, setSelectedInstallationRepositoryId] = useState<number | null>(null);
   const [repositorySelectionError, setRepositorySelectionError] = useState<string | null>(null);
   const [repositoryLoadMoreError, setRepositoryLoadMoreError] = useState<string | null>(null);
+  const [isPreparingAccessRequest, setIsPreparingAccessRequest] = useState(false);
+  const [generatedAccessRequestUrl, setGeneratedAccessRequestUrl] = useState<string | null>(null);
+  const [generatedAccessRequestExpiresAt, setGeneratedAccessRequestExpiresAt] = useState<string | null>(
+    null,
+  );
+  const [accessRequestLinkNotice, setAccessRequestLinkNotice] = useState<string | null>(null);
 
   const hasRepository = project.github.repositoryLinked || Boolean(displayRepositoryUrl);
 
@@ -129,6 +135,9 @@ export function RepositorySection({
   }
 
   function closeRequestModal() {
+    setAccessRequestLinkNotice(null);
+    setGeneratedAccessRequestUrl(null);
+    setGeneratedAccessRequestExpiresAt(null);
     setRequestModal((current) => ({ ...current, isOpen: false }));
   }
 
@@ -239,12 +248,70 @@ export function RepositorySection({
     }
   }
 
+  async function handleRequestMoreRepositoryAccess() {
+    setIsPreparingAccessRequest(true);
+    setGeneratedAccessRequestUrl(null);
+    setGeneratedAccessRequestExpiresAt(null);
+    setAccessRequestLinkNotice(null);
+    setRequestModal({
+      isOpen: true,
+      status: 'loading',
+      title: 'Preparing access request',
+      message: 'Creating a project-scoped access request before continuing to GitHub.',
+    });
+
+    try {
+      const data = await supervisorApi.createGitHubRepositoryAccessRequest(project.id);
+      const requestUrl = data.requestUrl?.trim();
+      if (!requestUrl) {
+        throw new Error('Missing request URL');
+      }
+      const absoluteUrl = new URL(requestUrl, window.location.origin).toString();
+      setGeneratedAccessRequestUrl(absoluteUrl);
+      setGeneratedAccessRequestExpiresAt(data.expiresAt ?? null);
+      setAccessRequestLinkNotice(null);
+      setRequestModal({
+        isOpen: true,
+        status: 'success',
+        title: 'Access request link created',
+        message: 'Use the generated access link below to continue the GitHub authorization flow.',
+      });
+    } catch (error) {
+      const message = isApiException(error)
+        ? error.apiError.message
+        : 'Unable to create access request right now. Please try again.';
+      setRequestModal({
+        isOpen: true,
+        status: 'error',
+        title: 'Access request failed',
+        message,
+      });
+    } finally {
+      setIsPreparingAccessRequest(false);
+    }
+  }
+
+  async function handleCopyAccessRequestLink() {
+    if (!generatedAccessRequestUrl) {
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(generatedAccessRequestUrl);
+      setAccessRequestLinkNotice('Access request link copied.');
+    } catch {
+      setAccessRequestLinkNotice('Unable to copy automatically. Copy the link manually.');
+    }
+  }
+
   async function handleConfirmRepositorySelection() {
     if (!activeInstallationId || !selectedInstallationRepositoryId) {
       setRepositorySelectionError('Select one repository to continue.');
       return;
     }
 
+    setGeneratedAccessRequestUrl(null);
+    setGeneratedAccessRequestExpiresAt(null);
+    setAccessRequestLinkNotice(null);
     setIsSaving(true);
     setRequestModal({
       isOpen: true,
@@ -285,6 +352,9 @@ export function RepositorySection({
 
   async function handleRemoveRepository() {
     setValidationError(null);
+    setGeneratedAccessRequestUrl(null);
+    setGeneratedAccessRequestExpiresAt(null);
+    setAccessRequestLinkNotice(null);
     setIsSaving(true);
     setRequestModal({
       isOpen: true,
@@ -327,6 +397,9 @@ export function RepositorySection({
 
     const repositoryUrl = nextRepositoryPayload;
     setValidationError(null);
+    setGeneratedAccessRequestUrl(null);
+    setGeneratedAccessRequestExpiresAt(null);
+    setAccessRequestLinkNotice(null);
 
     setIsSaving(true);
     setRequestModal({
@@ -401,6 +474,11 @@ export function RepositorySection({
     onPendingInstallationHandled?.();
   }, [hasRepository, onPendingInstallationHandled, pendingInstallationId]);
 
+  const showAccessRequestLinkInModal =
+    requestModal.isOpen &&
+    requestModal.status === 'success' &&
+    Boolean(generatedAccessRequestUrl);
+
   return (
     <section className="rounded-3xl border border-border bg-white p-6 shadow-sm">
       <RequestStateModal
@@ -408,6 +486,60 @@ export function RepositorySection({
         status={requestModal.status}
         title={requestModal.title}
         message={requestModal.message}
+        autoCloseOnSuccess={!showAccessRequestLinkInModal}
+        content={
+          showAccessRequestLinkInModal && generatedAccessRequestUrl ? (
+            <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-3 text-left">
+              <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
+                Access Request Link
+              </p>
+              <a
+                href={generatedAccessRequestUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-2 block break-all text-xs text-sky-700 underline-offset-2 hover:underline"
+              >
+                {generatedAccessRequestUrl}
+              </a>
+              {generatedAccessRequestExpiresAt ? (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Expires at {new Date(generatedAccessRequestExpiresAt).toLocaleString()}
+                </p>
+              ) : null}
+              {accessRequestLinkNotice ? (
+                <p className="mt-2 text-xs text-muted-foreground">{accessRequestLinkNotice}</p>
+              ) : null}
+            </div>
+          ) : null
+        }
+        footer={
+          showAccessRequestLinkInModal && generatedAccessRequestUrl ? (
+            <div className="flex flex-wrap justify-center gap-3">
+              <a
+                href={generatedAccessRequestUrl}
+                target="_blank"
+                rel="noreferrer"
+                className={buttonStyles({ variant: 'secondary', size: 'md' })}
+              >
+                Open link
+              </a>
+              <button
+                type="button"
+                className={buttonStyles({ variant: 'secondary', size: 'md' })}
+                onClick={() => void handleCopyAccessRequestLink()}
+              >
+                Copy link
+              </button>
+              <button
+                type="button"
+                className={buttonStyles({ variant: 'primary', size: 'md' })}
+                onClick={closeRequestModal}
+              >
+                Close
+              </button>
+            </div>
+          ) : undefined
+        }
         onClose={requestModal.status === 'loading' ? undefined : closeRequestModal}
       />
       <RequestStateModal
@@ -430,6 +562,8 @@ export function RepositorySection({
           onClose={closeLinkModal}
           onSave={() => void handleSaveRepository()}
           onConnectGitHubApp={handleConnectGitHubApp}
+          onRequestMoreRepositoryAccess={() => void handleRequestMoreRepositoryAccess()}
+          isRequestingMoreRepositoryAccess={isPreparingAccessRequest}
           connectedInstallationId={connectedInstallationId}
           onUseConnectedInstallation={(installationId) => {
             void openInstallationSelection(installationId);
@@ -456,17 +590,27 @@ export function RepositorySection({
 
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-lg font-semibold text-foreground">GitHub repository</h2>
-        <button
-          type="button"
-          className={buttonStyles({ variant: 'primary', size: 'sm' })}
-          onClick={openLinkModal}
-          disabled={hasRepository || isSaving}
-          title={
-            hasRepository ? 'Remove the current repository before adding a new one.' : undefined
-          }
-        >
-          Link repository
-        </button>
+        <div className="flex flex-wrap justify-end gap-2">
+          <button
+            type="button"
+            className={buttonStyles({ variant: 'secondary', size: 'sm' })}
+            onClick={() => void handleRequestMoreRepositoryAccess()}
+            disabled={isSaving || isPreparingAccessRequest}
+          >
+            {isPreparingAccessRequest ? 'Preparing request...' : 'Request More Repository Access'}
+          </button>
+          <button
+            type="button"
+            className={buttonStyles({ variant: 'primary', size: 'sm' })}
+            onClick={openLinkModal}
+            disabled={hasRepository || isSaving}
+            title={
+              hasRepository ? 'Remove the current repository before adding a new one.' : undefined
+            }
+          >
+            Link repository
+          </button>
+        </div>
       </div>
 
       {hasRepository ? (
