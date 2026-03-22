@@ -66,11 +66,12 @@ type CommitType =
   | 'style';
 
 function getCommitType(message: string): CommitType | null {
-  const subject = message
-    .split('\n')
-    .map((line) => line.trim())
-    .find((line) => line.length > 0)
-    ?.toLowerCase() ?? '';
+  const subject =
+    message
+      .split('\n')
+      .map((line) => line.trim())
+      .find((line) => line.length > 0)
+      ?.toLowerCase() ?? '';
 
   if (
     /^merge(\s|$)/.test(subject) ||
@@ -235,7 +236,9 @@ type LegacyCommitPayload = {
   recentCommits?: ProjectGitHubRecentCommit[];
 };
 
-function normalizeDashboardPayload(raw: ProjectGitHubPreview | LegacyCommitPayload): ProjectGitHubPreview {
+function normalizeDashboardPayload(
+  raw: ProjectGitHubPreview | LegacyCommitPayload,
+): ProjectGitHubPreview {
   const maybeDashboard = raw as ProjectGitHubPreview;
   if (
     maybeDashboard &&
@@ -293,7 +296,8 @@ function normalizeDashboardPayload(raw: ProjectGitHubPreview | LegacyCommitPaylo
         : [],
     activitySummary: {
       totalCommits: Number(legacy.activitySummary?.totalCommits ?? normalizedCommits.length),
-      lastActivityAt: legacy.activitySummary?.lastActivityAt ?? normalizedCommits[0]?.committedAt ?? null,
+      lastActivityAt:
+        legacy.activitySummary?.lastActivityAt ?? normalizedCommits[0]?.committedAt ?? null,
       status:
         legacy.activitySummary?.status === 'active' || legacy.activitySummary?.status === 'idle'
           ? legacy.activitySummary.status
@@ -335,9 +339,7 @@ export function CommitActivitySection({
         <section className="rounded-3xl border border-border bg-white p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-foreground">Repository Overview</h2>
           <div className="mt-4 animate-pulse space-y-3">
-            <div
-              className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
-            >
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
               <div className="h-4 w-2/3 rounded bg-slate-200" />
               <div className="mt-3 h-3 w-1/2 rounded bg-slate-200" />
               <div className="mt-2 h-3 w-1/4 rounded bg-slate-200" />
@@ -520,9 +522,7 @@ export function CommitActivitySection({
           </button>
         </div>
         {recentCommits.length > 0 ? (
-          <div className="mt-4 space-y-3">
-            {recentCommits.map(renderCommitCard)}
-          </div>
+          <div className="mt-4 space-y-3">{recentCommits.map(renderCommitCard)}</div>
         ) : (
           <p className="mt-4 text-sm text-muted-foreground">No recent activity found.</p>
         )}

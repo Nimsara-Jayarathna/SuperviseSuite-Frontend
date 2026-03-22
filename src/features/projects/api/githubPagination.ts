@@ -72,7 +72,11 @@ export function normalizePaginatedPayload<T>(
   };
 }
 
-export function fallbackSlicePage<T>(allItems: T[], page: number, size: number): PaginatedListResult<T> {
+export function fallbackSlicePage<T>(
+  allItems: T[],
+  page: number,
+  size: number,
+): PaginatedListResult<T> {
   const start = (page - 1) * size;
   const end = start + size;
   const items = allItems.slice(start, end);
@@ -85,5 +89,7 @@ export function fallbackSlicePage<T>(allItems: T[], page: number, size: number):
 }
 
 export function shouldFallbackToDashboard(error: unknown) {
-  return isApiException(error) && (error.apiError.code === 'NOT_FOUND' || error.apiError.status === 404);
+  return (
+    isApiException(error) && (error.apiError.code === 'NOT_FOUND' || error.apiError.status === 404)
+  );
 }

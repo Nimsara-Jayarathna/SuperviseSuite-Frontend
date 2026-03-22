@@ -124,7 +124,8 @@ export function RepositorySection({ project, onUpdate }: RepositorySectionProps)
         isOpen: true,
         status: 'error',
         title: 'Invalid GitHub App URL',
-        message: 'VITE_GITHUB_APP_INSTALL_URL is invalid. Please update frontend environment configuration.',
+        message:
+          'VITE_GITHUB_APP_INSTALL_URL is invalid. Please update frontend environment configuration.',
       });
     }
   }
@@ -241,11 +242,7 @@ export function RepositorySection({ project, onUpdate }: RepositorySectionProps)
         onClose={connectModal.status === 'loading' ? undefined : closeConnectModal}
       />
 
-      <GithubDetailsModal
-        isOpen={isLinkModalOpen}
-        title="Link repository"
-        onClose={closeLinkModal}
-      >
+      <GithubDetailsModal isOpen={isLinkModalOpen} title="Link repository" onClose={closeLinkModal}>
         <RepositoryLinkModalContent
           urlInput={urlInput}
           validationError={validationError}
@@ -266,7 +263,9 @@ export function RepositorySection({ project, onUpdate }: RepositorySectionProps)
           className={buttonStyles({ variant: 'primary', size: 'sm' })}
           onClick={openLinkModal}
           disabled={hasRepository || isSaving}
-          title={hasRepository ? 'Remove the current repository before adding a new one.' : undefined}
+          title={
+            hasRepository ? 'Remove the current repository before adding a new one.' : undefined
+          }
         >
           Link repository
         </button>

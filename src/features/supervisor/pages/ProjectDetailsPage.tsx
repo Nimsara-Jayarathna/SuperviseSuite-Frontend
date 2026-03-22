@@ -224,7 +224,9 @@ export function ProjectDetailsPage() {
         title={refreshRequestModal.title}
         message={refreshRequestModal.message}
         onClose={refreshRequestModal.status === 'loading' ? undefined : closeRefreshRequestModal}
-        onRetry={refreshRequestModal.status === 'error' ? () => void handleGitHubRefresh() : undefined}
+        onRetry={
+          refreshRequestModal.status === 'error' ? () => void handleGitHubRefresh() : undefined
+        }
       />
 
       <PageHeader

@@ -27,8 +27,8 @@ export function RepositoryLinkModalContent({
     <div className="space-y-6">
       <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
         <p className="text-sm text-slate-700">
-          Linking by URL works best for public repositories with limited integration scope.
-          For private repositories and full secure sync, use GitHub App connection.
+          Linking by URL works best for public repositories with limited integration scope. For
+          private repositories and full secure sync, use GitHub App connection.
         </p>
       </div>
 
@@ -97,4 +97,3 @@ export function RepositoryLinkModalContent({
     </div>
   );
 }
-

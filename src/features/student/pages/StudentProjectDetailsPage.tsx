@@ -12,7 +12,11 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { StudentProjectDetailsSkeleton } from '../components/StudentProjectDetailsSkeleton';
 import { useStudentProject } from '../hooks/useStudentProject';
 import { studentApi } from '../api/studentApi';
-import type { StudentProjectDetailMember, StudentProjectDetailTab } from '../types';
+import type {
+  StudentProjectDetailLeader,
+  StudentProjectDetailMember,
+  StudentProjectDetailTab,
+} from '../types';
 
 const dateFormatter = new Intl.DateTimeFormat('en', {
   month: 'short',
@@ -32,6 +36,10 @@ const BASE_TABS: StudentProjectDetailTab[] = ['overview', 'team', 'milestones'];
 
 function memberDisplayName(member: StudentProjectDetailMember) {
   return `${member.firstName ?? ''} ${member.lastName ?? ''}`.trim() || member.email;
+}
+
+function leaderDisplayName(leader: StudentProjectDetailLeader) {
+  return `${leader.firstName ?? ''} ${leader.lastName ?? ''}`.trim() || leader.email;
 }
 
 function statusTone(status: string) {
@@ -213,6 +221,14 @@ export function StudentProjectDetailsPage() {
                     {project.healthNote ?? 'No health note recorded yet.'}
                   </p>
                 </div>
+                <div className="sm:col-span-2">
+                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                    Project leader
+                  </p>
+                  <p className="mt-1 font-medium text-foreground">
+                    {project.leader ? leaderDisplayName(project.leader) : 'No leader assigned'}
+                  </p>
+                </div>
               </div>
             </div>
           </section>
@@ -255,6 +271,11 @@ export function StudentProjectDetailsPage() {
                 <p className="mt-1 text-sm text-muted-foreground">{member.email}</p>
                 <div className="mt-2 flex flex-wrap items-center gap-2">
                   <RoleBadge role={member.memberRole} />
+                  {project.leader?.id === member.id ? (
+                    <span className="inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-amber-700">
+                      Leader
+                    </span>
+                  ) : null}
                   {member.registrationNumber ? (
                     <span className="text-xs text-muted-foreground">
                       • {member.registrationNumber}

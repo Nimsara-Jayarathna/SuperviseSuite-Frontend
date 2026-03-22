@@ -48,7 +48,9 @@ export const supervisorApi = {
       return inFlightProjectGitHubRequests[projectId];
     }
 
-    const request = apiClient.get<ProjectGitHubActivity>(`/api/supervisor/projects/${projectId}/github`);
+    const request = apiClient.get<ProjectGitHubActivity>(
+      `/api/supervisor/projects/${projectId}/github`,
+    );
     inFlightProjectGitHubRequests[projectId] = request;
 
     try {
@@ -76,7 +78,11 @@ export const supervisorApi = {
       }
 
       const dashboard = await this.getProjectGitHubDashboard(projectId);
-      return fallbackSlicePage<ProjectGitHubRecentCommit>(dashboard.recentCommitsPreview ?? [], page, size);
+      return fallbackSlicePage<ProjectGitHubRecentCommit>(
+        dashboard.recentCommitsPreview ?? [],
+        page,
+        size,
+      );
     }
   },
 
@@ -96,7 +102,11 @@ export const supervisorApi = {
       }
 
       const dashboard = await this.getProjectGitHubDashboard(projectId);
-      return fallbackSlicePage<ProjectGitHubContributor>(dashboard.contributorsPreview ?? [], page, size);
+      return fallbackSlicePage<ProjectGitHubContributor>(
+        dashboard.contributorsPreview ?? [],
+        page,
+        size,
+      );
     }
   },
 

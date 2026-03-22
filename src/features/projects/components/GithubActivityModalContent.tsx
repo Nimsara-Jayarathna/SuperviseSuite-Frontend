@@ -35,11 +35,12 @@ type CommitType =
   | 'style';
 
 function getCommitType(message: string): CommitType | null {
-  const subject = message
-    .split('\n')
-    .map((line) => line.trim())
-    .find((line) => line.length > 0)
-    ?.toLowerCase() ?? '';
+  const subject =
+    message
+      .split('\n')
+      .map((line) => line.trim())
+      .find((line) => line.length > 0)
+      ?.toLowerCase() ?? '';
 
   if (
     /^merge(\s|$)/.test(subject) ||
@@ -112,7 +113,10 @@ function commitTypeBadgeClass(type: CommitType) {
 type GithubActivityModalContentProps = {
   isOpen: boolean;
   pageSize: number;
-  fetchPage: (page: number, size: number) => Promise<PaginatedListResult<ProjectGitHubRecentCommit>>;
+  fetchPage: (
+    page: number,
+    size: number,
+  ) => Promise<PaginatedListResult<ProjectGitHubRecentCommit>>;
 };
 
 function ActivityItemSkeleton() {

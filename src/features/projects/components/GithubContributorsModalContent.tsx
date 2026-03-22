@@ -16,7 +16,7 @@ function initialsOf(name: string) {
   }
 
   const first = parts[0][0] ?? '';
-  const second = parts.length > 1 ? parts[1][0] ?? '' : '';
+  const second = parts.length > 1 ? (parts[1][0] ?? '') : '';
   return `${first}${second}`.toUpperCase();
 }
 
@@ -138,7 +138,9 @@ export function GithubContributorsModalContent({
             {initialsOf(contributor.name)}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-foreground">#{index + 1} {contributor.name}</p>
+            <p className="truncate text-sm font-medium text-foreground">
+              #{index + 1} {contributor.name}
+            </p>
             <p className="mt-1 text-xs text-muted-foreground">
               {contributor.commitCount} commit{contributor.commitCount === 1 ? '' : 's'}
             </p>

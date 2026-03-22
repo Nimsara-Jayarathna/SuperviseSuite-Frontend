@@ -35,6 +35,14 @@ export type StudentProjectDetailMilestone = {
   sequenceNo: number;
 };
 
+export type StudentProjectDetailLeader = {
+  id: string;
+  firstName: string | null;
+  lastName: string | null;
+  email: string;
+  registrationNumber: string | null;
+};
+
 export type StudentProjectDetail = {
   id: string;
   title: string;
@@ -48,6 +56,7 @@ export type StudentProjectDetail = {
   healthNote: string | null;
   repositoryUrl?: string | null;
   github: ProjectGitHubPreview;
+  leader: StudentProjectDetailLeader | null;
   members: StudentProjectDetailMember[];
   milestones: StudentProjectDetailMilestone[];
 };
