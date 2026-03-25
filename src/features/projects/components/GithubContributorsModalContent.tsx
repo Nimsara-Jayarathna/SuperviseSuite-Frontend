@@ -27,11 +27,11 @@ type GithubContributorsModalContentProps = {
 
 function ContributorItemSkeleton() {
   return (
-    <article className="flex animate-pulse items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-      <div className="h-10 w-10 rounded-full bg-slate-200" />
+    <article className="flex animate-pulse items-center gap-4 rounded-2xl border border-slate-100 bg-white p-4">
+      <div className="h-12 w-12 rounded-full bg-slate-100" />
       <div className="flex-1">
-        <div className="h-4 w-2/5 rounded bg-slate-200" />
-        <div className="mt-2 h-3 w-1/4 rounded bg-slate-200" />
+        <div className="h-4 w-1/3 rounded bg-slate-100" />
+        <div className="mt-2 h-3 w-1/5 rounded bg-slate-100" />
       </div>
     </article>
   );
@@ -59,7 +59,7 @@ export function GithubContributorsModalContent({
 
       try {
         const result = await fetchPage(targetPage);
-        setItems((current) => (append ? [...current, ...result.items] : result.items));
+        setItems((current: ProjectGitHubContributor[]) => (append ? [...current, ...result.items] : result.items));
         setPage(result.page);
         setHasMore(result.hasMore);
       } catch (error) {
@@ -126,25 +126,46 @@ export function GithubContributorsModalContent({
   }
 
   return (
-    <div className="space-y-3">
-      {items.map((contributor, index) => (
-        <article
-          key={`${contributor.name}-${index}`}
-          className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4"
-        >
-          <div className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-slate-200 text-xs font-semibold text-slate-700">
-            {initialsOf(contributor.name)}
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-foreground">
-              #{index + 1} {contributor.name}
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {contributor.commitCount} commit{contributor.commitCount === 1 ? '' : 's'}
-            </p>
-          </div>
-        </article>
-      ))}
+    <div className="flex flex-col gap-3">
+      {items.map((contributor, index) => {
+        const avatarUrl = `https://github.com/${contributor.name}.png`;
+        
+        return (
+          <article
+            key={`${contributor.name}-${index}`}
+            className="group flex items-center gap-4 rounded-2xl border border-slate-100 bg-white p-4 transition-all hover:border-amber-200 hover:shadow-md"
+          >
+            <div className="relative shrink-0">
+              <div className="h-12 w-12 overflow-hidden rounded-full border border-slate-100 bg-slate-50 transition-transform group-hover:scale-110">
+                <img 
+                  src={avatarUrl} 
+                  alt={contributor.name} 
+                  className="h-full w-full object-cover"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(contributor.name)}&background=f1f5f9&color=94a3b8`;
+                  }}
+                />
+              </div>
+              <div className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-slate-800 text-[10px] font-bold text-white ring-2 ring-white">
+                {index + 1}
+              </div>
+            </div>
+            
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-base font-bold text-slate-800 group-hover:text-amber-700 transition-colors">
+                {contributor.name}
+              </p>
+              <div className="mt-1 flex items-center gap-2">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                  {contributor.commitCount} Total Commits
+                </span>
+                <div className="h-1 w-1 rounded-full bg-slate-300" />
+                <span className="text-[10px] font-bold text-emerald-600">Active Contributor</span>
+              </div>
+            </div>
+          </article>
+        );
+      })}
 
       {isLoadingMore ? (
         <div className="space-y-3 pt-1">
