@@ -86,29 +86,52 @@ export function RepositoryManagementModalContent({
 
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-        <p className="text-xs text-muted-foreground">
-          Limits:{' '}
-          <span className={linkedLimitReached ? 'font-semibold text-amber-700' : 'font-medium text-foreground'}>
-            Linked {linkedCount} / {maxLinkedRepositories}
-          </span>
-          <span className="px-1.5">·</span>
-          <span className={enabledLimitReached ? 'font-semibold text-amber-700' : 'font-medium text-foreground'}>
-            Enabled {enabledCount} / {maxEnabledRepositories}
-          </span>
-        </p>
+      <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="grid gap-6 sm:grid-cols-2">
+          {/* Linked Progress */}
+          <div>
+            <div className="mb-2 flex items-center justify-between text-xs">
+              <span className="font-semibold text-slate-700">Linked repositories</span>
+              <span className={linkedLimitReached ? 'font-bold text-amber-600' : 'font-medium text-slate-500'}>
+                {linkedCount} / {maxLinkedRepositories}
+              </span>
+            </div>
+            <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100 ring-1 ring-inset ring-slate-200">
+              <div
+                className={`h-full rounded-full transition-all duration-500 ${linkedLimitReached ? 'bg-amber-500' : 'bg-sky-500'}`}
+                style={{ width: `${Math.min(100, (linkedCount / maxLinkedRepositories) * 100)}%` }}
+              />
+            </div>
+          </div>
+          {/* Enabled Progress */}
+          <div>
+            <div className="mb-2 flex items-center justify-between text-xs">
+              <span className="font-semibold text-slate-700">Enabled active</span>
+              <span className={enabledLimitReached ? 'font-bold text-amber-600' : 'font-medium text-slate-500'}>
+                {enabledCount} / {maxEnabledRepositories}
+              </span>
+            </div>
+            <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100 ring-1 ring-inset ring-slate-200">
+              <div
+                className={`h-full rounded-full transition-all duration-500 ${enabledLimitReached ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                style={{ width: `${Math.min(100, (enabledCount / maxEnabledRepositories) * 100)}%` }}
+              />
+            </div>
+          </div>
+        </div>
+
         {bothLimitsReached ? (
-          <p className="mt-2 inline-flex rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-semibold text-amber-800">
+          <p className="mt-4 inline-flex items-center rounded-full bg-amber-50 px-3 py-1.5 text-[11px] font-semibold text-amber-800 ring-1 ring-inset ring-amber-600/20">
             Linked and enabled limits reached. Unlink one repository and disable one enabled repository to continue.
           </p>
         ) : null}
         {!bothLimitsReached && enabledLimitReached ? (
-          <p className="mt-2 inline-flex rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-semibold text-amber-800">
+          <p className="mt-4 inline-flex items-center rounded-full bg-amber-50 px-3 py-1.5 text-[11px] font-semibold text-amber-800 ring-1 ring-inset ring-amber-600/20">
             Enabled limit reached. Disable one enabled repository before enabling another.
           </p>
         ) : null}
         {!bothLimitsReached && linkedLimitReached ? (
-          <p className="mt-2 inline-flex rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-semibold text-amber-800">
+          <p className="mt-4 inline-flex items-center rounded-full bg-amber-50 px-3 py-1.5 text-[11px] font-semibold text-amber-800 ring-1 ring-inset ring-amber-600/20">
             Linked limit reached. Unlink one repository to add another.
           </p>
         ) : null}
@@ -143,6 +166,7 @@ export function RepositoryManagementModalContent({
                 <th className="px-3 py-3 text-left font-medium">Access type</th>
                 <th className="px-3 py-3 text-left font-medium">Status</th>
                 <th className="px-3 py-3 text-left font-medium">Actions</th>
+                <th className="px-3 py-3 text-right font-medium text-rose-500/80">Danger</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -152,7 +176,7 @@ export function RepositoryManagementModalContent({
                 const enableBlocked = blockedByEnabledLimit || blockedByLinkedLimit;
                 const isEditingDisplayName = editingDisplayNameRowKey === row.rowKey;
                 return (
-                  <tr key={row.rowKey} className="align-top">
+                  <tr key={row.rowKey} className={`align-top transition-all duration-300 ${!row.enabled ? 'bg-slate-50/50 opacity-60 grayscale-[0.2]' : ''}`}>
                     <td className="px-3 py-3 text-xs text-foreground">
                       {row.customName?.trim() || '—'}
                     </td>
@@ -271,22 +295,22 @@ export function RepositoryManagementModalContent({
                               <RefreshCw className="h-5 w-5" strokeWidth={2.25} />
                             </button>
                           ) : null}
-
-                          {row.sourceId ? (
-                            <button
-                              type="button"
-                              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-rose-200 bg-white text-rose-600 shadow-sm transition-colors hover:border-rose-300 hover:bg-rose-50"
-                              onClick={() => onDisconnectSource(row.sourceId!)}
-                              disabled={isMutating || isSavingDisplayName}
-                              title="Disconnect source"
-                              aria-label="Disconnect source"
-                            >
-                              <Unlink className="h-5 w-5" strokeWidth={2.25} />
-                            </button>
-                          ) : null}
                         </div>
-
                       </div>
+                    </td>
+                    <td className="px-3 py-3 text-right">
+                      {row.sourceId ? (
+                        <button
+                          type="button"
+                          className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-rose-200 bg-white text-rose-600 shadow-sm transition-colors hover:border-rose-300 hover:bg-rose-50"
+                          onClick={() => onDisconnectSource(row.sourceId!)}
+                          disabled={isMutating || isSavingDisplayName}
+                          title="Disconnect source completely"
+                          aria-label="Disconnect source completely"
+                        >
+                          <Unlink className="h-4 w-4" strokeWidth={2.25} />
+                        </button>
+                      ) : null}
                     </td>
                   </tr>
                 );
