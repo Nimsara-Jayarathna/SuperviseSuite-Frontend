@@ -25,6 +25,7 @@ import type {
   GitHubRepositoryAccessRequestValidation,
   GitHubInstallationRepositoriesPage,
   ProjectGitHubRepositories,
+  ProjectGitHubRepositoryListing,
   CreateSupervisorProjectRequest,
   CreateSupervisorProjectResponse,
   LinkProjectGitHubRepositoryRequest,
@@ -275,6 +276,12 @@ export const supervisorApi = {
 
     return apiClient.get<GitHubInstallationRepositoriesPage>(
       `/api/supervisor/projects/${projectId}/github/installations/${installationId}/repositories?${params.toString()}`,
+    );
+  },
+
+  async getProjectRepositoriesInventory(projectId: string): Promise<ProjectGitHubRepositoryListing> {
+    return apiClient.get<ProjectGitHubRepositoryListing>(
+      `/api/supervisor/projects/${projectId}/github/repositories/inventory`,
     );
   },
 

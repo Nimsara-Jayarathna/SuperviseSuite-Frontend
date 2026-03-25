@@ -1,5 +1,6 @@
 import { buttonStyles } from '@/components/ui/Button';
 import { Pencil, RefreshCw, Github, Unlink } from 'lucide-react';
+import { RepositoryRowSkeleton } from './RepositoryRowSkeleton';
 
 export type RepositoryManagementRow = {
   rowKey: string;
@@ -138,8 +139,24 @@ export function RepositoryManagementModalContent({
       </div>
 
       {isLoadingInventory ? (
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 text-sm text-muted-foreground">
-          Loading repository access inventory...
+        <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
+          <table className="min-w-full divide-y divide-slate-200 text-sm">
+            <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-[0.14em] text-muted-foreground">
+              <tr>
+                <th className="px-4 py-3.5 text-left font-medium">Display name</th>
+                <th className="px-4 py-3.5 text-left font-medium">Owner</th>
+                <th className="px-4 py-3.5 text-left font-medium whitespace-nowrap">Access type</th>
+                <th className="px-4 py-3.5 text-left font-medium">Status</th>
+                <th className="px-4 py-3.5 text-center font-medium">Actions</th>
+                <th className="px-4 py-3.5 text-center font-medium">Danger</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {Array.from({ length: 3 }).map((_, index) => (
+                <RepositoryRowSkeleton key={`repo-row-skeleton-${index}`} />
+              ))}
+            </tbody>
+          </table>
         </div>
       ) : inventoryError ? (
         <div className="space-y-3 rounded-2xl border border-rose-200 bg-rose-50 p-4">

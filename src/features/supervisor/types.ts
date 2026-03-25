@@ -411,3 +411,7 @@ export type GitHubAccessRequestCreateV2 = {
   requestUrl: string;
   expiresAt: string;
 };
+export type ProjectGitHubRepositoryListing = {
+  projectId: string;
+  inventory: GitHubAvailableRepositories[];
+};

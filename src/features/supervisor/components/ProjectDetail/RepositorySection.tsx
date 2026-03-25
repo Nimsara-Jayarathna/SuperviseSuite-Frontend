@@ -240,13 +240,12 @@ export function RepositorySection({
     setIsLoadingInventory(true);
     setInventoryError(null);
     try {
-      const entries = await Promise.all(
-        accessSources.map(async (source) => {
-          const response = await supervisorApi.getAvailableGitHubRepositories(source.id);
-          return [source.id, response.items] as const;
-        }),
-      );
-      setInventoryBySourceId(Object.fromEntries(entries));
+      const listing = await supervisorApi.getProjectRepositoriesInventory(project.id);
+      const mapping: Record<string, GitHubRepositoryOption[]> = {};
+      listing.inventory.forEach((res) => {
+        mapping[res.sourceId] = res.items;
+      });
+      setInventoryBySourceId(mapping);
     } catch (error) {
       const message = isApiException(error)
         ? error.apiError.message
