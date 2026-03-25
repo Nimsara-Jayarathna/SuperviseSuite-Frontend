@@ -1,5 +1,5 @@
 import { buttonStyles } from '@/components/ui/Button';
-import { Pencil, RefreshCw, Github } from 'lucide-react';
+import { Pencil, RefreshCw, Github, Unlink } from 'lucide-react';
 
 export type RepositoryManagementRow = {
   rowKey: string;
@@ -275,11 +275,13 @@ export function RepositoryManagementModalContent({
                           {row.sourceId ? (
                             <button
                               type="button"
-                              className={buttonStyles({ variant: 'outline', size: 'sm' })}
+                              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-rose-200 bg-white text-rose-600 shadow-sm transition-colors hover:border-rose-300 hover:bg-rose-50"
                               onClick={() => onDisconnectSource(row.sourceId!)}
                               disabled={isMutating || isSavingDisplayName}
+                              title="Disconnect source"
+                              aria-label="Disconnect source"
                             >
-                              Disconnect source
+                              <Unlink className="h-5 w-5" strokeWidth={2.25} />
                             </button>
                           ) : null}
                         </div>
