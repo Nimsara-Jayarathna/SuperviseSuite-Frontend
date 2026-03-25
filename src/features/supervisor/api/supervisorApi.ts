@@ -249,6 +249,18 @@ export const supervisorApi = {
     return data;
   },
 
+  async updateGitHubRepositoryDisplayName(
+    linkedRepositoryId: string,
+    customName: string | null,
+  ): Promise<ProjectGitHubRepositories> {
+    const data = await apiClient.post<ProjectGitHubRepositories>(
+      `/api/github/repositories/${linkedRepositoryId}/display-name`,
+      { customName },
+    );
+    invalidateProjectCaches(data.projectId);
+    return data;
+  },
+
   getInstallationRepositories(
     projectId: string,
     installationId: number,

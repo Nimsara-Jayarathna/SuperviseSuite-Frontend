@@ -1,5 +1,5 @@
 import { buttonStyles } from '@/components/ui/Button';
-import { Github, RefreshCw } from 'lucide-react';
+import { Pencil, RefreshCw, Github } from 'lucide-react';
 
 export type RepositoryManagementRow = {
   rowKey: string;
@@ -33,6 +33,14 @@ type RepositoryManagementModalContentProps = {
   onRefresh: (linkId: string) => void;
   onToggleEnabled: (row: RepositoryManagementRow) => void;
   onDisconnectSource: (sourceId: string) => void;
+  editingDisplayNameRowKey: string | null;
+  editingDisplayNameDraft: string;
+  displayNameEditError: string | null;
+  isSavingDisplayName: boolean;
+  onStartDisplayNameEdit: (row: RepositoryManagementRow) => void;
+  onDisplayNameDraftChange: (value: string) => void;
+  onCancelDisplayNameEdit: () => void;
+  onSaveDisplayNameEdit: (row: RepositoryManagementRow) => void;
 };
 
 function formatAccessTypeLabel(value: string | null | undefined): string {
@@ -63,6 +71,14 @@ export function RepositoryManagementModalContent({
   onRefresh,
   onToggleEnabled,
   onDisconnectSource,
+  editingDisplayNameRowKey,
+  editingDisplayNameDraft,
+  displayNameEditError,
+  isSavingDisplayName,
+  onStartDisplayNameEdit,
+  onDisplayNameDraftChange,
+  onCancelDisplayNameEdit,
+  onSaveDisplayNameEdit,
 }: RepositoryManagementModalContentProps) {
   const linkedLimitReached = linkedCount >= maxLinkedRepositories;
   const enabledLimitReached = enabledCount >= maxEnabledRepositories;
@@ -134,6 +150,7 @@ export function RepositoryManagementModalContent({
                 const blockedByEnabledLimit = !row.enabled && remainingEnabledSlots < 1;
                 const blockedByLinkedLimit = !row.enabled && !row.linkId && remainingLinkSlots < 1;
                 const enableBlocked = blockedByEnabledLimit || blockedByLinkedLimit;
+                const isEditingDisplayName = editingDisplayNameRowKey === row.rowKey;
                 return (
                   <tr key={row.rowKey} className="align-top">
                     <td className="px-3 py-3 text-xs text-foreground">
@@ -213,44 +230,96 @@ export function RepositoryManagementModalContent({
                       </div>
                     </td>
                     <td className="px-3 py-3">
-                      <div className="flex flex-nowrap items-center gap-2 whitespace-nowrap">
-                        {row.url ? (
-                          <a
-                            href={row.url}
-                            target="_blank"
-                            rel="noreferrer"
-                            title="Open repository"
-                            aria-label="Open repository"
-                          >
-                            <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-slate-900 text-white shadow-sm ring-1 ring-slate-900/20 transition-colors hover:bg-slate-800">
-                              <Github className="h-5 w-5" strokeWidth={2.25} />
-                            </span>
-                          </a>
-                        ) : null}
-                        {row.enabled && row.linkId ? (
-                          <>
+                      <div className="space-y-2">
+                        <div className="flex flex-nowrap items-center gap-2 whitespace-nowrap">
+                          {row.url ? (
+                            <a
+                              href={row.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              title="Open repository"
+                              aria-label="Open repository"
+                            >
+                              <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-slate-900 text-white shadow-sm ring-1 ring-slate-900/20 transition-colors hover:bg-slate-800">
+                                <Github className="h-5 w-5" strokeWidth={2.25} />
+                              </span>
+                            </a>
+                          ) : null}
+
+                          {row.linkId ? (
+                            <button
+                              type="button"
+                              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm transition-colors hover:bg-slate-50"
+                              onClick={() => onStartDisplayNameEdit(row)}
+                              disabled={isMutating || isSavingDisplayName}
+                              title="Edit display name"
+                              aria-label="Edit display name"
+                            >
+                              <Pencil className="h-5 w-5" strokeWidth={2.25} />
+                            </button>
+                          ) : null}
+
+                          {row.enabled && row.linkId ? (
                             <button
                               type="button"
                               className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm transition-colors hover:bg-slate-50"
                               onClick={() => onRefresh(row.linkId!)}
-                              disabled={isMutating}
+                              disabled={isMutating || isSavingDisplayName}
                               title="Refresh repository"
                               aria-label="Refresh repository"
                             >
                               <RefreshCw className="h-5 w-5" strokeWidth={2.25} />
                             </button>
-                          </>
-                        ) : null}
+                          ) : null}
 
-                        {row.sourceId ? (
-                          <button
-                            type="button"
-                            className={buttonStyles({ variant: 'outline', size: 'sm' })}
-                            onClick={() => onDisconnectSource(row.sourceId!)}
-                            disabled={isMutating}
-                          >
-                            Disconnect source
-                          </button>
+                          {row.sourceId ? (
+                            <button
+                              type="button"
+                              className={buttonStyles({ variant: 'outline', size: 'sm' })}
+                              onClick={() => onDisconnectSource(row.sourceId!)}
+                              disabled={isMutating || isSavingDisplayName}
+                            >
+                              Disconnect source
+                            </button>
+                          ) : null}
+                        </div>
+
+                        {isEditingDisplayName && row.linkId ? (
+                          <div className="w-[260px] rounded-xl border border-slate-200 bg-slate-50 p-2.5">
+                            <p className="mb-1 text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+                              Display name
+                            </p>
+                            <input
+                              type="text"
+                              className="h-9 w-full rounded-lg border border-slate-300 bg-white px-2.5 text-xs text-foreground focus:border-slate-400 focus:outline-none"
+                              value={editingDisplayNameDraft}
+                              onChange={(event) => onDisplayNameDraftChange(event.target.value)}
+                              placeholder="Custom display name"
+                              maxLength={255}
+                              disabled={isSavingDisplayName}
+                            />
+                            {displayNameEditError ? (
+                              <p className="mt-1 text-xs text-rose-700">{displayNameEditError}</p>
+                            ) : null}
+                            <div className="mt-2 flex items-center justify-end gap-2">
+                              <button
+                                type="button"
+                                className={buttonStyles({ variant: 'ghost', size: 'sm' })}
+                                onClick={onCancelDisplayNameEdit}
+                                disabled={isSavingDisplayName}
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                type="button"
+                                className={buttonStyles({ variant: 'primary', size: 'sm' })}
+                                onClick={() => onSaveDisplayNameEdit(row)}
+                                disabled={isSavingDisplayName}
+                              >
+                                {isSavingDisplayName ? 'Saving...' : 'Save'}
+                              </button>
+                            </div>
+                          </div>
                         ) : null}
                       </div>
                     </td>

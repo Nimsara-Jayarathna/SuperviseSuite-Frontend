@@ -96,6 +96,10 @@ export function RepositorySection({
   >({});
   const [isLoadingInventory, setIsLoadingInventory] = useState(false);
   const [inventoryError, setInventoryError] = useState<string | null>(null);
+  const [editingDisplayNameRowKey, setEditingDisplayNameRowKey] = useState<string | null>(null);
+  const [editingDisplayNameDraft, setEditingDisplayNameDraft] = useState('');
+  const [displayNameEditError, setDisplayNameEditError] = useState<string | null>(null);
+  const [isSavingDisplayName, setIsSavingDisplayName] = useState(false);
 
   const [requestModal, setRequestModal] = useState<RequestModalState>({
     isOpen: false,
@@ -254,6 +258,9 @@ export function RepositorySection({
 
   useEffect(() => {
     if (!isManagementModalOpen) {
+      setEditingDisplayNameRowKey(null);
+      setEditingDisplayNameDraft('');
+      setDisplayNameEditError(null);
       return;
     }
     void loadRepositoryInventory();
@@ -275,6 +282,51 @@ export function RepositorySection({
 
   function closeRequestModal() {
     setRequestModal((current) => ({ ...current, isOpen: false }));
+  }
+
+  function startDisplayNameEdit(row: RepositoryManagementRow) {
+    if (!row.linkId) {
+      return;
+    }
+    setEditingDisplayNameRowKey(row.rowKey);
+    setEditingDisplayNameDraft(row.customName ?? '');
+    setDisplayNameEditError(null);
+  }
+
+  function cancelDisplayNameEdit() {
+    setEditingDisplayNameRowKey(null);
+    setEditingDisplayNameDraft('');
+    setDisplayNameEditError(null);
+  }
+
+  async function saveDisplayNameEdit(row: RepositoryManagementRow) {
+    if (!row.linkId || editingDisplayNameRowKey !== row.rowKey) {
+      return;
+    }
+
+    const normalized = editingDisplayNameDraft.trim();
+    if (normalized.length > 255) {
+      setDisplayNameEditError('Display name must be 255 characters or less.');
+      return;
+    }
+
+    setIsSavingDisplayName(true);
+    setDisplayNameEditError(null);
+    try {
+      await supervisorApi.updateGitHubRepositoryDisplayName(
+        row.linkId,
+        normalized.length > 0 ? normalized : null,
+      );
+      await reloadProjectAndRepositories(project.id);
+      cancelDisplayNameEdit();
+    } catch (error) {
+      const message = isApiException(error)
+        ? error.apiError.message
+        : 'Unable to update display name right now.';
+      setDisplayNameEditError(message);
+    } finally {
+      setIsSavingDisplayName(false);
+    }
   }
 
   function openLinkedLimitError(context: 'link' | 'enable') {
@@ -695,6 +747,14 @@ export function RepositorySection({
           onRefresh={(linkId) => void handleRefreshRepository(linkId)}
           onToggleEnabled={(row) => void handleToggleRepositoryEnabled(row)}
           onDisconnectSource={(sourceId) => void handleDisconnectAccessSource(sourceId)}
+          editingDisplayNameRowKey={editingDisplayNameRowKey}
+          editingDisplayNameDraft={editingDisplayNameDraft}
+          displayNameEditError={displayNameEditError}
+          isSavingDisplayName={isSavingDisplayName}
+          onStartDisplayNameEdit={startDisplayNameEdit}
+          onDisplayNameDraftChange={setEditingDisplayNameDraft}
+          onCancelDisplayNameEdit={cancelDisplayNameEdit}
+          onSaveDisplayNameEdit={(row) => void saveDisplayNameEdit(row)}
         />
       </GithubDetailsModal>
 
