@@ -14,12 +14,17 @@ import type {
 import type {
   AddSupervisorProjectMembersRequest,
   AddSupervisorProjectMilestoneRequest,
+  GitHubAccessRequestCreateV2,
+  GitHubAvailableRepositories,
+  GitHubInstallStart,
   GitHubAccessUpdatedAcknowledge,
   GitHubAccessUpdatedSummary,
+  LinkGitHubRepositoriesPayload,
   GitHubRepositoryAccessRequestContinue,
   GitHubRepositoryAccessRequestCreate,
   GitHubRepositoryAccessRequestValidation,
   GitHubInstallationRepositoriesPage,
+  ProjectGitHubRepositories,
   CreateSupervisorProjectRequest,
   CreateSupervisorProjectResponse,
   LinkProjectGitHubRepositoryRequest,
@@ -51,6 +56,16 @@ function clearSupervisorApiCache() {
   clearRecord(inFlightProjectRequests);
   clearRecord(cachedProjectGitHubById);
   clearRecord(inFlightProjectGitHubRequests);
+}
+
+function invalidateProjectCaches(projectId: string | null | undefined) {
+  if (!projectId) {
+    return;
+  }
+  delete cachedProjectsById[projectId];
+  delete inFlightProjectRequests[projectId];
+  delete cachedProjectGitHubById[projectId];
+  delete inFlightProjectGitHubRequests[projectId];
 }
 
 registerSessionCacheClearer(clearSupervisorApiCache);
@@ -133,6 +148,79 @@ export const supervisorApi = {
 
   refreshProjectGitHub(projectId: string): Promise<void> {
     return apiClient.post<void>(`/api/supervisor/projects/${projectId}/github/refresh`, {});
+  },
+
+  startGitHubAccessSourceInstall(body: {
+    projectId?: string;
+    requestToken?: string;
+  }): Promise<GitHubInstallStart> {
+    return apiClient.post<GitHubInstallStart>('/api/github/access-source/install/start', body);
+  },
+
+  createPublicGitHubAccessSource(
+    projectId: string,
+    repositoryUrl: string,
+  ): Promise<GitHubAvailableRepositories> {
+    return apiClient.post<GitHubAvailableRepositories>('/api/github/access-source/public', {
+      projectId,
+      repositoryUrl,
+    });
+  },
+
+  createGitHubAccessSourceRequest(projectId: string): Promise<GitHubAccessRequestCreateV2> {
+    return apiClient.post<GitHubAccessRequestCreateV2>('/api/github/access-source/request', {
+      projectId,
+    });
+  },
+
+  getAvailableGitHubRepositories(sourceId: string): Promise<GitHubAvailableRepositories> {
+    const params = new URLSearchParams({ sourceId });
+    return apiClient.get<GitHubAvailableRepositories>(
+      `/api/github/repositories/available?${params.toString()}`,
+    );
+  },
+
+  async linkGitHubRepositories(
+    payload: LinkGitHubRepositoriesPayload,
+  ): Promise<ProjectGitHubRepositories> {
+    const data = await apiClient.post<ProjectGitHubRepositories>(
+      '/api/github/repositories/link',
+      payload,
+    );
+    invalidateProjectCaches(data.projectId);
+    return data;
+  },
+
+  getProjectGitHubRepositories(projectId: string): Promise<ProjectGitHubRepositories> {
+    return apiClient.get<ProjectGitHubRepositories>(`/api/projects/${projectId}/github-repositories`);
+  },
+
+  async unlinkGitHubRepository(linkedRepositoryId: string): Promise<ProjectGitHubRepositories> {
+    const data = await apiClient.del<ProjectGitHubRepositories>(
+      `/api/github/repositories/${linkedRepositoryId}`,
+    );
+    invalidateProjectCaches(data.projectId);
+    return data;
+  },
+
+  async refreshGitHubRepository(linkedRepositoryId: string): Promise<ProjectGitHubRepositories> {
+    const data = await apiClient.post<ProjectGitHubRepositories>(
+      `/api/github/repositories/${linkedRepositoryId}/refresh`,
+      {},
+    );
+    invalidateProjectCaches(data.projectId);
+    return data;
+  },
+
+  async selectPrimaryGitHubRepository(
+    linkedRepositoryId: string,
+  ): Promise<ProjectGitHubRepositories> {
+    const data = await apiClient.post<ProjectGitHubRepositories>(
+      `/api/github/repositories/${linkedRepositoryId}/select`,
+      {},
+    );
+    invalidateProjectCaches(data.projectId);
+    return data;
   },
 
   getInstallationRepositories(

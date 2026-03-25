@@ -1,604 +1,350 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { env } from '@/app/config/env';
+import { useEffect, useMemo, useState } from 'react';
 import { buttonStyles } from '@/components/ui/Button';
 import { RequestStateModal } from '@/components/ui/RequestStateModal';
 import { GithubDetailsModal } from '@/features/projects/components/GithubDetailsModal';
 import { isApiException } from '@/services/apiClient';
-import { Github } from 'lucide-react';
+import { Github, RefreshCw } from 'lucide-react';
 import { supervisorApi } from '../../api/supervisorApi';
-import type { GitHubInstallationRepository, SupervisorProjectDetail } from '../../types';
-import { RepositoryLinkModalContent } from './RepositoryLinkModalContent';
+import { useAvailableRepositories } from '../../hooks/useAvailableRepositories';
+import { useGitHubSetupFlow } from '../../hooks/useGitHubSetupFlow';
+import { useProjectRepositories } from '../../hooks/useProjectRepositories';
+import { useRepositorySelection } from '../../hooks/useRepositorySelection';
+import type { ProjectGitHubRepositories, SupervisorProjectDetail } from '../../types';
+import {
+  RepositoryLinkModalContent,
+  type RepositoryLinkMethod,
+} from './RepositoryLinkModalContent';
 
 type RepositorySectionProps = {
   project: SupervisorProjectDetail;
   onUpdate: (updatedProject: SupervisorProjectDetail) => void;
-  pendingInstallationId?: number | null;
-  onPendingInstallationHandled?: () => void;
+  pendingSourceId?: string | null;
+  onPendingSourceHandled?: () => void;
 };
 
-const GITHUB_REPOSITORY_URL_PATTERN = /^https:\/\/github\.com\/[a-zA-Z0-9_-]+\/[a-zA-Z0-9_-]+$/;
+const GITHUB_REPOSITORY_URL_PATTERN = /^https:\/\/github\.com\/[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+$/;
 
-type LinkModalStep = 'entry' | 'installation-selection';
-type LinkMethod = 'url' | 'github_app';
+type ModalStep = 'method' | 'repository-selection';
 
-function toRepositoryPayload(value: string): string | null {
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : null;
+type RequestModalState = {
+  isOpen: boolean;
+  status: 'loading' | 'success' | 'error';
+  title: string;
+  message: string;
+};
+
+function toSyncLabel(value: string | null | undefined): string {
+  if (value === 'SUCCESS') return 'Synced';
+  if (value === 'FAILED') return 'Sync failed';
+  if (value === 'PENDING') return 'Pending';
+  return 'Unknown';
 }
 
-function isValidGithubRepositoryUrl(value: string): boolean {
-  return GITHUB_REPOSITORY_URL_PATTERN.test(value);
+function toSourceLabel(source: ProjectGitHubRepositories['accessSources'][number]): string {
+  return `${source.ownerLogin} (${source.accessType})`;
 }
 
-function toAccessScopeLabel(
-  accessScope: string | null | undefined,
-  count: number | null | undefined,
-): string | null {
-  if (accessScope === 'SINGLE_REPOSITORY') {
-    return 'GitHub access: 1 repository available';
-  }
-  if (accessScope === 'MULTIPLE_REPOSITORIES') {
-    return `GitHub access: ${typeof count === 'number' ? count : 'multiple'} repositories available`;
-  }
-  if (accessScope === 'NO_REPOSITORIES') {
-    return 'GitHub access: no repositories selected yet';
-  }
-  if (accessScope === 'ACCESS_UNAVAILABLE') {
-    return 'GitHub access is connected. Repository list will be resolved when needed.';
-  }
-  return null;
+function isValidRepositoryUrl(value: string): boolean {
+  return GITHUB_REPOSITORY_URL_PATTERN.test(value.trim());
 }
 
 export function RepositorySection({
   project,
   onUpdate,
-  pendingInstallationId,
-  onPendingInstallationHandled,
+  pendingSourceId,
+  onPendingSourceHandled,
 }: RepositorySectionProps) {
-  const linkedRepository = project.github.repositories[0];
-  const displayRepositoryUrl = linkedRepository?.url ?? project.repositoryUrl ?? null;
-  const [isSaving, setIsSaving] = useState(false);
-  const [validationError, setValidationError] = useState<string | null>(null);
-  const [requestModal, setRequestModal] = useState<{
-    isOpen: boolean;
-    status: 'loading' | 'success' | 'error';
-    title: string;
-    message: string;
-  }>({
-    isOpen: false,
-    status: 'loading',
-    title: '',
-    message: '',
-  });
-  const [connectModal, setConnectModal] = useState<{
-    isOpen: boolean;
-    status: 'loading' | 'success' | 'error';
-    title: string;
-    message: string;
-  }>({
-    isOpen: false,
-    status: 'loading',
-    title: '',
-    message: '',
-  });
-  const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
-  const [selectedLinkMethod, setSelectedLinkMethod] = useState<LinkMethod | null>(null);
-  const [urlInput, setUrlInput] = useState(displayRepositoryUrl ?? '');
-  const [initialEditValue, setInitialEditValue] = useState(displayRepositoryUrl ?? '');
-  const [linkModalStep, setLinkModalStep] = useState<LinkModalStep>('entry');
-  const [connectedInstallationId, setConnectedInstallationId] = useState<number | null>(null);
-  const [activeInstallationId, setActiveInstallationId] = useState<number | null>(null);
-  const [installationRepositories, setInstallationRepositories] = useState<
-    GitHubInstallationRepository[]
-  >([]);
-  const [isLoadingInstallationRepositories, setIsLoadingInstallationRepositories] = useState(false);
-  const [isLoadingMoreInstallationRepositories, setIsLoadingMoreInstallationRepositories] =
-    useState(false);
-  const [installationRepositoriesNextPage, setInstallationRepositoriesNextPage] = useState<
-    number | null
-  >(null);
-  const [installationRepositoriesHasNext, setInstallationRepositoriesHasNext] = useState(false);
-  const [installationRepositoriesTotalCount, setInstallationRepositoriesTotalCount] = useState<
-    number | null
-  >(null);
-  const [selectedInstallationRepositoryId, setSelectedInstallationRepositoryId] = useState<
-    number | null
-  >(null);
-  const [repositorySelectionError, setRepositorySelectionError] = useState<string | null>(null);
-  const [repositoryLoadMoreError, setRepositoryLoadMoreError] = useState<string | null>(null);
-  const [isPreparingAccessRequest, setIsPreparingAccessRequest] = useState(false);
+  const {
+    data: repositoriesData,
+    isLoading: isLoadingRepositoriesData,
+    error: repositoriesDataError,
+    reload: reloadRepositoriesData,
+  } = useProjectRepositories(project.id);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalStep, setModalStep] = useState<ModalStep>('method');
+  const [selectedMethod, setSelectedMethod] = useState<RepositoryLinkMethod | null>(null);
+  const [selectedSourceId, setSelectedSourceId] = useState<string | null>(null);
+
+  const [publicRepositoryUrl, setPublicRepositoryUrl] = useState('');
+  const [publicCustomName, setPublicCustomName] = useState('');
+
+  const [isSubmittingPublicRepository, setIsSubmittingPublicRepository] = useState(false);
+  const [isCreatingAccessRequest, setIsCreatingAccessRequest] = useState(false);
+  const [isConfirmingRepositorySelection, setIsConfirmingRepositorySelection] = useState(false);
+  const [isMutatingLinks, setIsMutatingLinks] = useState(false);
+  const [isAccessRequestLinkCopied, setIsAccessRequestLinkCopied] = useState(false);
   const [generatedAccessRequestUrl, setGeneratedAccessRequestUrl] = useState<string | null>(null);
   const [generatedAccessRequestExpiresAt, setGeneratedAccessRequestExpiresAt] = useState<
     string | null
   >(null);
-  const [accessRequestLinkNotice, setAccessRequestLinkNotice] = useState<string | null>(null);
-  const [isAccessRequestLinkCopied, setIsAccessRequestLinkCopied] = useState(false);
-  const copyFeedbackTimeoutRef = useRef<number | null>(null);
 
-  const hasRepository = project.github.repositoryLinked || Boolean(displayRepositoryUrl);
-  const authorizedInstallationId = project.github.authorizedInstallationId ?? null;
-  const effectiveInstallationId = connectedInstallationId ?? authorizedInstallationId;
-  const accessScopeLabel = toAccessScopeLabel(
-    project.github.accessScope,
-    project.github.accessibleRepositoryCount,
-  );
-  const canConfigureRepositorySelection =
-    !hasRepository &&
-    typeof effectiveInstallationId === 'number' &&
-    Number.isFinite(effectiveInstallationId) &&
-    effectiveInstallationId > 0;
+  const [requestModal, setRequestModal] = useState<RequestModalState>({
+    isOpen: false,
+    status: 'loading',
+    title: '',
+    message: '',
+  });
 
-  useEffect(() => {
-    if (!isLinkModalOpen) {
-      setUrlInput(displayRepositoryUrl ?? '');
-      setInitialEditValue(displayRepositoryUrl ?? '');
-      setValidationError(null);
-      setLinkModalStep('entry');
-      setSelectedLinkMethod(null);
-      setRepositorySelectionError(null);
-      setInstallationRepositories([]);
-      setSelectedInstallationRepositoryId(null);
-      setIsLoadingInstallationRepositories(false);
-      setIsLoadingMoreInstallationRepositories(false);
-      setActiveInstallationId(null);
-      setInstallationRepositoriesNextPage(null);
-      setInstallationRepositoriesHasNext(false);
-      setInstallationRepositoriesTotalCount(null);
-      setRepositoryLoadMoreError(null);
-    }
-  }, [displayRepositoryUrl, isLinkModalOpen]);
+  const {
+    isStartingOwnerInstall,
+    startOwnerInstall,
+  } = useGitHubSetupFlow(project.id);
+
+  const {
+    data: availableRepositoriesData,
+    isLoading: isLoadingAvailableRepositories,
+    error: availableRepositoriesError,
+    reload: reloadAvailableRepositories,
+  } = useAvailableRepositories(modalStep === 'repository-selection' ? selectedSourceId : null);
+
+  const linkedRepositories = repositoriesData?.repositories ?? [];
+  const accessSources = repositoriesData?.accessSources ?? [];
+  const maxLinkedRepositories = repositoriesData?.maxLinkedRepositories ?? 5;
+  const remainingSlots = Math.max(0, maxLinkedRepositories - linkedRepositories.length);
+
+  const selection = useRepositorySelection(remainingSlots > 0 ? remainingSlots : 0);
+
+  const sourceById = useMemo(() => {
+    return new Map(accessSources.map((source) => [source.id, source]));
+  }, [accessSources]);
+
+  const selectedSource = selectedSourceId ? sourceById.get(selectedSourceId) ?? null : null;
 
   useEffect(() => {
-    const nextAuthorizedInstallationId =
-      typeof project.github.authorizedInstallationId === 'number' &&
-      project.github.authorizedInstallationId > 0
-        ? project.github.authorizedInstallationId
-        : null;
-
-    setConnectedInstallationId(nextAuthorizedInstallationId);
-  }, [project.github.authorizedInstallationId]);
-
-  const hasInputChanged = useMemo(
-    () => urlInput !== initialEditValue,
-    [initialEditValue, urlInput],
-  );
-
-  const nextRepositoryPayload = useMemo(() => toRepositoryPayload(urlInput), [urlInput]);
-  const isInputValid = useMemo(
-    () => nextRepositoryPayload === null || isValidGithubRepositoryUrl(nextRepositoryPayload),
-    [nextRepositoryPayload],
-  );
-
-  function openLinkModal() {
-    setUrlInput(displayRepositoryUrl ?? '');
-    setInitialEditValue(displayRepositoryUrl ?? '');
-    setValidationError(null);
-    setLinkModalStep('entry');
-    setSelectedLinkMethod(null);
-    setIsLinkModalOpen(true);
-    if (
-      !hasRepository &&
-      typeof effectiveInstallationId === 'number' &&
-      Number.isFinite(effectiveInstallationId) &&
-      effectiveInstallationId > 0
-    ) {
-      void openInstallationSelection(effectiveInstallationId);
-    }
-  }
-
-  function closeLinkModal() {
-    if (isSaving || isLoadingInstallationRepositories) {
+    if (!pendingSourceId) {
       return;
     }
-    setIsLinkModalOpen(false);
-    setValidationError(null);
-    setRepositorySelectionError(null);
+
+    setIsModalOpen(true);
+    setModalStep('repository-selection');
+    setSelectedMethod(null);
+    setSelectedSourceId(pendingSourceId);
+    selection.clear();
+    onPendingSourceHandled?.();
+  }, [onPendingSourceHandled, pendingSourceId, selection.clear]);
+
+  useEffect(() => {
+    if (!isModalOpen) {
+      setPublicRepositoryUrl('');
+      setPublicCustomName('');
+      setGeneratedAccessRequestUrl(null);
+      setGeneratedAccessRequestExpiresAt(null);
+      setIsAccessRequestLinkCopied(false);
+      setSelectedMethod(null);
+      setSelectedSourceId(null);
+      setModalStep('method');
+      selection.clear();
+    }
+  }, [isModalOpen, selection.clear]);
+
+  async function reloadProjectAndRepositories(projectId: string) {
+    await reloadRepositoriesData();
+    const updatedProject = await supervisorApi.getProjectById(projectId, true);
+    onUpdate(updatedProject);
+  }
+
+  function openRequestModal(
+    status: RequestModalState['status'],
+    title: string,
+    message: string,
+  ) {
+    setRequestModal({ isOpen: true, status, title, message });
   }
 
   function closeRequestModal() {
-    if (copyFeedbackTimeoutRef.current) {
-      window.clearTimeout(copyFeedbackTimeoutRef.current);
-      copyFeedbackTimeoutRef.current = null;
-    }
-    setIsAccessRequestLinkCopied(false);
-    setAccessRequestLinkNotice(null);
-    setGeneratedAccessRequestUrl(null);
-    setGeneratedAccessRequestExpiresAt(null);
     setRequestModal((current) => ({ ...current, isOpen: false }));
   }
 
-  function closeConnectModal() {
-    setConnectModal((current) => ({ ...current, isOpen: false }));
+  function openSourceSelection(sourceId: string) {
+    setSelectedSourceId(sourceId);
+    setModalStep('repository-selection');
+    setSelectedMethod(null);
+    selection.clear();
   }
 
-  const openInstallationSelection = useCallback(
-    async (installationId: number) => {
-      if (!Number.isFinite(installationId) || installationId < 1) {
-        setRepositorySelectionError('Invalid installation id received from GitHub setup.');
-        setLinkModalStep('installation-selection');
-        setSelectedLinkMethod(null);
-        return;
-      }
-
-      setLinkModalStep('installation-selection');
-      setSelectedLinkMethod(null);
-      setActiveInstallationId(installationId);
-      setIsLoadingInstallationRepositories(true);
-      setIsLoadingMoreInstallationRepositories(false);
-      setRepositorySelectionError(null);
-      setRepositoryLoadMoreError(null);
-      setInstallationRepositories([]);
-      setSelectedInstallationRepositoryId(null);
-      setInstallationRepositoriesNextPage(null);
-      setInstallationRepositoriesHasNext(false);
-      setInstallationRepositoriesTotalCount(null);
-
-      try {
-        const repositoriesPage = await supervisorApi.getInstallationRepositories(
-          project.id,
-          installationId,
-          1,
-        );
-        setInstallationRepositories(repositoriesPage.items);
-        setInstallationRepositoriesNextPage(repositoriesPage.nextPage);
-        setInstallationRepositoriesHasNext(repositoriesPage.hasNext);
-        setInstallationRepositoriesTotalCount(repositoriesPage.totalCount);
-        const selectable = repositoriesPage.items[0] ?? null;
-        setSelectedInstallationRepositoryId(selectable ? selectable.repositoryId : null);
-      } catch (error) {
-        const message = isApiException(error)
-          ? error.apiError.message
-          : 'Unable to load repositories for this installation.';
-        setRepositorySelectionError(message);
-      } finally {
-        setIsLoadingInstallationRepositories(false);
-      }
-    },
-    [project.id],
-  );
-
-  async function handleLoadMoreInstallationRepositories() {
-    if (
-      !activeInstallationId ||
-      !installationRepositoriesNextPage ||
-      isLoadingMoreInstallationRepositories
-    ) {
+  async function handleSubmitPublicRepository() {
+    const repositoryUrl = publicRepositoryUrl.trim();
+    if (!isValidRepositoryUrl(repositoryUrl)) {
+      openRequestModal('error', 'Invalid repository URL', 'Enter a valid https://github.com/owner/repo URL.');
       return;
     }
 
-    setIsLoadingMoreInstallationRepositories(true);
-    setRepositoryLoadMoreError(null);
-
-    try {
-      const repositoriesPage = await supervisorApi.getInstallationRepositories(
-        project.id,
-        activeInstallationId,
-        installationRepositoriesNextPage,
+    if (remainingSlots < 1) {
+      openRequestModal(
+        'error',
+        'Repository limit reached',
+        'Unlink an existing repository before adding another one.',
       );
-      setInstallationRepositories((previous) => {
-        const seen = new Set(previous.map((item) => item.repositoryId));
-        const nextItems = repositoriesPage.items.filter((item) => !seen.has(item.repositoryId));
-        return [...previous, ...nextItems];
-      });
-      setInstallationRepositoriesNextPage(repositoriesPage.nextPage);
-      setInstallationRepositoriesHasNext(repositoriesPage.hasNext);
-      setInstallationRepositoriesTotalCount(repositoriesPage.totalCount);
-    } catch (error) {
-      const message = isApiException(error)
-        ? error.apiError.message
-        : 'Unable to load more repositories right now.';
-      setRepositoryLoadMoreError(message);
-    } finally {
-      setIsLoadingMoreInstallationRepositories(false);
-    }
-  }
-
-  async function handleRemoveAccessAuthorization() {
-    setIsSaving(true);
-    setRequestModal({
-      isOpen: true,
-      status: 'loading',
-      title: 'Removing GitHub access authorization',
-      message: 'Clearing project-level GitHub authorization and repository linkage data.',
-    });
-
-    try {
-      const updatedProject = await supervisorApi.removeProjectGitHubAccessAuthorization(project.id);
-      onUpdate(updatedProject);
-      setConnectedInstallationId(null);
-      setActiveInstallationId(null);
-      setLinkModalStep('entry');
-      setIsLinkModalOpen(false);
-      setRequestModal({
-        isOpen: true,
-        status: 'success',
-        title: 'GitHub access authorization removed',
-        message:
-          'Project-level GitHub authorization was removed. You can now link a repository again using the regular flow.',
-      });
-    } catch (error) {
-      const message = isApiException(error)
-        ? error.apiError.message
-        : 'Unable to remove GitHub access authorization right now. Please try again.';
-      setRequestModal({
-        isOpen: true,
-        status: 'error',
-        title: 'Failed to remove GitHub access authorization',
-        message,
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  }
-
-  function handleConnectGitHubApp() {
-    if (!env.apiBaseUrl) {
-      setConnectModal({
-        isOpen: true,
-        status: 'error',
-        title: 'GitHub App setup unavailable',
-        message:
-          'API base URL is not configured yet. Set VITE_API_BASE_URL to enable GitHub setup.',
-      });
       return;
     }
 
+    setIsSubmittingPublicRepository(true);
+    openRequestModal('loading', 'Linking public repository', 'Creating access source and linking repository.');
+
     try {
-      const setupStartUrl = new URL(
-        `/api/supervisor/projects/${project.id}/github/setup/start`,
-        `${env.apiBaseUrl}/`,
-      );
-      window.location.assign(setupStartUrl.toString());
-    } catch {
-      setConnectModal({
-        isOpen: true,
-        status: 'error',
-        title: 'Invalid API configuration',
-        message: 'VITE_API_BASE_URL is invalid. Please update frontend environment configuration.',
+      const created = await supervisorApi.createPublicGitHubAccessSource(project.id, repositoryUrl);
+      const repository = created.items[0];
+      if (!repository) {
+        throw new Error('No repository returned from public access source creation.');
+      }
+
+      await supervisorApi.linkGitHubRepositories({
+        projectId: project.id,
+        sourceId: created.sourceId,
+        repositories: [
+          {
+            githubRepositoryId: repository.id,
+            customName: publicCustomName.trim() || undefined,
+            primary: linkedRepositories.length === 0,
+          },
+        ],
       });
+
+      await reloadProjectAndRepositories(project.id);
+      setIsModalOpen(false);
+      openRequestModal('success', 'Repository linked', 'Public repository linked successfully.');
+    } catch (error) {
+      const message = isApiException(error)
+        ? error.apiError.message
+        : 'Unable to link public repository right now.';
+      openRequestModal('error', 'Repository link failed', message);
+    } finally {
+      setIsSubmittingPublicRepository(false);
     }
   }
 
-  async function handleRequestMoreRepositoryAccess() {
-    setIsPreparingAccessRequest(true);
+  async function handleCreateAccessRequest() {
+    setIsCreatingAccessRequest(true);
     setGeneratedAccessRequestUrl(null);
     setGeneratedAccessRequestExpiresAt(null);
-    setAccessRequestLinkNotice(null);
-    setRequestModal({
-      isOpen: true,
-      status: 'loading',
-      title: 'Preparing access request',
-      message: 'Creating a project-scoped access request before continuing to GitHub.',
-    });
 
     try {
-      const data = await supervisorApi.createGitHubRepositoryAccessRequest(project.id);
-      const requestUrl = data.requestUrl?.trim();
-      if (!requestUrl) {
-        throw new Error('Missing request URL');
-      }
-      const absoluteUrl = new URL(requestUrl, window.location.origin).toString();
+      const response = await supervisorApi.createGitHubAccessSourceRequest(project.id);
+      const absoluteUrl = new URL(response.requestUrl, window.location.origin).toString();
       setGeneratedAccessRequestUrl(absoluteUrl);
-      setGeneratedAccessRequestExpiresAt(data.expiresAt ?? null);
-      setAccessRequestLinkNotice(null);
-      setRequestModal({
-        isOpen: true,
-        status: 'success',
-        title: 'Access request link created',
-        message: 'Use the generated access link below to continue the GitHub authorization flow.',
-      });
+      setGeneratedAccessRequestExpiresAt(response.expiresAt ?? null);
+      setIsAccessRequestLinkCopied(false);
     } catch (error) {
       const message = isApiException(error)
         ? error.apiError.message
-        : 'Unable to create access request right now. Please try again.';
-      setRequestModal({
-        isOpen: true,
-        status: 'error',
-        title: 'Access request failed',
-        message,
-      });
+        : 'Unable to generate access request link right now.';
+      openRequestModal('error', 'Request link generation failed', message);
     } finally {
-      setIsPreparingAccessRequest(false);
+      setIsCreatingAccessRequest(false);
     }
   }
 
-  async function handleCopyAccessRequestLink() {
+  async function handleCopyAccessRequestUrl() {
     if (!generatedAccessRequestUrl) {
       return;
     }
+
     try {
       await navigator.clipboard.writeText(generatedAccessRequestUrl);
-      setAccessRequestLinkNotice(null);
       setIsAccessRequestLinkCopied(true);
-      if (copyFeedbackTimeoutRef.current) {
-        window.clearTimeout(copyFeedbackTimeoutRef.current);
-      }
-      copyFeedbackTimeoutRef.current = window.setTimeout(() => {
-        setIsAccessRequestLinkCopied(false);
-        copyFeedbackTimeoutRef.current = null;
-      }, 1200);
+      window.setTimeout(() => setIsAccessRequestLinkCopied(false), 1200);
     } catch {
       setIsAccessRequestLinkCopied(false);
-      setAccessRequestLinkNotice('Unable to copy automatically. Copy the link manually.');
+      openRequestModal('error', 'Copy failed', 'Unable to copy link automatically.');
     }
   }
 
-  useEffect(() => {
-    return () => {
-      if (copyFeedbackTimeoutRef.current) {
-        window.clearTimeout(copyFeedbackTimeoutRef.current);
-      }
-    };
-  }, []);
+  async function handleStartOwnerInstall() {
+    try {
+      await startOwnerInstall();
+    } catch (error) {
+      const message = isApiException(error)
+        ? error.apiError.message
+        : error instanceof Error
+          ? error.message
+          : 'Unable to start GitHub install flow right now.';
+      openRequestModal('error', 'GitHub install start failed', message);
+    }
+  }
 
   async function handleConfirmRepositorySelection() {
-    if (!activeInstallationId || !selectedInstallationRepositoryId) {
-      setRepositorySelectionError('Select one repository to continue.');
+    if (!selectedSourceId) {
+      openRequestModal('error', 'Missing access source', 'Select a valid access source and try again.');
       return;
     }
 
-    setGeneratedAccessRequestUrl(null);
-    setGeneratedAccessRequestExpiresAt(null);
-    setAccessRequestLinkNotice(null);
-    setIsSaving(true);
-    setRequestModal({
-      isOpen: true,
-      status: 'loading',
-      title: 'Linking repository',
-      message: 'Saving selected repository and syncing GitHub data for this project.',
-    });
-
-    try {
-      await supervisorApi.linkProjectGitHubRepository(project.id, {
-        installationId: activeInstallationId,
-        repositoryId: selectedInstallationRepositoryId,
-      });
-      const updatedProject = await supervisorApi.getProjectById(project.id, true);
-      onUpdate(updatedProject);
-
-      setIsLinkModalOpen(false);
-      setRequestModal({
-        isOpen: true,
-        status: 'success',
-        title: 'Repository linked',
-        message: 'Selected GitHub repository was linked and synced successfully.',
-      });
-    } catch (error) {
-      const message = isApiException(error)
-        ? error.apiError.message
-        : 'Unable to link selected repository. Please try again.';
-      setRequestModal({
-        isOpen: true,
-        status: 'error',
-        title: 'Repository link failed',
-        message,
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  }
-
-  async function handleRemoveRepository() {
-    setValidationError(null);
-    setGeneratedAccessRequestUrl(null);
-    setGeneratedAccessRequestExpiresAt(null);
-    setAccessRequestLinkNotice(null);
-    setIsSaving(true);
-    setRequestModal({
-      isOpen: true,
-      status: 'loading',
-      title: 'Removing GitHub link',
-      message: 'Disconnecting GitHub repository and clearing project GitHub linkage.',
-    });
-
-    try {
-      const updatedProject = await supervisorApi.updateRepository(project.id, null);
-      onUpdate(updatedProject);
-      setUrlInput('');
-      setInitialEditValue('');
-      setRequestModal({
-        isOpen: true,
-        status: 'success',
-        title: 'GitHub removed',
-        message: 'GitHub repository/app linkage was removed from this project.',
-      });
-    } catch (error) {
-      const message = isApiException(error)
-        ? error.apiError.message
-        : 'Unable to remove GitHub linkage. Please try again.';
-      setRequestModal({
-        isOpen: true,
-        status: 'error',
-        title: 'Unable to remove GitHub linkage',
-        message,
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  }
-
-  async function handleSaveRepository() {
-    if (!isInputValid) {
-      setValidationError('Please enter a valid GitHub repository URL');
+    if (selection.selectionsPayload.length === 0) {
+      openRequestModal('error', 'No repositories selected', 'Select at least one repository.');
       return;
     }
 
-    const repositoryUrl = nextRepositoryPayload;
-    setValidationError(null);
-    setGeneratedAccessRequestUrl(null);
-    setGeneratedAccessRequestExpiresAt(null);
-    setAccessRequestLinkNotice(null);
-
-    setIsSaving(true);
-    setRequestModal({
-      isOpen: true,
-      status: 'loading',
-      title: 'Updating repository link',
-      message: 'Saving GitHub repository settings for this project.',
-    });
+    setIsConfirmingRepositorySelection(true);
+    openRequestModal('loading', 'Linking repositories', 'Saving selected repositories for this project.');
 
     try {
-      const updatedProject = await supervisorApi.updateRepository(project.id, repositoryUrl);
-      onUpdate(updatedProject);
-      setIsLinkModalOpen(false);
-      const nextDisplayUrl =
-        updatedProject.github.repositories[0]?.url ?? updatedProject.repositoryUrl ?? '';
-      setUrlInput(nextDisplayUrl);
-      setInitialEditValue(nextDisplayUrl);
-      setRequestModal({
-        isOpen: true,
-        status: 'success',
-        title: repositoryUrl ? 'Repository linked' : 'Repository removed',
-        message: repositoryUrl
-          ? 'GitHub repository URL was saved successfully.'
-          : 'GitHub repository URL was removed successfully.',
+      await supervisorApi.linkGitHubRepositories({
+        projectId: project.id,
+        sourceId: selectedSourceId,
+        repositories: selection.selectionsPayload,
       });
+      await reloadProjectAndRepositories(project.id);
+      setIsModalOpen(false);
+      openRequestModal('success', 'Repositories linked', 'Selected repositories were linked successfully.');
     } catch (error) {
       const message = isApiException(error)
         ? error.apiError.message
-        : 'Unable to update repository. Please try again.';
-      setRequestModal({
-        isOpen: true,
-        status: 'error',
-        title: 'Unable to update repository',
-        message: message || 'Unable to update repository. Please try again.',
-      });
+        : 'Unable to link repositories right now.';
+      openRequestModal('error', 'Repository linking failed', message);
     } finally {
-      setIsSaving(false);
+      setIsConfirmingRepositorySelection(false);
     }
   }
 
-  function handleUrlInputChange(nextValue: string) {
-    const nextPayload = toRepositoryPayload(nextValue);
-    setUrlInput(nextValue);
-    if (nextPayload && !isValidGithubRepositoryUrl(nextPayload)) {
-      setValidationError('Please enter a valid GitHub repository URL');
-    } else {
-      setValidationError(null);
+  async function handleSelectPrimary(linkId: string) {
+    setIsMutatingLinks(true);
+    openRequestModal('loading', 'Selecting repository', 'Setting selected repository as primary.');
+    try {
+      await supervisorApi.selectPrimaryGitHubRepository(linkId);
+      await reloadProjectAndRepositories(project.id);
+      openRequestModal('success', 'Primary repository updated', 'GitHub tab now tracks the selected repository.');
+    } catch (error) {
+      const message = isApiException(error)
+        ? error.apiError.message
+        : 'Unable to select repository right now.';
+      openRequestModal('error', 'Repository selection failed', message);
+    } finally {
+      setIsMutatingLinks(false);
     }
   }
 
-  useEffect(() => {
-    if (!pendingInstallationId) {
-      return;
+  async function handleRefreshRepository(linkId: string) {
+    setIsMutatingLinks(true);
+    openRequestModal('loading', 'Refreshing repository', 'Syncing repository metadata, commits, and contributors.');
+    try {
+      await supervisorApi.refreshGitHubRepository(linkId);
+      await reloadProjectAndRepositories(project.id);
+      openRequestModal('success', 'Repository refreshed', 'Repository sync completed.');
+    } catch (error) {
+      const message = isApiException(error)
+        ? error.apiError.message
+        : 'Unable to refresh repository right now.';
+      openRequestModal('error', 'Repository refresh failed', message);
+    } finally {
+      setIsMutatingLinks(false);
     }
+  }
 
-    setConnectedInstallationId(pendingInstallationId);
-
-    if (!hasRepository) {
-      setIsLinkModalOpen(true);
-      void openInstallationSelection(pendingInstallationId);
+  async function handleUnlinkRepository(linkId: string) {
+    setIsMutatingLinks(true);
+    openRequestModal('loading', 'Unlinking repository', 'Removing repository from this project.');
+    try {
+      await supervisorApi.unlinkGitHubRepository(linkId);
+      await reloadProjectAndRepositories(project.id);
+      openRequestModal('success', 'Repository unlinked', 'Repository was removed from this project.');
+    } catch (error) {
+      const message = isApiException(error)
+        ? error.apiError.message
+        : 'Unable to unlink repository right now.';
+      openRequestModal('error', 'Repository unlink failed', message);
+    } finally {
+      setIsMutatingLinks(false);
     }
-    onPendingInstallationHandled?.();
-  }, [
-    hasRepository,
-    onPendingInstallationHandled,
-    openInstallationSelection,
-    pendingInstallationId,
-  ]);
-
-  const showAccessRequestLinkInModal =
-    requestModal.isOpen && requestModal.status === 'success' && Boolean(generatedAccessRequestUrl);
+  }
 
   return (
     <section className="rounded-3xl border border-border bg-white p-6 shadow-sm">
@@ -607,216 +353,196 @@ export function RepositorySection({
         status={requestModal.status}
         title={requestModal.title}
         message={requestModal.message}
-        autoCloseOnSuccess={!showAccessRequestLinkInModal}
-        content={
-          showAccessRequestLinkInModal && generatedAccessRequestUrl ? (
-            <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-3 text-left">
-              <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
-                Access Request Link
-              </p>
-              <a
-                href={generatedAccessRequestUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="mt-2 block break-all text-xs text-sky-700 underline-offset-2 hover:underline"
-              >
-                {generatedAccessRequestUrl}
-              </a>
-              {generatedAccessRequestExpiresAt ? (
-                <p className="mt-2 text-xs text-muted-foreground">
-                  Expires at {new Date(generatedAccessRequestExpiresAt).toLocaleString()}
-                </p>
-              ) : null}
-              {accessRequestLinkNotice ? (
-                <p className="mt-2 text-xs text-muted-foreground">{accessRequestLinkNotice}</p>
-              ) : null}
-            </div>
-          ) : null
-        }
-        footer={
-          showAccessRequestLinkInModal && generatedAccessRequestUrl ? (
-            <div className="flex flex-wrap justify-center gap-3">
-              <button
-                type="button"
-                className={buttonStyles({ variant: 'secondary', size: 'md' })}
-                onClick={() => void handleCopyAccessRequestLink()}
-              >
-                <span className="inline-flex items-center gap-2">
-                  <span>{isAccessRequestLinkCopied ? 'Copied' : 'Copy link'}</span>
-                  <span
-                    aria-hidden="true"
-                    className={`inline-flex text-emerald-600 transition-all duration-200 ${
-                      isAccessRequestLinkCopied ? 'scale-100 opacity-100' : 'scale-75 opacity-0'
-                    }`}
-                  >
-                    ✓
-                  </span>
-                </span>
-              </button>
-              <button
-                type="button"
-                className={buttonStyles({ variant: 'primary', size: 'md' })}
-                onClick={closeRequestModal}
-              >
-                Close
-              </button>
-            </div>
-          ) : undefined
-        }
         onClose={requestModal.status === 'loading' ? undefined : closeRequestModal}
       />
-      <RequestStateModal
-        isOpen={connectModal.isOpen}
-        status={connectModal.status}
-        title={connectModal.title}
-        message={connectModal.message}
-        onClose={connectModal.status === 'loading' ? undefined : closeConnectModal}
-      />
 
-      <GithubDetailsModal isOpen={isLinkModalOpen} title="Link repository" onClose={closeLinkModal}>
+      <GithubDetailsModal isOpen={isModalOpen} title="Link repositories" onClose={() => setIsModalOpen(false)}>
         <RepositoryLinkModalContent
-          step={linkModalStep}
-          selectedMethod={selectedLinkMethod}
-          urlInput={urlInput}
-          validationError={validationError}
-          isSaving={isSaving}
-          hasInputChanged={hasInputChanged}
-          isInputValid={isInputValid}
-          onUrlChange={handleUrlInputChange}
-          onSave={() => void handleSaveRepository()}
-          onConnectGitHubApp={handleConnectGitHubApp}
-          onRequestMoreRepositoryAccess={() => void handleRequestMoreRepositoryAccess()}
-          isRequestingMoreRepositoryAccess={isPreparingAccessRequest}
-          connectedInstallationId={connectedInstallationId}
-          onUseConnectedInstallation={(installationId) => {
-            void openInstallationSelection(installationId);
+          step={modalStep}
+          selectedMethod={selectedMethod}
+          onSelectMethod={setSelectedMethod}
+          onBackToMethods={() => {
+            setModalStep('method');
+            setSelectedSourceId(null);
           }}
-          repositories={installationRepositories}
-          selectedRepositoryId={selectedInstallationRepositoryId}
-          isLoadingRepositories={isLoadingInstallationRepositories}
-          repositorySelectionError={repositorySelectionError}
-          onSelectRepository={setSelectedInstallationRepositoryId}
+          publicRepositoryUrl={publicRepositoryUrl}
+          publicCustomName={publicCustomName}
+          onChangePublicRepositoryUrl={setPublicRepositoryUrl}
+          onChangePublicCustomName={setPublicCustomName}
+          onSubmitPublicRepository={() => void handleSubmitPublicRepository()}
+          isSubmittingPublicRepository={isSubmittingPublicRepository}
+          onStartOwnerInstall={() => void handleStartOwnerInstall()}
+          isStartingOwnerInstall={isStartingOwnerInstall}
+          onCreateAccessRequest={() => void handleCreateAccessRequest()}
+          isCreatingAccessRequest={isCreatingAccessRequest}
+          generatedAccessRequestUrl={generatedAccessRequestUrl}
+          generatedAccessRequestExpiresAt={generatedAccessRequestExpiresAt}
+          onCopyAccessRequestUrl={() => void handleCopyAccessRequestUrl()}
+          isAccessRequestLinkCopied={isAccessRequestLinkCopied}
+          selectedSourceLabel={selectedSource ? toSourceLabel(selectedSource) : null}
+          availableRepositories={availableRepositoriesData?.items ?? []}
+          isLoadingAvailableRepositories={isLoadingAvailableRepositories}
+          availableRepositoriesError={availableRepositoriesError?.message ?? null}
+          onReloadAvailableRepositories={() => void reloadAvailableRepositories()}
+          selectedRepositoryIds={selection.selectedRepositoryIds}
+          primaryRepositoryId={selection.primaryRepositoryId}
+          customNameByRepositoryId={selection.customNameByRepositoryId}
+          maxSelectableCount={remainingSlots}
+          onToggleRepository={selection.toggleRepository}
+          onSetPrimaryRepository={selection.setPrimaryRepositoryId}
+          onCustomNameChange={selection.setCustomName}
           onConfirmRepositorySelection={() => void handleConfirmRepositorySelection()}
-          onRetryLoadRepositories={() => {
-            if (activeInstallationId) {
-              void openInstallationSelection(activeInstallationId);
-            }
-          }}
-          hasMoreRepositories={installationRepositoriesHasNext}
-          totalRepositoryCount={installationRepositoriesTotalCount}
-          isLoadingMoreRepositories={isLoadingMoreInstallationRepositories}
-          onLoadMoreRepositories={() => void handleLoadMoreInstallationRepositories()}
-          loadMoreError={repositoryLoadMoreError}
-          onSelectMethod={setSelectedLinkMethod}
-          onChangeMethod={() => setSelectedLinkMethod(null)}
+          isConfirmingRepositorySelection={isConfirmingRepositorySelection}
         />
+
+        {selectedMethod === 'INSTALLATION_DIRECT' && modalStep === 'method' ? (
+          <div className="mt-3">
+            <button
+              type="button"
+              className={buttonStyles({ variant: 'secondary', size: 'sm' })}
+              onClick={() => {
+                const installationSources = accessSources.filter((source) => source.installationId != null);
+                const latestSource = installationSources[0];
+                if (latestSource) {
+                  openSourceSelection(latestSource.id);
+                }
+              }}
+            >
+              Select repositories from existing installation
+            </button>
+          </div>
+        ) : null}
       </GithubDetailsModal>
 
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-lg font-semibold text-foreground">GitHub repository</h2>
-        <div className="flex flex-wrap justify-end gap-2">
-          <button
-            type="button"
-            className={buttonStyles({ variant: 'primary', size: 'sm' })}
-            onClick={openLinkModal}
-            disabled={isSaving || hasRepository || canConfigureRepositorySelection}
-            title={
-              hasRepository
-                ? 'Remove the current repository before selecting another one.'
-                : canConfigureRepositorySelection
-                  ? 'Use Configure repository in the access-authorization block below.'
-                  : undefined
-            }
-          >
-            <span className="inline-flex items-center gap-2">
-              <Github className="h-4 w-4" />
-              <span>Link repository</span>
-            </span>
-          </button>
-        </div>
+        <h2 className="text-lg font-semibold text-foreground">GitHub repositories</h2>
+        <button
+          type="button"
+          className={buttonStyles({ variant: 'primary', size: 'sm' })}
+          onClick={() => setIsModalOpen(true)}
+          disabled={remainingSlots < 1}
+          title={remainingSlots < 1 ? 'Maximum linked repositories reached.' : undefined}
+        >
+          <span className="inline-flex items-center gap-2">
+            <Github className="h-4 w-4" />
+            Link repositories
+          </span>
+        </button>
       </div>
 
-      {hasRepository ? (
-        <div className="mt-5 space-y-2">
-          <div className="flex flex-wrap items-center gap-3">
-            <a
-              href={displayRepositoryUrl ?? '#'}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm font-medium text-sky-700 underline-offset-2 hover:underline"
-            >
-              {displayRepositoryUrl}
-            </a>
-            <button
-              type="button"
-              className={buttonStyles({
-                variant: 'secondary',
-                size: 'sm',
-                className: 'text-rose-600 hover:text-rose-700',
-              })}
-              onClick={() => void handleRemoveRepository()}
-              disabled={isSaving}
-            >
-              Remove
-            </button>
+      <p className="mt-2 text-xs text-muted-foreground">
+        Linked {linkedRepositories.length} / {maxLinkedRepositories} repositories.
+      </p>
+
+      {isLoadingRepositoriesData ? (
+        <p className="mt-4 text-sm text-muted-foreground">Loading GitHub repositories...</p>
+      ) : repositoriesDataError ? (
+        <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
+          <p>{repositoriesDataError.message}</p>
+          <button
+            type="button"
+            className={buttonStyles({ variant: 'secondary', size: 'sm', className: 'mt-3' })}
+            onClick={() => void reloadRepositoriesData()}
+          >
+            Retry
+          </button>
+        </div>
+      ) : null}
+
+      {accessSources.length > 0 ? (
+        <div className="mt-4 space-y-2">
+          <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Access sources</p>
+          <div className="flex flex-wrap gap-2">
+            {accessSources.map((source) => (
+              <button
+                key={source.id}
+                type="button"
+                className={buttonStyles({ variant: 'secondary', size: 'sm' })}
+                onClick={() => {
+                  setIsModalOpen(true);
+                  openSourceSelection(source.id);
+                }}
+                disabled={remainingSlots < 1}
+              >
+                {toSourceLabel(source)}
+              </button>
+            ))}
           </div>
-          {accessScopeLabel ? (
-            <p className="inline-flex rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs text-amber-800">
-              {accessScopeLabel}
-            </p>
-          ) : null}
-          <p className="text-xs text-muted-foreground">
-            Linked via repository URL or GitHub App integration.
-          </p>
-          <p className="text-xs text-muted-foreground">
-            Only one repository is supported right now. Remove this repository to add another one.
-          </p>
+        </div>
+      ) : null}
+
+      {linkedRepositories.length === 0 ? (
+        <div className="mt-5 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4">
+          <p className="text-sm text-muted-foreground">No GitHub repositories linked yet.</p>
         </div>
       ) : (
-        <div className="mt-5 space-y-2">
-          <p className="text-sm text-muted-foreground">No GitHub repository linked yet.</p>
-          {canConfigureRepositorySelection ? (
-            <div className="mt-3 rounded-2xl border border-amber-300 bg-amber-50/70 p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-800">
-                Existing GitHub Access Authorization
-              </p>
-              <p className="mt-2 text-sm text-amber-900">
-                This project already has GitHub App access authorization. The actions below manage
-                that existing authorization and repository linkage for this project.
-              </p>
-              {accessScopeLabel ? (
-                <p className="mt-3 inline-flex rounded-full border border-amber-300 bg-white/70 px-2.5 py-1 text-xs text-amber-900">
-                  {accessScopeLabel}
-                </p>
-              ) : null}
-              <div className="mt-4 flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  className={buttonStyles({ variant: 'primary', size: 'sm' })}
-                  onClick={openLinkModal}
-                  disabled={isSaving}
-                >
-                  Configure repository
-                </button>
-                <button
-                  type="button"
-                  className={buttonStyles({
-                    variant: 'secondary',
-                    size: 'sm',
-                    className: 'text-rose-700 hover:text-rose-800',
-                  })}
-                  onClick={() => void handleRemoveAccessAuthorization()}
-                  disabled={isSaving}
-                >
-                  Remove access linkage
-                </button>
+        <div className="mt-5 space-y-3">
+          {linkedRepositories.map((repository) => (
+            <article key={repository.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-foreground">
+                    {repository.customName?.trim() || repository.name || repository.fullName || 'Repository'}
+                    {repository.primary ? (
+                      <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] uppercase text-amber-800">
+                        Primary
+                      </span>
+                    ) : null}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">{repository.fullName}</p>
+                  {repository.url ? (
+                    <a
+                      href={repository.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-1 inline-block text-xs text-sky-700 hover:underline"
+                    >
+                      {repository.url}
+                    </a>
+                  ) : null}
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Owner: {repository.ownerLogin || 'unknown'} · Sync: {toSyncLabel(repository.syncStatus)}
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  {!repository.primary ? (
+                    <button
+                      type="button"
+                      className={buttonStyles({ variant: 'secondary', size: 'sm' })}
+                      onClick={() => void handleSelectPrimary(repository.id)}
+                      disabled={isMutatingLinks}
+                    >
+                      Select
+                    </button>
+                  ) : null}
+                  <button
+                    type="button"
+                    className={buttonStyles({ variant: 'secondary', size: 'sm' })}
+                    onClick={() => void handleRefreshRepository(repository.id)}
+                    disabled={isMutatingLinks}
+                  >
+                    <span className="inline-flex items-center gap-1">
+                      <RefreshCw className="h-3.5 w-3.5" />
+                      Refresh
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    className={buttonStyles({
+                      variant: 'secondary',
+                      size: 'sm',
+                      className: 'text-rose-600 hover:text-rose-700',
+                    })}
+                    onClick={() => void handleUnlinkRepository(repository.id)}
+                    disabled={isMutatingLinks}
+                  >
+                    Unlink
+                  </button>
+                </div>
               </div>
-            </div>
-          ) : accessScopeLabel ? (
-            <p className="inline-flex rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs text-amber-800">
-              {accessScopeLabel}
-            </p>
-          ) : null}
+            </article>
+          ))}
         </div>
       )}
     </section>

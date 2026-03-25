@@ -1,225 +1,221 @@
-import { useEffect, useRef } from 'react';
 import { buttonStyles } from '@/components/ui/Button';
-import { Github } from 'lucide-react';
-import type { GitHubInstallationRepository } from '../../types';
+import { ExternalLink, Github, Link2, ShieldCheck } from 'lucide-react';
+import type { GitHubRepositoryOption } from '../../types';
 
-type RepositoryLinkMethod = 'url' | 'github_app';
+export type RepositoryLinkMethod =
+  | 'PUBLIC_URL'
+  | 'INSTALLATION_DIRECT'
+  | 'INSTALLATION_REQUESTED';
 
 type RepositoryLinkModalContentProps = {
-  step: 'entry' | 'installation-selection';
+  step: 'method' | 'repository-selection';
   selectedMethod: RepositoryLinkMethod | null;
-  urlInput: string;
-  validationError: string | null;
-  isSaving: boolean;
-  hasInputChanged: boolean;
-  isInputValid: boolean;
-  onUrlChange: (nextValue: string) => void;
-  onSave: () => void;
-  onConnectGitHubApp: () => void;
-  onRequestMoreRepositoryAccess: () => void;
-  isRequestingMoreRepositoryAccess: boolean;
-  connectedInstallationId: number | null;
-  onUseConnectedInstallation: (installationId: number) => void;
-  repositories: GitHubInstallationRepository[];
-  selectedRepositoryId: number | null;
-  isLoadingRepositories: boolean;
-  repositorySelectionError: string | null;
-  onSelectRepository: (repositoryId: number) => void;
-  onConfirmRepositorySelection: () => void;
-  onRetryLoadRepositories: () => void;
-  hasMoreRepositories: boolean;
-  totalRepositoryCount: number | null;
-  isLoadingMoreRepositories: boolean;
-  onLoadMoreRepositories: () => void;
-  loadMoreError: string | null;
   onSelectMethod: (method: RepositoryLinkMethod) => void;
-  onChangeMethod: () => void;
+  onBackToMethods: () => void;
+  publicRepositoryUrl: string;
+  publicCustomName: string;
+  onChangePublicRepositoryUrl: (value: string) => void;
+  onChangePublicCustomName: (value: string) => void;
+  onSubmitPublicRepository: () => void;
+  isSubmittingPublicRepository: boolean;
+  onStartOwnerInstall: () => void;
+  isStartingOwnerInstall: boolean;
+  onCreateAccessRequest: () => void;
+  isCreatingAccessRequest: boolean;
+  generatedAccessRequestUrl: string | null;
+  generatedAccessRequestExpiresAt: string | null;
+  onCopyAccessRequestUrl: () => void;
+  isAccessRequestLinkCopied: boolean;
+  selectedSourceLabel: string | null;
+  availableRepositories: GitHubRepositoryOption[];
+  isLoadingAvailableRepositories: boolean;
+  availableRepositoriesError: string | null;
+  onReloadAvailableRepositories: () => void;
+  selectedRepositoryIds: string[];
+  primaryRepositoryId: string | null;
+  customNameByRepositoryId: Record<string, string>;
+  maxSelectableCount: number;
+  onToggleRepository: (repositoryId: string) => void;
+  onSetPrimaryRepository: (repositoryId: string) => void;
+  onCustomNameChange: (repositoryId: string, value: string) => void;
+  onConfirmRepositorySelection: () => void;
+  isConfirmingRepositorySelection: boolean;
 };
 
-function RepositorySelectionSkeleton() {
+function SelectedCountPill({ selected, limit }: { selected: number; limit: number }) {
   return (
-    <div
-      className="min-h-80 space-y-2 rounded-2xl border border-slate-200 bg-slate-50/50 p-2"
-      aria-live="polite"
-      aria-busy="true"
-    >
-      {Array.from({ length: 5 }).map((_, index) => (
-        <div
-          key={`repository-skeleton-${index}`}
-          className="rounded-2xl border border-slate-200 bg-white p-3 animate-pulse"
-        >
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0 flex-1 space-y-2">
-              <div className="h-4 w-7/12 rounded bg-slate-200" />
-              <div className="h-3 w-10/12 rounded bg-slate-200" />
-              <div className="h-3 w-4/12 rounded bg-slate-200" />
-            </div>
-            <div className="mt-0.5 h-4 w-4 rounded-full bg-slate-200" />
-          </div>
-        </div>
-      ))}
-    </div>
+    <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs text-slate-600">
+      Selected {selected}
+      {limit > 0 ? ` / ${limit}` : ''}
+    </span>
   );
 }
 
 export function RepositoryLinkModalContent({
   step,
   selectedMethod,
-  urlInput,
-  validationError,
-  isSaving,
-  hasInputChanged,
-  isInputValid,
-  onUrlChange,
-  onSave,
-  onConnectGitHubApp,
-  onRequestMoreRepositoryAccess,
-  isRequestingMoreRepositoryAccess,
-  connectedInstallationId,
-  onUseConnectedInstallation,
-  repositories,
-  selectedRepositoryId,
-  isLoadingRepositories,
-  repositorySelectionError,
-  onSelectRepository,
-  onConfirmRepositorySelection,
-  onRetryLoadRepositories,
-  hasMoreRepositories,
-  totalRepositoryCount,
-  isLoadingMoreRepositories,
-  onLoadMoreRepositories,
-  loadMoreError,
   onSelectMethod,
-  onChangeMethod,
+  onBackToMethods,
+  publicRepositoryUrl,
+  publicCustomName,
+  onChangePublicRepositoryUrl,
+  onChangePublicCustomName,
+  onSubmitPublicRepository,
+  isSubmittingPublicRepository,
+  onStartOwnerInstall,
+  isStartingOwnerInstall,
+  onCreateAccessRequest,
+  isCreatingAccessRequest,
+  generatedAccessRequestUrl,
+  generatedAccessRequestExpiresAt,
+  onCopyAccessRequestUrl,
+  isAccessRequestLinkCopied,
+  selectedSourceLabel,
+  availableRepositories,
+  isLoadingAvailableRepositories,
+  availableRepositoriesError,
+  onReloadAvailableRepositories,
+  selectedRepositoryIds,
+  primaryRepositoryId,
+  customNameByRepositoryId,
+  maxSelectableCount,
+  onToggleRepository,
+  onSetPrimaryRepository,
+  onCustomNameChange,
+  onConfirmRepositorySelection,
+  isConfirmingRepositorySelection,
 }: RepositoryLinkModalContentProps) {
-  const repositoriesScrollContainerRef = useRef<HTMLDivElement | null>(null);
-  const previousFirstRepositoryIdRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    if (step !== 'installation-selection' || repositories.length === 0) {
-      previousFirstRepositoryIdRef.current = null;
-      return;
-    }
-
-    const firstRepositoryId = repositories[0].repositoryId;
-    if (previousFirstRepositoryIdRef.current !== firstRepositoryId) {
-      repositoriesScrollContainerRef.current?.scrollTo({ top: 0 });
-      previousFirstRepositoryIdRef.current = firstRepositoryId;
-    }
-  }, [repositories, step]);
-
-  if (step === 'installation-selection') {
+  if (step === 'repository-selection') {
     return (
-      <div className="space-y-5">
-        <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
-          <h4 className="text-sm font-semibold text-foreground">Select repository</h4>
+      <div className="space-y-4">
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+          <p className="text-sm font-semibold text-foreground">Select repositories</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Select a repository for this project.
+            {selectedSourceLabel
+              ? `Source: ${selectedSourceLabel}`
+              : 'Select one or more repositories from this access source.'}
           </p>
         </div>
 
-        {isLoadingRepositories ? (
-          <RepositorySelectionSkeleton />
-        ) : repositorySelectionError ? (
-          <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
-            <p>{repositorySelectionError}</p>
-            <div className="mt-3">
-              <button
-                type="button"
-                className={buttonStyles({ variant: 'secondary', size: 'sm' })}
-                onClick={onRetryLoadRepositories}
-                disabled={isSaving}
-              >
-                Retry
-              </button>
-            </div>
+        {isLoadingAvailableRepositories ? (
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 text-sm text-muted-foreground">
+            Loading available repositories...
           </div>
-        ) : repositories.length === 0 ? (
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-muted-foreground">
-            No repositories are available in this installation.
+        ) : availableRepositoriesError ? (
+          <div className="space-y-3 rounded-2xl border border-rose-200 bg-rose-50 p-4">
+            <p className="text-sm text-rose-700">{availableRepositoriesError}</p>
+            <button
+              type="button"
+              className={buttonStyles({ variant: 'secondary', size: 'sm' })}
+              onClick={onReloadAvailableRepositories}
+            >
+              Retry
+            </button>
+          </div>
+        ) : availableRepositories.length === 0 ? (
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 text-sm text-muted-foreground">
+            No repositories are available under this access source.
           </div>
         ) : (
-          <div className="space-y-3">
-            <div
-              ref={repositoriesScrollContainerRef}
-              className="max-h-80 space-y-2 overflow-y-auto pr-1"
-            >
-              {repositories.map((repository) => {
-                const isChecked = selectedRepositoryId === repository.repositoryId;
-                return (
-                  <label
-                    key={repository.repositoryId}
-                    className={`block rounded-2xl border p-3 transition-colors ${
-                      isChecked
-                        ? 'border-amber-300 bg-amber-50'
-                        : 'border-slate-200 bg-white hover:border-slate-300'
-                    } cursor-pointer`}
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-medium text-foreground">{repository.fullName}</p>
-                        <a
-                          href={repository.url}
-                          target="_blank"
-                          rel="noreferrer"
-                          onClick={(event) => event.stopPropagation()}
-                          className="mt-1 block text-xs text-sky-700 underline-offset-2 hover:underline"
-                        >
-                          {repository.url}
-                        </a>
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          Default branch: {repository.defaultBranch || 'main'}
-                        </p>
-                      </div>
-                      <input
-                        type="radio"
-                        name="github-installation-repository"
-                        checked={isChecked}
-                        onChange={() => onSelectRepository(repository.repositoryId)}
-                        disabled={isSaving || isLoadingMoreRepositories}
-                        className="mt-1 h-4 w-4"
-                      />
-                    </div>
-                  </label>
-                );
-              })}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
+                Available repositories
+              </p>
+              <SelectedCountPill selected={selectedRepositoryIds.length} limit={maxSelectableCount} />
             </div>
 
-            <div className="space-y-2">
-              <p className="text-xs text-muted-foreground">
-                Showing {repositories.length}
-                {totalRepositoryCount != null ? ` of ${totalRepositoryCount}` : ''} repositories.
-              </p>
-              {loadMoreError ? <p className="text-xs text-rose-600">{loadMoreError}</p> : null}
+            <div className="max-h-[420px] space-y-2 overflow-y-auto pr-1">
+              {availableRepositories.map((repository) => {
+                const selected = selectedRepositoryIds.includes(repository.id);
+                const primary = primaryRepositoryId === repository.id;
+
+                return (
+                  <div
+                    key={repository.id}
+                    className={`rounded-2xl border p-3 ${selected ? 'border-amber-300 bg-amber-50' : 'border-slate-200 bg-white'}`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <label className="flex min-w-0 flex-1 cursor-pointer items-start gap-2">
+                        <input
+                          type="checkbox"
+                          checked={selected}
+                          onChange={() => onToggleRepository(repository.id)}
+                          disabled={
+                            isConfirmingRepositorySelection ||
+                            (!selected &&
+                              maxSelectableCount > 0 &&
+                              selectedRepositoryIds.length >= maxSelectableCount)
+                          }
+                          className="mt-1 h-4 w-4"
+                        />
+                        <span className="min-w-0">
+                          <span className="block text-sm font-medium text-foreground">
+                            {repository.fullName}
+                          </span>
+                          <a
+                            href={repository.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="mt-1 inline-flex items-center gap-1 text-xs text-sky-700 hover:underline"
+                          >
+                            {repository.url}
+                            <ExternalLink className="h-3.5 w-3.5" />
+                          </a>
+                          <span className="mt-1 block text-xs text-muted-foreground">
+                            Owner: {repository.ownerLogin} · Default branch: {repository.defaultBranch || 'main'}
+                          </span>
+                        </span>
+                      </label>
+
+                      {selected ? (
+                        <label className="ml-2 inline-flex shrink-0 items-center gap-1 text-xs text-slate-700">
+                          <input
+                            type="radio"
+                            name="primary-repository"
+                            checked={primary}
+                            onChange={() => onSetPrimaryRepository(repository.id)}
+                            disabled={isConfirmingRepositorySelection}
+                          />
+                          Primary
+                        </label>
+                      ) : null}
+                    </div>
+
+                    {selected ? (
+                      <div className="mt-3">
+                        <input
+                          value={customNameByRepositoryId[repository.id] ?? ''}
+                          onChange={(event) => onCustomNameChange(repository.id, event.target.value)}
+                          placeholder="Custom display name (optional)"
+                          disabled={isConfirmingRepositorySelection}
+                          className="h-9 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-amber-300"
+                        />
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
 
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex min-h-9 items-center">
-            {hasMoreRepositories ? (
-              <button
-                type="button"
-                className={buttonStyles({ variant: 'secondary', size: 'sm' })}
-                onClick={onLoadMoreRepositories}
-                disabled={isSaving || isLoadingMoreRepositories}
-              >
-                {isLoadingMoreRepositories ? 'Loading more...' : 'Load more'}
-              </button>
-            ) : null}
-          </div>
+        <div className="flex items-center justify-between gap-2">
+          <button
+            type="button"
+            className={buttonStyles({ variant: 'secondary', size: 'sm' })}
+            onClick={onBackToMethods}
+            disabled={isConfirmingRepositorySelection}
+          >
+            Back
+          </button>
           <button
             type="button"
             className={buttonStyles({ variant: 'primary', size: 'sm' })}
             onClick={onConfirmRepositorySelection}
-            disabled={
-              isSaving ||
-              isLoadingRepositories ||
-              repositories.length === 0 ||
-              selectedRepositoryId == null
-            }
+            disabled={isConfirmingRepositorySelection || selectedRepositoryIds.length === 0}
           >
-            {isSaving ? 'Linking...' : 'Link selected repository'}
+            {isConfirmingRepositorySelection ? 'Linking...' : 'Link selected repositories'}
           </button>
         </div>
       </div>
@@ -227,182 +223,151 @@ export function RepositoryLinkModalContent({
   }
 
   return (
-    <div className="space-y-6 min-h-[460px]">
-      {selectedMethod === null ? (
-        <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
-          <p className="text-sm font-semibold text-foreground">Choose linking method</p>
-          <p className="text-sm text-slate-700">
-            Choose how you want to connect a repository to this project.
+    <div className="space-y-4">
+      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+        <p className="text-sm font-semibold text-foreground">Choose linking method</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          PUBLIC URL, direct owner install, or owner-requested install flow.
+        </p>
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-3">
+        <button
+          type="button"
+          onClick={() => onSelectMethod('PUBLIC_URL')}
+          className={`rounded-2xl border p-4 text-left ${selectedMethod === 'PUBLIC_URL' ? 'border-amber-300 bg-amber-50' : 'border-slate-200 bg-white'}`}
+        >
+          <p className="inline-flex items-center gap-2 text-sm font-semibold text-foreground">
+            <Link2 className="h-4 w-4" />
+            Link Public Repository
           </p>
-        </div>
-      ) : null}
+          <p className="mt-2 text-xs text-muted-foreground">Public only. No GitHub App required.</p>
+        </button>
 
-      {selectedMethod === null ? (
-        <section className="grid gap-4 sm:grid-cols-2">
-          <button
-            type="button"
-            onClick={() => onSelectMethod('url')}
-            className="h-full min-h-[160px] rounded-2xl border border-slate-200 bg-white p-5 text-left transition-all hover:border-slate-300 hover:bg-slate-50"
-          >
-            <div className="flex h-full flex-col gap-2.5">
-              <div className="flex items-start justify-between gap-3">
-                <p className="text-sm font-semibold text-foreground leading-6">
-                  Link via Repository URL
-                </p>
-                <span className="inline-flex whitespace-nowrap rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-600">
-                  Quick/Public
-                </span>
-              </div>
-              <p className="max-w-[28ch] text-xs leading-6 text-muted-foreground">
-                Best for public repositories and quick linking.
-              </p>
-            </div>
-          </button>
+        <button
+          type="button"
+          onClick={() => onSelectMethod('INSTALLATION_DIRECT')}
+          className={`rounded-2xl border p-4 text-left ${selectedMethod === 'INSTALLATION_DIRECT' ? 'border-amber-300 bg-amber-50' : 'border-slate-200 bg-white'}`}
+        >
+          <p className="inline-flex items-center gap-2 text-sm font-semibold text-foreground">
+            <Github className="h-4 w-4" />
+            Connect GitHub (Owner)
+          </p>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Use when you own the repository or org.
+          </p>
+        </button>
 
-          <button
-            type="button"
-            onClick={() => onSelectMethod('github_app')}
-            className="h-full min-h-[160px] rounded-2xl border border-amber-300 bg-amber-50/60 p-5 text-left transition-all hover:border-amber-400 hover:bg-amber-50"
-          >
-            <div className="flex h-full flex-col gap-2.5">
-              <div className="flex items-start justify-between gap-3">
-                <p className="text-sm font-semibold text-foreground leading-6">
-                  Link using GitHub App
-                </p>
-                <span className="inline-flex whitespace-nowrap rounded-full border border-amber-300 bg-white px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-amber-800">
-                  Recommended
-                </span>
-              </div>
-              <p className="max-w-[30ch] text-xs leading-6 text-muted-foreground">
-                Recommended for private repositories and secure access.
-              </p>
-            </div>
-          </button>
-        </section>
-      ) : null}
+        <button
+          type="button"
+          onClick={() => onSelectMethod('INSTALLATION_REQUESTED')}
+          className={`rounded-2xl border p-4 text-left ${selectedMethod === 'INSTALLATION_REQUESTED' ? 'border-amber-300 bg-amber-50' : 'border-slate-200 bg-white'}`}
+        >
+          <p className="inline-flex items-center gap-2 text-sm font-semibold text-foreground">
+            <ShieldCheck className="h-4 w-4" />
+            Request Access from Owner
+          </p>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Generate a secure request link for the owner.
+          </p>
+        </button>
+      </div>
 
-      {selectedMethod === 'url' ? (
-        <section className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4 transition-all duration-200 ease-out">
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-              Method 1 of 2
-            </p>
-            <h4 className="mt-1 text-sm font-semibold text-foreground">Link via Repository URL</h4>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Use this when the repository is public and you want the fastest setup.
-            </p>
-            <p className="mt-2 text-xs text-muted-foreground">
-              Enter URL in format: <code>https://github.com/owner/repo</code>.
-            </p>
-            <p className="mt-2 text-xs text-slate-600">
-              Need private repository access and secure authorization? Click{' '}
-              <span className="font-semibold">Change method</span> and choose GitHub App.
-            </p>
-          </div>
-
-          <label className="block space-y-1.5">
-            <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-              Repository URL
-            </span>
-            <input
-              value={urlInput}
-              onChange={(event) => onUrlChange(event.target.value)}
-              placeholder="https://github.com/owner/repo"
-              className="h-10 w-full rounded-2xl border border-border bg-white px-4 text-sm outline-none transition-colors focus:border-amber-300 focus:ring-2 focus:ring-amber-100"
-              disabled={isSaving}
-            />
-          </label>
-
-          {validationError ? <p className="text-sm text-rose-600">{validationError}</p> : null}
-
-          <div className="flex flex-wrap justify-between gap-2">
-            <button
-              type="button"
-              className="text-xs font-medium text-sky-700 underline-offset-2 hover:underline"
-              onClick={onChangeMethod}
-              disabled={isSaving}
-            >
-              Change method
-            </button>
+      {selectedMethod === 'PUBLIC_URL' ? (
+        <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4">
+          <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Method: Public URL</p>
+          <input
+            value={publicRepositoryUrl}
+            onChange={(event) => onChangePublicRepositoryUrl(event.target.value)}
+            placeholder="https://github.com/owner/repo"
+            disabled={isSubmittingPublicRepository}
+            className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-amber-300"
+          />
+          <input
+            value={publicCustomName}
+            onChange={(event) => onChangePublicCustomName(event.target.value)}
+            placeholder="Custom display name (optional)"
+            disabled={isSubmittingPublicRepository}
+            className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-amber-300"
+          />
+          <div className="flex justify-end">
             <button
               type="button"
               className={buttonStyles({ variant: 'primary', size: 'sm' })}
-              onClick={onSave}
-              disabled={isSaving || !hasInputChanged || !isInputValid}
+              onClick={onSubmitPublicRepository}
+              disabled={isSubmittingPublicRepository || !publicRepositoryUrl.trim()}
             >
-              {isSaving ? 'Saving...' : 'Save repository link'}
+              {isSubmittingPublicRepository ? 'Linking...' : 'Link repository'}
             </button>
           </div>
-        </section>
+        </div>
       ) : null}
 
-      {selectedMethod === 'github_app' ? (
-        <section className="rounded-2xl border border-border bg-slate-50/70 p-4 transition-all duration-200 ease-out">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-            Method 2 of 2 (Recommended)
+      {selectedMethod === 'INSTALLATION_DIRECT' ? (
+        <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4">
+          <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Method: Owner Install</p>
+          <p className="text-xs text-muted-foreground">
+            Continue to GitHub and install/select repositories, then return for repository selection.
           </p>
-          <h4 className="mt-1 text-sm font-semibold text-foreground">Link using GitHub App</h4>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Use this when your repository is private or you need secure project-scoped access.
-          </p>
-          <p className="mt-2 text-xs text-muted-foreground">
-            If you are the repository owner (or organization admin), click Connect GitHub App.
-          </p>
-          <p className="mt-2 text-xs text-muted-foreground">
-            If you are not the owner and need access granted, click Request More Repository Access.
-            After access is granted on GitHub, come back here and continue linking.
-          </p>
-          <p className="mt-2 text-xs text-amber-700">
-            Grant access only to repositories needed for this project.
-          </p>
-          <p className="mt-2 text-xs text-slate-600">
-            Need a quick public-repository link instead? Click{' '}
-            <span className="font-semibold">Change method</span> and choose Repository URL.
-          </p>
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex justify-end">
             <button
               type="button"
-              className="text-xs font-medium text-sky-700 underline-offset-2 hover:underline"
-              onClick={onChangeMethod}
-              disabled={isSaving || isRequestingMoreRepositoryAccess}
+              className={buttonStyles({ variant: 'primary', size: 'sm' })}
+              onClick={onStartOwnerInstall}
+              disabled={isStartingOwnerInstall}
             >
-              Change method
+              {isStartingOwnerInstall ? 'Redirecting...' : 'Continue to GitHub'}
             </button>
-            <div className="flex flex-wrap justify-end gap-2">
-              <button
-                type="button"
-                className={buttonStyles({ variant: 'secondary', size: 'sm' })}
-                onClick={onRequestMoreRepositoryAccess}
-                disabled={isSaving || isRequestingMoreRepositoryAccess}
+          </div>
+        </div>
+      ) : null}
+
+      {selectedMethod === 'INSTALLATION_REQUESTED' ? (
+        <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4">
+          <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Method: Request Access</p>
+          <p className="text-xs text-muted-foreground">
+            Generate a secure link and send it to the repository owner.
+          </p>
+
+          <div className="flex justify-end">
+            <button
+              type="button"
+              className={buttonStyles({ variant: 'secondary', size: 'sm' })}
+              onClick={onCreateAccessRequest}
+              disabled={isCreatingAccessRequest}
+            >
+              {isCreatingAccessRequest ? 'Generating...' : 'Generate access request link'}
+            </button>
+          </div>
+
+          {generatedAccessRequestUrl ? (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs">
+              <p className="font-semibold text-foreground">Share this link</p>
+              <a
+                href={generatedAccessRequestUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-1 block break-all text-sky-700 hover:underline"
               >
-                {isRequestingMoreRepositoryAccess
-                  ? 'Preparing request...'
-                  : 'Request More Repository Access'}
-              </button>
-              {connectedInstallationId ? (
+                {generatedAccessRequestUrl}
+              </a>
+              {generatedAccessRequestExpiresAt ? (
+                <p className="mt-1 text-muted-foreground">
+                  Expires at {new Date(generatedAccessRequestExpiresAt).toLocaleString()}
+                </p>
+              ) : null}
+              <div className="mt-2">
                 <button
                   type="button"
                   className={buttonStyles({ variant: 'secondary', size: 'sm' })}
-                  onClick={() => onUseConnectedInstallation(connectedInstallationId)}
-                  disabled={isSaving}
+                  onClick={onCopyAccessRequestUrl}
                 >
-                  Configure repository link
+                  {isAccessRequestLinkCopied ? 'Copied' : 'Copy link'}
                 </button>
-              ) : null}
-              <button
-                type="button"
-                className={buttonStyles({ variant: 'primary', size: 'sm' })}
-                onClick={onConnectGitHubApp}
-                disabled={isSaving}
-              >
-                <span className="inline-flex items-center gap-2">
-                  <Github className="h-4 w-4" />
-                  <span>Connect GitHub App</span>
-                </span>
-              </button>
+              </div>
             </div>
-          </div>
-        </section>
+          ) : null}
+        </div>
       ) : null}
     </div>
   );
