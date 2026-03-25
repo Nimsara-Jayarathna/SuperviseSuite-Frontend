@@ -96,6 +96,8 @@ export function RepositorySection({
   >({});
   const [isLoadingInventory, setIsLoadingInventory] = useState(false);
   const [inventoryError, setInventoryError] = useState<string | null>(null);
+  const [swapTargetRowKey, setSwapTargetRowKey] = useState<string | null>(null);
+  const [swapDisableLinkId, setSwapDisableLinkId] = useState<string | null>(null);
 
   const [requestModal, setRequestModal] = useState<RequestModalState>({
     isOpen: false,
@@ -124,7 +126,7 @@ export function RepositorySection({
   const enabledCount = linkedRepositories.filter((repository) => repository.enabled).length;
   const remainingLinkSlots = Math.max(0, maxLinkedRepositories - linkedCount);
   const remainingEnabledSlots = Math.max(0, maxEnabledRepositories - enabledCount);
-  const repositorySelectionCapacity = Math.min(remainingLinkSlots, remainingEnabledSlots);
+  const repositorySelectionCapacity = remainingLinkSlots;
 
   const managementRows = useMemo<RepositoryManagementRow[]>(() => {
     const sourceById = new Map(accessSources.map((source) => [source.id, source]));
@@ -186,6 +188,20 @@ export function RepositorySection({
       return (a.fullName ?? '').localeCompare(b.fullName ?? '');
     });
   }, [accessSources, inventoryBySourceId, linkedRepositories]);
+
+  const swapTargetRow = useMemo(
+    () => managementRows.find((row) => row.rowKey === swapTargetRowKey) ?? null,
+    [managementRows, swapTargetRowKey],
+  );
+
+  const swapCandidates = useMemo(() => {
+    return managementRows
+      .filter((row) => row.enabled && Boolean(row.linkId) && row.rowKey !== swapTargetRowKey)
+      .map((row) => ({
+        linkId: row.linkId!,
+        label: row.customName?.trim() || row.fullName || row.ownerLogin || 'Repository',
+      }));
+  }, [managementRows, swapTargetRowKey]);
 
   const selection = useRepositorySelection(repositorySelectionCapacity > 0 ? repositorySelectionCapacity : 0);
 
@@ -251,10 +267,25 @@ export function RepositorySection({
 
   useEffect(() => {
     if (!isManagementModalOpen) {
+      setSwapTargetRowKey(null);
+      setSwapDisableLinkId(null);
       return;
     }
     void loadRepositoryInventory();
   }, [accessSources, isManagementModalOpen]);
+
+  useEffect(() => {
+    if (!swapTargetRowKey) {
+      return;
+    }
+    if (swapCandidates.length === 0) {
+      setSwapDisableLinkId(null);
+      return;
+    }
+    if (!swapDisableLinkId || !swapCandidates.some((candidate) => candidate.linkId === swapDisableLinkId)) {
+      setSwapDisableLinkId(swapCandidates[0].linkId);
+    }
+  }, [swapCandidates, swapDisableLinkId, swapTargetRowKey]);
 
   async function reloadProjectAndRepositories(projectId: string) {
     await reloadRepositoriesData();
@@ -289,15 +320,6 @@ export function RepositorySection({
       );
       return;
     }
-    if (remainingEnabledSlots < 1) {
-      openRequestModal(
-        'error',
-        'Enabled repository limit reached',
-        'Disable another enabled repository before linking a new one.',
-      );
-      return;
-    }
-
     setIsSubmittingPublicRepository(true);
     openRequestModal('loading', 'Linking public repository', 'Creating access source and linking repository.');
 
@@ -586,6 +608,91 @@ export function RepositorySection({
     }
   }
 
+  function beginSwapEnable(row: RepositoryManagementRow) {
+    const candidates = managementRows.filter(
+      (candidate) => candidate.enabled && Boolean(candidate.linkId) && candidate.rowKey !== row.rowKey,
+    );
+    if (candidates.length === 0) {
+      openRequestModal(
+        'error',
+        'Swap unavailable',
+        'No enabled repository is available to disable for swapping.',
+      );
+      return;
+    }
+    setSwapTargetRowKey(row.rowKey);
+    setSwapDisableLinkId(candidates[0].linkId ?? null);
+  }
+
+  function clearSwapEnable() {
+    setSwapTargetRowKey(null);
+    setSwapDisableLinkId(null);
+  }
+
+  async function handleConfirmSwapEnable() {
+    if (!swapTargetRow || !swapDisableLinkId) {
+      openRequestModal('error', 'Swap incomplete', 'Select a repository to disable first.');
+      return;
+    }
+
+    setIsMutatingLinks(true);
+    openRequestModal('loading', 'Swapping enabled repository', 'Disabling selected repository and enabling target repository.');
+    try {
+      await supervisorApi.disableGitHubRepository(swapDisableLinkId);
+      if (swapTargetRow.linkId) {
+        await supervisorApi.enableGitHubRepository(swapTargetRow.linkId);
+      } else if (swapTargetRow.sourceId && swapTargetRow.githubRepositoryId) {
+        await supervisorApi.linkGitHubRepositories({
+          projectId: project.id,
+          sourceId: swapTargetRow.sourceId,
+          repositories: [
+            {
+              githubRepositoryId: swapTargetRow.githubRepositoryId,
+              primary: false,
+            },
+          ],
+        });
+      } else {
+        throw new Error('Target repository details are missing for swap enable.');
+      }
+      await reloadProjectAndRepositories(project.id);
+      clearSwapEnable();
+      openRequestModal('success', 'Swap completed', 'Repository enablement has been updated.');
+    } catch (error) {
+      const message = isApiException(error)
+        ? error.apiError.message
+        : 'Unable to complete swap enable right now.';
+      openRequestModal('error', 'Swap failed', message);
+    } finally {
+      setIsMutatingLinks(false);
+    }
+  }
+
+  async function handleToggleRepositoryEnabled(row: RepositoryManagementRow) {
+    if (row.enabled) {
+      clearSwapEnable();
+      if (!row.linkId) {
+        return;
+      }
+      await handleDisableRepository(row.linkId);
+      return;
+    }
+    if (!row.linkId && remainingLinkSlots < 1) {
+      openRequestModal(
+        'error',
+        'Linked repository limit reached',
+        'Unlink one repository before enabling a new repository.',
+      );
+      return;
+    }
+    if (remainingEnabledSlots < 1) {
+      beginSwapEnable(row);
+      return;
+    }
+    clearSwapEnable();
+    await handleEnableRepository(row);
+  }
+
   return (
     <section className="rounded-3xl border border-border bg-white p-6 shadow-sm">
       <RequestStateModal
@@ -637,9 +744,7 @@ export function RepositorySection({
           selectionLimitMessage={
             remainingLinkSlots < 1
               ? 'Linked repository limit reached. Remove a linked repository to add another one.'
-              : remainingEnabledSlots < 1
-                ? 'Enabled repository limit reached. Disable another enabled repository first.'
-                : null
+              : null
           }
           onToggleRepository={selection.toggleRepository}
           onSetPrimaryRepository={selection.setPrimaryRepositoryId}
@@ -668,9 +773,15 @@ export function RepositorySection({
           onReloadInventory={() => void loadRepositoryInventory()}
           onSelectPrimary={(linkId) => void handleSelectPrimary(linkId)}
           onRefresh={(linkId) => void handleRefreshRepository(linkId)}
-          onEnableForProject={(row) => void handleEnableRepository(row)}
-          onDisableForProject={(linkId) => void handleDisableRepository(linkId)}
+          onToggleEnabled={(row) => void handleToggleRepositoryEnabled(row)}
+          onStartSwapEnable={(row) => beginSwapEnable(row)}
           onDisconnectSource={(sourceId) => void handleDisconnectAccessSource(sourceId)}
+          swapTargetRowKey={swapTargetRowKey}
+          swapDisableLinkId={swapDisableLinkId}
+          swapCandidates={swapCandidates}
+          onSwapCandidateChange={setSwapDisableLinkId}
+          onConfirmSwapEnable={() => void handleConfirmSwapEnable()}
+          onCancelSwapEnable={clearSwapEnable}
         />
       </GithubDetailsModal>
 
@@ -689,13 +800,7 @@ export function RepositorySection({
             className={buttonStyles({ variant: 'primary', size: 'sm' })}
             onClick={() => setIsModalOpen(true)}
             disabled={repositorySelectionCapacity < 1}
-            title={
-              remainingLinkSlots < 1
-                ? 'Maximum linked repositories reached.'
-                : remainingEnabledSlots < 1
-                  ? 'Maximum enabled repositories reached.'
-                  : undefined
-            }
+            title={remainingLinkSlots < 1 ? 'Maximum linked repositories reached.' : undefined}
           >
             <span className="inline-flex items-center gap-2">
               <Github className="h-4 w-4" />

@@ -1,4 +1,5 @@
 import { buttonStyles } from '@/components/ui/Button';
+import { Github, RefreshCw } from 'lucide-react';
 
 export type RepositoryManagementRow = {
   rowKey: string;
@@ -30,9 +31,15 @@ type RepositoryManagementModalContentProps = {
   onReloadInventory: () => void;
   onSelectPrimary: (linkId: string) => void;
   onRefresh: (linkId: string) => void;
-  onEnableForProject: (row: RepositoryManagementRow) => void;
-  onDisableForProject: (linkId: string) => void;
+  onToggleEnabled: (row: RepositoryManagementRow) => void;
+  onStartSwapEnable: (row: RepositoryManagementRow) => void;
   onDisconnectSource: (sourceId: string) => void;
+  swapTargetRowKey: string | null;
+  swapDisableLinkId: string | null;
+  swapCandidates: Array<{ linkId: string; label: string }>;
+  onSwapCandidateChange: (linkId: string) => void;
+  onConfirmSwapEnable: () => void;
+  onCancelSwapEnable: () => void;
 };
 
 function formatAccessTypeLabel(value: string | null | undefined): string {
@@ -69,20 +76,37 @@ export function RepositoryManagementModalContent({
   onReloadInventory,
   onSelectPrimary,
   onRefresh,
-  onEnableForProject,
-  onDisableForProject,
+  onToggleEnabled,
+  onStartSwapEnable,
   onDisconnectSource,
+  swapTargetRowKey,
+  swapDisableLinkId,
+  swapCandidates,
+  onSwapCandidateChange,
+  onConfirmSwapEnable,
+  onCancelSwapEnable,
 }: RepositoryManagementModalContentProps) {
+  const linkedLimitReached = linkedCount >= maxLinkedRepositories;
+  const enabledLimitReached = enabledCount >= maxEnabledRepositories;
+
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-        <p className="text-sm font-semibold text-foreground">Repository management</p>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Linked {linkedCount} / {maxLinkedRepositories} repositories.
+      <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+        <p className="text-xs text-muted-foreground">
+          Limits:{' '}
+          <span className={linkedLimitReached ? 'font-semibold text-amber-700' : 'font-medium text-foreground'}>
+            Linked {linkedCount} / {maxLinkedRepositories}
+          </span>
+          <span className="px-1.5">·</span>
+          <span className={enabledLimitReached ? 'font-semibold text-amber-700' : 'font-medium text-foreground'}>
+            Enabled {enabledCount} / {maxEnabledRepositories}
+          </span>
         </p>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Enabled {enabledCount} / {maxEnabledRepositories} repositories.
-        </p>
+        {enabledLimitReached ? (
+          <p className="mt-2 inline-flex rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-semibold text-amber-800">
+            Enabled limit reached. Use swap enable to replace an active repository.
+          </p>
+        ) : null}
       </div>
 
       {isLoadingInventory ? (
@@ -110,7 +134,6 @@ export function RepositoryManagementModalContent({
             <thead className="bg-slate-50 text-xs uppercase tracking-[0.14em] text-muted-foreground">
               <tr>
                 <th className="px-3 py-3 text-left font-medium">Display name</th>
-                <th className="px-3 py-3 text-left font-medium">Repository</th>
                 <th className="px-3 py-3 text-left font-medium">Owner</th>
                 <th className="px-3 py-3 text-left font-medium">Access type</th>
                 <th className="px-3 py-3 text-left font-medium">Status</th>
@@ -119,87 +142,177 @@ export function RepositoryManagementModalContent({
             </thead>
             <tbody className="divide-y divide-slate-100">
               {rows.map((row) => {
-                const enableBlocked = row.linkId
-                  ? !row.enabled && remainingEnabledSlots < 1
-                  : (!row.enabled && (remainingEnabledSlots < 1 || remainingLinkSlots < 1));
+                const blockedByEnabledLimit = !row.enabled && remainingEnabledSlots < 1;
+                const blockedByLinkedLimit = !row.enabled && !row.linkId && remainingLinkSlots < 1;
+                const enableBlocked = blockedByEnabledLimit || blockedByLinkedLimit;
+                const swapPossible = rows.some(
+                  (candidate) => candidate.enabled && Boolean(candidate.linkId) && candidate.rowKey !== row.rowKey,
+                );
                 return (
                   <tr key={row.rowKey} className="align-top">
                     <td className="px-3 py-3 text-xs text-foreground">
                       {row.customName?.trim() || '—'}
                     </td>
-                    <td className="px-3 py-3">
-                      {row.url ? (
-                        <a href={row.url} target="_blank" rel="noreferrer" className="inline-block">
-                          <span className={buttonStyles({ variant: 'secondary', size: 'sm', className: row.enabled ? '' : 'opacity-70' })}>
-                            Open repository
-                          </span>
-                        </a>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">—</span>
-                      )}
-                    </td>
                     <td className="px-3 py-3 text-xs text-foreground">{row.ownerLogin || 'unknown'}</td>
                     <td className="px-3 py-3 text-xs text-foreground">{formatAccessTypeLabel(row.accessType)}</td>
                     <td className="px-3 py-3">
-                      <div className="flex flex-wrap items-center gap-2 text-xs">
-                        <span
-                          className={`rounded-full px-2 py-0.5 font-medium ${
-                            row.enabled
-                              ? 'bg-emerald-100 text-emerald-800'
-                              : 'bg-slate-100 text-slate-600'
-                          }`}
-                        >
-                          {row.enabled ? 'Enabled' : 'Disabled'}
-                        </span>
+                      <div className="space-y-2 text-xs">
+                        <div className="flex items-center gap-2">
+                          <span className="w-12 text-[11px] uppercase tracking-[0.08em] text-muted-foreground">Enabled</span>
+                          <button
+                            type="button"
+                            role="switch"
+                            aria-checked={row.enabled}
+                            aria-label={row.enabled ? 'Disable repository' : 'Enable repository'}
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full border transition-colors ${
+                              row.enabled
+                                ? 'border-emerald-500 bg-emerald-500'
+                                : 'border-slate-300 bg-slate-200'
+                            } ${isMutating || enableBlocked ? 'cursor-not-allowed opacity-50' : ''}`}
+                            onClick={() => onToggleEnabled(row)}
+                            disabled={
+                              isMutating ||
+                              enableBlocked ||
+                              (!row.enabled && (!row.sourceId || !row.githubRepositoryId))
+                            }
+                            title={
+                              blockedByEnabledLimit
+                                ? 'Enabled limit reached. Disable one enabled repository first.'
+                                : blockedByLinkedLimit
+                                  ? 'Linked repository limit reached. Unlink one repository first.'
+                                : row.enabled
+                                  ? 'Disable for project'
+                                  : 'Enable for project'
+                            }
+                          >
+                            <span
+                              className={`inline-block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${
+                                row.enabled ? 'translate-x-5' : 'translate-x-0.5'
+                              }`}
+                            />
+                          </button>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="w-12 text-[11px] uppercase tracking-[0.08em] text-muted-foreground">Primary</span>
+                          <button
+                            type="button"
+                            role="switch"
+                            aria-checked={row.primary}
+                            aria-label={row.primary ? 'Primary repository selected' : 'Set as primary repository'}
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full border transition-colors ${
+                              row.primary
+                                ? 'border-amber-500 bg-amber-500'
+                                : 'border-slate-300 bg-slate-200'
+                            } ${
+                              isMutating || !row.enabled || !row.linkId || row.primary
+                                ? 'cursor-not-allowed opacity-50'
+                                : ''
+                            }`}
+                            onClick={() => {
+                              if (!row.linkId || !row.enabled || row.primary) {
+                                return;
+                              }
+                              onSelectPrimary(row.linkId);
+                            }}
+                            disabled={isMutating || !row.enabled || !row.linkId || row.primary}
+                            title={row.primary ? 'Current primary' : 'Set as primary'}
+                          >
+                            <span
+                              className={`inline-block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${
+                                row.primary ? 'translate-x-5' : 'translate-x-0.5'
+                              }`}
+                            />
+                          </button>
+                        </div>
                         <span className="text-muted-foreground">{toSyncLabel(row.syncStatus)}</span>
-                        {!row.enabled && enableBlocked ? (
-                          <span className="text-amber-700">
-                            {row.linkId ? 'Enabled limit reached' : 'Limit reached'}
-                          </span>
+                        {!row.enabled && blockedByEnabledLimit ? (
+                          <div className="pt-1">
+                            <button
+                              type="button"
+                              className={buttonStyles({ variant: 'secondary', size: 'sm', className: 'h-7 px-2 text-[11px]' })}
+                              onClick={() => onStartSwapEnable(row)}
+                              disabled={isMutating || !swapPossible}
+                              title={
+                                swapPossible
+                                  ? 'Choose an enabled repository to disable, then enable this one.'
+                                  : 'No enabled repository available to swap.'
+                              }
+                            >
+                              Swap enable
+                            </button>
+                          </div>
+                        ) : null}
+                        {!row.enabled && blockedByLinkedLimit ? (
+                          <span className="text-amber-700">Linked limit reached</span>
+                        ) : null}
+                        {swapTargetRowKey === row.rowKey ? (
+                          <div className="space-y-2 rounded-xl border border-amber-200 bg-amber-50 p-2">
+                            <p className="text-[11px] font-medium text-amber-900">
+                              Select active repository to disable
+                            </p>
+                            <select
+                              value={swapDisableLinkId ?? ''}
+                              onChange={(event) => onSwapCandidateChange(event.target.value)}
+                              className="h-8 w-full rounded-lg border border-amber-200 bg-white px-2 text-[11px] text-foreground"
+                              disabled={isMutating || swapCandidates.length === 0}
+                            >
+                              {swapCandidates.map((candidate) => (
+                                <option key={candidate.linkId} value={candidate.linkId}>
+                                  {candidate.label}
+                                </option>
+                              ))}
+                            </select>
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                className={buttonStyles({ variant: 'primary', size: 'sm', className: 'h-7 px-2 text-[11px]' })}
+                                onClick={onConfirmSwapEnable}
+                                disabled={isMutating || !swapDisableLinkId}
+                              >
+                                Confirm swap
+                              </button>
+                              <button
+                                type="button"
+                                className={buttonStyles({ variant: 'secondary', size: 'sm', className: 'h-7 px-2 text-[11px]' })}
+                                onClick={onCancelSwapEnable}
+                                disabled={isMutating}
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
                         ) : null}
                       </div>
                     </td>
                     <td className="px-3 py-3">
                       <div className="flex flex-nowrap items-center gap-2 whitespace-nowrap">
+                        {row.url ? (
+                          <a
+                            href={row.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            title="Open repository"
+                            aria-label="Open repository"
+                          >
+                            <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-slate-900 text-white shadow-sm ring-1 ring-slate-900/20 transition-colors hover:bg-slate-800">
+                              <Github className="h-5 w-5" strokeWidth={2.25} />
+                            </span>
+                          </a>
+                        ) : null}
                         {row.enabled && row.linkId ? (
                           <>
-                            {!row.primary ? (
-                              <button
-                                type="button"
-                                className={buttonStyles({ variant: 'secondary', size: 'sm' })}
-                                onClick={() => onSelectPrimary(row.linkId!)}
-                                disabled={isMutating}
-                              >
-                                Set primary
-                              </button>
-                            ) : null}
                             <button
                               type="button"
-                              className={buttonStyles({ variant: 'secondary', size: 'sm' })}
+                              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm transition-colors hover:bg-slate-50"
                               onClick={() => onRefresh(row.linkId!)}
                               disabled={isMutating}
+                              title="Refresh repository"
+                              aria-label="Refresh repository"
                             >
-                              Refresh
-                            </button>
-                            <button
-                              type="button"
-                              className={buttonStyles({ variant: 'danger', size: 'sm' })}
-                              onClick={() => onDisableForProject(row.linkId!)}
-                              disabled={isMutating}
-                            >
-                              Disable
+                              <RefreshCw className="h-5 w-5" strokeWidth={2.25} />
                             </button>
                           </>
-                        ) : (
-                          <button
-                            type="button"
-                            className={buttonStyles({ variant: 'primary', size: 'sm' })}
-                            onClick={() => onEnableForProject(row)}
-                            disabled={isMutating || enableBlocked}
-                          >
-                            Enable
-                          </button>
-                        )}
+                        ) : null}
 
                         {row.sourceId ? (
                           <button
