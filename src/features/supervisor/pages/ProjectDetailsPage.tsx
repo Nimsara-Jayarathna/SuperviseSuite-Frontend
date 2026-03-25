@@ -11,6 +11,8 @@ import { ProjectDetailsSkeleton } from '../components/ProjectDetailsSkeleton';
 import { MilestonesTabSection } from '../components/ProjectDetail/MilestonesTabSection';
 import { OverviewTabSection } from '../components/ProjectDetail/OverviewTabSection';
 import { TeamTabSection } from '../components/ProjectDetail/TeamTabSection';
+import { useProjectRepositories } from '../hooks/useProjectRepositories';
+import { parseGitHubSetupRedirect } from '../hooks/useGitHubSetupFlow';
 import { useProjectDetailsPageState } from '../hooks/useProjectDetailsPageState';
 import { useSupervisorProject } from '../hooks/useSupervisorProject';
 import { supervisorApi } from '../api/supervisorApi';
@@ -35,12 +37,15 @@ export function ProjectDetailsPage() {
     },
   );
   const [isRefreshingGitHub, setIsRefreshingGitHub] = useState(false);
-  const [pendingGitHubInstallationId, setPendingGitHubInstallationId] = useState<number | null>(
-    null,
-  );
-  const handlePendingGitHubInstallationHandled = useCallback(() => {
-    setPendingGitHubInstallationId(null);
+  const [pendingGitHubSourceId, setPendingGitHubSourceId] = useState<string | null>(null);
+  const [selectedGitHubRepositoryLinkId, setSelectedGitHubRepositoryLinkId] = useState<
+    string | null
+  >(null);
+  const handlePendingGitHubSourceHandled = useCallback(() => {
+    setPendingGitHubSourceId(null);
   }, []);
+  const { data: projectRepositories, reload: reloadProjectRepositories } =
+    useProjectRepositories(projectId);
   const [refreshRequestModal, setRefreshRequestModal] = useState<{
     isOpen: boolean;
     status: 'loading' | 'success' | 'error';
@@ -116,48 +121,45 @@ export function ProjectDetailsPage() {
       return;
     }
 
-    const githubSetup = searchParams.get('githubSetup');
-    if (!githubSetup) {
+    const redirectState = parseGitHubSetupRedirect(searchParams);
+    if (!redirectState.setupStatus) {
       return;
     }
 
-    if (githubSetup === 'success') {
-      const installationIdRaw = searchParams.get('installationId');
-      const parsedInstallationId = installationIdRaw ? Number(installationIdRaw) : Number.NaN;
-      const githubAccessUpdated = searchParams.get('githubAccessUpdated') === 'true';
-
-      if (Number.isFinite(parsedInstallationId) && parsedInstallationId > 0) {
-        setPendingGitHubInstallationId(parsedInstallationId);
+    if (redirectState.setupStatus === 'success') {
+      if (redirectState.sourceId) {
+        setPendingGitHubSourceId(redirectState.sourceId);
         setRefreshRequestModal({
           isOpen: true,
           status: 'success',
-          title: githubAccessUpdated
+          title: redirectState.githubAccessUpdated
             ? 'GitHub access updated successfully'
             : 'GitHub App connected',
-          message: githubAccessUpdated
-            ? 'Your available repositories have been refreshed. Select one repository in Overview to finish linking this project. You can remove repository access anytime from GitHub App settings.'
-            : 'GitHub installation is ready. Select one repository in Overview to finish linking this project.',
+          message: redirectState.githubAccessUpdated
+            ? 'Your available repositories have been refreshed. Select repositories in Overview to finish linking this project.'
+            : 'GitHub installation is ready. Select repositories in Overview to finish linking this project.',
         });
       } else {
         setRefreshRequestModal({
           isOpen: true,
           status: 'error',
           title: 'Setup incomplete',
-          message:
-            'GitHub App was connected, but installation id was not returned. Reconnect GitHub App and try again.',
+          message: 'GitHub App connected, but source id was not returned. Reconnect and try again.',
         });
       }
 
       const nextParams = new URLSearchParams(searchParams);
       nextParams.delete('githubSetup');
       nextParams.delete('installationId');
+      nextParams.delete('githubSourceId');
+      nextParams.delete('githubFlow');
       nextParams.delete('githubAccessUpdated');
       nextParams.delete('tab');
       setSearchParams(nextParams, { replace: true });
       return;
     }
 
-    if (githubSetup === 'failed') {
+    if (redirectState.setupStatus === 'failed') {
       setRefreshRequestModal({
         isOpen: true,
         status: 'error',
@@ -167,10 +169,58 @@ export function ProjectDetailsPage() {
       const nextParams = new URLSearchParams(searchParams);
       nextParams.delete('githubSetup');
       nextParams.delete('installationId');
+      nextParams.delete('githubSourceId');
+      nextParams.delete('githubFlow');
       nextParams.delete('githubAccessUpdated');
       setSearchParams(nextParams, { replace: true });
     }
   }, [projectId, searchParams, setSearchParams]);
+
+  useEffect(() => {
+    const primaryLink =
+      projectRepositories?.repositories.find((repository) => repository.primary) ??
+      projectRepositories?.repositories[0] ??
+      null;
+    setSelectedGitHubRepositoryLinkId(primaryLink?.id ?? null);
+  }, [projectRepositories?.repositories]);
+
+  async function handleSelectGitHubRepository(linkedRepositoryId: string) {
+    if (!projectId) {
+      return;
+    }
+
+    setIsRefreshingGitHub(true);
+    setRefreshRequestModal({
+      isOpen: true,
+      status: 'loading',
+      title: 'Switching repository',
+      message: 'Updating primary repository and loading repository-level GitHub analytics.',
+    });
+
+    try {
+      await supervisorApi.selectPrimaryGitHubRepository(linkedRepositoryId);
+      await Promise.all([reload(), reloadProjectRepositories()]);
+      setSelectedGitHubRepositoryLinkId(linkedRepositoryId);
+      setRefreshRequestModal({
+        isOpen: true,
+        status: 'success',
+        title: 'Repository selected',
+        message: 'GitHub tab now reflects the selected repository.',
+      });
+    } catch (error) {
+      const message = isApiException(error)
+        ? error.apiError.message
+        : 'Unable to switch repository right now.';
+      setRefreshRequestModal({
+        isOpen: true,
+        status: 'error',
+        title: 'Repository switch failed',
+        message,
+      });
+    } finally {
+      setIsRefreshingGitHub(false);
+    }
+  }
 
   const requestedTab = searchParams.get('tab') as SupervisorProjectDetailTab | null;
   const activeTab = requestedTab && TABS.includes(requestedTab) ? requestedTab : 'overview';
@@ -307,8 +357,8 @@ export function ProjectDetailsPage() {
           project={project}
           overview={overview}
           onProjectUpdate={actions.handleProjectUpdate}
-          pendingGitHubInstallationId={pendingGitHubInstallationId}
-          onPendingGitHubInstallationHandled={handlePendingGitHubInstallationHandled}
+          pendingGitHubSourceId={pendingGitHubSourceId}
+          onPendingGitHubSourceHandled={handlePendingGitHubSourceHandled}
         />
       ) : null}
 
@@ -319,18 +369,41 @@ export function ProjectDetailsPage() {
       ) : null}
 
       {activeTab === 'github' ? (
-        <CommitActivitySection
-          isLoading={isLoading}
-          error={null}
-          data={project.github}
-          onRetry={() => void reload()}
-          loadActivityPage={loadActivityPage}
-          loadContributorsPage={loadContributorsPage}
-          canRefresh
-          isRefreshing={isRefreshingGitHub}
-          onRefresh={() => void handleGitHubRefresh()}
-          onNavigateToOverview={() => handleTabChange('overview')}
-        />
+        <div className="space-y-4">
+          {projectRepositories && projectRepositories.repositories.length > 0 ? (
+            <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+              <label className="space-y-1.5">
+                <span className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                  Repository Selector
+                </span>
+                <select
+                  value={selectedGitHubRepositoryLinkId ?? ''}
+                  onChange={(event) => void handleSelectGitHubRepository(event.target.value)}
+                  className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-amber-300"
+                >
+                  {projectRepositories.repositories.map((repository) => (
+                    <option key={repository.id} value={repository.id}>
+                      {repository.customName?.trim() || repository.fullName || repository.name || 'Repository'}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </section>
+          ) : null}
+
+          <CommitActivitySection
+            isLoading={isLoading}
+            error={null}
+            data={project.github}
+            onRetry={() => void reload()}
+            loadActivityPage={loadActivityPage}
+            loadContributorsPage={loadContributorsPage}
+            canRefresh
+            isRefreshing={isRefreshingGitHub}
+            onRefresh={() => void handleGitHubRefresh()}
+            onNavigateToOverview={() => handleTabChange('overview')}
+          />
+        </div>
       ) : null}
     </div>
   );
