@@ -159,14 +159,14 @@ export function RepositoryManagementModalContent({
       ) : (
         <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
           <table className="min-w-full divide-y divide-slate-200 text-sm">
-            <thead className="bg-slate-50 text-xs uppercase tracking-[0.14em] text-muted-foreground">
+            <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-[0.14em] text-muted-foreground">
               <tr>
-                <th className="px-3 py-3 text-left font-medium">Display name</th>
-                <th className="px-3 py-3 text-left font-medium">Owner</th>
-                <th className="px-3 py-3 text-left font-medium">Access type</th>
-                <th className="px-3 py-3 text-left font-medium">Status</th>
-                <th className="px-3 py-3 text-left font-medium">Actions</th>
-                <th className="px-3 py-3 text-right font-medium text-rose-500/80">Danger</th>
+                <th className="px-4 py-3.5 text-left font-medium">Display name</th>
+                <th className="px-4 py-3.5 text-left font-medium">Owner</th>
+                <th className="px-4 py-3.5 text-left font-medium whitespace-nowrap">Access type</th>
+                <th className="px-4 py-3.5 text-left font-medium">Status</th>
+                <th className="px-4 py-3.5 text-center font-medium">Actions</th>
+                <th className="px-4 py-3.5 text-center font-medium">Danger</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -177,12 +177,12 @@ export function RepositoryManagementModalContent({
                 const isEditingDisplayName = editingDisplayNameRowKey === row.rowKey;
                 return (
                   <tr key={row.rowKey} className={`align-top transition-all duration-300 ${!row.enabled ? 'bg-slate-50/50 opacity-60 grayscale-[0.2]' : ''}`}>
-                    <td className="px-3 py-3 text-xs text-foreground">
+                    <td className="px-4 py-3.5 text-xs font-medium text-foreground">
                       {row.customName?.trim() || '—'}
                     </td>
-                    <td className="px-3 py-3 text-xs text-foreground">{row.ownerLogin || 'unknown'}</td>
-                    <td className="px-3 py-3 text-xs text-foreground">{formatAccessTypeLabel(row.accessType)}</td>
-                    <td className="px-3 py-3">
+                    <td className="px-4 py-3.5 text-xs text-slate-600">{row.ownerLogin || 'unknown'}</td>
+                    <td className="px-4 py-3.5 text-xs text-slate-600">{formatAccessTypeLabel(row.accessType)}</td>
+                    <td className="px-4 py-3.5">
                       <div className="space-y-2 text-xs">
                         <div className="flex items-center gap-2">
                           <span className="w-12 text-[11px] uppercase tracking-[0.08em] text-muted-foreground">Enabled</span>
@@ -253,9 +253,8 @@ export function RepositoryManagementModalContent({
                         </div>
                       </div>
                     </td>
-                    <td className="px-3 py-3">
-                      <div className="space-y-2">
-                        <div className="flex flex-nowrap items-center gap-2 whitespace-nowrap">
+                    <td className="px-4 py-3.5">
+                      <div className="flex flex-nowrap items-center justify-center gap-2 whitespace-nowrap">
                           {row.url ? (
                             <a
                               href={row.url}
@@ -296,9 +295,8 @@ export function RepositoryManagementModalContent({
                             </button>
                           ) : null}
                         </div>
-                      </div>
                     </td>
-                    <td className="px-3 py-3 text-right">
+                    <td className="px-4 py-3.5 text-center">
                       {row.sourceId ? (
                         <button
                           type="button"
