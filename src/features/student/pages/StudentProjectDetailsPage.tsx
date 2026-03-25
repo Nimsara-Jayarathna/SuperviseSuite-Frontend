@@ -1,4 +1,4 @@
-import { CalendarDays, Clock3, Users, ChevronDown, Check, Github, RefreshCw, ExternalLink } from 'lucide-react';
+import { CalendarDays, Clock3, Users, ChevronDown, Check, Github, RefreshCw, ExternalLink, CheckCircle2, Circle, AlertCircle, XCircle, Clock, Flag } from 'lucide-react';
 import { useCallback } from 'react';
 import { CommitActivitySection } from '@/features/projects/components/CommitActivitySection';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
@@ -59,6 +59,40 @@ function getLifecycleTone(status: string): any {
       return 'neutral';
     default:
       return 'neutral';
+  }
+}
+
+function getMilestoneTone(status: string): any {
+  switch (status) {
+    case 'COMPLETED':
+      return 'success';
+    case 'IN_PROGRESS':
+      return 'student'; // using student for sky/blue feel
+    case 'PLANNED':
+      return 'neutral';
+    case 'MISSED':
+      return 'danger';
+    case 'CANCELLED':
+      return 'neutral';
+    default:
+      return 'neutral';
+  }
+}
+
+function getStatusIcon(status: string, className?: string) {
+  switch (status) {
+    case 'COMPLETED':
+      return <CheckCircle2 className={className} />;
+    case 'IN_PROGRESS':
+      return <Clock className={className} />;
+    case 'PLANNED':
+      return <Circle className={className} />;
+    case 'MISSED':
+      return <AlertCircle className={className} />;
+    case 'CANCELLED':
+      return <XCircle className={className} />;
+    default:
+      return <Circle className={className} />;
   }
 }
 
@@ -269,28 +303,58 @@ export function StudentProjectDetailsPage() {
 
           <aside className="space-y-6">
             <div className="rounded-3xl border border-border bg-white p-6 shadow-sm transition-all hover:shadow-md">
-              <h2 className="text-lg font-semibold text-foreground">Primary milestone</h2>
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="text-lg font-bold tracking-tight text-slate-800">Primary Milestone</h2>
+                <div className="flex -space-x-1.5 h-6">
+                  <div className="h-1.5 w-1.5 rounded-full bg-indigo-400" />
+                  <div className="h-1.5 w-1.5 rounded-full bg-indigo-200" />
+                  <div className="h-1.5 w-1.5 rounded-full bg-indigo-100" />
+                </div>
+              </div>
+              
               {project.milestones.length > 0 ? (
                 <div className="mt-5">
-                  <div className="rounded-2xl border border-indigo-100 bg-indigo-50/30 p-5">
-                    <div className="flex items-center justify-between">
-                      <p className="font-bold text-slate-800">{project.milestones[0].title}</p>
-                      <StatusBadge tone="student" className="text-[10px] font-black uppercase">
-                        {project.milestones[0].status}
-                      </StatusBadge>
+                  <article className="group relative overflow-hidden rounded-3xl border border-slate-100 bg-white p-5 shadow-sm transition-all hover:shadow-lg">
+                    <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-indigo-50/30 transition-transform group-hover:scale-150" />
+                    
+                    <div className="relative">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 shadow-inner group-hover:bg-indigo-100 transition-colors">
+                          <span className="text-sm font-black">
+                            {String(project.milestones[0].sequenceNo).padStart(2, '0')}
+                          </span>
+                        </div>
+                        <StatusBadge tone={getMilestoneTone(project.milestones[0].status)}>
+                          {project.milestones[0].status.replace('_', ' ')}
+                        </StatusBadge>
+                      </div>
+
+                      <h3 className="mt-4 text-xl font-black tracking-tight text-slate-800 line-clamp-1 group-hover:text-indigo-900 transition-colors">
+                        {project.milestones[0].title}
+                      </h3>
+                      
+                      <div className="mt-2 flex items-center gap-2 text-xs font-bold text-slate-400">
+                        <CalendarDays className="h-3.5 w-3.5 text-indigo-400" />
+                        <span>Due {dateFormatter.format(new Date(project.milestones[0].dueDate))}</span>
+                      </div>
+
+                      <p className="mt-4 text-sm leading-relaxed text-slate-500 line-clamp-3">
+                        {project.milestones[0].description ?? 'No description provided for this milestone.'}
+                      </p>
+                      
+                      <div className="mt-5 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-indigo-500 opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0">
+                        <span>View in Milestones Tab</span>
+                        <ExternalLink className="h-2.5 w-2.5" />
+                      </div>
                     </div>
-                    <div className="mt-3 flex items-center gap-2 text-sm text-indigo-600 font-medium">
-                      <CalendarDays className="h-4 w-4" />
-                      <span>Due {dateFormatter.format(new Date(project.milestones[0].dueDate))}</span>
-                    </div>
-                    <p className="mt-4 text-sm leading-relaxed text-slate-500 line-clamp-3">
-                      {project.milestones[0].description ?? 'No description provided.'}
-                    </p>
-                  </div>
+                  </article>
                 </div>
               ) : (
-                <div className="mt-5 rounded-2xl border border-dashed border-slate-200 p-8 text-center">
-                  <p className="text-sm text-muted-foreground">No milestones recorded yet.</p>
+                <div className="mt-5 rounded-3xl border border-dashed border-slate-200 bg-slate-50/50 p-10 text-center">
+                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-slate-100">
+                    <Flag className="h-6 w-6 text-slate-400" />
+                  </div>
+                  <p className="mt-4 text-sm font-bold text-slate-400">No milestones yet.</p>
                 </div>
               )}
             </div>
@@ -333,32 +397,65 @@ export function StudentProjectDetailsPage() {
       ) : null}
 
       {activeTab === 'milestones' ? (
-        <section className="rounded-3xl border border-border bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-foreground">Milestones</h2>
+        <section className="rounded-3xl border border-border bg-white p-6 shadow-sm transition-all hover:shadow-md">
+          <div className="flex flex-col">
+            <h2 className="text-lg font-bold tracking-tight text-slate-800">Project Milestones</h2>
+            <p className="text-xs font-medium text-slate-400">Total {project.milestones.length} milestones defined</p>
+          </div>
+          
           {project.milestones.length > 0 ? (
-            <div className="mt-5 space-y-4">
-              {project.milestones.map((milestone) => (
+            <div className="mt-6 space-y-4">
+              {project.milestones.map((milestone, index) => (
                 <div
                   key={milestone.id}
-                  className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
+                  className="relative overflow-hidden rounded-3xl border border-slate-100 bg-white p-5 transition-all hover:shadow-lg group"
                 >
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                    <p className="font-medium text-foreground">
-                      {milestone.sequenceNo}. {milestone.title}
-                    </p>
-                    <span className="text-sm text-muted-foreground">{milestone.status}</span>
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                    <div className="flex shrink-0 items-center justify-center">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-50 text-base font-black text-slate-400 shadow-inner group-hover:bg-indigo-50 group-hover:text-indigo-500 transition-colors">
+                        {String(milestone.sequenceNo).padStart(2, '0')}
+                      </div>
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div className="flex flex-col">
+                          <h4 className="text-lg font-black tracking-tight text-slate-800 transition-colors group-hover:text-indigo-900">
+                            {milestone.title}
+                          </h4>
+                          <div className="mt-1 flex items-center gap-2 text-xs font-bold text-slate-400">
+                            <CalendarDays className="h-3.5 w-3.5" />
+                            <span>Due {dateFormatter.format(new Date(milestone.dueDate))}</span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          {getStatusIcon(milestone.status, "h-4 w-4 text-slate-300")}
+                          <StatusBadge tone={getMilestoneTone(milestone.status)}>
+                            {milestone.status.replace('_', ' ')}
+                          </StatusBadge>
+                        </div>
+                      </div>
+
+                      <p className="mt-3 text-sm leading-relaxed text-slate-500 line-clamp-2">
+                        {milestone.description ?? 'No description provided for this milestone.'}
+                      </p>
+                    </div>
                   </div>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    Due {dateFormatter.format(new Date(milestone.dueDate))}
-                  </p>
-                  <p className="mt-2 text-sm leading-7 text-muted-foreground">
-                    {milestone.description ?? 'No description provided.'}
-                  </p>
+                  
+                  {index < project.milestones.length - 1 && (
+                    <div className="absolute left-[3.5rem] bottom-0 top-[4.5rem] w-0.5 bg-slate-50 -z-10 group-hover:bg-indigo-50/50" />
+                  )}
                 </div>
               ))}
             </div>
           ) : (
-            <p className="mt-4 text-sm text-muted-foreground">No milestones recorded yet.</p>
+            <div className="mt-6 rounded-3xl border border-dashed border-slate-200 p-12 text-center text-slate-400">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-50 shadow-inner">
+                <Flag className="h-6 w-6" />
+              </div>
+              <p className="mt-4 text-sm font-bold">No milestones recorded yet.</p>
+            </div>
           )}
         </section>
       ) : null}
