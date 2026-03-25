@@ -20,7 +20,10 @@ type RepositoryManagementModalContentProps = {
   rows: RepositoryManagementRow[];
   linkedCount: number;
   maxLinkedRepositories: number;
-  remainingSlots: number;
+  enabledCount: number;
+  maxEnabledRepositories: number;
+  remainingLinkSlots: number;
+  remainingEnabledSlots: number;
   isMutating: boolean;
   isLoadingInventory: boolean;
   inventoryError: string | null;
@@ -32,10 +35,23 @@ type RepositoryManagementModalContentProps = {
   onDisconnectSource: (sourceId: string) => void;
 };
 
+function formatAccessTypeLabel(value: string | null | undefined): string {
+  const normalized = (value ?? '').trim();
+  if (!normalized) {
+    return 'Unknown';
+  }
+  return normalized
+    .toLowerCase()
+    .split('_')
+    .map((part) => (part.length > 0 ? part[0].toUpperCase() + part.slice(1) : part))
+    .join(' ');
+}
+
 function toSyncLabel(value: string | null | undefined): string {
   if (value === 'SUCCESS') return 'Synced';
   if (value === 'FAILED') return 'Sync failed';
   if (value === 'PENDING') return 'Pending';
+  if (value === 'DISABLED') return 'Disabled';
   return 'Not linked';
 }
 
@@ -43,7 +59,10 @@ export function RepositoryManagementModalContent({
   rows,
   linkedCount,
   maxLinkedRepositories,
-  remainingSlots,
+  enabledCount,
+  maxEnabledRepositories,
+  remainingLinkSlots,
+  remainingEnabledSlots,
   isMutating,
   isLoadingInventory,
   inventoryError,
@@ -59,7 +78,10 @@ export function RepositoryManagementModalContent({
       <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
         <p className="text-sm font-semibold text-foreground">Repository management</p>
         <p className="mt-1 text-xs text-muted-foreground">
-          Linked {linkedCount} / {maxLinkedRepositories} repositories. Manage enablement, primary selection, and source access from one place.
+          Linked {linkedCount} / {maxLinkedRepositories} repositories.
+        </p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Enabled {enabledCount} / {maxEnabledRepositories} repositories.
         </p>
       </div>
 
@@ -87,77 +109,70 @@ export function RepositoryManagementModalContent({
           <table className="min-w-full divide-y divide-slate-200 text-sm">
             <thead className="bg-slate-50 text-xs uppercase tracking-[0.14em] text-muted-foreground">
               <tr>
-                <th className="px-3 py-3 text-left font-medium">Enabled</th>
-                <th className="px-3 py-3 text-left font-medium">Primary</th>
                 <th className="px-3 py-3 text-left font-medium">Display name</th>
                 <th className="px-3 py-3 text-left font-medium">Repository</th>
                 <th className="px-3 py-3 text-left font-medium">Owner</th>
                 <th className="px-3 py-3 text-left font-medium">Access type</th>
-                <th className="px-3 py-3 text-left font-medium">Sync</th>
+                <th className="px-3 py-3 text-left font-medium">Status</th>
                 <th className="px-3 py-3 text-left font-medium">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {rows.map((row) => {
-                const enableBlocked = !row.enabled && remainingSlots < 1;
+                const enableBlocked = row.linkId
+                  ? !row.enabled && remainingEnabledSlots < 1
+                  : (!row.enabled && (remainingEnabledSlots < 1 || remainingLinkSlots < 1));
                 return (
                   <tr key={row.rowKey} className="align-top">
-                    <td className="px-3 py-3">
-                      <label className="inline-flex items-center gap-2 text-xs text-foreground">
-                        <input
-                          type="checkbox"
-                          checked={row.enabled}
-                          onChange={() => {
-                            if (row.enabled && row.linkId) {
-                              onDisableForProject(row.linkId);
-                            } else if (!row.enabled) {
-                              onEnableForProject(row);
-                            }
-                          }}
-                          disabled={isMutating || (!row.enabled && enableBlocked)}
-                        />
-                        <span>{row.enabled ? 'Enabled' : 'Disabled'}</span>
-                      </label>
-                      {!row.enabled && enableBlocked ? (
-                        <p className="mt-1 text-[11px] text-amber-700">Limit reached</p>
-                      ) : null}
+                    <td className="px-3 py-3 text-xs text-foreground">
+                      {row.customName?.trim() || '—'}
                     </td>
                     <td className="px-3 py-3">
-                      {row.enabled && row.linkId ? (
-                        <label className="inline-flex items-center gap-2 text-xs text-foreground">
-                          <input
-                            type="radio"
-                            checked={row.primary}
-                            onChange={() => onSelectPrimary(row.linkId!)}
-                            disabled={isMutating || row.primary}
-                          />
-                          <span>{row.primary ? 'Primary' : 'Set primary'}</span>
-                        </label>
+                      {row.url ? (
+                        <a href={row.url} target="_blank" rel="noreferrer" className="inline-block">
+                          <span className={buttonStyles({ variant: 'secondary', size: 'sm', className: row.enabled ? '' : 'opacity-70' })}>
+                            Open repository
+                          </span>
+                        </a>
                       ) : (
                         <span className="text-xs text-muted-foreground">—</span>
                       )}
                     </td>
-                    <td className="px-3 py-3 text-xs text-foreground">{row.customName?.trim() || '—'}</td>
-                    <td className="px-3 py-3">
-                      <p className="font-medium text-foreground">{row.fullName || 'Repository'}</p>
-                      {row.url ? (
-                        <a
-                          href={row.url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="mt-1 inline-block break-all text-xs text-sky-700 hover:underline"
-                        >
-                          {row.url}
-                        </a>
-                      ) : null}
-                    </td>
                     <td className="px-3 py-3 text-xs text-foreground">{row.ownerLogin || 'unknown'}</td>
-                    <td className="px-3 py-3 text-xs text-foreground">{row.accessType}</td>
-                    <td className="px-3 py-3 text-xs text-foreground">{toSyncLabel(row.syncStatus)}</td>
+                    <td className="px-3 py-3 text-xs text-foreground">{formatAccessTypeLabel(row.accessType)}</td>
                     <td className="px-3 py-3">
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-wrap items-center gap-2 text-xs">
+                        <span
+                          className={`rounded-full px-2 py-0.5 font-medium ${
+                            row.enabled
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : 'bg-slate-100 text-slate-600'
+                          }`}
+                        >
+                          {row.enabled ? 'Enabled' : 'Disabled'}
+                        </span>
+                        <span className="text-muted-foreground">{toSyncLabel(row.syncStatus)}</span>
+                        {!row.enabled && enableBlocked ? (
+                          <span className="text-amber-700">
+                            {row.linkId ? 'Enabled limit reached' : 'Limit reached'}
+                          </span>
+                        ) : null}
+                      </div>
+                    </td>
+                    <td className="px-3 py-3">
+                      <div className="flex flex-nowrap items-center gap-2 whitespace-nowrap">
                         {row.enabled && row.linkId ? (
                           <>
+                            {!row.primary ? (
+                              <button
+                                type="button"
+                                className={buttonStyles({ variant: 'secondary', size: 'sm' })}
+                                onClick={() => onSelectPrimary(row.linkId!)}
+                                disabled={isMutating}
+                              >
+                                Set primary
+                              </button>
+                            ) : null}
                             <button
                               type="button"
                               className={buttonStyles({ variant: 'secondary', size: 'sm' })}

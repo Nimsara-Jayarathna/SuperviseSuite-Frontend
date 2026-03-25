@@ -203,6 +203,24 @@ export const supervisorApi = {
     return data;
   },
 
+  async enableGitHubRepository(linkedRepositoryId: string): Promise<ProjectGitHubRepositories> {
+    const data = await apiClient.post<ProjectGitHubRepositories>(
+      `/api/github/repositories/${linkedRepositoryId}/enable`,
+      {},
+    );
+    invalidateProjectCaches(data.projectId);
+    return data;
+  },
+
+  async disableGitHubRepository(linkedRepositoryId: string): Promise<ProjectGitHubRepositories> {
+    const data = await apiClient.post<ProjectGitHubRepositories>(
+      `/api/github/repositories/${linkedRepositoryId}/disable`,
+      {},
+    );
+    invalidateProjectCaches(data.projectId);
+    return data;
+  },
+
   async disconnectGitHubAccessSource(sourceId: string): Promise<ProjectGitHubRepositories> {
     const data = await apiClient.del<ProjectGitHubRepositories>(
       `/api/github/access-source/${sourceId}`,

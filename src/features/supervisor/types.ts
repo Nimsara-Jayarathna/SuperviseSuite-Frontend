@@ -334,7 +334,7 @@ export type GitHubAccessUpdatedAcknowledge = {
 
 export type GitHubAccessType = 'PUBLIC_URL' | 'INSTALLATION_DIRECT' | 'INSTALLATION_REQUESTED';
 export type GitHubOwnerType = 'USER' | 'ORG';
-export type GitHubSyncStatus = 'PENDING' | 'SUCCESS' | 'FAILED';
+export type GitHubSyncStatus = 'PENDING' | 'SUCCESS' | 'FAILED' | 'DISABLED';
 
 export type GitHubAccessSource = {
   id: string;
@@ -385,6 +385,7 @@ export type ProjectRepositoryLink = {
   defaultBranch: string | null;
   url: string | null;
   primary: boolean;
+  enabled: boolean;
   linkedAt: string;
   lastSyncedAt: string | null;
   syncStatus: GitHubSyncStatus | null;
@@ -393,6 +394,7 @@ export type ProjectRepositoryLink = {
 export type ProjectGitHubRepositories = {
   projectId: string;
   maxLinkedRepositories: number;
+  maxEnabledRepositories: number;
   accessSources: GitHubAccessSource[];
   repositories: ProjectRepositoryLink[];
 };

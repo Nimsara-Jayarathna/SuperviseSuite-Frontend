@@ -47,6 +47,7 @@ function toSyncLabel(value: string | null | undefined): string {
   if (value === 'SUCCESS') return 'Synced';
   if (value === 'FAILED') return 'Sync failed';
   if (value === 'PENDING') return 'Pending';
+  if (value === 'DISABLED') return 'Disabled';
   return 'Unknown';
 }
 
@@ -118,7 +119,12 @@ export function RepositorySection({
   const linkedRepositories = repositoriesData?.repositories ?? [];
   const accessSources = repositoriesData?.accessSources ?? [];
   const maxLinkedRepositories = repositoriesData?.maxLinkedRepositories ?? 5;
-  const remainingSlots = Math.max(0, maxLinkedRepositories - linkedRepositories.length);
+  const maxEnabledRepositories = repositoriesData?.maxEnabledRepositories ?? maxLinkedRepositories;
+  const linkedCount = linkedRepositories.length;
+  const enabledCount = linkedRepositories.filter((repository) => repository.enabled).length;
+  const remainingLinkSlots = Math.max(0, maxLinkedRepositories - linkedCount);
+  const remainingEnabledSlots = Math.max(0, maxEnabledRepositories - enabledCount);
+  const repositorySelectionCapacity = Math.min(remainingLinkSlots, remainingEnabledSlots);
 
   const managementRows = useMemo<RepositoryManagementRow[]>(() => {
     const sourceById = new Map(accessSources.map((source) => [source.id, source]));
@@ -137,7 +143,7 @@ export function RepositorySection({
           githubRepositoryId: item.id,
           githubRepoId: item.githubRepoId,
           linkId: linked?.id ?? null,
-          enabled: Boolean(linked),
+          enabled: Boolean(linked?.enabled),
           primary: Boolean(linked?.primary),
           customName: linked?.customName ?? null,
           fullName: item.fullName ?? linked?.fullName ?? null,
@@ -156,17 +162,17 @@ export function RepositorySection({
       if (rowsByKey.has(rowKey)) {
         continue;
       }
-      rowsByKey.set(rowKey, {
-        rowKey,
-        sourceId: linked.sourceId ?? null,
-        accessType: source?.accessType ?? 'UNKNOWN',
-        githubRepositoryId: linked.githubRepositoryId,
-        githubRepoId: linked.githubRepoId,
-        linkId: linked.id,
-        enabled: true,
-        primary: Boolean(linked.primary),
-        customName: linked.customName,
-        fullName: linked.fullName,
+        rowsByKey.set(rowKey, {
+          rowKey,
+          sourceId: linked.sourceId ?? null,
+          accessType: source?.accessType ?? 'UNKNOWN',
+          githubRepositoryId: linked.githubRepositoryId,
+          githubRepoId: linked.githubRepoId,
+          linkId: linked.id,
+          enabled: linked.enabled,
+          primary: Boolean(linked.primary),
+          customName: linked.customName,
+          fullName: linked.fullName,
         ownerLogin: linked.ownerLogin,
         url: linked.url,
         syncStatus: linked.syncStatus,
@@ -181,7 +187,7 @@ export function RepositorySection({
     });
   }, [accessSources, inventoryBySourceId, linkedRepositories]);
 
-  const selection = useRepositorySelection(remainingSlots > 0 ? remainingSlots : 0);
+  const selection = useRepositorySelection(repositorySelectionCapacity > 0 ? repositorySelectionCapacity : 0);
 
   const sourceById = useMemo(() => {
     return new Map(accessSources.map((source) => [source.id, source]));
@@ -275,11 +281,19 @@ export function RepositorySection({
       return;
     }
 
-    if (remainingSlots < 1) {
+    if (remainingLinkSlots < 1) {
       openRequestModal(
         'error',
-        'Repository limit reached',
-        'Unlink an existing repository before adding another one.',
+        'Linked repository limit reached',
+        'Remove a linked repository before adding another one.',
+      );
+      return;
+    }
+    if (remainingEnabledSlots < 1) {
+      openRequestModal(
+        'error',
+        'Enabled repository limit reached',
+        'Disable another enabled repository before linking a new one.',
       );
       return;
     }
@@ -301,7 +315,7 @@ export function RepositorySection({
           {
             githubRepositoryId: repository.id,
             customName: publicCustomName.trim() || undefined,
-            primary: linkedRepositories.length === 0,
+            primary: enabledCount === 0,
           },
         ],
       });
@@ -474,6 +488,33 @@ export function RepositorySection({
   }
 
   async function handleEnableRepository(row: RepositoryManagementRow) {
+    if (row.linkId) {
+      if (remainingEnabledSlots < 1) {
+        openRequestModal(
+          'error',
+          'Enabled repository limit reached',
+          'Disable another enabled repository before enabling this one.',
+        );
+        return;
+      }
+
+      setIsMutatingLinks(true);
+      openRequestModal('loading', 'Enabling repository', 'Re-enabling repository tracking for this project.');
+      try {
+        await supervisorApi.enableGitHubRepository(row.linkId);
+        await reloadProjectAndRepositories(project.id);
+        openRequestModal('success', 'Repository enabled', 'Repository is now active for this project.');
+      } catch (error) {
+        const message = isApiException(error)
+          ? error.apiError.message
+          : 'Unable to enable repository right now.';
+        openRequestModal('error', 'Repository enable failed', message);
+      } finally {
+        setIsMutatingLinks(false);
+      }
+      return;
+    }
+
     if (!row.sourceId || !row.githubRepositoryId) {
       openRequestModal(
         'error',
@@ -482,11 +523,19 @@ export function RepositorySection({
       );
       return;
     }
-    if (remainingSlots < 1) {
+    if (remainingLinkSlots < 1) {
       openRequestModal(
         'error',
-        'Repository limit reached',
-        'Unlink an existing repository before enabling another one.',
+        'Linked repository limit reached',
+        'Remove a linked repository before adding another one.',
+      );
+      return;
+    }
+    if (remainingEnabledSlots < 1) {
+      openRequestModal(
+        'error',
+        'Enabled repository limit reached',
+        'Disable another enabled repository before enabling this one.',
       );
       return;
     }
@@ -500,7 +549,7 @@ export function RepositorySection({
         repositories: [
           {
             githubRepositoryId: row.githubRepositoryId,
-            primary: linkedRepositories.length === 0,
+            primary: enabledCount === 0,
           },
         ],
       });
@@ -511,6 +560,27 @@ export function RepositorySection({
         ? error.apiError.message
         : 'Unable to enable repository right now.';
       openRequestModal('error', 'Repository enable failed', message);
+    } finally {
+      setIsMutatingLinks(false);
+    }
+  }
+
+  async function handleDisableRepository(linkId: string) {
+    setIsMutatingLinks(true);
+    openRequestModal('loading', 'Disabling repository', 'Keeping link access while pausing repository sync.');
+    try {
+      await supervisorApi.disableGitHubRepository(linkId);
+      await reloadProjectAndRepositories(project.id);
+      openRequestModal(
+        'success',
+        'Repository disabled',
+        'Repository is linked but inactive. You can re-enable it later.',
+      );
+    } catch (error) {
+      const message = isApiException(error)
+        ? error.apiError.message
+        : 'Unable to disable repository right now.';
+      openRequestModal('error', 'Repository disable failed', message);
     } finally {
       setIsMutatingLinks(false);
     }
@@ -563,7 +633,14 @@ export function RepositorySection({
           selectedRepositoryIds={selection.selectedRepositoryIds}
           primaryRepositoryId={selection.primaryRepositoryId}
           customNameByRepositoryId={selection.customNameByRepositoryId}
-          maxSelectableCount={remainingSlots}
+          maxSelectableCount={repositorySelectionCapacity}
+          selectionLimitMessage={
+            remainingLinkSlots < 1
+              ? 'Linked repository limit reached. Remove a linked repository to add another one.'
+              : remainingEnabledSlots < 1
+                ? 'Enabled repository limit reached. Disable another enabled repository first.'
+                : null
+          }
           onToggleRepository={selection.toggleRepository}
           onSetPrimaryRepository={selection.setPrimaryRepositoryId}
           onCustomNameChange={selection.setCustomName}
@@ -579,9 +656,12 @@ export function RepositorySection({
       >
         <RepositoryManagementModalContent
           rows={managementRows}
-          linkedCount={linkedRepositories.length}
+          linkedCount={linkedCount}
           maxLinkedRepositories={maxLinkedRepositories}
-          remainingSlots={remainingSlots}
+          enabledCount={enabledCount}
+          maxEnabledRepositories={maxEnabledRepositories}
+          remainingLinkSlots={remainingLinkSlots}
+          remainingEnabledSlots={remainingEnabledSlots}
           isMutating={isMutatingLinks}
           isLoadingInventory={isLoadingInventory}
           inventoryError={inventoryError}
@@ -589,7 +669,7 @@ export function RepositorySection({
           onSelectPrimary={(linkId) => void handleSelectPrimary(linkId)}
           onRefresh={(linkId) => void handleRefreshRepository(linkId)}
           onEnableForProject={(row) => void handleEnableRepository(row)}
-          onDisableForProject={(linkId) => void handleUnlinkRepository(linkId)}
+          onDisableForProject={(linkId) => void handleDisableRepository(linkId)}
           onDisconnectSource={(sourceId) => void handleDisconnectAccessSource(sourceId)}
         />
       </GithubDetailsModal>
@@ -608,8 +688,14 @@ export function RepositorySection({
             type="button"
             className={buttonStyles({ variant: 'primary', size: 'sm' })}
             onClick={() => setIsModalOpen(true)}
-            disabled={remainingSlots < 1}
-            title={remainingSlots < 1 ? 'Maximum linked repositories reached.' : undefined}
+            disabled={repositorySelectionCapacity < 1}
+            title={
+              remainingLinkSlots < 1
+                ? 'Maximum linked repositories reached.'
+                : remainingEnabledSlots < 1
+                  ? 'Maximum enabled repositories reached.'
+                  : undefined
+            }
           >
             <span className="inline-flex items-center gap-2">
               <Github className="h-4 w-4" />
@@ -620,7 +706,7 @@ export function RepositorySection({
       </div>
 
       <p className="mt-2 text-xs text-muted-foreground">
-        Linked {linkedRepositories.length} / {maxLinkedRepositories} repositories.
+        Linked {linkedCount} / {maxLinkedRepositories} repositories · Enabled {enabledCount} / {maxEnabledRepositories}.
       </p>
 
       {isLoadingRepositoriesData ? (
@@ -648,11 +734,16 @@ export function RepositorySection({
             <article key={repository.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold text-foreground">
+                  <p className={`text-sm font-semibold ${repository.enabled ? 'text-foreground' : 'text-muted-foreground line-through'}`}>
                     {repository.customName?.trim() || repository.name || repository.fullName || 'Repository'}
                     {repository.primary ? (
                       <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] uppercase text-amber-800">
                         Primary
+                      </span>
+                    ) : null}
+                    {!repository.enabled ? (
+                      <span className="ml-2 rounded-full bg-slate-200 px-2 py-0.5 text-[10px] uppercase text-slate-700">
+                        Disabled
                       </span>
                     ) : null}
                   </p>
@@ -673,7 +764,7 @@ export function RepositorySection({
                 </div>
 
                 <div className="flex flex-wrap gap-2">
-                  {!repository.primary ? (
+                  {repository.enabled && !repository.primary ? (
                     <button
                       type="button"
                       className={buttonStyles({ variant: 'secondary', size: 'sm' })}
@@ -687,7 +778,7 @@ export function RepositorySection({
                     type="button"
                     className={buttonStyles({ variant: 'secondary', size: 'sm' })}
                     onClick={() => void handleRefreshRepository(repository.id)}
-                    disabled={isMutatingLinks}
+                    disabled={isMutatingLinks || !repository.enabled}
                   >
                     <span className="inline-flex items-center gap-1">
                       <RefreshCw className="h-3.5 w-3.5" />

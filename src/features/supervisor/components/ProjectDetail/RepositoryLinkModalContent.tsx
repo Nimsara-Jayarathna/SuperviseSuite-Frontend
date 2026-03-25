@@ -37,6 +37,7 @@ type RepositoryLinkModalContentProps = {
   primaryRepositoryId: string | null;
   customNameByRepositoryId: Record<string, string>;
   maxSelectableCount: number;
+  selectionLimitMessage?: string | null;
   onToggleRepository: (repositoryId: string) => void;
   onSetPrimaryRepository: (repositoryId: string) => void;
   onCustomNameChange: (repositoryId: string, value: string) => void;
@@ -83,6 +84,7 @@ export function RepositoryLinkModalContent({
   primaryRepositoryId,
   customNameByRepositoryId,
   maxSelectableCount,
+  selectionLimitMessage,
   onToggleRepository,
   onSetPrimaryRepository,
   onCustomNameChange,
@@ -107,7 +109,8 @@ export function RepositoryLinkModalContent({
 
         {maxSelectableCount === 0 ? (
           <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-            Repository limit reached for this project. Unlink an existing repository to add another one.
+            {selectionLimitMessage ??
+              'Repository limit reached for this project. Remove an existing repository to add another one.'}
           </div>
         ) : null}
 
