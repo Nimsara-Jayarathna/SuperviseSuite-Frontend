@@ -4,6 +4,8 @@ export type ProjectGitHubRepositoryPreview = {
   url: string;
   defaultBranch: string;
   lastSyncedAt: string | null;
+  createdAt: string;
+  updatedAt: string | null;
 };
 
 export type ProjectGitHubActivitySummary = {
@@ -38,6 +40,7 @@ export type ProjectGitHubPreview = {
     | string
     | null;
   repositories: ProjectGitHubRepositoryPreview[];
+  primaryRepositoryUrl?: string | null;
   activitySummary: ProjectGitHubActivitySummary;
   contributorsPreview: ProjectGitHubContributor[];
   recentCommitsPreview: ProjectGitHubRecentCommit[];

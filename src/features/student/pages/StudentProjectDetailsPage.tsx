@@ -497,7 +497,7 @@ export function StudentProjectDetailsPage() {
 
       {activeTab === 'github' ? (
         <div className="space-y-4">
-          {project.repositoryUrl && (
+          {project.github?.primaryRepositoryUrl && (
             <section className="relative z-20">
               <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition-all hover:shadow-md">
                 <div className="flex min-w-0 flex-1 flex-col">
@@ -509,10 +509,10 @@ export function StudentProjectDetailsPage() {
                       <Github className="h-4 w-4" />
                     </div>
                     <span className="truncate font-bold text-slate-800">
-                      {project.repositoryUrl.split('/').pop()}
+                      {project.github.primaryRepositoryUrl.split('/').pop()}
                     </span>
                     <a
-                      href={project.repositoryUrl}
+                      href={project.github.primaryRepositoryUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-slate-400 hover:text-indigo-600 transition-colors"
