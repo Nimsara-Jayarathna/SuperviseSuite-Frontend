@@ -32,14 +32,7 @@ type RepositoryManagementModalContentProps = {
   onSelectPrimary: (linkId: string) => void;
   onRefresh: (linkId: string) => void;
   onToggleEnabled: (row: RepositoryManagementRow) => void;
-  onStartSwapEnable: (row: RepositoryManagementRow) => void;
   onDisconnectSource: (sourceId: string) => void;
-  swapTargetRowKey: string | null;
-  swapDisableLinkId: string | null;
-  swapCandidates: Array<{ linkId: string; label: string }>;
-  onSwapCandidateChange: (linkId: string) => void;
-  onConfirmSwapEnable: () => void;
-  onCancelSwapEnable: () => void;
 };
 
 function formatAccessTypeLabel(value: string | null | undefined): string {
@@ -52,14 +45,6 @@ function formatAccessTypeLabel(value: string | null | undefined): string {
     .split('_')
     .map((part) => (part.length > 0 ? part[0].toUpperCase() + part.slice(1) : part))
     .join(' ');
-}
-
-function toSyncLabel(value: string | null | undefined): string {
-  if (value === 'SUCCESS') return 'Synced';
-  if (value === 'FAILED') return 'Sync failed';
-  if (value === 'PENDING') return 'Pending';
-  if (value === 'DISABLED') return 'Disabled';
-  return 'Not linked';
 }
 
 export function RepositoryManagementModalContent({
@@ -77,17 +62,11 @@ export function RepositoryManagementModalContent({
   onSelectPrimary,
   onRefresh,
   onToggleEnabled,
-  onStartSwapEnable,
   onDisconnectSource,
-  swapTargetRowKey,
-  swapDisableLinkId,
-  swapCandidates,
-  onSwapCandidateChange,
-  onConfirmSwapEnable,
-  onCancelSwapEnable,
 }: RepositoryManagementModalContentProps) {
   const linkedLimitReached = linkedCount >= maxLinkedRepositories;
   const enabledLimitReached = enabledCount >= maxEnabledRepositories;
+  const bothLimitsReached = linkedLimitReached && enabledLimitReached;
 
   return (
     <div className="space-y-4">
@@ -102,9 +81,19 @@ export function RepositoryManagementModalContent({
             Enabled {enabledCount} / {maxEnabledRepositories}
           </span>
         </p>
-        {enabledLimitReached ? (
+        {bothLimitsReached ? (
           <p className="mt-2 inline-flex rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-semibold text-amber-800">
-            Enabled limit reached. Use swap enable to replace an active repository.
+            Linked and enabled limits reached. Unlink one repository and disable one enabled repository to continue.
+          </p>
+        ) : null}
+        {!bothLimitsReached && enabledLimitReached ? (
+          <p className="mt-2 inline-flex rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-semibold text-amber-800">
+            Enabled limit reached. Disable one enabled repository before enabling another.
+          </p>
+        ) : null}
+        {!bothLimitsReached && linkedLimitReached ? (
+          <p className="mt-2 inline-flex rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-semibold text-amber-800">
+            Linked limit reached. Unlink one repository to add another.
           </p>
         ) : null}
       </div>
@@ -145,9 +134,6 @@ export function RepositoryManagementModalContent({
                 const blockedByEnabledLimit = !row.enabled && remainingEnabledSlots < 1;
                 const blockedByLinkedLimit = !row.enabled && !row.linkId && remainingLinkSlots < 1;
                 const enableBlocked = blockedByEnabledLimit || blockedByLinkedLimit;
-                const swapPossible = rows.some(
-                  (candidate) => candidate.enabled && Boolean(candidate.linkId) && candidate.rowKey !== row.rowKey,
-                );
                 return (
                   <tr key={row.rowKey} className="align-top">
                     <td className="px-3 py-3 text-xs text-foreground">
@@ -224,64 +210,6 @@ export function RepositoryManagementModalContent({
                             />
                           </button>
                         </div>
-                        <span className="text-muted-foreground">{toSyncLabel(row.syncStatus)}</span>
-                        {!row.enabled && blockedByEnabledLimit ? (
-                          <div className="pt-1">
-                            <button
-                              type="button"
-                              className={buttonStyles({ variant: 'secondary', size: 'sm', className: 'h-7 px-2 text-[11px]' })}
-                              onClick={() => onStartSwapEnable(row)}
-                              disabled={isMutating || !swapPossible}
-                              title={
-                                swapPossible
-                                  ? 'Choose an enabled repository to disable, then enable this one.'
-                                  : 'No enabled repository available to swap.'
-                              }
-                            >
-                              Swap enable
-                            </button>
-                          </div>
-                        ) : null}
-                        {!row.enabled && blockedByLinkedLimit ? (
-                          <span className="text-amber-700">Linked limit reached</span>
-                        ) : null}
-                        {swapTargetRowKey === row.rowKey ? (
-                          <div className="space-y-2 rounded-xl border border-amber-200 bg-amber-50 p-2">
-                            <p className="text-[11px] font-medium text-amber-900">
-                              Select active repository to disable
-                            </p>
-                            <select
-                              value={swapDisableLinkId ?? ''}
-                              onChange={(event) => onSwapCandidateChange(event.target.value)}
-                              className="h-8 w-full rounded-lg border border-amber-200 bg-white px-2 text-[11px] text-foreground"
-                              disabled={isMutating || swapCandidates.length === 0}
-                            >
-                              {swapCandidates.map((candidate) => (
-                                <option key={candidate.linkId} value={candidate.linkId}>
-                                  {candidate.label}
-                                </option>
-                              ))}
-                            </select>
-                            <div className="flex items-center gap-2">
-                              <button
-                                type="button"
-                                className={buttonStyles({ variant: 'primary', size: 'sm', className: 'h-7 px-2 text-[11px]' })}
-                                onClick={onConfirmSwapEnable}
-                                disabled={isMutating || !swapDisableLinkId}
-                              >
-                                Confirm swap
-                              </button>
-                              <button
-                                type="button"
-                                className={buttonStyles({ variant: 'secondary', size: 'sm', className: 'h-7 px-2 text-[11px]' })}
-                                onClick={onCancelSwapEnable}
-                                disabled={isMutating}
-                              >
-                                Cancel
-                              </button>
-                            </div>
-                          </div>
-                        ) : null}
                       </div>
                     </td>
                     <td className="px-3 py-3">
