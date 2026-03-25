@@ -427,6 +427,34 @@ export function CommitActivitySection({
   const normalized = normalizeDashboardPayload(data);
   const repositoryItems = normalized.repositoryLinked ? normalized.repositories.slice(0, 1) : [];
   const hasLinkedRepository = repositoryItems.length > 0;
+
+  if (!hasLinkedRepository) {
+    return (
+      <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-slate-200 bg-slate-50/50 p-12 text-center">
+        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-slate-100">
+          <Github className="h-8 w-8 text-slate-400" />
+        </div>
+        <h3 className="mt-6 text-lg font-bold text-slate-800">No repository connected</h3>
+        <p className="mt-2 max-w-xs text-sm leading-relaxed text-slate-500">
+          Connect a GitHub repository to this project to start tracking commits, activity, and contributor data.
+        </p>
+        {onNavigateToOverview && (
+          <button
+            type="button"
+            className={buttonStyles({
+              variant: 'primary',
+              size: 'sm',
+              className: 'mt-6 rounded-xl hover:shadow-lg transition-all',
+            })}
+            onClick={onNavigateToOverview}
+          >
+            Link a Repository
+          </button>
+        )}
+      </div>
+    );
+  }
+
   const topContributors = normalized.contributorsPreview.slice(0, 4);
   const recentCommits = normalized.recentCommitsPreview.slice(0, 6);
 
@@ -435,7 +463,7 @@ export function CommitActivitySection({
       <section className="rounded-3xl border border-border bg-white p-6 shadow-sm">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-lg font-semibold text-foreground">Repository Overview</h2>
-          {canRefresh && hasLinkedRepository ? (
+          {canRefresh ? (
             <button
               type="button"
               className={buttonStyles({ variant: 'secondary', size: 'sm' })}
@@ -446,113 +474,94 @@ export function CommitActivitySection({
             </button>
           ) : null}
         </div>
-        {repositoryItems.length > 0 ? (
-          <div className="mt-6">
-            {repositoryItems.map((repository) => {
-              const [owner] = repository.url.split('github.com/')[1]?.split('/') || [];
-              const ownerAvatarUrl = owner ? `https://github.com/${owner}.png` : null;
-              
-              return (
-                <article
-                  key={repository.url}
-                  className="group relative overflow-hidden rounded-3xl border border-slate-100 bg-slate-50/50 p-5 transition-all hover:bg-white hover:shadow-lg"
-                >
-                  <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
-                    <div className="flex shrink-0 items-center justify-center">
-                      <div className="relative h-16 w-16 overflow-hidden rounded-2xl border-2 border-white bg-white shadow-sm transition-transform group-hover:scale-110">
-                        {ownerAvatarUrl ? (
-                          <img 
-                            src={ownerAvatarUrl} 
-                            alt={owner} 
-                            className="h-full w-full object-cover"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(repository.name)}&background=f1f5f9&color=94a3b8`;
-                            }}
-                          />
-                        ) : (
-                          <div className="flex h-full w-full items-center justify-center bg-slate-100 text-slate-400">
-                            <Github className="h-8 w-8" />
-                          </div>
-                        )}
-                        <div className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-lg bg-amber-500 text-white shadow-sm">
-                          <Github className="h-3 w-3" />
+        <div className="mt-6">
+          {repositoryItems.map((repository) => {
+            const [owner] = repository.url.split('github.com/')[1]?.split('/') || [];
+            const ownerAvatarUrl = owner ? `https://github.com/${owner}.png` : null;
+
+            return (
+              <article
+                key={repository.url}
+                className="group relative overflow-hidden rounded-3xl border border-slate-100 bg-slate-50/50 p-5 transition-all hover:bg-white hover:shadow-lg"
+              >
+                <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
+                  <div className="flex shrink-0 items-center justify-center">
+                    <div className="relative h-16 w-16 overflow-hidden rounded-2xl border-2 border-white bg-white shadow-sm transition-transform group-hover:scale-110">
+                      {ownerAvatarUrl ? (
+                        <img
+                          src={ownerAvatarUrl}
+                          alt={owner}
+                          className="h-full w-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(repository.name)}&background=f1f5f9&color=94a3b8`;
+                          }}
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center bg-slate-100 text-slate-400">
+                          <Github className="h-8 w-8" />
                         </div>
+                      )}
+                      <div className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-lg bg-amber-500 text-white shadow-sm">
+                        <Github className="h-3 w-3" />
                       </div>
                     </div>
+                  </div>
 
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-3">
-                        <h3 className="text-xl font-black tracking-tight text-slate-800">
-                          {repository.name}
-                        </h3>
-                        <a
-                          href={repository.url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-400 shadow-sm transition-all hover:text-amber-600 hover:shadow-md"
-                        >
-                          <ExternalLink className="h-3 w-3" />
-                          Visit Repository
-                        </a>
-                      </div>
-                      
-                      <div className="mt-4 flex flex-wrap items-center gap-6">
-                        <div className="flex flex-col gap-1">
-                          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Default Branch</span>
-                          <div className="flex items-center gap-1.5">
-                            <GitMerge className="h-3.5 w-3.5 text-indigo-500" />
-                            <span className="text-sm font-bold text-slate-600">{repository.defaultBranch || 'main'}</span>
-                          </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <h3 className="text-xl font-black tracking-tight text-slate-800">
+                        {repository.name}
+                      </h3>
+                      <a
+                        href={repository.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-400 shadow-sm transition-all hover:text-amber-600 hover:shadow-md"
+                      >
+                        <ExternalLink className="h-3 w-3" />
+                        Visit Repository
+                      </a>
+                    </div>
+
+                    <div className="mt-4 flex flex-wrap items-center gap-6">
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                          Default Branch
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <GitMerge className="h-3.5 w-3.5 text-indigo-500" />
+                          <span className="text-sm font-bold text-slate-600">
+                            {repository.defaultBranch || 'main'}
+                          </span>
                         </div>
+                      </div>
 
-                        <div className="h-8 w-px bg-slate-200 hidden sm:block" />
+                      <div className="h-8 w-px bg-slate-200 hidden sm:block" />
 
-                        <div className="flex flex-col gap-1">
-                          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Last Synced</span>
-                          <div className="flex items-center gap-1.5">
-                            <RefreshCw className="h-3.5 w-3.5 text-emerald-500" />
-                            <span className="text-sm font-bold text-slate-600">
-                              {repository.lastSyncedAt ? (
-                                <TimeAgo date={repository.lastSyncedAt} />
-                              ) : (
-                                'Never synced'
-                              )}
-                            </span>
-                          </div>
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                          Last Synced
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <RefreshCw className="h-3.5 w-3.5 text-emerald-500" />
+                          <span className="text-sm font-bold text-slate-600">
+                            {repository.lastSyncedAt ? (
+                              <TimeAgo date={repository.lastSyncedAt} />
+                            ) : (
+                              'Never synced'
+                            )}
+                          </span>
                         </div>
                       </div>
                     </div>
                   </div>
-                  
-                  <div className="absolute -bottom-6 -right-6 h-24 w-24 rounded-full bg-amber-50/30 transition-transform group-hover:scale-150" />
-                </article>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-slate-200 bg-slate-50/50 p-12 text-center">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-slate-100">
-              <Github className="h-8 w-8 text-slate-400" />
-            </div>
-            <h3 className="mt-6 text-lg font-bold text-slate-800">No repository connected</h3>
-            <p className="mt-2 max-w-xs text-sm leading-relaxed text-slate-500">
-              Connect a GitHub repository to this project to start tracking commits, activity, and contributor data.
-            </p>
-            {onNavigateToOverview && (
-              <button
-                type="button"
-                className={buttonStyles({
-                  variant: 'primary',
-                  size: 'sm',
-                  className: 'mt-6 rounded-xl hover:shadow-lg transition-all',
-                })}
-                onClick={onNavigateToOverview}
-              >
-                Link a Repository
-              </button>
-            )}
-          </div>
-        )}
+                </div>
+
+                <div className="absolute -bottom-6 -right-6 h-24 w-24 rounded-full bg-amber-50/30 transition-transform group-hover:scale-150" />
+              </article>
+            );
+          })}
+        </div>
       </section>
 
       <section className="space-y-4">
