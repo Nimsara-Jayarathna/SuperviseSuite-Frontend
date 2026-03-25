@@ -365,43 +365,45 @@ export function StudentProjectDetailsPage() {
 
       {activeTab === 'github' ? (
         <div className="space-y-4">
-          <section className="relative z-20">
-            <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition-all hover:shadow-md">
-              <div className="flex min-w-0 flex-1 flex-col">
-                <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
-                  Active Repository
-                </span>
-                <div className="mt-1 flex min-w-0 items-center gap-2">
-                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
-                    <Github className="h-4 w-4" />
-                  </div>
-                  <span className="truncate font-bold text-slate-800">
-                    {project.repositoryUrl ? project.repositoryUrl.split('/').pop() : 'No repository linked'}
+          {project.repositoryUrl && (
+            <section className="relative z-20">
+              <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition-all hover:shadow-md">
+                <div className="flex min-w-0 flex-1 flex-col">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
+                    Active Repository
                   </span>
-                  {project.repositoryUrl && (
-                    <a 
-                      href={project.repositoryUrl} 
-                      target="_blank" 
+                  <div className="mt-1 flex min-w-0 items-center gap-2">
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
+                      <Github className="h-4 w-4" />
+                    </div>
+                    <span className="truncate font-bold text-slate-800">
+                      {project.repositoryUrl.split('/').pop()}
+                    </span>
+                    <a
+                      href={project.repositoryUrl}
+                      target="_blank"
                       rel="noopener noreferrer"
                       className="text-slate-400 hover:text-indigo-600 transition-colors"
                     >
                       <ExternalLink className="h-3.5 w-3.5" />
                     </a>
-                  )}
+                  </div>
                 </div>
-              </div>
 
-              <div className="hidden shrink-0 items-center gap-3 sm:flex">
-                <div className="flex flex-col items-end text-right">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Sync Status</span>
-                  <div className="mt-0.5 flex items-center gap-1.5">
-                    <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-                    <span className="text-xs font-bold text-slate-600">Linked</span>
+                <div className="hidden shrink-0 items-center gap-3 sm:flex">
+                  <div className="flex flex-col items-end text-right">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                      Sync Status
+                    </span>
+                    <div className="mt-0.5 flex items-center gap-1.5">
+                      <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                      <span className="text-xs font-bold text-slate-600">Linked</span>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          </section>
+            </section>
+          )}
 
           <CommitActivitySection
             isLoading={isLoading}

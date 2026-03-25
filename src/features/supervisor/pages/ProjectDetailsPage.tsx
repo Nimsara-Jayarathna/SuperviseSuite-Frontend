@@ -441,7 +441,7 @@ export function ProjectDetailsPage() {
 
       {activeTab === 'github' ? (
         <div className="space-y-4">
-          {projectRepositories && projectRepositories.repositories.length > 0 ? (
+          {projectRepositories && projectRepositories.repositories.length > 0 && activeRepository ? (
             <section className="relative z-20">
               <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition-all hover:shadow-md">
                 <div className="flex min-w-0 flex-1 flex-col">
@@ -459,7 +459,7 @@ export function ProjectDetailsPage() {
                           <Github className="h-4 w-4" />
                         </div>
                         <span className="truncate font-bold text-slate-800">
-                          {activeRepository?.customName?.trim() || activeRepository?.fullName || activeRepository?.name || 'Select a repository'}
+                          {activeRepository.customName?.trim() || activeRepository.fullName || activeRepository.name || 'Set a repository'}
                         </span>
                       </div>
                       <ChevronDown className={`h-4 w-4 shrink-0 text-slate-400 transition-transform duration-300 ${isRepoSelectorOpen ? 'rotate-180' : ''}`} />
@@ -513,9 +513,9 @@ export function ProjectDetailsPage() {
                   <div className="flex flex-col items-end text-right">
                     <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Sync Status</span>
                     <div className="mt-0.5 flex items-center gap-1.5">
-                      <div className={`h-1.5 w-1.5 rounded-full ${activeRepository?.syncStatus === 'SUCCESS' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-slate-300'}`} />
+                      <div className={`h-1.5 w-1.5 rounded-full ${activeRepository.syncStatus === 'SUCCESS' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-slate-300'}`} />
                       <span className="text-xs font-bold text-slate-600">
-                        {activeRepository?.syncStatus === 'SUCCESS' ? 'Healthy' : 'Pending'}
+                        {activeRepository.syncStatus === 'SUCCESS' ? 'Healthy' : 'Pending'}
                       </span>
                     </div>
                   </div>

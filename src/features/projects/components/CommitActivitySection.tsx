@@ -530,20 +530,27 @@ export function CommitActivitySection({
             })}
           </div>
         ) : (
-          <div className="mt-3 space-y-3">
-            <p className="text-sm text-muted-foreground">No repository connected.</p>
-            <p className="text-sm text-muted-foreground">
-              Link a repository to start tracking GitHub activity.
+          <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-slate-200 bg-slate-50/50 p-12 text-center">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-slate-100">
+              <Github className="h-8 w-8 text-slate-400" />
+            </div>
+            <h3 className="mt-6 text-lg font-bold text-slate-800">No repository connected</h3>
+            <p className="mt-2 max-w-xs text-sm leading-relaxed text-slate-500">
+              Connect a GitHub repository to this project to start tracking commits, activity, and contributor data.
             </p>
-            {onNavigateToOverview ? (
+            {onNavigateToOverview && (
               <button
                 type="button"
-                className={buttonStyles({ variant: 'secondary', size: 'sm' })}
+                className={buttonStyles({
+                  variant: 'primary',
+                  size: 'sm',
+                  className: 'mt-6 rounded-xl hover:shadow-lg transition-all',
+                })}
                 onClick={onNavigateToOverview}
               >
-                Go to Overview
+                Link a Repository
               </button>
-            ) : null}
+            )}
           </div>
         )}
       </section>
