@@ -619,11 +619,12 @@ export function CommitActivitySection({
           </div>
           <button
             type="button"
-            className="group flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-amber-600 transition-colors hover:text-amber-700"
+            className="group flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-amber-600 transition-all hover:text-amber-700 disabled:cursor-not-allowed disabled:opacity-40"
             onClick={() => setOpenModal('contributors')}
+            disabled={!hasLinkedRepository || normalized.contributorsPreview.length === 0}
           >
             View all 
-            <ChevronRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
+            <ChevronRight className="h-3 w-3 transition-transform group-last:translate-x-0.5" />
           </button>
         </div>
         {topContributors.length > 0 ? (
@@ -672,11 +673,12 @@ export function CommitActivitySection({
           </div>
           <button
             type="button"
-            className="group flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-amber-600 transition-colors hover:text-amber-700"
+            className="group flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-amber-600 transition-all hover:text-amber-700 disabled:cursor-not-allowed disabled:opacity-40"
             onClick={() => setOpenModal('activity')}
+            disabled={!hasLinkedRepository || normalized.recentCommitsPreview.length === 0}
           >
             View full feed
-            <ChevronRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
+            <ChevronRight className="h-3 w-3 transition-transform group-last:translate-x-0.5" />
           </button>
         </div>
         {recentCommits.length > 0 ? (

@@ -325,25 +325,27 @@ export function ProjectDetailsPage() {
       />
 
       <section className="flex flex-wrap items-center gap-3">
-        <div className="relative inline-flex flex-col">
-          <span className="absolute -top-2 left-3 bg-slate-50 px-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80">
-            Lifecycle
-          </span>
-          <div className="inline-flex items-center rounded-2xl border border-slate-200 bg-white px-3 py-1.5 shadow-sm transition-all hover:border-amber-200">
-            <select
-              value={actions.quickLifecycleStatus}
-              onChange={(e) =>
-                actions.handleQuickStatusChange(e.target.value as SupervisorProjectLifecycle)
-              }
-              disabled={actions.isUpdatingStatus}
-              className="bg-transparent text-sm font-bold tracking-tight text-foreground outline-none cursor-pointer"
-            >
-              {LIFECYCLE_OPTIONS.map((status) => (
-                <option key={status} value={status}>
-                  {status.replace('_', ' ')}
-                </option>
-              ))}
-            </select>
+        <div className="inline-flex items-center rounded-2xl border border-slate-200 bg-white px-4 py-2 shadow-sm transition-all hover:border-amber-200 hover:shadow-md">
+          <div className="flex flex-col leading-tight">
+            <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
+              Lifecycle
+            </span>
+            <div className="mt-0.5">
+              <select
+                value={actions.quickLifecycleStatus}
+                onChange={(e) =>
+                  actions.handleQuickStatusChange(e.target.value as SupervisorProjectLifecycle)
+                }
+                disabled={actions.isUpdatingStatus}
+                className="bg-transparent text-[13px] font-black uppercase tracking-tight text-foreground outline-none cursor-pointer"
+              >
+                {LIFECYCLE_OPTIONS.map((status) => (
+                  <option key={status} value={status}>
+                    {status.replace('_', ' ')}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
 
