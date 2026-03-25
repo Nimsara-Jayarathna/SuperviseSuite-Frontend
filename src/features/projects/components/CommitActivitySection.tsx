@@ -39,6 +39,7 @@ type CommitActivitySectionProps = {
   isRefreshing: boolean;
   onRefresh?: () => void;
   onNavigateToOverview?: () => void;
+  emptyStateDescription?: string;
 };
 
 const dateTimeFormatter = new Intl.DateTimeFormat('en', {
@@ -370,6 +371,7 @@ export function CommitActivitySection({
   isRefreshing,
   onRefresh,
   onNavigateToOverview,
+  emptyStateDescription,
 }: CommitActivitySectionProps) {
   const [openModal, setOpenModal] = useState<'activity' | 'contributors' | null>(null);
 
@@ -436,7 +438,7 @@ export function CommitActivitySection({
         </div>
         <h3 className="mt-6 text-lg font-bold text-slate-800">No repository connected</h3>
         <p className="mt-2 max-w-xs text-sm leading-relaxed text-slate-500">
-          Connect a GitHub repository to this project to start tracking commits, activity, and contributor data.
+          {emptyStateDescription || 'Connect a GitHub repository to this project to start tracking commits, activity, and contributor data.'}
         </p>
         {onNavigateToOverview && (
           <button

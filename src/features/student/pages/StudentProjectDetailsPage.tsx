@@ -546,7 +546,7 @@ export function StudentProjectDetailsPage() {
             loadContributorsPage={loadContributorsPage}
             canRefresh={false}
             isRefreshing={false}
-            onNavigateToOverview={() => handleTabChange('overview')}
+            emptyStateDescription="Please wait for your supervisor to link a GitHub repository to this project. Repository management is restricted to supervisors."
           />
         </div>
       ) : null}
