@@ -835,72 +835,66 @@ export function RepositorySection({
       ) : (
         <div className="mt-5 space-y-3">
           {linkedRepositories.map((repository) => (
-            <article key={repository.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className={`text-sm font-semibold ${repository.enabled ? 'text-foreground' : 'text-muted-foreground line-through'}`}>
-                    {repository.customName?.trim() || repository.name || repository.fullName || 'Repository'}
+            <article
+              key={repository.id}
+              className={`rounded-2xl border p-4 transition-all duration-300 ${repository.primary ? 'border-amber-200 border-l-4 border-l-amber-500 bg-amber-50/40 shadow-sm' : 'border-slate-200 bg-white'} ${!repository.enabled ? 'bg-slate-50/50 opacity-60 grayscale-[0.2]' : ''}`}
+            >
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <h3 className={`truncate text-sm font-semibold ${repository.enabled ? 'text-foreground' : 'text-slate-600'}`}>
+                      {repository.customName?.trim() || repository.name || repository.fullName || 'Repository'}
+                    </h3>
                     {repository.primary ? (
-                      <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] uppercase text-amber-800">
+                      <span className="inline-flex shrink-0 items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-800">
                         Primary
                       </span>
                     ) : null}
                     {!repository.enabled ? (
-                      <span className="ml-2 rounded-full bg-slate-200 px-2 py-0.5 text-[10px] uppercase text-slate-700">
+                      <span className="inline-flex shrink-0 items-center rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-700">
                         Disabled
                       </span>
                     ) : null}
-                  </p>
-                  <p className="mt-1 text-xs text-muted-foreground">{repository.fullName}</p>
-                  {repository.url ? (
-                    <a
-                      href={repository.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="mt-1 inline-block text-xs text-sky-700 hover:underline"
-                    >
-                      {repository.url}
-                    </a>
-                  ) : null}
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Owner: {repository.ownerLogin || 'unknown'} · Sync: {toSyncLabel(repository.syncStatus)}
-                  </p>
-                </div>
+                  </div>
+                  
+                  <div className="mt-3 grid grid-cols-1 gap-2 text-xs text-slate-500 sm:grid-cols-12 sm:gap-4">
+                    {/* Repository Path */}
+                    <div className="flex min-w-0 items-center gap-1.5 hover:text-foreground sm:col-span-5">
+                      <Github className="h-3.5 w-3.5 shrink-0" />
+                      {repository.url ? (
+                        <a
+                          href={repository.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="truncate hover:underline"
+                        >
+                          {repository.fullName}
+                        </a>
+                      ) : (
+                        <span className="truncate">{repository.fullName}</span>
+                      )}
+                    </div>
+                    
+                    {/* Owner */}
+                    <div className="flex min-w-0 items-center sm:col-span-4">
+                      <span className="truncate">
+                        Owner: <span className="font-medium text-slate-700">{repository.ownerLogin || 'unknown'}</span>
+                      </span>
+                    </div>
 
-                <div className="flex flex-wrap gap-2">
-                  {repository.enabled && !repository.primary ? (
-                    <button
-                      type="button"
-                      className={buttonStyles({ variant: 'secondary', size: 'sm' })}
-                      onClick={() => void handleSelectPrimary(repository.id)}
-                      disabled={isMutatingLinks}
-                    >
-                      Select
-                    </button>
-                  ) : null}
-                  <button
-                    type="button"
-                    className={buttonStyles({ variant: 'secondary', size: 'sm' })}
-                    onClick={() => void handleRefreshRepository(repository.id)}
-                    disabled={isMutatingLinks || !repository.enabled}
-                  >
-                    <span className="inline-flex items-center gap-1">
-                      <RefreshCw className="h-3.5 w-3.5" />
-                      Refresh
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    className={buttonStyles({
-                      variant: 'secondary',
-                      size: 'sm',
-                      className: 'text-rose-600 hover:text-rose-700',
-                    })}
-                    onClick={() => void handleUnlinkRepository(repository.id)}
-                    disabled={isMutatingLinks}
-                  >
-                    Unlink
-                  </button>
+                    {/* Sync Status */}
+                    <div className="flex min-w-0 items-center gap-1.5 sm:col-span-3 sm:justify-end">
+                      <RefreshCw className={`h-3.5 w-3.5 shrink-0 ${repository.syncStatus === 'SUCCESS' ? 'text-emerald-500' : 'text-slate-400'}`} />
+                      <span 
+                        className={`truncate ${repository.syncStatus === 'SUCCESS' ? 'font-medium text-emerald-700' : ''}`}
+                        title={repository.lastSyncedAt ? new Date(repository.lastSyncedAt).toLocaleString() : undefined}
+                      >
+                        {repository.syncStatus === 'SUCCESS' && repository.lastSyncedAt
+                          ? `Synced ${new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }).format(new Date(repository.lastSyncedAt))}`
+                          : toSyncLabel(repository.syncStatus)}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </article>
