@@ -284,43 +284,6 @@ export function RepositoryManagementModalContent({
                           ) : null}
                         </div>
 
-                        {isEditingDisplayName && row.linkId ? (
-                          <div className="w-[260px] rounded-xl border border-slate-200 bg-slate-50 p-2.5">
-                            <p className="mb-1 text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
-                              Display name
-                            </p>
-                            <input
-                              type="text"
-                              className="h-9 w-full rounded-lg border border-slate-300 bg-white px-2.5 text-xs text-foreground focus:border-slate-400 focus:outline-none"
-                              value={editingDisplayNameDraft}
-                              onChange={(event) => onDisplayNameDraftChange(event.target.value)}
-                              placeholder="Custom display name"
-                              maxLength={255}
-                              disabled={isSavingDisplayName}
-                            />
-                            {displayNameEditError ? (
-                              <p className="mt-1 text-xs text-rose-700">{displayNameEditError}</p>
-                            ) : null}
-                            <div className="mt-2 flex items-center justify-end gap-2">
-                              <button
-                                type="button"
-                                className={buttonStyles({ variant: 'ghost', size: 'sm' })}
-                                onClick={onCancelDisplayNameEdit}
-                                disabled={isSavingDisplayName}
-                              >
-                                Cancel
-                              </button>
-                              <button
-                                type="button"
-                                className={buttonStyles({ variant: 'primary', size: 'sm' })}
-                                onClick={() => onSaveDisplayNameEdit(row)}
-                                disabled={isSavingDisplayName}
-                              >
-                                {isSavingDisplayName ? 'Saving...' : 'Save'}
-                              </button>
-                            </div>
-                          </div>
-                        ) : null}
                       </div>
                     </td>
                   </tr>

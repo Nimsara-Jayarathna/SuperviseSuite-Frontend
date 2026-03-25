@@ -124,7 +124,7 @@ export function RequestStateModal({
   const modalContent = (
     <div
       className={cn(
-        'fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 px-4 backdrop-blur-md transition-opacity duration-250',
+        'fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 px-4 backdrop-blur-md transition-opacity duration-250',
         isMounted ? 'opacity-100' : 'opacity-0',
       )}
     >

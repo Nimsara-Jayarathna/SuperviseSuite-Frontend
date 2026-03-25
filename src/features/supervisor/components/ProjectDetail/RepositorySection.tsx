@@ -22,6 +22,7 @@ import {
   RepositoryManagementModalContent,
   type RepositoryManagementRow,
 } from './RepositoryManagementModalContent';
+import { RepositoryRenameModal } from './RepositoryRenameModal';
 
 type RepositorySectionProps = {
   project: SupervisorProjectDetail;
@@ -312,6 +313,8 @@ export function RepositorySection({
 
     setIsSavingDisplayName(true);
     setDisplayNameEditError(null);
+    openRequestModal('loading', 'Updating display name', 'Saving new display name for the repository.');
+
     try {
       await supervisorApi.updateGitHubRepositoryDisplayName(
         row.linkId,
@@ -319,11 +322,13 @@ export function RepositorySection({
       );
       await reloadProjectAndRepositories(project.id);
       cancelDisplayNameEdit();
+      openRequestModal('success', 'Display name updated', 'The repository display name was updated successfully.');
     } catch (error) {
       const message = isApiException(error)
         ? error.apiError.message
         : 'Unable to update display name right now.';
       setDisplayNameEditError(message);
+      openRequestModal('error', 'Update failed', message);
     } finally {
       setIsSavingDisplayName(false);
     }
@@ -757,6 +762,21 @@ export function RepositorySection({
           onSaveDisplayNameEdit={(row) => void saveDisplayNameEdit(row)}
         />
       </GithubDetailsModal>
+
+      <RepositoryRenameModal
+        isOpen={!!editingDisplayNameRowKey}
+        draftName={editingDisplayNameDraft}
+        error={displayNameEditError}
+        isSaving={isSavingDisplayName}
+        onChange={setEditingDisplayNameDraft}
+        onSave={() => {
+          const row = managementRows.find((r) => r.rowKey === editingDisplayNameRowKey);
+          if (row) {
+            void saveDisplayNameEdit(row);
+          }
+        }}
+        onClose={cancelDisplayNameEdit}
+      />
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-lg font-semibold text-foreground">GitHub repositories</h2>
