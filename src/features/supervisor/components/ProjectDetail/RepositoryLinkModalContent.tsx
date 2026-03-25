@@ -9,6 +9,8 @@ export type RepositoryLinkMethod =
 
 type RepositoryLinkModalContentProps = {
   step: 'method' | 'repository-selection';
+  repositorySelectionEntryMode: 'manual' | 'callback-direct' | 'callback-requested';
+  canReturnToMethods: boolean;
   selectedMethod: RepositoryLinkMethod | null;
   onSelectMethod: (method: RepositoryLinkMethod) => void;
   onBackToMethods: () => void;
@@ -53,6 +55,8 @@ function SelectedCountPill({ selected, limit }: { selected: number; limit: numbe
 
 export function RepositoryLinkModalContent({
   step,
+  repositorySelectionEntryMode,
+  canReturnToMethods,
   selectedMethod,
   onSelectMethod,
   onBackToMethods,
@@ -86,16 +90,26 @@ export function RepositoryLinkModalContent({
   isConfirmingRepositorySelection,
 }: RepositoryLinkModalContentProps) {
   if (step === 'repository-selection') {
+    const sourceDescription = repositorySelectionEntryMode === 'callback-requested'
+      ? 'Access request completed. Select repositories to link to this project.'
+      : repositorySelectionEntryMode === 'callback-direct'
+        ? 'GitHub installation completed. Select repositories to link to this project.'
+        : selectedSourceLabel
+          ? `Source: ${selectedSourceLabel}`
+          : 'Select one or more repositories from this access source.';
+
     return (
       <div className="space-y-4">
         <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
           <p className="text-sm font-semibold text-foreground">Select repositories</p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {selectedSourceLabel
-              ? `Source: ${selectedSourceLabel}`
-              : 'Select one or more repositories from this access source.'}
-          </p>
+          <p className="mt-1 text-xs text-muted-foreground">{sourceDescription}</p>
         </div>
+
+        {maxSelectableCount === 0 ? (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+            Repository limit reached for this project. Unlink an existing repository to add another one.
+          </div>
+        ) : null}
 
         {isLoadingAvailableRepositories ? (
           <div className="rounded-2xl border border-slate-200 bg-white p-4 text-sm text-muted-foreground">
@@ -143,6 +157,7 @@ export function RepositoryLinkModalContent({
                           onChange={() => onToggleRepository(repository.id)}
                           disabled={
                             isConfirmingRepositorySelection ||
+                            (!selected && maxSelectableCount === 0) ||
                             (!selected &&
                               maxSelectableCount > 0 &&
                               selectedRepositoryIds.length >= maxSelectableCount)
@@ -201,14 +216,18 @@ export function RepositoryLinkModalContent({
         )}
 
         <div className="flex items-center justify-between gap-2">
-          <button
-            type="button"
-            className={buttonStyles({ variant: 'secondary', size: 'sm' })}
-            onClick={onBackToMethods}
-            disabled={isConfirmingRepositorySelection}
-          >
-            Back
-          </button>
+          {canReturnToMethods ? (
+            <button
+              type="button"
+              className={buttonStyles({ variant: 'secondary', size: 'sm' })}
+              onClick={onBackToMethods}
+              disabled={isConfirmingRepositorySelection}
+            >
+              Back
+            </button>
+          ) : (
+            <span />
+          )}
           <button
             type="button"
             className={buttonStyles({ variant: 'primary', size: 'sm' })}
@@ -307,7 +326,7 @@ export function RepositoryLinkModalContent({
         <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4">
           <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Method: Owner Install</p>
           <p className="text-xs text-muted-foreground">
-            Continue to GitHub and install/select repositories, then return for repository selection.
+            Continue to GitHub. After successful install, you will return directly to repository selection.
           </p>
           <div className="flex justify-end">
             <button

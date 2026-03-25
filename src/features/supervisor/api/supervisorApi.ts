@@ -203,6 +203,14 @@ export const supervisorApi = {
     return data;
   },
 
+  async disconnectGitHubAccessSource(sourceId: string): Promise<ProjectGitHubRepositories> {
+    const data = await apiClient.del<ProjectGitHubRepositories>(
+      `/api/github/access-source/${sourceId}`,
+    );
+    invalidateProjectCaches(data.projectId);
+    return data;
+  },
+
   async refreshGitHubRepository(linkedRepositoryId: string): Promise<ProjectGitHubRepositories> {
     const data = await apiClient.post<ProjectGitHubRepositories>(
       `/api/github/repositories/${linkedRepositoryId}/refresh`,

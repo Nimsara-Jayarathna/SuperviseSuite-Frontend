@@ -38,11 +38,15 @@ export function ProjectDetailsPage() {
   );
   const [isRefreshingGitHub, setIsRefreshingGitHub] = useState(false);
   const [pendingGitHubSourceId, setPendingGitHubSourceId] = useState<string | null>(null);
+  const [pendingGitHubFlowType, setPendingGitHubFlowType] = useState<
+    'INSTALLATION_DIRECT' | 'INSTALLATION_REQUESTED' | null
+  >(null);
   const [selectedGitHubRepositoryLinkId, setSelectedGitHubRepositoryLinkId] = useState<
     string | null
   >(null);
   const handlePendingGitHubSourceHandled = useCallback(() => {
     setPendingGitHubSourceId(null);
+    setPendingGitHubFlowType(null);
   }, []);
   const { data: projectRepositories, reload: reloadProjectRepositories } =
     useProjectRepositories(projectId);
@@ -129,6 +133,7 @@ export function ProjectDetailsPage() {
     if (redirectState.setupStatus === 'success') {
       if (redirectState.sourceId) {
         setPendingGitHubSourceId(redirectState.sourceId);
+        setPendingGitHubFlowType(redirectState.flowType);
         setRefreshRequestModal({
           isOpen: true,
           status: 'success',
@@ -358,6 +363,7 @@ export function ProjectDetailsPage() {
           overview={overview}
           onProjectUpdate={actions.handleProjectUpdate}
           pendingGitHubSourceId={pendingGitHubSourceId}
+          pendingGitHubFlowType={pendingGitHubFlowType}
           onPendingGitHubSourceHandled={handlePendingGitHubSourceHandled}
         />
       ) : null}

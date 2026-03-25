@@ -9,6 +9,7 @@ type OverviewTabSectionProps = {
   overview: OverviewState;
   onProjectUpdate: (updatedProject: SupervisorProjectDetail) => void;
   pendingGitHubSourceId?: string | null;
+  pendingGitHubFlowType?: 'INSTALLATION_DIRECT' | 'INSTALLATION_REQUESTED' | null;
   onPendingGitHubSourceHandled?: () => void;
 };
 
@@ -17,6 +18,7 @@ export function OverviewTabSection({
   overview,
   onProjectUpdate,
   pendingGitHubSourceId,
+  pendingGitHubFlowType,
   onPendingGitHubSourceHandled,
 }: OverviewTabSectionProps) {
   return (
@@ -172,6 +174,7 @@ export function OverviewTabSection({
           project={project}
           onUpdate={onProjectUpdate}
           pendingSourceId={pendingGitHubSourceId}
+          pendingFlowType={pendingGitHubFlowType}
           onPendingSourceHandled={onPendingGitHubSourceHandled}
         />
 
