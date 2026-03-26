@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 type SelectionPayload = {
   githubRepositoryId: string;
   customName?: string;
-  primary?: boolean;
+  primary?: true;
 };
 
 export function useRepositorySelection(maxSelectable: number) {
@@ -37,7 +37,7 @@ export function useRepositorySelection(maxSelectable: number) {
       if (current.includes(repositoryId)) {
         const next = current.filter((id) => id !== repositoryId);
         if (primaryRepositoryId === repositoryId) {
-          setPrimaryRepositoryId(next[0] ?? null);
+          setPrimaryRepositoryId(null);
         }
         return next;
       }
@@ -53,6 +53,16 @@ export function useRepositorySelection(maxSelectable: number) {
       return next;
     });
   }, [primaryRepositoryId, safeMaxSelectable]);
+
+  const togglePrimaryRepository = useCallback(
+    (repositoryId: string) => {
+      if (!selectedRepositoryIds.includes(repositoryId)) {
+        return;
+      }
+      setPrimaryRepositoryId((current) => (current === repositoryId ? null : repositoryId));
+    },
+    [selectedRepositoryIds],
+  );
 
   const setCustomName = useCallback((repositoryId: string, value: string) => {
     setCustomNameByRepositoryId((current) => ({ ...current, [repositoryId]: value }));
@@ -70,7 +80,7 @@ export function useRepositorySelection(maxSelectable: number) {
       return {
         githubRepositoryId: repositoryId,
         customName: customName && customName.length > 0 ? customName : undefined,
-        primary: primaryRepositoryId === repositoryId,
+        primary: primaryRepositoryId === repositoryId ? true : undefined,
       };
     });
   }, [customNameByRepositoryId, primaryRepositoryId, selectedRepositoryIds]);
@@ -83,7 +93,7 @@ export function useRepositorySelection(maxSelectable: number) {
       selectionsPayload,
       isSelected,
       toggleRepository,
-      setPrimaryRepositoryId,
+      setPrimaryRepositoryId: togglePrimaryRepository,
       setCustomName,
       clear,
     }),
@@ -96,6 +106,7 @@ export function useRepositorySelection(maxSelectable: number) {
       selectedRepositoryIds,
       setCustomName,
       toggleRepository,
+      togglePrimaryRepository,
     ],
   );
 }

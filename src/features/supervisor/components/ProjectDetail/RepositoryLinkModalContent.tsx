@@ -252,7 +252,7 @@ export function RepositoryLinkModalContent({
                               }`}
                             >
                               {primary ? <Crown className="h-3 w-3" /> : <div className="h-3 w-3 rounded-full border border-slate-200" />}
-                              Primary
+                              {primary ? 'Primary (click to unset)' : 'Set primary'}
                             </button>
                           ) : null}
                         </div>
