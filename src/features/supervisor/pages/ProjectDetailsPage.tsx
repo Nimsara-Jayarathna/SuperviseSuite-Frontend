@@ -168,23 +168,6 @@ export function ProjectDetailsPage() {
       if (redirectState.sourceId) {
         setPendingGitHubSourceId(redirectState.sourceId);
         setPendingGitHubFlowType(redirectState.flowType);
-        setRefreshRequestModal({
-          isOpen: true,
-          status: 'success',
-          title: redirectState.githubAccessUpdated
-            ? 'GitHub access updated successfully'
-            : 'GitHub App connected',
-          message: redirectState.githubAccessUpdated
-            ? 'Your available repositories have been refreshed. Select repositories in Overview to finish linking this project.'
-            : 'GitHub installation is ready. Select repositories in Overview to finish linking this project.',
-        });
-      } else {
-        setRefreshRequestModal({
-          isOpen: true,
-          status: 'error',
-          title: 'Setup incomplete',
-          message: 'GitHub App connected, but source id was not returned. Reconnect and try again.',
-        });
       }
 
       const nextParams = new URLSearchParams(searchParams);

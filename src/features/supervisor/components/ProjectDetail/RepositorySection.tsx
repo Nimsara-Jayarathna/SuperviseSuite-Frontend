@@ -217,12 +217,10 @@ export function RepositorySection({
     setSelectionEntryMode(
       pendingFlowType === 'INSTALLATION_REQUESTED' ? 'callback-requested' : 'callback-direct',
     );
-    selection.clear();
-    onPendingSourceHandled?.();
-  }, [onPendingSourceHandled, pendingFlowType, pendingSourceId, selection.clear]);
+  }, [pendingFlowType, pendingSourceId]);
 
   useEffect(() => {
-    if (!isModalOpen) {
+    if (!isModalOpen && !pendingSourceId) {
       setPublicRepositoryUrl('');
       setPublicCustomName('');
       setGeneratedAccessRequestUrl(null);
@@ -234,7 +232,7 @@ export function RepositorySection({
       setModalStep('method');
       selection.clear();
     }
-  }, [isModalOpen, selection.clear]);
+  }, [isModalOpen, pendingSourceId, selection.clear]);
 
   async function loadRepositoryInventory() {
     setIsLoadingInventory(true);
@@ -677,7 +675,14 @@ export function RepositorySection({
         onClose={requestModal.status === 'loading' ? undefined : closeRequestModal}
       />
 
-      <GithubDetailsModal isOpen={isModalOpen} title="Link repositories" onClose={() => setIsModalOpen(false)}>
+      <GithubDetailsModal 
+        isOpen={isModalOpen} 
+        title="Link repositories" 
+        onClose={() => {
+          setIsModalOpen(false);
+          onPendingSourceHandled?.();
+        }}
+      >
         <RepositoryLinkModalContent
           step={modalStep}
           repositorySelectionEntryMode={selectionEntryMode}
