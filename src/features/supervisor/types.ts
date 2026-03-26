@@ -378,6 +378,7 @@ export type LinkGitHubRepositoriesPayload = {
 export type ProjectRepositoryLink = {
   id: string;
   sourceId: string | null;
+  accessType?: GitHubAccessType | string | null;
   githubRepositoryId: string | null;
   githubRepoId: number;
   fullName: string | null;

@@ -33,6 +33,7 @@ type RepositoryManagementModalContentProps = {
   onSelectPrimary: (linkId: string) => void;
   onRefresh: (linkId: string) => void;
   onToggleEnabled: (row: RepositoryManagementRow) => void;
+  onUnlinkRepository: (linkId: string) => void;
   onDisconnectSource: (sourceId: string) => void;
   editingDisplayNameRowKey: string | null;
   editingDisplayNameDraft: string;
@@ -71,6 +72,7 @@ export function RepositoryManagementModalContent({
   onSelectPrimary,
   onRefresh,
   onToggleEnabled,
+  onUnlinkRepository,
   onDisconnectSource,
   editingDisplayNameRowKey,
   editingDisplayNameDraft,
@@ -314,13 +316,24 @@ export function RepositoryManagementModalContent({
                         </div>
                     </td>
                     <td className="px-4 py-3.5 text-center">
-                      {row.sourceId ? (
+                      {row.linkId ? (
+                        <button
+                          type="button"
+                          className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-rose-200 bg-white text-rose-600 shadow-sm transition-colors hover:border-rose-300 hover:bg-rose-50"
+                          onClick={() => onUnlinkRepository(row.linkId!)}
+                          disabled={isMutating || isSavingDisplayName}
+                          title="Unlink this repository"
+                          aria-label="Unlink this repository"
+                        >
+                          <Unlink className="h-4 w-4" strokeWidth={2.25} />
+                        </button>
+                      ) : row.sourceId ? (
                         <button
                           type="button"
                           className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-rose-200 bg-white text-rose-600 shadow-sm transition-colors hover:border-rose-300 hover:bg-rose-50"
                           onClick={() => onDisconnectSource(row.sourceId!)}
                           disabled={isMutating || isSavingDisplayName}
-                          title="Disconnect source completely"
+                          title="Disconnect source completely (removes all links from this source)"
                           aria-label="Disconnect source completely"
                         >
                           <Unlink className="h-4 w-4" strokeWidth={2.25} />

@@ -150,7 +150,7 @@ export function RepositorySection({
       rowsByRepoId.set(linked.githubRepoId, {
         rowKey,
         sourceId: linked.sourceId ?? null,
-        accessType: source?.accessType ?? (linked.sourceId ? 'UNKNOWN' : 'MANUAL'),
+        accessType: source?.accessType ?? linked.accessType ?? (linked.sourceId ? 'UNKNOWN' : 'MANUAL'),
         githubRepositoryId: linked.githubRepositoryId,
         githubRepoId: linked.githubRepoId,
         linkId: linked.id,
@@ -842,6 +842,7 @@ export function RepositorySection({
           onSelectPrimary={(linkId) => void handleSelectPrimary(linkId)}
           onRefresh={(linkId) => void handleRefreshRepository(linkId)}
           onToggleEnabled={(row) => void handleToggleRepositoryEnabled(row)}
+          onUnlinkRepository={(linkId) => void handleUnlinkRepository(linkId)}
           onDisconnectSource={(sourceId) => void handleDisconnectAccessSource(sourceId)}
           editingDisplayNameRowKey={editingDisplayNameRowKey}
           editingDisplayNameDraft={editingDisplayNameDraft}
