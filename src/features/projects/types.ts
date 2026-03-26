@@ -44,6 +44,7 @@ export type ProjectGitHubPreview = {
   activitySummary: ProjectGitHubActivitySummary;
   contributorsPreview: ProjectGitHubContributor[];
   recentCommitsPreview: ProjectGitHubRecentCommit[];
+  hasUnacknowledgedAccess?: boolean;
 };
 
 export type PaginatedListResult<T> = {

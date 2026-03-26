@@ -787,13 +787,21 @@ export function RepositorySection({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-lg font-semibold text-foreground">GitHub repositories</h2>
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            className={buttonStyles({ variant: 'secondary', size: 'sm' })}
-            onClick={() => setIsManagementModalOpen(true)}
-          >
-            Manage repositories
-          </button>
+          <div className="relative">
+            <button
+              type="button"
+              className={buttonStyles({ variant: 'secondary', size: 'sm' })}
+              onClick={() => setIsManagementModalOpen(true)}
+            >
+              Manage repositories
+            </button>
+            {project.github.hasUnacknowledgedAccess && (
+              <span className="absolute -right-1 -top-1 flex h-3 w-3">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75"></span>
+                <span className="relative inline-flex h-3 w-3 rounded-full bg-red-500"></span>
+              </span>
+            )}
+          </div>
           <button
             type="button"
             className={buttonStyles({ variant: 'primary', size: 'sm' })}
