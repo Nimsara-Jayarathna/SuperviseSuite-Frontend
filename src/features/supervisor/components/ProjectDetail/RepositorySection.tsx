@@ -135,45 +135,20 @@ export function RepositorySection({
   const repositorySelectionCapacity = remainingLinkSlots;
 
   const managementRows = useMemo<RepositoryManagementRow[]>(() => {
-    const sourceById = new Map(accessSources.map((source) => [source.id, source]));
     const linkedByRepoId = new Map(linkedRepositories.map((repository) => [repository.githubRepoId, repository]));
-    const rowsByKey = new Map<string, RepositoryManagementRow>();
+    const rowsByRepoId = new Map<number, RepositoryManagementRow>();
 
-    for (const source of accessSources) {
-      const items = inventoryBySourceId[source.id] ?? [];
-      for (const item of items) {
-        const linked = linkedByRepoId.get(item.githubRepoId) ?? null;
-        const rowKey = `${source.id}:${item.githubRepoId}`;
-        rowsByKey.set(rowKey, {
-          rowKey,
-          sourceId: source.id,
-          accessType: source.accessType,
-          githubRepositoryId: item.id,
-          githubRepoId: item.githubRepoId,
-          linkId: linked?.id ?? null,
-          enabled: Boolean(linked?.enabled),
-          primary: Boolean(linked?.primary),
-          customName: linked?.customName ?? null,
-          fullName: item.fullName ?? linked?.fullName ?? null,
-          ownerLogin: item.ownerLogin ?? linked?.ownerLogin ?? null,
-          url: item.url ?? linked?.url ?? null,
-          syncStatus: linked?.syncStatus ?? null,
-        });
-      }
-    }
-
+    // 1. Process all linked repositories first to ensure they are the "authoritative" rows
     for (const linked of linkedRepositories) {
-      const source = linked.sourceId ? sourceById.get(linked.sourceId) ?? null : null;
+      const source = linked.sourceId ? accessSources.find(s => s.id === linked.sourceId) : null;
       const rowKey = linked.sourceId
         ? `${linked.sourceId}:${linked.githubRepoId}`
         : `linked:${linked.id}`;
-      if (rowsByKey.has(rowKey)) {
-        continue;
-      }
-      rowsByKey.set(rowKey, {
+      
+      rowsByRepoId.set(linked.githubRepoId, {
         rowKey,
         sourceId: linked.sourceId ?? null,
-        accessType: source?.accessType ?? 'UNKNOWN',
+        accessType: source?.accessType ?? (linked.sourceId ? 'UNKNOWN' : 'MANUAL'),
         githubRepositoryId: linked.githubRepositoryId,
         githubRepoId: linked.githubRepoId,
         linkId: linked.id,
@@ -187,7 +162,34 @@ export function RepositorySection({
       });
     }
 
-    return Array.from(rowsByKey.values()).sort((a, b) => {
+    // 2. Add unlinked repositories from inventories if they aren't already represented by a link
+    for (const source of accessSources) {
+      const items = inventoryBySourceId[source.id] ?? [];
+      for (const item of items) {
+        if (rowsByRepoId.has(item.githubRepoId)) {
+          continue;
+        }
+
+        const rowKey = `${source.id}:${item.githubRepoId}`;
+        rowsByRepoId.set(item.githubRepoId, {
+          rowKey,
+          sourceId: source.id,
+          accessType: source.accessType,
+          githubRepositoryId: item.id,
+          githubRepoId: item.githubRepoId,
+          linkId: null,
+          enabled: false,
+          primary: false,
+          customName: null,
+          fullName: item.fullName,
+          ownerLogin: item.ownerLogin,
+          url: item.url,
+          syncStatus: null,
+        });
+      }
+    }
+
+    return Array.from(rowsByRepoId.values()).sort((a, b) => {
       if (a.enabled !== b.enabled) {
         return a.enabled ? -1 : 1;
       }

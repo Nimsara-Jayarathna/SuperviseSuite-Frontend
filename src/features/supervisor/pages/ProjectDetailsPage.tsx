@@ -82,6 +82,7 @@ export function ProjectDetailsPage() {
     status: 'loading' | 'success' | 'error';
     title: string;
     message: string;
+    retryAction?: () => void;
   }>({
     isOpen: false,
     status: 'loading',
@@ -125,6 +126,7 @@ export function ProjectDetailsPage() {
       status: 'loading',
       title: 'Refreshing GitHub data',
       message: 'Syncing latest repository metadata, commits, and contributors.',
+      retryAction: () => void handleGitHubRefresh(),
     });
     try {
       await supervisorApi.refreshProjectGitHub(projectId);
@@ -217,6 +219,7 @@ export function ProjectDetailsPage() {
       status: 'loading',
       title: 'Switching repository',
       message: 'Updating primary repository and loading repository-level GitHub analytics.',
+      retryAction: () => void handleSelectGitHubRepository(linkedRepositoryId),
     });
 
     try {
@@ -298,7 +301,7 @@ export function ProjectDetailsPage() {
         message={refreshRequestModal.message}
         onClose={refreshRequestModal.status === 'loading' ? undefined : closeRefreshRequestModal}
         onRetry={
-          refreshRequestModal.status === 'error' ? () => void handleGitHubRefresh() : undefined
+          refreshRequestModal.status === 'error' ? refreshRequestModal.retryAction : undefined
         }
       />
 
@@ -456,8 +459,10 @@ export function ProjectDetailsPage() {
                         />
                         <div className="absolute left-0 top-full z-20 mt-2 w-full min-w-[280px] overflow-hidden rounded-2xl border border-slate-200 bg-white p-1 shadow-xl animate-in fade-in slide-in-from-top-2 duration-200">
                           <div className="max-h-[300px] overflow-y-auto">
-                            {projectRepositories.repositories.map((repo) => {
-                              const isSelected = repo.id === selectedGitHubRepositoryLinkId;
+                            {projectRepositories.repositories
+                              .filter((repo) => repo.enabled)
+                              .map((repo) => {
+                                const isSelected = repo.id === selectedGitHubRepositoryLinkId;
                               return (
                                 <button
                                   key={repo.id}
