@@ -14,9 +14,7 @@ export function normalizeGitHubRepositoryUrl(rawValue: string): string | null {
     return null;
   }
 
-  const withScheme = /^[a-zA-Z][a-zA-Z\d+\-.]*:\/\//.test(trimmed)
-    ? trimmed
-    : `https://${trimmed}`;
+  const withScheme = /^[a-zA-Z][a-zA-Z\d+\-.]*:\/\//.test(trimmed) ? trimmed : `https://${trimmed}`;
 
   const parsed = tryParseUrl(withScheme);
   if (!parsed) {
@@ -42,4 +40,3 @@ export function normalizeGitHubRepositoryUrl(rawValue: string): string | null {
 
   return `https://github.com/${owner}/${repository}`;
 }
-

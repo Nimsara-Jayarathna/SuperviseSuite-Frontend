@@ -4,9 +4,7 @@ import { normalizeGitHubRepositoryUrl } from './githubRepositoryUrl';
 describe('normalizeGitHubRepositoryUrl', () => {
   it('normalizes canonical URL', () => {
     expect(
-      normalizeGitHubRepositoryUrl(
-        'https://github.com/Nimsara-Jayarathna/SuperviseSuite-Frontend',
-      ),
+      normalizeGitHubRepositoryUrl('https://github.com/Nimsara-Jayarathna/SuperviseSuite-Frontend'),
     ).toBe('https://github.com/Nimsara-Jayarathna/SuperviseSuite-Frontend');
   });
 
@@ -33,11 +31,8 @@ describe('normalizeGitHubRepositoryUrl', () => {
   it('rejects invalid formats', () => {
     expect(normalizeGitHubRepositoryUrl('https://github.com/Nimsara-Jayarathna')).toBeNull();
     expect(
-      normalizeGitHubRepositoryUrl(
-        'https://gitlab.com/Nimsara-Jayarathna/SuperviseSuite-Frontend',
-      ),
+      normalizeGitHubRepositoryUrl('https://gitlab.com/Nimsara-Jayarathna/SuperviseSuite-Frontend'),
     ).toBeNull();
     expect(normalizeGitHubRepositoryUrl('not-a-url')).toBeNull();
   });
 });
-
