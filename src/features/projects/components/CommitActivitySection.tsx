@@ -322,7 +322,7 @@ function normalizeDashboardPayload(
           id: repository.id ?? null,
           name: repository.name ?? 'Repository',
           url: repository.url ?? '',
-          defaultBranch: repository.defaultBranch ?? 'main',
+          defaultBranch: repository.defaultBranch ?? 'unknown',
           lastSyncedAt: repository.lastSyncedAt ?? null,
           createdAt: new Date(0).toISOString(),
           updatedAt: null,
@@ -333,7 +333,7 @@ function normalizeDashboardPayload(
               id: null,
               name: legacy.repository.name ?? 'Repository',
               url: legacy.repository.url ?? '',
-              defaultBranch: legacy.repository.defaultBranch ?? 'main',
+              defaultBranch: legacy.repository.defaultBranch ?? 'unknown',
               lastSyncedAt: null,
               createdAt: new Date(0).toISOString(),
               updatedAt: null,
@@ -537,7 +537,7 @@ export function CommitActivitySection({
                         <div className="flex items-center gap-1.5">
                           <GitMerge className="h-3.5 w-3.5 text-indigo-500" />
                           <span className="text-sm font-bold text-slate-600">
-                            {repository.defaultBranch || 'main'}
+                            {repository.defaultBranch || 'unknown'}
                           </span>
                         </div>
                       </div>
