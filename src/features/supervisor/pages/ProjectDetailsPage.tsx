@@ -75,8 +75,7 @@ export function ProjectDetailsPage() {
     setPendingGitHubSourceId(null);
     setPendingGitHubFlowType(null);
   }, []);
-  const { data: projectRepositories, reload: reloadProjectRepositories } =
-    useProjectRepositories(projectId);
+  const { data: projectRepositories } = useProjectRepositories(projectId);
   const [refreshRequestModal, setRefreshRequestModal] = useState<{
     isOpen: boolean;
     status: 'loading' | 'success' | 'error';
@@ -208,43 +207,8 @@ export function ProjectDetailsPage() {
     setSelectedGitHubRepositoryLinkId(primaryLink?.id ?? null);
   }, [projectRepositories?.repositories]);
 
-  async function handleSelectGitHubRepository(linkedRepositoryId: string) {
-    if (!projectId) {
-      return;
-    }
-
-    setIsRefreshingGitHub(true);
-    setRefreshRequestModal({
-      isOpen: true,
-      status: 'loading',
-      title: 'Switching repository',
-      message: 'Updating primary repository and loading repository-level GitHub analytics.',
-      retryAction: () => void handleSelectGitHubRepository(linkedRepositoryId),
-    });
-
-    try {
-      await supervisorApi.selectPrimaryGitHubRepository(linkedRepositoryId);
-      await Promise.all([reload(), reloadProjectRepositories()]);
-      setSelectedGitHubRepositoryLinkId(linkedRepositoryId);
-      setRefreshRequestModal({
-        isOpen: true,
-        status: 'success',
-        title: 'Repository selected',
-        message: 'GitHub tab now reflects the selected repository.',
-      });
-    } catch (error) {
-      const message = isApiException(error)
-        ? error.apiError.message
-        : 'Unable to switch repository right now.';
-      setRefreshRequestModal({
-        isOpen: true,
-        status: 'error',
-        title: 'Repository switch failed',
-        message,
-      });
-    } finally {
-      setIsRefreshingGitHub(false);
-    }
+  function handleSelectGitHubRepository(linkedRepositoryId: string) {
+    setSelectedGitHubRepositoryLinkId(linkedRepositoryId);
   }
 
   const requestedTab = searchParams.get('tab') as SupervisorProjectDetailTab | null;

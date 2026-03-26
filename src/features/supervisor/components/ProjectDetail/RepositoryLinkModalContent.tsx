@@ -171,32 +171,61 @@ export function RepositoryLinkModalContent({
               {availableRepositories.map((repository) => {
                 const selected = selectedRepositoryIds.includes(repository.id);
                 const primary = primaryRepositoryId === repository.id;
+                const blockedBySelectionLimit =
+                  !selected &&
+                  maxSelectableCount > 0 &&
+                  selectedRepositoryIds.length >= maxSelectableCount;
+                const selectionBlocked =
+                  isConfirmingRepositorySelection ||
+                  (!selected && maxSelectableCount === 0) ||
+                  blockedBySelectionLimit;
 
                 return (
                   <div
                     key={repository.id}
+                    role="button"
+                    tabIndex={selectionBlocked ? -1 : 0}
+                    onClick={() => {
+                      if (selectionBlocked) {
+                        return;
+                      }
+                      onToggleRepository(repository.id);
+                    }}
+                    onKeyDown={(event) => {
+                      if (selectionBlocked) {
+                        return;
+                      }
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        onToggleRepository(repository.id);
+                      }
+                    }}
                     className={`relative overflow-hidden rounded-3xl border p-4 transition-all ${
-                      selected 
-                        ? 'border-indigo-100 bg-indigo-50/20 shadow-sm' 
-                        : 'border-slate-100 bg-white hover:border-slate-200 hover:shadow-md'
-                    }`}
+                      selected
+                        ? 'border-indigo-100 bg-indigo-50/20 shadow-sm'
+                        : blockedBySelectionLimit
+                          ? 'border-slate-100 bg-slate-50/70 opacity-55'
+                          : 'border-slate-100 bg-white hover:border-slate-200 hover:shadow-md'
+                    } ${selectionBlocked ? 'cursor-not-allowed' : 'cursor-pointer'}`}
                   >
                     <div className="flex items-start gap-4">
                       <div className="mt-1 flex shrink-0 items-center justify-center">
                         <button
                           type="button"
-                          onClick={() => onToggleRepository(repository.id)}
-                          disabled={
-                            isConfirmingRepositorySelection ||
-                            (!selected && maxSelectableCount === 0) ||
-                            (!selected &&
-                              maxSelectableCount > 0 &&
-                              selectedRepositoryIds.length >= maxSelectableCount)
-                          }
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            if (selectionBlocked) {
+                              return;
+                            }
+                            onToggleRepository(repository.id);
+                          }}
+                          disabled={selectionBlocked}
                           className={`flex h-6 w-6 items-center justify-center rounded-lg border transition-all ${
-                            selected 
+                            selected
                               ? 'border-indigo-500 bg-indigo-500 text-white shadow-lg shadow-indigo-100' 
-                              : 'border-slate-200 bg-white hover:border-indigo-400'
+                              : blockedBySelectionLimit
+                                ? 'border-slate-200 bg-slate-100 text-slate-300'
+                                : 'border-slate-200 bg-white hover:border-indigo-400'
                           }`}
                         >
                           {selected && <Check className="h-4 w-4" />}
@@ -211,7 +240,10 @@ export function RepositoryLinkModalContent({
                           {selected ? (
                             <button
                               type="button"
-                              onClick={() => onSetPrimaryRepository(repository.id)}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                onSetPrimaryRepository(repository.id);
+                              }}
                               disabled={isConfirmingRepositorySelection}
                               className={`flex items-center gap-1.5 rounded-xl border px-2.5 py-1 text-[10px] font-black uppercase tracking-wider transition-all ${
                                 primary 
@@ -229,6 +261,7 @@ export function RepositoryLinkModalContent({
                           href={repository.url}
                           target="_blank"
                           rel="noreferrer"
+                          onClick={(event) => event.stopPropagation()}
                           className="mt-1 inline-flex items-center gap-1 text-xs font-bold text-indigo-500 hover:text-indigo-700 transition-colors"
                         >
                           {repository.url}
@@ -251,6 +284,7 @@ export function RepositoryLinkModalContent({
                             <input
                               value={customNameByRepositoryId[repository.id] ?? ''}
                               onChange={(event) => onCustomNameChange(repository.id, event.target.value)}
+                              onClick={(event) => event.stopPropagation()}
                               placeholder="Set a custom display name..."
                               disabled={isConfirmingRepositorySelection}
                               className="h-10 w-full rounded-2xl border border-indigo-100 bg-white px-4 text-sm font-medium outline-none transition-all focus:border-indigo-400 focus:ring-4 focus:ring-indigo-50/50"
