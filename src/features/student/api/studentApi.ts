@@ -31,6 +31,14 @@ function clearStudentApiCache() {
   clearRecord(inFlightProjectGitHubRequestsByKey);
 }
 
+function appendQuery(url: string, params: URLSearchParams): string {
+  const query = params.toString();
+  if (!query) {
+    return url;
+  }
+  return `${url}${url.includes('?') ? '&' : '?'}${query}`;
+}
+
 registerSessionCacheClearer(clearStudentApiCache);
 
 export const studentApi = {
@@ -85,10 +93,9 @@ export const studentApi = {
     if (linkedRepositoryId) {
       params.set('linkedRepositoryId', linkedRepositoryId);
     }
-    const suffix = params.toString() ? `&${params.toString()}` : '';
     try {
       const payload = await apiClient.get<unknown>(
-        `${buildPagedUrl(`/api/student/projects/${projectId}/github/activity`, page)}${suffix}`,
+        appendQuery(buildPagedUrl(`/api/student/projects/${projectId}/github/activity`, page), params),
       );
       return normalizePaginatedPayload<ProjectGitHubRecentCommit>(payload, page);
     } catch (error) {
@@ -113,10 +120,12 @@ export const studentApi = {
     if (linkedRepositoryId) {
       params.set('linkedRepositoryId', linkedRepositoryId);
     }
-    const suffix = params.toString() ? `&${params.toString()}` : '';
     try {
       const payload = await apiClient.get<unknown>(
-        `${buildPagedUrl(`/api/student/projects/${projectId}/github/contributors`, page)}${suffix}`,
+        appendQuery(
+          buildPagedUrl(`/api/student/projects/${projectId}/github/contributors`, page),
+          params,
+        ),
       );
       return normalizePaginatedPayload<ProjectGitHubContributor>(payload, page);
     } catch (error) {

@@ -77,6 +77,14 @@ function invalidateProjectCaches(projectId: string | null | undefined) {
   }
 }
 
+function appendQuery(url: string, params: URLSearchParams): string {
+  const query = params.toString();
+  if (!query) {
+    return url;
+  }
+  return `${url}${url.includes('?') ? '&' : '?'}${query}`;
+}
+
 registerSessionCacheClearer(clearSupervisorApiCache);
 
 export const supervisorApi = {
@@ -131,10 +139,9 @@ export const supervisorApi = {
     if (linkedRepositoryId) {
       params.set('linkedRepositoryId', linkedRepositoryId);
     }
-    const suffix = params.toString() ? `&${params.toString()}` : '';
     try {
       const payload = await apiClient.get<unknown>(
-        `${buildPagedUrl(`/api/supervisor/projects/${projectId}/github/activity`, page)}${suffix}`,
+        appendQuery(buildPagedUrl(`/api/supervisor/projects/${projectId}/github/activity`, page), params),
       );
       return normalizePaginatedPayload<ProjectGitHubRecentCommit>(payload, page);
     } catch (error) {
@@ -159,10 +166,12 @@ export const supervisorApi = {
     if (linkedRepositoryId) {
       params.set('linkedRepositoryId', linkedRepositoryId);
     }
-    const suffix = params.toString() ? `&${params.toString()}` : '';
     try {
       const payload = await apiClient.get<unknown>(
-        `${buildPagedUrl(`/api/supervisor/projects/${projectId}/github/contributors`, page)}${suffix}`,
+        appendQuery(
+          buildPagedUrl(`/api/supervisor/projects/${projectId}/github/contributors`, page),
+          params,
+        ),
       );
       return normalizePaginatedPayload<ProjectGitHubContributor>(payload, page);
     } catch (error) {
