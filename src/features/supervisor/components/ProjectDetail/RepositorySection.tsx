@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { buttonStyles } from '@/components/ui/Button';
 import { RequestStateModal } from '@/components/ui/RequestStateModal';
 import { GithubDetailsModal } from '@/features/projects/components/GithubDetailsModal';
@@ -67,6 +68,7 @@ export function RepositorySection({
   pendingFlowType,
   onPendingSourceHandled,
 }: RepositorySectionProps) {
+  const navigate = useNavigate();
   const {
     data: repositoriesData,
     isLoading: isLoadingRepositoriesData,
@@ -791,7 +793,13 @@ export function RepositorySection({
             <button
               type="button"
               className={buttonStyles({ variant: 'secondary', size: 'sm' })}
-              onClick={() => setIsManagementModalOpen(true)}
+              onClick={() => {
+                if (project.github.hasUnacknowledgedAccess) {
+                  navigate(`/github/access-updated?projectId=${project.id}`);
+                } else {
+                  setIsManagementModalOpen(true);
+                }
+              }}
             >
               Manage repositories
             </button>

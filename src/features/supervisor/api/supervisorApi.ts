@@ -349,6 +349,19 @@ export const supervisorApi = {
     );
   },
 
+  getProjectGitHubAccessUpdatedSummary(projectId: string): Promise<GitHubAccessUpdatedSummary> {
+    return apiClient.get<GitHubAccessUpdatedSummary>(
+      `/api/supervisor/projects/${projectId}/access-updated/summary`,
+    );
+  },
+
+  acknowledgeProjectGitHubAccessUpdated(projectId: string): Promise<GitHubAccessUpdatedAcknowledge> {
+    return apiClient.post<GitHubAccessUpdatedAcknowledge>(
+      `/api/supervisor/projects/${projectId}/access-updated/acknowledge`,
+      {},
+    );
+  },
+
   async linkProjectGitHubRepository(
     projectId: string,
     body: LinkProjectGitHubRepositoryRequest,
