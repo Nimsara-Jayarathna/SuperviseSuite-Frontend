@@ -34,6 +34,8 @@ Docker/CI note:
 - Pass `VITE_API_BASE_URL` as a single build argument.
 - Example:
   `docker build --build-arg VITE_API_BASE_URL=https://stg.supervisesuite.blipzo.xyz .`
+- FE container-level gzip compression is configured in `nginx.conf` for text assets (`gzip_min_length 1024`).
+- If Nginx Proxy Manager also applies compression, keep only one compression layer active to avoid redundant work.
 
 ### Install and Run
 
