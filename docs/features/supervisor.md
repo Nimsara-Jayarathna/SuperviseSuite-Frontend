@@ -4,7 +4,6 @@ Supervisor workspace for dashboard monitoring, project listing, project creation
 
 Related major-fixes doc: `docs/branches/major-fixes-scrum-97-supervisor-ui-workflow.md`
 Related GitHub integration doc: `docs/branches/major-fixes-scrum-80-github-dashboard-integration.md`
-Related multi-repository doc: `docs/branches/major-fixes-scrum-81-multiple-github-repositories.md`
 
 ## Routes
 
