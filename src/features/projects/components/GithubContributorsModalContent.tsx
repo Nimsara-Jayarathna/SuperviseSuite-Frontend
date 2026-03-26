@@ -59,7 +59,9 @@ export function GithubContributorsModalContent({
 
       try {
         const result = await fetchPage(targetPage);
-        setItems((current: ProjectGitHubContributor[]) => (append ? [...current, ...result.items] : result.items));
+        setItems((current: ProjectGitHubContributor[]) =>
+          append ? [...current, ...result.items] : result.items,
+        );
         setPage(result.page);
         setHasMore(result.hasMore);
       } catch (error) {
@@ -129,7 +131,7 @@ export function GithubContributorsModalContent({
     <div className="flex flex-col gap-3">
       {items.map((contributor, index) => {
         const avatarUrl = `https://github.com/${contributor.name}.png`;
-        
+
         return (
           <article
             key={`${contributor.name}-${index}`}
@@ -137,12 +139,13 @@ export function GithubContributorsModalContent({
           >
             <div className="relative shrink-0">
               <div className="h-12 w-12 overflow-hidden rounded-full border border-slate-100 bg-slate-50 transition-transform group-hover:scale-110">
-                <img 
-                  src={avatarUrl} 
-                  alt={contributor.name} 
+                <img
+                  src={avatarUrl}
+                  alt={contributor.name}
                   className="h-full w-full object-cover"
                   onError={(e) => {
-                    (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(contributor.name)}&background=f1f5f9&color=94a3b8`;
+                    (e.target as HTMLImageElement).src =
+                      `https://ui-avatars.com/api/?name=${encodeURIComponent(contributor.name)}&background=f1f5f9&color=94a3b8`;
                   }}
                 />
               </div>
@@ -150,7 +153,7 @@ export function GithubContributorsModalContent({
                 {index + 1}
               </div>
             </div>
-            
+
             <div className="min-w-0 flex-1">
               <p className="truncate text-base font-bold text-slate-800 group-hover:text-amber-700 transition-colors">
                 {contributor.name}

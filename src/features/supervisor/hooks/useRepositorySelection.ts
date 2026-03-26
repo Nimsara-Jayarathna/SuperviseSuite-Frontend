@@ -32,27 +32,30 @@ export function useRepositorySelection(maxSelectable: number) {
     [selectedRepositoryIds],
   );
 
-  const toggleRepository = useCallback((repositoryId: string) => {
-    setSelectedRepositoryIds((current) => {
-      if (current.includes(repositoryId)) {
-        const next = current.filter((id) => id !== repositoryId);
-        if (primaryRepositoryId === repositoryId) {
-          setPrimaryRepositoryId(null);
+  const toggleRepository = useCallback(
+    (repositoryId: string) => {
+      setSelectedRepositoryIds((current) => {
+        if (current.includes(repositoryId)) {
+          const next = current.filter((id) => id !== repositoryId);
+          if (primaryRepositoryId === repositoryId) {
+            setPrimaryRepositoryId(null);
+          }
+          return next;
+        }
+
+        if (safeMaxSelectable > 0 && current.length >= safeMaxSelectable) {
+          return current;
+        }
+
+        const next = [...current, repositoryId];
+        if (!primaryRepositoryId) {
+          setPrimaryRepositoryId(repositoryId);
         }
         return next;
-      }
-
-      if (safeMaxSelectable > 0 && current.length >= safeMaxSelectable) {
-        return current;
-      }
-
-      const next = [...current, repositoryId];
-      if (!primaryRepositoryId) {
-        setPrimaryRepositoryId(repositoryId);
-      }
-      return next;
-    });
-  }, [primaryRepositoryId, safeMaxSelectable]);
+      });
+    },
+    [primaryRepositoryId, safeMaxSelectable],
+  );
 
   const togglePrimaryRepository = useCallback(
     (repositoryId: string) => {

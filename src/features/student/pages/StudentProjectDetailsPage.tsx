@@ -1,4 +1,23 @@
-import { CalendarDays, Clock3, Users, ChevronDown, Check, Github, RefreshCw, ExternalLink, CheckCircle2, Circle, AlertCircle, XCircle, Clock, Flag, ShieldCheck, Crown, X, Plus } from 'lucide-react';
+import {
+  CalendarDays,
+  Clock3,
+  Users,
+  ChevronDown,
+  Check,
+  Github,
+  RefreshCw,
+  ExternalLink,
+  CheckCircle2,
+  Circle,
+  AlertCircle,
+  XCircle,
+  Clock,
+  Flag,
+  ShieldCheck,
+  Crown,
+  X,
+  Plus,
+} from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { CommitActivitySection } from '@/features/projects/components/CommitActivitySection';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
@@ -105,15 +124,20 @@ export function StudentProjectDetailsPage() {
   const [selectedGitHubRepositoryLinkId, setSelectedGitHubRepositoryLinkId] = useState<
     string | null
   >(null);
-  const [githubView, setGithubView] = useState<ProjectGitHubActivity | null>(project?.github ?? null);
+  const [githubView, setGithubView] = useState<ProjectGitHubActivity | null>(
+    project?.github ?? null,
+  );
   const [isGitHubViewLoading, setIsGitHubViewLoading] = useState(false);
 
   const enabledRepositories = useMemo(
-    () => project?.githubRepositories?.repositories?.filter((repository) => repository.enabled) ?? [],
+    () =>
+      project?.githubRepositories?.repositories?.filter((repository) => repository.enabled) ?? [],
     [project?.githubRepositories?.repositories],
   );
   const activeRepository = useMemo(
-    () => enabledRepositories.find((repository) => repository.id === selectedGitHubRepositoryLinkId) ?? null,
+    () =>
+      enabledRepositories.find((repository) => repository.id === selectedGitHubRepositoryLinkId) ??
+      null,
     [enabledRepositories, selectedGitHubRepositoryLinkId],
   );
 
@@ -123,7 +147,9 @@ export function StudentProjectDetailsPage() {
 
   useEffect(() => {
     const primaryLink =
-      enabledRepositories.find((repository) => repository.primary) ?? enabledRepositories[0] ?? null;
+      enabledRepositories.find((repository) => repository.primary) ??
+      enabledRepositories[0] ??
+      null;
     setSelectedGitHubRepositoryLinkId(primaryLink?.id ?? null);
   }, [enabledRepositories]);
 
@@ -135,7 +161,11 @@ export function StudentProjectDetailsPage() {
     setSelectedGitHubRepositoryLinkId(linkedRepositoryId);
     setIsGitHubViewLoading(true);
     try {
-      const nextView = await studentApi.getProjectGitHubDashboard(projectId, false, linkedRepositoryId);
+      const nextView = await studentApi.getProjectGitHubDashboard(
+        projectId,
+        false,
+        linkedRepositoryId,
+      );
       setGithubView(nextView);
     } finally {
       setIsGitHubViewLoading(false);
@@ -147,7 +177,11 @@ export function StudentProjectDetailsPage() {
       if (!projectId) {
         return Promise.resolve({ items: [], hasMore: false, page, size: 10 });
       }
-      return studentApi.getProjectGitHubActivityPage(projectId, page, selectedGitHubRepositoryLinkId);
+      return studentApi.getProjectGitHubActivityPage(
+        projectId,
+        page,
+        selectedGitHubRepositoryLinkId,
+      );
     },
     [projectId, selectedGitHubRepositoryLinkId],
   );
@@ -156,7 +190,11 @@ export function StudentProjectDetailsPage() {
       if (!projectId) {
         return Promise.resolve({ items: [], hasMore: false, page, size: 10 });
       }
-      return studentApi.getProjectGitHubContributorsPage(projectId, page, selectedGitHubRepositoryLinkId);
+      return studentApi.getProjectGitHubContributorsPage(
+        projectId,
+        page,
+        selectedGitHubRepositoryLinkId,
+      );
     },
     [projectId, selectedGitHubRepositoryLinkId],
   );
@@ -234,7 +272,9 @@ export function StudentProjectDetailsPage() {
               <CalendarDays className="h-4 w-4" />
             </div>
             <div className="flex flex-col leading-tight">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Milestone</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                Milestone
+              </span>
               <span className="font-semibold text-slate-700">
                 {project.milestoneDate
                   ? dateFormatter.format(new Date(project.milestoneDate))
@@ -248,7 +288,9 @@ export function StudentProjectDetailsPage() {
               <Users className="h-4 w-4" />
             </div>
             <div className="flex flex-col leading-tight">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Team</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                Team
+              </span>
               <span className="font-semibold text-slate-700">
                 {project.members.length} member{project.members.length === 1 ? '' : 's'}
               </span>
@@ -260,7 +302,9 @@ export function StudentProjectDetailsPage() {
               <Clock3 className="h-4 w-4" />
             </div>
             <div className="flex flex-col leading-tight">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Progress</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                Progress
+              </span>
               <span className="font-semibold text-slate-700">{project.progressPercent ?? 0}%</span>
             </div>
           </div>
@@ -313,15 +357,23 @@ export function StudentProjectDetailsPage() {
               </div>
               <div className="mt-6 grid gap-6 sm:grid-cols-2">
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Batch</p>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
+                    Batch
+                  </p>
                   <p className="mt-1 font-semibold text-slate-700">{project.batch ?? 'Not set'}</p>
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Semester</p>
-                  <p className="mt-1 font-semibold text-slate-700">{project.semester ?? 'Not set'}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
+                    Semester
+                  </p>
+                  <p className="mt-1 font-semibold text-slate-700">
+                    {project.semester ?? 'Not set'}
+                  </p>
                 </div>
                 <div className="sm:col-span-2">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Health note</p>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
+                    Health note
+                  </p>
                   <div className="mt-2 rounded-2xl bg-amber-50/50 p-4 border border-amber-100/50">
                     <p className="text-sm leading-relaxed text-slate-600">
                       {project.healthNote ?? 'No health note recorded yet.'}
@@ -329,10 +381,14 @@ export function StudentProjectDetailsPage() {
                   </div>
                 </div>
                 <div className="sm:col-span-2">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Project leader</p>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
+                    Project leader
+                  </p>
                   <div className="mt-2 flex items-center gap-3">
                     <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-600">
-                      {project.leader ? leaderDisplayName(project.leader).charAt(0).toUpperCase() : '?'}
+                      {project.leader
+                        ? leaderDisplayName(project.leader).charAt(0).toUpperCase()
+                        : '?'}
                     </div>
                     <p className="font-semibold text-slate-700">
                       {project.leader ? leaderDisplayName(project.leader) : 'No leader assigned'}
@@ -346,19 +402,21 @@ export function StudentProjectDetailsPage() {
           <aside className="space-y-6">
             <div className="rounded-3xl border border-border bg-white p-6 shadow-sm transition-all hover:shadow-md">
               <div className="flex items-center justify-between gap-3">
-                <h2 className="text-lg font-bold tracking-tight text-slate-800">Primary Milestone</h2>
+                <h2 className="text-lg font-bold tracking-tight text-slate-800">
+                  Primary Milestone
+                </h2>
                 <div className="flex -space-x-1.5 h-6">
                   <div className="h-1.5 w-1.5 rounded-full bg-indigo-400" />
                   <div className="h-1.5 w-1.5 rounded-full bg-indigo-200" />
                   <div className="h-1.5 w-1.5 rounded-full bg-indigo-100" />
                 </div>
               </div>
-              
+
               {project.milestones.length > 0 ? (
                 <div className="mt-5">
                   <article className="group relative overflow-hidden rounded-3xl border border-slate-100 bg-white p-5 shadow-sm transition-all hover:shadow-lg">
                     <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-indigo-50/30 transition-transform group-hover:scale-150" />
-                    
+
                     <div className="relative">
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 shadow-inner group-hover:bg-indigo-100 transition-colors">
@@ -374,16 +432,19 @@ export function StudentProjectDetailsPage() {
                       <h3 className="mt-4 text-xl font-black tracking-tight text-slate-800 line-clamp-1 group-hover:text-indigo-900 transition-colors">
                         {project.milestones[0].title}
                       </h3>
-                      
+
                       <div className="mt-2 flex items-center gap-2 text-xs font-bold text-slate-400">
                         <CalendarDays className="h-3.5 w-3.5 text-indigo-400" />
-                        <span>Due {dateFormatter.format(new Date(project.milestones[0].dueDate))}</span>
+                        <span>
+                          Due {dateFormatter.format(new Date(project.milestones[0].dueDate))}
+                        </span>
                       </div>
 
                       <p className="mt-4 text-sm leading-relaxed text-slate-500 line-clamp-3">
-                        {project.milestones[0].description ?? 'No description provided for this milestone.'}
+                        {project.milestones[0].description ??
+                          'No description provided for this milestone.'}
                       </p>
-                      
+
                       <div className="mt-5 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-indigo-500 opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0">
                         <span>View in Milestones Tab</span>
                         <ExternalLink className="h-2.5 w-2.5" />
@@ -408,7 +469,9 @@ export function StudentProjectDetailsPage() {
         <section className="rounded-3xl border border-border bg-white p-6 shadow-sm transition-all hover:shadow-md">
           <div className="flex flex-col">
             <h2 className="text-lg font-bold tracking-tight text-slate-800">Project Team</h2>
-            <p className="text-xs font-medium text-slate-400">Total {project.members.length} members assigned</p>
+            <p className="text-xs font-medium text-slate-400">
+              Total {project.members.length} members assigned
+            </p>
           </div>
 
           <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -416,22 +479,24 @@ export function StudentProjectDetailsPage() {
               <div
                 key={member.id}
                 className={`group relative overflow-hidden rounded-3xl border p-5 transition-all hover:shadow-lg ${
-                  member.memberRole === 'SUPERVISOR' 
-                    ? 'border-indigo-100 bg-indigo-50/20' 
+                  member.memberRole === 'SUPERVISOR'
+                    ? 'border-indigo-100 bg-indigo-50/20'
                     : 'border-slate-100 bg-white'
                 }`}
               >
                 {/* Background pattern */}
-                <div className={`absolute -right-4 -top-4 h-20 w-20 rounded-full opacity-10 transition-transform group-hover:scale-150 ${
+                <div
+                  className={`absolute -right-4 -top-4 h-20 w-20 rounded-full opacity-10 transition-transform group-hover:scale-150 ${
                     member.memberRole === 'SUPERVISOR' ? 'bg-indigo-600' : 'bg-slate-400'
-                  }`} 
+                  }`}
                 />
 
                 <div className="relative">
                   <div className="flex items-center gap-3">
-                    <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-xs font-black shadow-inner ${
-                        member.memberRole === 'SUPERVISOR' 
-                          ? 'bg-indigo-100 text-indigo-600' 
+                    <div
+                      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-xs font-black shadow-inner ${
+                        member.memberRole === 'SUPERVISOR'
+                          ? 'bg-indigo-100 text-indigo-600'
                           : 'bg-slate-50 text-slate-500'
                       }`}
                     >
@@ -449,11 +514,14 @@ export function StudentProjectDetailsPage() {
 
                   <div className="mt-5 flex flex-wrap items-center gap-2">
                     <RoleBadge role={member.memberRole} />
-                    
+
                     {project.leader?.id === member.id && (
                       <div className="flex items-center gap-1.5">
                         <Crown className="h-3.5 w-3.5 text-amber-500" />
-                        <StatusBadge tone="warning" className="border-none bg-amber-100 text-[10px] font-black uppercase tracking-wider text-amber-700">
+                        <StatusBadge
+                          tone="warning"
+                          className="border-none bg-amber-100 text-[10px] font-black uppercase tracking-wider text-amber-700"
+                        >
                           Leader
                         </StatusBadge>
                       </div>
@@ -477,9 +545,11 @@ export function StudentProjectDetailsPage() {
         <section className="rounded-3xl border border-border bg-white p-6 shadow-sm transition-all hover:shadow-md">
           <div className="flex flex-col">
             <h2 className="text-lg font-bold tracking-tight text-slate-800">Project Milestones</h2>
-            <p className="text-xs font-medium text-slate-400">Total {project.milestones.length} milestones defined</p>
+            <p className="text-xs font-medium text-slate-400">
+              Total {project.milestones.length} milestones defined
+            </p>
           </div>
-          
+
           {project.milestones.length > 0 ? (
             <div className="mt-6 space-y-4">
               {project.milestones.map((milestone, index) => (
@@ -507,7 +577,7 @@ export function StudentProjectDetailsPage() {
                         </div>
 
                         <div className="flex items-center gap-2">
-                          {getStatusIcon(milestone.status, "h-4 w-4 text-slate-300")}
+                          {getStatusIcon(milestone.status, 'h-4 w-4 text-slate-300')}
                           <StatusBadge tone={getMilestoneTone(milestone.status)}>
                             {milestone.status.replace('_', ' ')}
                           </StatusBadge>
@@ -519,7 +589,7 @@ export function StudentProjectDetailsPage() {
                       </p>
                     </div>
                   </div>
-                  
+
                   {index < project.milestones.length - 1 && (
                     <div className="absolute left-[3.5rem] bottom-0 top-[4.5rem] w-0.5 bg-slate-50 -z-10 group-hover:bg-indigo-50/50" />
                   )}
@@ -557,10 +627,15 @@ export function StudentProjectDetailsPage() {
                           <Github className="h-4 w-4" />
                         </div>
                         <span className="truncate font-bold text-slate-800">
-                          {activeRepository.customName?.trim() || activeRepository.fullName || activeRepository.name || 'Repository'}
+                          {activeRepository.customName?.trim() ||
+                            activeRepository.fullName ||
+                            activeRepository.name ||
+                            'Repository'}
                         </span>
                       </div>
-                      <ChevronDown className={`h-4 w-4 shrink-0 text-slate-400 transition-transform duration-300 ${isRepoSelectorOpen ? 'rotate-180' : ''}`} />
+                      <ChevronDown
+                        className={`h-4 w-4 shrink-0 text-slate-400 transition-transform duration-300 ${isRepoSelectorOpen ? 'rotate-180' : ''}`}
+                      />
                     </button>
 
                     {isRepoSelectorOpen && (
@@ -584,17 +659,25 @@ export function StudentProjectDetailsPage() {
                                   className={`flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left text-sm transition-all hover:bg-indigo-50 ${isSelected ? 'bg-indigo-50/50 text-indigo-700' : 'text-slate-600 hover:text-indigo-700'}`}
                                 >
                                   <div className="flex min-w-0 items-center gap-3">
-                                    <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${isSelected ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-50 text-slate-400'}`}>
+                                    <div
+                                      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${isSelected ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-50 text-slate-400'}`}
+                                    >
                                       <Github className="h-4 w-4" />
                                     </div>
                                     <div className="flex min-w-0 flex-col">
                                       <span className="truncate font-bold tracking-tight">
-                                        {repo.customName?.trim() || repo.name || 'Unnamed Repository'}
+                                        {repo.customName?.trim() ||
+                                          repo.name ||
+                                          'Unnamed Repository'}
                                       </span>
-                                      <span className="truncate text-[10px] text-slate-400">{repo.fullName}</span>
+                                      <span className="truncate text-[10px] text-slate-400">
+                                        {repo.fullName}
+                                      </span>
                                     </div>
                                   </div>
-                                  {isSelected && <Check className="h-4 w-4 shrink-0 text-indigo-600" />}
+                                  {isSelected && (
+                                    <Check className="h-4 w-4 shrink-0 text-indigo-600" />
+                                  )}
                                 </button>
                               );
                             })}

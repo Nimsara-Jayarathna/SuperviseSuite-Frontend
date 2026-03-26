@@ -95,7 +95,11 @@ export function RepositoryManagementModalContent({
           <div>
             <div className="mb-2 flex items-center justify-between text-xs">
               <span className="font-semibold text-slate-700">Linked repositories</span>
-              <span className={linkedLimitReached ? 'font-bold text-amber-600' : 'font-medium text-slate-500'}>
+              <span
+                className={
+                  linkedLimitReached ? 'font-bold text-amber-600' : 'font-medium text-slate-500'
+                }
+              >
                 {linkedCount} / {maxLinkedRepositories}
               </span>
             </div>
@@ -110,14 +114,20 @@ export function RepositoryManagementModalContent({
           <div>
             <div className="mb-2 flex items-center justify-between text-xs">
               <span className="font-semibold text-slate-700">Enabled active</span>
-              <span className={enabledLimitReached ? 'font-bold text-amber-600' : 'font-medium text-slate-500'}>
+              <span
+                className={
+                  enabledLimitReached ? 'font-bold text-amber-600' : 'font-medium text-slate-500'
+                }
+              >
                 {enabledCount} / {maxEnabledRepositories}
               </span>
             </div>
             <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100 ring-1 ring-inset ring-slate-200">
               <div
                 className={`h-full rounded-full transition-all duration-500 ${enabledLimitReached ? 'bg-amber-500' : 'bg-emerald-500'}`}
-                style={{ width: `${Math.min(100, (enabledCount / maxEnabledRepositories) * 100)}%` }}
+                style={{
+                  width: `${Math.min(100, (enabledCount / maxEnabledRepositories) * 100)}%`,
+                }}
               />
             </div>
           </div>
@@ -125,7 +135,8 @@ export function RepositoryManagementModalContent({
 
         {bothLimitsReached ? (
           <p className="mt-4 inline-flex items-center rounded-full bg-amber-50 px-3 py-1.5 text-[11px] font-semibold text-amber-800 ring-1 ring-inset ring-amber-600/20">
-            Linked and enabled limits reached. Unlink one repository and disable one enabled repository to continue.
+            Linked and enabled limits reached. Unlink one repository and disable one enabled
+            repository to continue.
           </p>
         ) : null}
         {!bothLimitsReached && enabledLimitReached ? (
@@ -195,16 +206,25 @@ export function RepositoryManagementModalContent({
                 const enableBlocked = blockedByEnabledLimit || blockedByLinkedLimit;
                 const isEditingDisplayName = editingDisplayNameRowKey === row.rowKey;
                 return (
-                  <tr key={row.rowKey} className={`align-top transition-all duration-300 ${!row.enabled ? 'bg-slate-50/50 opacity-60 grayscale-[0.2]' : ''}`}>
+                  <tr
+                    key={row.rowKey}
+                    className={`align-top transition-all duration-300 ${!row.enabled ? 'bg-slate-50/50 opacity-60 grayscale-[0.2]' : ''}`}
+                  >
                     <td className="px-4 py-3.5 text-xs font-medium text-foreground">
                       {row.customName?.trim() || '—'}
                     </td>
-                    <td className="px-4 py-3.5 text-xs text-slate-600">{row.ownerLogin || 'unknown'}</td>
-                    <td className="px-4 py-3.5 text-xs text-slate-600">{formatAccessTypeLabel(row.accessType)}</td>
+                    <td className="px-4 py-3.5 text-xs text-slate-600">
+                      {row.ownerLogin || 'unknown'}
+                    </td>
+                    <td className="px-4 py-3.5 text-xs text-slate-600">
+                      {formatAccessTypeLabel(row.accessType)}
+                    </td>
                     <td className="px-4 py-3.5">
                       <div className="space-y-2 text-xs">
                         <div className="flex items-center gap-2">
-                          <span className="w-12 text-[11px] uppercase tracking-[0.08em] text-muted-foreground">Enabled</span>
+                          <span className="w-12 text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+                            Enabled
+                          </span>
                           <button
                             type="button"
                             role="switch"
@@ -226,9 +246,9 @@ export function RepositoryManagementModalContent({
                                 ? 'Enabled limit reached. Disable one enabled repository first.'
                                 : blockedByLinkedLimit
                                   ? 'Linked repository limit reached. Unlink one repository first.'
-                                : row.enabled
-                                  ? 'Disable for project'
-                                  : 'Enable for project'
+                                  : row.enabled
+                                    ? 'Disable for project'
+                                    : 'Enable for project'
                             }
                           >
                             <span
@@ -239,12 +259,18 @@ export function RepositoryManagementModalContent({
                           </button>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="w-12 text-[11px] uppercase tracking-[0.08em] text-muted-foreground">Primary</span>
+                          <span className="w-12 text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+                            Primary
+                          </span>
                           <button
                             type="button"
                             role="switch"
                             aria-checked={row.primary}
-                            aria-label={row.primary ? 'Primary repository selected' : 'Set as primary repository'}
+                            aria-label={
+                              row.primary
+                                ? 'Primary repository selected'
+                                : 'Set as primary repository'
+                            }
                             className={`relative inline-flex h-6 w-11 items-center rounded-full border transition-colors ${
                               row.primary
                                 ? 'border-amber-500 bg-amber-500'
@@ -274,46 +300,46 @@ export function RepositoryManagementModalContent({
                     </td>
                     <td className="px-4 py-3.5">
                       <div className="flex flex-nowrap items-center justify-center gap-2 whitespace-nowrap">
-                          {row.url ? (
-                            <a
-                              href={row.url}
-                              target="_blank"
-                              rel="noreferrer"
-                              title="Open repository"
-                              aria-label="Open repository"
-                            >
-                              <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-slate-900 text-white shadow-sm ring-1 ring-slate-900/20 transition-colors hover:bg-slate-800">
-                                <Github className="h-5 w-5" strokeWidth={2.25} />
-                              </span>
-                            </a>
-                          ) : null}
+                        {row.url ? (
+                          <a
+                            href={row.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            title="Open repository"
+                            aria-label="Open repository"
+                          >
+                            <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-slate-900 text-white shadow-sm ring-1 ring-slate-900/20 transition-colors hover:bg-slate-800">
+                              <Github className="h-5 w-5" strokeWidth={2.25} />
+                            </span>
+                          </a>
+                        ) : null}
 
-                          {row.linkId ? (
-                            <button
-                              type="button"
-                              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm transition-colors hover:bg-slate-50"
-                              onClick={() => onStartDisplayNameEdit(row)}
-                              disabled={isMutating || isSavingDisplayName}
-                              title="Edit display name"
-                              aria-label="Edit display name"
-                            >
-                              <Pencil className="h-5 w-5" strokeWidth={2.25} />
-                            </button>
-                          ) : null}
+                        {row.linkId ? (
+                          <button
+                            type="button"
+                            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm transition-colors hover:bg-slate-50"
+                            onClick={() => onStartDisplayNameEdit(row)}
+                            disabled={isMutating || isSavingDisplayName}
+                            title="Edit display name"
+                            aria-label="Edit display name"
+                          >
+                            <Pencil className="h-5 w-5" strokeWidth={2.25} />
+                          </button>
+                        ) : null}
 
-                          {row.enabled && row.linkId ? (
-                            <button
-                              type="button"
-                              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm transition-colors hover:bg-slate-50"
-                              onClick={() => onRefresh(row.linkId!)}
-                              disabled={isMutating || isSavingDisplayName}
-                              title="Refresh repository"
-                              aria-label="Refresh repository"
-                            >
-                              <RefreshCw className="h-5 w-5" strokeWidth={2.25} />
-                            </button>
-                          ) : null}
-                        </div>
+                        {row.enabled && row.linkId ? (
+                          <button
+                            type="button"
+                            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm transition-colors hover:bg-slate-50"
+                            onClick={() => onRefresh(row.linkId!)}
+                            disabled={isMutating || isSavingDisplayName}
+                            title="Refresh repository"
+                            aria-label="Refresh repository"
+                          >
+                            <RefreshCw className="h-5 w-5" strokeWidth={2.25} />
+                          </button>
+                        ) : null}
+                      </div>
                     </td>
                     <td className="px-4 py-3.5 text-center">
                       {row.linkId ? (

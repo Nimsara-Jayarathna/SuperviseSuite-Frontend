@@ -78,7 +78,8 @@ export function RepositorySection({
   const [modalStep, setModalStep] = useState<ModalStep>('method');
   const [selectedMethod, setSelectedMethod] = useState<RepositoryLinkMethod | null>(null);
   const [selectedSourceId, setSelectedSourceId] = useState<string | null>(null);
-  const [selectionEntryMode, setSelectionEntryMode] = useState<RepositorySelectionEntryMode>('manual');
+  const [selectionEntryMode, setSelectionEntryMode] =
+    useState<RepositorySelectionEntryMode>('manual');
 
   const [publicRepositoryUrl, setPublicRepositoryUrl] = useState('');
   const [publicCustomName, setPublicCustomName] = useState('');
@@ -111,10 +112,7 @@ export function RepositorySection({
     message: '',
   });
 
-  const {
-    isStartingOwnerInstall,
-    startOwnerInstall,
-  } = useGitHubSetupFlow(project.id);
+  const { isStartingOwnerInstall, startOwnerInstall } = useGitHubSetupFlow(project.id);
 
   const {
     data: availableRepositoriesData,
@@ -137,20 +135,23 @@ export function RepositorySection({
   const repositorySelectionCapacity = remainingLinkSlots;
 
   const managementRows = useMemo<RepositoryManagementRow[]>(() => {
-    const linkedByRepoId = new Map(linkedRepositories.map((repository) => [repository.githubRepoId, repository]));
+    const linkedByRepoId = new Map(
+      linkedRepositories.map((repository) => [repository.githubRepoId, repository]),
+    );
     const rowsByRepoId = new Map<number, RepositoryManagementRow>();
 
     // 1. Process all linked repositories first to ensure they are the "authoritative" rows
     for (const linked of linkedRepositories) {
-      const source = linked.sourceId ? accessSources.find(s => s.id === linked.sourceId) : null;
+      const source = linked.sourceId ? accessSources.find((s) => s.id === linked.sourceId) : null;
       const rowKey = linked.sourceId
         ? `${linked.sourceId}:${linked.githubRepoId}`
         : `linked:${linked.id}`;
-      
+
       rowsByRepoId.set(linked.githubRepoId, {
         rowKey,
         sourceId: linked.sourceId ?? null,
-        accessType: source?.accessType ?? linked.accessType ?? (linked.sourceId ? 'UNKNOWN' : 'MANUAL'),
+        accessType:
+          source?.accessType ?? linked.accessType ?? (linked.sourceId ? 'UNKNOWN' : 'MANUAL'),
         githubRepositoryId: linked.githubRepositoryId,
         githubRepoId: linked.githubRepoId,
         linkId: linked.id,
@@ -199,13 +200,15 @@ export function RepositorySection({
     });
   }, [accessSources, inventoryBySourceId, linkedRepositories]);
 
-  const selection = useRepositorySelection(repositorySelectionCapacity > 0 ? repositorySelectionCapacity : 0);
+  const selection = useRepositorySelection(
+    repositorySelectionCapacity > 0 ? repositorySelectionCapacity : 0,
+  );
 
   const sourceById = useMemo(() => {
     return new Map(accessSources.map((source) => [source.id, source]));
   }, [accessSources]);
 
-  const selectedSource = selectedSourceId ? sourceById.get(selectedSourceId) ?? null : null;
+  const selectedSource = selectedSourceId ? (sourceById.get(selectedSourceId) ?? null) : null;
 
   useEffect(() => {
     if (!pendingSourceId) {
@@ -215,7 +218,9 @@ export function RepositorySection({
     setIsModalOpen(true);
     setModalStep('repository-selection');
     setSelectedMethod(
-      pendingFlowType === 'INSTALLATION_REQUESTED' ? 'INSTALLATION_REQUESTED' : 'INSTALLATION_DIRECT',
+      pendingFlowType === 'INSTALLATION_REQUESTED'
+        ? 'INSTALLATION_REQUESTED'
+        : 'INSTALLATION_DIRECT',
     );
     setSelectedSourceId(pendingSourceId);
     setSelectionEntryMode(
@@ -285,11 +290,7 @@ export function RepositorySection({
     }
   }
 
-  function openRequestModal(
-    status: RequestModalState['status'],
-    title: string,
-    message: string,
-  ) {
+  function openRequestModal(status: RequestModalState['status'], title: string, message: string) {
     setRequestModal({ isOpen: true, status, title, message });
   }
 
@@ -325,7 +326,11 @@ export function RepositorySection({
 
     setIsSavingDisplayName(true);
     setDisplayNameEditError(null);
-    openRequestModal('loading', 'Updating display name', 'Saving new display name for the repository.');
+    openRequestModal(
+      'loading',
+      'Updating display name',
+      'Saving new display name for the repository.',
+    );
 
     try {
       await supervisorApi.updateGitHubRepositoryDisplayName(
@@ -334,7 +339,11 @@ export function RepositorySection({
       );
       await reloadProjectAndRepositories(project.id);
       cancelDisplayNameEdit();
-      openRequestModal('success', 'Display name updated', 'The repository display name was updated successfully.');
+      openRequestModal(
+        'success',
+        'Display name updated',
+        'The repository display name was updated successfully.',
+      );
     } catch (error) {
       const message = isApiException(error)
         ? error.apiError.message
@@ -377,7 +386,11 @@ export function RepositorySection({
   async function handleSubmitPublicRepository() {
     const repositoryUrl = publicRepositoryUrl.trim();
     if (!isValidRepositoryUrl(repositoryUrl)) {
-      openRequestModal('error', 'Invalid repository URL', 'Enter a valid https://github.com/owner/repo URL.');
+      openRequestModal(
+        'error',
+        'Invalid repository URL',
+        'Enter a valid https://github.com/owner/repo URL.',
+      );
       return;
     }
 
@@ -386,7 +399,11 @@ export function RepositorySection({
       return;
     }
     setIsSubmittingPublicRepository(true);
-    openRequestModal('loading', 'Linking public repository', 'Creating access source and linking repository.');
+    openRequestModal(
+      'loading',
+      'Linking public repository',
+      'Creating access source and linking repository.',
+    );
 
     try {
       const created = await supervisorApi.createPublicGitHubAccessSource(project.id, repositoryUrl);
@@ -471,7 +488,11 @@ export function RepositorySection({
 
   async function handleConfirmRepositorySelection() {
     if (!selectedSourceId) {
-      openRequestModal('error', 'Missing access source', 'Select a valid access source and try again.');
+      openRequestModal(
+        'error',
+        'Missing access source',
+        'Select a valid access source and try again.',
+      );
       return;
     }
 
@@ -481,7 +502,11 @@ export function RepositorySection({
     }
 
     setIsConfirmingRepositorySelection(true);
-    openRequestModal('loading', 'Linking repositories', 'Saving selected repositories for this project.');
+    openRequestModal(
+      'loading',
+      'Linking repositories',
+      'Saving selected repositories for this project.',
+    );
 
     try {
       await supervisorApi.linkGitHubRepositories({
@@ -492,7 +517,11 @@ export function RepositorySection({
       await acknowledgePendingAccessIfPresent();
       await reloadProjectAndRepositories(project.id);
       setIsModalOpen(false);
-      openRequestModal('success', 'Repositories linked', 'Selected repositories were linked successfully.');
+      openRequestModal(
+        'success',
+        'Repositories linked',
+        'Selected repositories were linked successfully.',
+      );
     } catch (error) {
       const message = isApiException(error)
         ? error.apiError.message
@@ -509,7 +538,11 @@ export function RepositorySection({
     try {
       await supervisorApi.selectPrimaryGitHubRepository(linkId);
       await reloadProjectAndRepositories(project.id);
-      openRequestModal('success', 'Primary repository updated', 'GitHub tab now tracks the selected repository.');
+      openRequestModal(
+        'success',
+        'Primary repository updated',
+        'GitHub tab now tracks the selected repository.',
+      );
     } catch (error) {
       const message = isApiException(error)
         ? error.apiError.message
@@ -522,7 +555,11 @@ export function RepositorySection({
 
   async function handleRefreshRepository(linkId: string) {
     setIsMutatingLinks(true);
-    openRequestModal('loading', 'Refreshing repository', 'Syncing repository metadata, commits, and contributors.');
+    openRequestModal(
+      'loading',
+      'Refreshing repository',
+      'Syncing repository metadata, commits, and contributors.',
+    );
     try {
       await supervisorApi.refreshGitHubRepository(linkId);
       await reloadProjectAndRepositories(project.id);
@@ -543,7 +580,11 @@ export function RepositorySection({
     try {
       await supervisorApi.unlinkGitHubRepository(linkId);
       await reloadProjectAndRepositories(project.id);
-      openRequestModal('success', 'Repository unlinked', 'Repository was removed from this project.');
+      openRequestModal(
+        'success',
+        'Repository unlinked',
+        'Repository was removed from this project.',
+      );
     } catch (error) {
       const message = isApiException(error)
         ? error.apiError.message
@@ -556,7 +597,11 @@ export function RepositorySection({
 
   async function handleDisconnectAccessSource(sourceId: string) {
     setIsMutatingLinks(true);
-    openRequestModal('loading', 'Disconnecting access source', 'Removing source access and linked repositories from this project.');
+    openRequestModal(
+      'loading',
+      'Disconnecting access source',
+      'Removing source access and linked repositories from this project.',
+    );
     try {
       await supervisorApi.disconnectGitHubAccessSource(sourceId);
       await reloadProjectAndRepositories(project.id);
@@ -583,11 +628,19 @@ export function RepositorySection({
       }
 
       setIsMutatingLinks(true);
-      openRequestModal('loading', 'Enabling repository', 'Re-enabling repository tracking for this project.');
+      openRequestModal(
+        'loading',
+        'Enabling repository',
+        'Re-enabling repository tracking for this project.',
+      );
       try {
         await supervisorApi.enableGitHubRepository(row.linkId);
         await reloadProjectAndRepositories(project.id);
-        openRequestModal('success', 'Repository enabled', 'Repository is now active for this project.');
+        openRequestModal(
+          'success',
+          'Repository enabled',
+          'Repository is now active for this project.',
+        );
       } catch (error) {
         const message = isApiException(error)
           ? error.apiError.message
@@ -631,7 +684,11 @@ export function RepositorySection({
       });
       await acknowledgePendingAccessIfPresent();
       await reloadProjectAndRepositories(project.id);
-      openRequestModal('success', 'Repository enabled', 'Repository is now linked to this project.');
+      openRequestModal(
+        'success',
+        'Repository enabled',
+        'Repository is now linked to this project.',
+      );
     } catch (error) {
       const message = isApiException(error)
         ? error.apiError.message
@@ -644,7 +701,11 @@ export function RepositorySection({
 
   async function handleDisableRepository(linkId: string) {
     setIsMutatingLinks(true);
-    openRequestModal('loading', 'Disabling repository', 'Keeping link access while pausing repository sync.');
+    openRequestModal(
+      'loading',
+      'Disabling repository',
+      'Keeping link access while pausing repository sync.',
+    );
     try {
       await supervisorApi.disableGitHubRepository(linkId);
       await reloadProjectAndRepositories(project.id);
@@ -762,9 +823,9 @@ export function RepositorySection({
         onClose={requestModal.status === 'loading' ? undefined : closeRequestModal}
       />
 
-      <GithubDetailsModal 
-        isOpen={isModalOpen} 
-        title="Link repositories" 
+      <GithubDetailsModal
+        isOpen={isModalOpen}
+        title="Link repositories"
         onClose={() => {
           setIsModalOpen(false);
           onPendingSourceHandled?.();
@@ -921,7 +982,8 @@ export function RepositorySection({
       </div>
 
       <p className="mt-2 text-xs text-muted-foreground">
-        Linked {linkedCount} / {maxLinkedRepositories} repositories · Enabled {enabledCount} / {maxEnabledRepositories}.
+        Linked {linkedCount} / {maxLinkedRepositories} repositories · Enabled {enabledCount} /{' '}
+        {maxEnabledRepositories}.
       </p>
 
       {isLoadingRepositoriesData ? (
@@ -953,8 +1015,13 @@ export function RepositorySection({
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <h3 className={`truncate text-sm font-semibold ${repository.enabled ? 'text-foreground' : 'text-slate-600'}`}>
-                      {repository.customName?.trim() || repository.name || repository.fullName || 'Repository'}
+                    <h3
+                      className={`truncate text-sm font-semibold ${repository.enabled ? 'text-foreground' : 'text-slate-600'}`}
+                    >
+                      {repository.customName?.trim() ||
+                        repository.name ||
+                        repository.fullName ||
+                        'Repository'}
                     </h3>
                     {repository.primary ? (
                       <span className="inline-flex shrink-0 items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-800">
@@ -967,7 +1034,7 @@ export function RepositorySection({
                       </span>
                     ) : null}
                   </div>
-                  
+
                   <div className="mt-3 grid grid-cols-1 gap-2 text-xs text-slate-500 sm:grid-cols-12 sm:gap-4">
                     {/* Repository Path */}
                     <div className="flex min-w-0 items-center gap-1.5 hover:text-foreground sm:col-span-5">
@@ -985,20 +1052,29 @@ export function RepositorySection({
                         <span className="truncate">{repository.fullName}</span>
                       )}
                     </div>
-                    
+
                     {/* Owner */}
                     <div className="flex min-w-0 items-center sm:col-span-4">
                       <span className="truncate">
-                        Owner: <span className="font-medium text-slate-700">{repository.ownerLogin || 'unknown'}</span>
+                        Owner:{' '}
+                        <span className="font-medium text-slate-700">
+                          {repository.ownerLogin || 'unknown'}
+                        </span>
                       </span>
                     </div>
 
                     {/* Sync Status */}
                     <div className="flex min-w-0 items-center gap-1.5 sm:col-span-3 sm:justify-end">
-                      <RefreshCw className={`h-3.5 w-3.5 shrink-0 ${repository.syncStatus === 'SUCCESS' ? 'text-emerald-500' : 'text-slate-400'}`} />
-                      <span 
+                      <RefreshCw
+                        className={`h-3.5 w-3.5 shrink-0 ${repository.syncStatus === 'SUCCESS' ? 'text-emerald-500' : 'text-slate-400'}`}
+                      />
+                      <span
                         className={`truncate ${repository.syncStatus === 'SUCCESS' ? 'font-medium text-emerald-700' : ''}`}
-                        title={repository.lastSyncedAt ? new Date(repository.lastSyncedAt).toLocaleString() : undefined}
+                        title={
+                          repository.lastSyncedAt
+                            ? new Date(repository.lastSyncedAt).toLocaleString()
+                            : undefined
+                        }
                       >
                         {repository.syncStatus === 'SUCCESS' && repository.lastSyncedAt
                           ? `Synced ${new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }).format(new Date(repository.lastSyncedAt))}`

@@ -36,15 +36,15 @@ export function useProjectRepositories(projectId: string | undefined): UseProjec
         isApiException(loadError)
           ? loadError.apiError
           : {
-            timestamp: new Date().toISOString(),
-            status: 500,
-            error: 'Internal Server Error',
-            code: 'INTERNAL_ERROR',
-            message: 'Unable to load project repositories right now.',
-            path: `/api/supervisor/projects/${projectId}`,
-            traceId: null,
-            details: [],
-          },
+              timestamp: new Date().toISOString(),
+              status: 500,
+              error: 'Internal Server Error',
+              code: 'INTERNAL_ERROR',
+              message: 'Unable to load project repositories right now.',
+              path: `/api/supervisor/projects/${projectId}`,
+              traceId: null,
+              details: [],
+            },
       );
     } finally {
       setIsLoading(false);

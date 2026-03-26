@@ -1,24 +1,21 @@
 import { buttonStyles } from '@/components/ui/Button';
-import { 
-  ExternalLink, 
-  Github, 
-  Link2, 
-  ShieldCheck, 
-  ChevronRight, 
-  Info, 
-  Check, 
-  Copy, 
+import {
+  ExternalLink,
+  Github,
+  Link2,
+  ShieldCheck,
+  ChevronRight,
+  Info,
+  Check,
+  Copy,
   RefreshCw,
   Search,
   ArrowRight,
-  Crown
+  Crown,
 } from 'lucide-react';
 import type { GitHubRepositoryOption } from '../../types';
 
-export type RepositoryLinkMethod =
-  | 'PUBLIC_URL'
-  | 'INSTALLATION_DIRECT'
-  | 'INSTALLATION_REQUESTED';
+export type RepositoryLinkMethod = 'PUBLIC_URL' | 'INSTALLATION_DIRECT' | 'INSTALLATION_REQUESTED';
 
 type RepositoryLinkModalContentProps = {
   step: 'method' | 'repository-selection';
@@ -105,13 +102,14 @@ export function RepositoryLinkModalContent({
   isConfirmingRepositorySelection,
 }: RepositoryLinkModalContentProps) {
   if (step === 'repository-selection') {
-    const sourceDescription = repositorySelectionEntryMode === 'callback-requested'
-      ? 'Access request completed. Select repositories to link.'
-      : repositorySelectionEntryMode === 'callback-direct'
-        ? 'GitHub installation completed. Select repositories to link.'
-        : selectedSourceLabel
-          ? `Connected Source: ${selectedSourceLabel}`
-          : 'Select one or more repositories from this source.';
+    const sourceDescription =
+      repositorySelectionEntryMode === 'callback-requested'
+        ? 'Access request completed. Select repositories to link.'
+        : repositorySelectionEntryMode === 'callback-direct'
+          ? 'GitHub installation completed. Select repositories to link.'
+          : selectedSourceLabel
+            ? `Connected Source: ${selectedSourceLabel}`
+            : 'Select one or more repositories from this source.';
 
     return (
       <div className="space-y-4">
@@ -147,7 +145,11 @@ export function RepositoryLinkModalContent({
             <p className="text-sm font-bold text-rose-700">{availableRepositoriesError}</p>
             <button
               type="button"
-              className={buttonStyles({ variant: 'secondary', size: 'sm', className: 'rounded-xl' })}
+              className={buttonStyles({
+                variant: 'secondary',
+                size: 'sm',
+                className: 'rounded-xl',
+              })}
               onClick={onReloadAvailableRepositories}
             >
               Retry
@@ -164,7 +166,10 @@ export function RepositoryLinkModalContent({
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
                 Available repositories
               </p>
-              <SelectedCountPill selected={selectedRepositoryIds.length} limit={maxSelectableCount} />
+              <SelectedCountPill
+                selected={selectedRepositoryIds.length}
+                limit={maxSelectableCount}
+              />
             </div>
 
             <div className="max-h-[420px] space-y-3 overflow-y-auto pr-1">
@@ -222,7 +227,7 @@ export function RepositoryLinkModalContent({
                           disabled={selectionBlocked}
                           className={`flex h-6 w-6 items-center justify-center rounded-lg border transition-all ${
                             selected
-                              ? 'border-indigo-500 bg-indigo-500 text-white shadow-lg shadow-indigo-100' 
+                              ? 'border-indigo-500 bg-indigo-500 text-white shadow-lg shadow-indigo-100'
                               : blockedBySelectionLimit
                                 ? 'border-slate-200 bg-slate-100 text-slate-300'
                                 : 'border-slate-200 bg-white hover:border-indigo-400'
@@ -246,12 +251,16 @@ export function RepositoryLinkModalContent({
                               }}
                               disabled={isConfirmingRepositorySelection}
                               className={`flex items-center gap-1.5 rounded-xl border px-2.5 py-1 text-[10px] font-black uppercase tracking-wider transition-all ${
-                                primary 
-                                  ? 'border-amber-200 bg-amber-100 text-amber-700 shadow-sm shadow-amber-50' 
+                                primary
+                                  ? 'border-amber-200 bg-amber-100 text-amber-700 shadow-sm shadow-amber-50'
                                   : 'border-slate-200 bg-white text-slate-400 hover:border-amber-300 hover:text-amber-600'
                               }`}
                             >
-                              {primary ? <Crown className="h-3 w-3" /> : <div className="h-3 w-3 rounded-full border border-slate-200" />}
+                              {primary ? (
+                                <Crown className="h-3 w-3" />
+                              ) : (
+                                <div className="h-3 w-3 rounded-full border border-slate-200" />
+                              )}
                               {primary ? 'Primary (click to unset)' : 'Set primary'}
                             </button>
                           ) : null}
@@ -283,7 +292,9 @@ export function RepositoryLinkModalContent({
                           <div className="mt-4 animate-in fade-in slide-in-from-top-2 duration-300">
                             <input
                               value={customNameByRepositoryId[repository.id] ?? ''}
-                              onChange={(event) => onCustomNameChange(repository.id, event.target.value)}
+                              onChange={(event) =>
+                                onCustomNameChange(repository.id, event.target.value)
+                              }
                               onClick={(event) => event.stopPropagation()}
                               placeholder="Set a custom display name..."
                               disabled={isConfirmingRepositorySelection}
@@ -304,7 +315,11 @@ export function RepositoryLinkModalContent({
           {canReturnToMethods ? (
             <button
               type="button"
-              className={buttonStyles({ variant: 'secondary', size: 'md', className: 'rounded-2xl px-8 font-bold' })}
+              className={buttonStyles({
+                variant: 'secondary',
+                size: 'md',
+                className: 'rounded-2xl px-8 font-bold',
+              })}
               onClick={onBackToMethods}
               disabled={isConfirmingRepositorySelection}
             >
@@ -315,10 +330,10 @@ export function RepositoryLinkModalContent({
           )}
           <button
             type="button"
-            className={buttonStyles({ 
-              variant: 'primary', 
+            className={buttonStyles({
+              variant: 'primary',
               size: 'md',
-              className: 'rounded-2xl px-10 font-bold shadow-lg shadow-indigo-100' 
+              className: 'rounded-2xl px-10 font-bold shadow-lg shadow-indigo-100',
             })}
             onClick={onConfirmRepositorySelection}
             disabled={isConfirmingRepositorySelection || selectedRepositoryIds.length === 0}
@@ -339,7 +354,9 @@ export function RepositoryLinkModalContent({
     <div className="py-1">
       <div className="mb-6 flex flex-col items-center text-center">
         <h3 className="text-xl font-black tracking-tight text-slate-800">Connection Method</h3>
-        <p className="mt-1 text-xs font-bold text-slate-400">Choose how you want to link your GitHub projects</p>
+        <p className="mt-1 text-xs font-bold text-slate-400">
+          Choose how you want to link your GitHub projects
+        </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -367,32 +384,34 @@ export function RepositoryLinkModalContent({
             title: 'Request Access',
             subtitle: 'SECURE',
             description: 'Generate a link for the project owner.',
-          }
+          },
         ].map((method) => {
           const isSelected = selectedMethod === method.id;
           const Icon = method.icon;
-          
+
           return (
             <button
               key={method.id}
               type="button"
               onClick={() => onSelectMethod(method.id as RepositoryLinkMethod)}
               className={`group relative flex flex-col items-center p-5 text-center transition-all rounded-3xl border ${
-                isSelected 
-                  ? `border-${method.color}-200 bg-${method.color}-50/30 ring-4 ring-${method.color}-50` 
+                isSelected
+                  ? `border-${method.color}-200 bg-${method.color}-50/30 ring-4 ring-${method.color}-50`
                   : 'border-slate-100 bg-white hover:border-indigo-100 hover:shadow-lg'
               }`}
             >
-              <div className={`mb-4 flex h-14 w-14 items-center justify-center rounded-2xl shadow-inner transition-transform group-hover:scale-110 duration-300 ${
-                  isSelected 
-                    ? `bg-${method.color}-100 text-${method.color}-600` 
+              <div
+                className={`mb-4 flex h-14 w-14 items-center justify-center rounded-2xl shadow-inner transition-transform group-hover:scale-110 duration-300 ${
+                  isSelected
+                    ? `bg-${method.color}-100 text-${method.color}-600`
                     : `bg-slate-50 text-slate-400 group-hover:bg-indigo-50 group-hover:text-indigo-600`
                 }`}
               >
                 <Icon className="h-6 w-6" />
               </div>
 
-              <span className={`text-[10px] font-black uppercase tracking-[0.15em] opacity-60 ${
+              <span
+                className={`text-[10px] font-black uppercase tracking-[0.15em] opacity-60 ${
                   isSelected ? `text-${method.color}-600` : 'text-slate-400'
                 }`}
               >
@@ -406,7 +425,9 @@ export function RepositoryLinkModalContent({
               </p>
 
               {isSelected && (
-                <div className={`absolute top-3 right-3 flex h-5 w-5 items-center justify-center rounded-full bg-${method.color}-500 text-white shadow-sm`}>
+                <div
+                  className={`absolute top-3 right-3 flex h-5 w-5 items-center justify-center rounded-full bg-${method.color}-500 text-white shadow-sm`}
+                >
                   <Check className="h-3 w-3" />
                 </div>
               )}
@@ -424,7 +445,9 @@ export function RepositoryLinkModalContent({
             </h5>
             <div className="mt-4 flex flex-col gap-3">
               <div className="space-y-1.5">
-                <label className="ml-1 text-[9px] font-black uppercase tracking-widest text-amber-700/60">Repository URL</label>
+                <label className="ml-1 text-[9px] font-black uppercase tracking-widest text-amber-700/60">
+                  Repository URL
+                </label>
                 <input
                   value={publicRepositoryUrl}
                   onChange={(event) => onChangePublicRepositoryUrl(event.target.value)}
@@ -434,7 +457,9 @@ export function RepositoryLinkModalContent({
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="ml-1 text-[9px] font-black uppercase tracking-widest text-amber-700/60">Display Name (Optional)</label>
+                <label className="ml-1 text-[9px] font-black uppercase tracking-widest text-amber-700/60">
+                  Display Name (Optional)
+                </label>
                 <input
                   value={publicCustomName}
                   onChange={(event) => onChangePublicCustomName(event.target.value)}
@@ -447,10 +472,11 @@ export function RepositoryLinkModalContent({
             <div className="mt-6 flex justify-end">
               <button
                 type="button"
-                className={buttonStyles({ 
-                  variant: 'primary', 
+                className={buttonStyles({
+                  variant: 'primary',
                   size: 'sm',
-                  className: 'rounded-xl px-8 bg-amber-600 hover:bg-amber-700 shadow-lg shadow-amber-100 text-[10px] font-black uppercase tracking-wider' 
+                  className:
+                    'rounded-xl px-8 bg-amber-600 hover:bg-amber-700 shadow-lg shadow-amber-100 text-[10px] font-black uppercase tracking-wider',
                 })}
                 onClick={onSubmitPublicRepository}
                 disabled={isSubmittingPublicRepository || !publicRepositoryUrl.trim()}
@@ -473,15 +499,17 @@ export function RepositoryLinkModalContent({
               Direct Owner Install
             </h5>
             <p className="mt-3 text-xs font-bold text-indigo-700/70 leading-relaxed">
-              Redirecting to GitHub to install our companion app. You'll return here to pick your repos.
+              Redirecting to GitHub to install our companion app. You'll return here to pick your
+              repos.
             </p>
             <div className="mt-6 flex justify-end">
               <button
                 type="button"
-                className={buttonStyles({ 
-                  variant: 'primary', 
+                className={buttonStyles({
+                  variant: 'primary',
                   size: 'sm',
-                  className: 'rounded-xl px-8 shadow-lg shadow-indigo-100 text-[10px] font-black uppercase tracking-wider' 
+                  className:
+                    'rounded-xl px-8 shadow-lg shadow-indigo-100 text-[10px] font-black uppercase tracking-wider',
                 })}
                 onClick={onStartOwnerInstall}
                 disabled={isStartingOwnerInstall}
@@ -511,10 +539,11 @@ export function RepositoryLinkModalContent({
               {!generatedAccessRequestUrl && (
                 <button
                   type="button"
-                  className={buttonStyles({ 
-                    variant: 'primary', 
+                  className={buttonStyles({
+                    variant: 'primary',
                     size: 'sm',
-                    className: 'rounded-xl px-8 shadow-lg shadow-slate-200 text-[10px] font-black uppercase tracking-wider bg-slate-800 hover:bg-slate-900' 
+                    className:
+                      'rounded-xl px-8 shadow-lg shadow-slate-200 text-[10px] font-black uppercase tracking-wider bg-slate-800 hover:bg-slate-900',
                   })}
                   onClick={onCreateAccessRequest}
                   disabled={isCreatingAccessRequest}
@@ -533,7 +562,9 @@ export function RepositoryLinkModalContent({
               <div className="mt-5 animate-in zoom-in-95 duration-300">
                 <div className="rounded-2xl bg-white p-5 shadow-inner ring-1 ring-slate-100">
                   <div className="flex items-center justify-between gap-3">
-                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Share Link</p>
+                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">
+                      Share Link
+                    </p>
                     {generatedAccessRequestExpiresAt && (
                       <span className="text-[9px] font-black text-rose-500 bg-rose-50 px-2 py-0.5 rounded-lg">
                         EXP: {new Date(generatedAccessRequestExpiresAt).toLocaleDateString()}
@@ -546,11 +577,12 @@ export function RepositoryLinkModalContent({
                   <div className="mt-5 flex justify-end">
                     <button
                       type="button"
-                      className={buttonStyles({ 
-                        variant: 'primary', 
+                      className={buttonStyles({
+                        variant: 'primary',
                         size: 'sm',
-                        className: 'rounded-xl px-8 shadow-lg shadow-indigo-100 text-[10px] font-black uppercase tracking-wider' 
-                    })}
+                        className:
+                          'rounded-xl px-8 shadow-lg shadow-indigo-100 text-[10px] font-black uppercase tracking-wider',
+                      })}
                       onClick={onCopyAccessRequestUrl}
                     >
                       {isAccessRequestLinkCopied ? (

@@ -164,7 +164,9 @@ export function GithubActivityModalContent({ isOpen, fetchPage }: GithubActivity
 
       try {
         const result = await fetchPage(targetPage);
-        setItems((current: ProjectGitHubRecentCommit[]) => (append ? [...current, ...result.items] : result.items));
+        setItems((current: ProjectGitHubRecentCommit[]) =>
+          append ? [...current, ...result.items] : result.items,
+        );
         setPage(result.page);
         setHasMore(result.hasMore);
       } catch (error) {
@@ -245,9 +247,9 @@ export function GithubActivityModalContent({ isOpen, fetchPage }: GithubActivity
             <div className="flex shrink-0 flex-col items-center gap-2 pt-1">
               <div className="relative h-10 w-10 overflow-hidden rounded-full border border-slate-200 bg-slate-50 transition-transform group-hover:scale-110">
                 {authorAvatarUrl ? (
-                  <img 
-                    src={authorAvatarUrl} 
-                    alt={commit.author || 'Author'} 
+                  <img
+                    src={authorAvatarUrl}
+                    alt={commit.author || 'Author'}
                     className="h-full w-full object-cover"
                     onError={(e) => {
                       (e.target as HTMLImageElement).style.display = 'none';
@@ -270,15 +272,17 @@ export function GithubActivityModalContent({ isOpen, fetchPage }: GithubActivity
                   </span>
                   <span className="text-slate-300">•</span>
                   {commit.committedAt && (
-                    <TimeAgo 
-                      date={commit.committedAt} 
+                    <TimeAgo
+                      date={commit.committedAt}
                       className="text-xs font-medium text-slate-400"
                     />
                   )}
                 </div>
                 <div className="flex items-center gap-2">
                   {type && (
-                    <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${commitTypeBadgeClass(type)}`}>
+                    <span
+                      className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${commitTypeBadgeClass(type)}`}
+                    >
                       <CommitTypeIcon type={type} className="h-3 w-3" />
                       {type}
                     </span>

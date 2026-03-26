@@ -147,15 +147,21 @@ export function OverviewTabSection({
           ) : (
             <div className="mt-6 grid gap-6 sm:grid-cols-2">
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Batch</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
+                  Batch
+                </p>
                 <p className="mt-1 font-semibold text-slate-700">{project.batch ?? 'Not set'}</p>
               </div>
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Semester</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
+                  Semester
+                </p>
                 <p className="mt-1 font-semibold text-slate-700">{project.semester ?? 'Not set'}</p>
               </div>
               <div className="sm:col-span-2">
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Health note</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
+                  Health note
+                </p>
                 <div className="mt-2 rounded-2xl bg-amber-50/50 p-4 border border-amber-100/50">
                   <p className="text-sm leading-relaxed text-slate-600">
                     {project.healthNote ?? 'No health note recorded yet.'}
@@ -163,13 +169,19 @@ export function OverviewTabSection({
                 </div>
               </div>
               <div className="sm:col-span-2">
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Project leader</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
+                  Project leader
+                </p>
                 <div className="mt-2 flex items-center gap-3">
                   <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-600">
-                    {project.leader ? (project.leader.firstName?.[0] || project.leader.email[0]).toUpperCase() : '?'}
+                    {project.leader
+                      ? (project.leader.firstName?.[0] || project.leader.email[0]).toUpperCase()
+                      : '?'}
                   </div>
                   <p className="font-semibold text-slate-700">
-                    {project.leader ? `${project.leader.firstName} ${project.leader.lastName}` : 'No leader assigned'}
+                    {project.leader
+                      ? `${project.leader.firstName} ${project.leader.lastName}`
+                      : 'No leader assigned'}
                   </p>
                 </div>
               </div>

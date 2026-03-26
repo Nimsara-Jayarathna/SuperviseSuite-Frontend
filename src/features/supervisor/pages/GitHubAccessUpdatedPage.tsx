@@ -95,9 +95,7 @@ export function GitHubAccessUpdatedPage() {
 
     const resolvedSourceId = sourceId || summary?.sourceId || '';
     const resolvedFlowType =
-      flowType ||
-      summary?.flowType ||
-      (token ? 'INSTALLATION_REQUESTED' : 'INSTALLATION_DIRECT');
+      flowType || summary?.flowType || (token ? 'INSTALLATION_REQUESTED' : 'INSTALLATION_DIRECT');
 
     const nextParams = new URLSearchParams();
     nextParams.set('githubSetup', 'success');
@@ -111,7 +109,9 @@ export function GitHubAccessUpdatedPage() {
     }
 
     setIsAcknowledging(true);
-    navigate(`/supervisor/projects/${resolvedProjectId}?${nextParams.toString()}`, { replace: true });
+    navigate(`/supervisor/projects/${resolvedProjectId}?${nextParams.toString()}`, {
+      replace: true,
+    });
   }
 
   return (
@@ -122,7 +122,12 @@ export function GitHubAccessUpdatedPage() {
         title={title}
         message={message}
         autoCloseOnSuccess={false}
-        onClose={status === 'loading' ? undefined : () => navigate(projectId ? `/supervisor/projects/${projectId}` : '/', { replace: true })}
+        onClose={
+          status === 'loading'
+            ? undefined
+            : () =>
+                navigate(projectId ? `/supervisor/projects/${projectId}` : '/', { replace: true })
+        }
         onRetry={status === 'error' && (token || projectId) ? () => void loadSummary() : undefined}
         content={
           status === 'success' && summary ? (

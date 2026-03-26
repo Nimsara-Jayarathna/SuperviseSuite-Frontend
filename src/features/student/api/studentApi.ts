@@ -16,7 +16,8 @@ import type { ProjectGitHubActivity, StudentProjectDetail, StudentProjectSummary
 const cachedProjectsById: Partial<Record<string, StudentProjectDetail>> = {};
 const inFlightProjectRequests: Partial<Record<string, Promise<StudentProjectDetail>>> = {};
 const cachedProjectGitHubByKey: Partial<Record<string, ProjectGitHubActivity>> = {};
-const inFlightProjectGitHubRequestsByKey: Partial<Record<string, Promise<ProjectGitHubActivity>>> = {};
+const inFlightProjectGitHubRequestsByKey: Partial<Record<string, Promise<ProjectGitHubActivity>>> =
+  {};
 
 function clearRecord(record: Partial<Record<string, unknown>>) {
   for (const key of Object.keys(record)) {
@@ -95,7 +96,10 @@ export const studentApi = {
     }
     try {
       const payload = await apiClient.get<unknown>(
-        appendQuery(buildPagedUrl(`/api/student/projects/${projectId}/github/activity`, page), params),
+        appendQuery(
+          buildPagedUrl(`/api/student/projects/${projectId}/github/activity`, page),
+          params,
+        ),
       );
       return normalizePaginatedPayload<ProjectGitHubRecentCommit>(payload, page);
     } catch (error) {

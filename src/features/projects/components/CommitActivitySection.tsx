@@ -195,9 +195,9 @@ function renderCommitCard(commit: ProjectGitHubRecentCommit, index: number) {
       <div className="flex shrink-0 flex-col items-center gap-2 pt-1">
         <div className="relative h-10 w-10 overflow-hidden rounded-full border border-slate-200 bg-slate-50 transition-transform group-hover:scale-110">
           {authorAvatarUrl ? (
-            <img 
-              src={authorAvatarUrl} 
-              alt={commit.author || 'Author'} 
+            <img
+              src={authorAvatarUrl}
+              alt={commit.author || 'Author'}
               className="h-full w-full object-cover"
               onError={(e) => {
                 (e.target as HTMLImageElement).style.display = 'none';
@@ -220,15 +220,14 @@ function renderCommitCard(commit: ProjectGitHubRecentCommit, index: number) {
             </span>
             <span className="text-slate-300">•</span>
             {commit.committedAt && (
-              <TimeAgo 
-                date={commit.committedAt} 
-                className="text-xs font-medium text-slate-400"
-              />
+              <TimeAgo date={commit.committedAt} className="text-xs font-medium text-slate-400" />
             )}
           </div>
           <div className="flex items-center gap-2">
             {type && (
-              <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${commitTypeBadgeClass(type)}`}>
+              <span
+                className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${commitTypeBadgeClass(type)}`}
+              >
                 <CommitTypeIcon type={type} className="h-3 w-3" />
                 {type}
               </span>
@@ -442,7 +441,8 @@ export function CommitActivitySection({
         </div>
         <h3 className="mt-6 text-lg font-bold text-slate-800">No repository connected</h3>
         <p className="mt-2 max-w-xs text-sm leading-relaxed text-slate-500">
-          {emptyStateDescription || 'Connect a GitHub repository to this project to start tracking commits, activity, and contributor data.'}
+          {emptyStateDescription ||
+            'Connect a GitHub repository to this project to start tracking commits, activity, and contributor data.'}
         </p>
         {onNavigateToOverview && (
           <button
@@ -499,7 +499,8 @@ export function CommitActivitySection({
                           alt={owner}
                           className="h-full w-full object-cover"
                           onError={(e) => {
-                            (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(repository.name)}&background=f1f5f9&color=94a3b8`;
+                            (e.target as HTMLImageElement).src =
+                              `https://ui-avatars.com/api/?name=${encodeURIComponent(repository.name)}&background=f1f5f9&color=94a3b8`;
                           }}
                         />
                       ) : (
@@ -599,7 +600,10 @@ export function CommitActivitySection({
               <div className="mt-1">
                 {normalized.activitySummary.lastActivityAt ? (
                   <div className="flex flex-col">
-                    <TimeAgo date={normalized.activitySummary.lastActivityAt} className="text-lg font-black text-slate-800" />
+                    <TimeAgo
+                      date={normalized.activitySummary.lastActivityAt}
+                      className="text-lg font-black text-slate-800"
+                    />
                     <span className="text-[10px] font-medium text-slate-400">
                       {formatDateTime(normalized.activitySummary.lastActivityAt)}
                     </span>
@@ -624,7 +628,9 @@ export function CommitActivitySection({
                 <p className="text-3xl font-black text-slate-800">
                   {toDisplayStatus(normalized.activitySummary.status)}
                 </p>
-                <div className={`h-2.5 w-2.5 rounded-full ${normalized.activitySummary.status === 'active' ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]' : 'bg-slate-300'}`} />
+                <div
+                  className={`h-2.5 w-2.5 rounded-full ${normalized.activitySummary.status === 'active' ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]' : 'bg-slate-300'}`}
+                />
               </div>
             </div>
           </div>
@@ -645,7 +651,7 @@ export function CommitActivitySection({
             onClick={() => setOpenModal('contributors')}
             disabled={!hasLinkedRepository || normalized.contributorsPreview.length === 0}
           >
-            View all 
+            View all
             <ChevronRight className="h-3 w-3 transition-transform group-last:translate-x-0.5" />
           </button>
         </div>
@@ -659,12 +665,13 @@ export function CommitActivitySection({
                   className="flex items-center gap-3 rounded-2xl border border-slate-50 bg-slate-50/50 p-3 transition-all hover:bg-white hover:shadow-sm"
                 >
                   <div className="h-10 w-10 overflow-hidden rounded-full border border-white bg-white shadow-sm">
-                    <img 
-                      src={avatarUrl} 
-                      alt={contributor.name} 
+                    <img
+                      src={avatarUrl}
+                      alt={contributor.name}
                       className="h-full w-full object-cover"
                       onError={(e) => {
-                        (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(contributor.name)}&background=f1f5f9&color=94a3b8`;
+                        (e.target as HTMLImageElement).src =
+                          `https://ui-avatars.com/api/?name=${encodeURIComponent(contributor.name)}&background=f1f5f9&color=94a3b8`;
                       }}
                     />
                   </div>
@@ -704,9 +711,7 @@ export function CommitActivitySection({
           </button>
         </div>
         {recentCommits.length > 0 ? (
-          <div className="mt-6 flex flex-col gap-4">
-            {recentCommits.map(renderCommitCard)}
-          </div>
+          <div className="mt-6 flex flex-col gap-4">{recentCommits.map(renderCommitCard)}</div>
         ) : (
           <div className="mt-4 rounded-2xl border border-dashed border-slate-200 p-8 text-center text-sm text-slate-400">
             No recent activity found.

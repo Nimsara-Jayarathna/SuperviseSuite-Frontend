@@ -13,7 +13,9 @@ export function RequestGitHubRepositoryAccessPage() {
   const token = useMemo(() => searchParams.get('token')?.trim() ?? '', [searchParams]);
 
   const [isContinuing, setIsContinuing] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(token ? null : INVALID_LINK_MESSAGE);
+  const [errorMessage, setErrorMessage] = useState<string | null>(
+    token ? null : INVALID_LINK_MESSAGE,
+  );
 
   async function handleContinue() {
     if (!token) {
@@ -81,7 +83,9 @@ export function RequestGitHubRepositoryAccessPage() {
                 <Github className="h-4 w-4" />
                 Step 3
               </div>
-              <p className="mt-2 text-sm text-slate-700">Return to SuperviseSuite and link repos.</p>
+              <p className="mt-2 text-sm text-slate-700">
+                Return to SuperviseSuite and link repos.
+              </p>
             </div>
           </div>
 

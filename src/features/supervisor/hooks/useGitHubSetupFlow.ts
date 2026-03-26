@@ -18,14 +18,12 @@ export function parseGitHubSetupRedirect(searchParams: URLSearchParams): GitHubS
 
   const installationRaw = searchParams.get('installationId')?.trim() ?? '';
   const parsedInstallationId = installationRaw.length > 0 ? Number(installationRaw) : Number.NaN;
-  const installationId = Number.isFinite(parsedInstallationId) && parsedInstallationId > 0
-    ? parsedInstallationId
-    : null;
+  const installationId =
+    Number.isFinite(parsedInstallationId) && parsedInstallationId > 0 ? parsedInstallationId : null;
 
   const flowRaw = searchParams.get('githubFlow')?.trim() ?? '';
-  const flowType = flowRaw === 'INSTALLATION_DIRECT' || flowRaw === 'INSTALLATION_REQUESTED'
-    ? flowRaw
-    : null;
+  const flowType =
+    flowRaw === 'INSTALLATION_DIRECT' || flowRaw === 'INSTALLATION_REQUESTED' ? flowRaw : null;
 
   return {
     setupStatus,

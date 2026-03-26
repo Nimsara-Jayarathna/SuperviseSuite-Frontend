@@ -77,7 +77,7 @@ export function RepositoryRenameModal({
         </Button>
 
         <h3 className="mb-5 text-lg font-semibold text-foreground">Edit display name</h3>
-        
+
         <div className="space-y-4">
           <div>
             <label className="mb-1.5 block text-xs uppercase tracking-[0.08em] text-muted-foreground">

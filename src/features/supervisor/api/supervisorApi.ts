@@ -44,7 +44,8 @@ import type {
 const cachedProjectsById: Partial<Record<string, SupervisorProjectDetail>> = {};
 const inFlightProjectRequests: Partial<Record<string, Promise<SupervisorProjectDetail>>> = {};
 const cachedProjectGitHubByKey: Partial<Record<string, ProjectGitHubActivity>> = {};
-const inFlightProjectGitHubRequestsByKey: Partial<Record<string, Promise<ProjectGitHubActivity>>> = {};
+const inFlightProjectGitHubRequestsByKey: Partial<Record<string, Promise<ProjectGitHubActivity>>> =
+  {};
 
 function clearRecord(record: Partial<Record<string, unknown>>) {
   for (const key of Object.keys(record)) {
@@ -141,7 +142,10 @@ export const supervisorApi = {
     }
     try {
       const payload = await apiClient.get<unknown>(
-        appendQuery(buildPagedUrl(`/api/supervisor/projects/${projectId}/github/activity`, page), params),
+        appendQuery(
+          buildPagedUrl(`/api/supervisor/projects/${projectId}/github/activity`, page),
+          params,
+        ),
       );
       return normalizePaginatedPayload<ProjectGitHubRecentCommit>(payload, page);
     } catch (error) {
@@ -230,7 +234,9 @@ export const supervisorApi = {
   },
 
   getProjectGitHubRepositories(projectId: string): Promise<ProjectGitHubRepositories> {
-    return apiClient.get<ProjectGitHubRepositories>(`/api/projects/${projectId}/github-repositories`);
+    return apiClient.get<ProjectGitHubRepositories>(
+      `/api/projects/${projectId}/github-repositories`,
+    );
   },
 
   async unlinkGitHubRepository(linkedRepositoryId: string): Promise<ProjectGitHubRepositories> {
@@ -316,7 +322,9 @@ export const supervisorApi = {
     );
   },
 
-  async getProjectRepositoriesInventory(projectId: string): Promise<ProjectGitHubRepositoryListing> {
+  async getProjectRepositoriesInventory(
+    projectId: string,
+  ): Promise<ProjectGitHubRepositoryListing> {
     return apiClient.get<ProjectGitHubRepositoryListing>(
       `/api/supervisor/projects/${projectId}/github/repositories/inventory`,
     );
@@ -392,7 +400,9 @@ export const supervisorApi = {
     );
   },
 
-  acknowledgeProjectGitHubAccessUpdated(projectId: string): Promise<GitHubAccessUpdatedAcknowledge> {
+  acknowledgeProjectGitHubAccessUpdated(
+    projectId: string,
+  ): Promise<GitHubAccessUpdatedAcknowledge> {
     return apiClient.post<GitHubAccessUpdatedAcknowledge>(
       `/api/supervisor/projects/${projectId}/access-updated/acknowledge`,
       {},

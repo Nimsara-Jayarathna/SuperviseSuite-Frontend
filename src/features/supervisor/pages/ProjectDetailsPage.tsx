@@ -100,7 +100,9 @@ export function ProjectDetailsPage() {
   const [isRepoSelectorOpen, setIsRepoSelectorOpen] = useState(false);
 
   const activeRepository = useMemo(() => {
-    return projectRepositories?.repositories.find((r) => r.id === selectedGitHubRepositoryLinkId) ?? null;
+    return (
+      projectRepositories?.repositories.find((r) => r.id === selectedGitHubRepositoryLinkId) ?? null
+    );
   }, [projectRepositories, selectedGitHubRepositoryLinkId]);
 
   const loadActivityPage = useCallback(
@@ -108,7 +110,11 @@ export function ProjectDetailsPage() {
       if (!projectId) {
         return Promise.resolve({ items: [], hasMore: false, page, size: 10 });
       }
-      return supervisorApi.getProjectGitHubActivityPage(projectId, page, selectedGitHubRepositoryLinkId);
+      return supervisorApi.getProjectGitHubActivityPage(
+        projectId,
+        page,
+        selectedGitHubRepositoryLinkId,
+      );
     },
     [projectId, selectedGitHubRepositoryLinkId],
   );
@@ -344,7 +350,9 @@ export function ProjectDetailsPage() {
               <CalendarDays className="h-4 w-4" />
             </div>
             <div className="flex flex-col leading-tight">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Milestone</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                Milestone
+              </span>
               <span className="font-semibold text-slate-700">
                 {project.milestoneDate
                   ? dateFormatter.format(new Date(project.milestoneDate))
@@ -358,7 +366,9 @@ export function ProjectDetailsPage() {
               <Users className="h-4 w-4" />
             </div>
             <div className="flex flex-col leading-tight">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Team</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                Team
+              </span>
               <span className="font-semibold text-slate-700">
                 {project.members.length} member{project.members.length === 1 ? '' : 's'}
               </span>
@@ -370,7 +380,9 @@ export function ProjectDetailsPage() {
               <Clock3 className="h-4 w-4" />
             </div>
             <div className="flex flex-col leading-tight">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Progress</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                Progress
+              </span>
               <span className="font-semibold text-slate-700">{project.progressPercent ?? 0}%</span>
             </div>
           </div>
@@ -430,7 +442,9 @@ export function ProjectDetailsPage() {
 
       {activeTab === 'github' ? (
         <div className="space-y-4">
-          {projectRepositories && projectRepositories.repositories.length > 0 && activeRepository ? (
+          {projectRepositories &&
+          projectRepositories.repositories.length > 0 &&
+          activeRepository ? (
             <section className="relative z-20">
               <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition-all hover:shadow-md">
                 <div className="flex min-w-0 flex-1 flex-col">
@@ -448,17 +462,22 @@ export function ProjectDetailsPage() {
                           <Github className="h-4 w-4" />
                         </div>
                         <span className="truncate font-bold text-slate-800">
-                          {activeRepository.customName?.trim() || activeRepository.fullName || activeRepository.name || 'Set a repository'}
+                          {activeRepository.customName?.trim() ||
+                            activeRepository.fullName ||
+                            activeRepository.name ||
+                            'Set a repository'}
                         </span>
                       </div>
-                      <ChevronDown className={`h-4 w-4 shrink-0 text-slate-400 transition-transform duration-300 ${isRepoSelectorOpen ? 'rotate-180' : ''}`} />
+                      <ChevronDown
+                        className={`h-4 w-4 shrink-0 text-slate-400 transition-transform duration-300 ${isRepoSelectorOpen ? 'rotate-180' : ''}`}
+                      />
                     </button>
 
                     {isRepoSelectorOpen && (
                       <>
-                        <div 
-                          className="fixed inset-0 z-10" 
-                          onClick={() => setIsRepoSelectorOpen(false)} 
+                        <div
+                          className="fixed inset-0 z-10"
+                          onClick={() => setIsRepoSelectorOpen(false)}
                         />
                         <div className="absolute left-0 top-full z-20 mt-2 w-full min-w-[280px] overflow-hidden rounded-2xl border border-slate-200 bg-white p-1 shadow-xl animate-in fade-in slide-in-from-top-2 duration-200">
                           <div className="max-h-[300px] overflow-y-auto">
@@ -466,33 +485,39 @@ export function ProjectDetailsPage() {
                               .filter((repo) => repo.enabled)
                               .map((repo) => {
                                 const isSelected = repo.id === selectedGitHubRepositoryLinkId;
-                              return (
-                                <button
-                                  key={repo.id}
-                                  type="button"
-                                  onClick={() => {
-                                    void handleSelectGitHubRepository(repo.id);
-                                    setIsRepoSelectorOpen(false);
-                                  }}
-                                  className={`flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left text-sm transition-all hover:bg-amber-50 ${isSelected ? 'bg-amber-50/50 text-amber-700' : 'text-slate-600 hover:text-amber-700'}`}
-                                >
-                                  <div className="flex min-w-0 items-center gap-3">
-                                    <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${isSelected ? 'bg-amber-100 text-amber-600' : 'bg-slate-50 text-slate-400'}`}>
-                                      <Github className="h-4 w-4" />
+                                return (
+                                  <button
+                                    key={repo.id}
+                                    type="button"
+                                    onClick={() => {
+                                      void handleSelectGitHubRepository(repo.id);
+                                      setIsRepoSelectorOpen(false);
+                                    }}
+                                    className={`flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left text-sm transition-all hover:bg-amber-50 ${isSelected ? 'bg-amber-50/50 text-amber-700' : 'text-slate-600 hover:text-amber-700'}`}
+                                  >
+                                    <div className="flex min-w-0 items-center gap-3">
+                                      <div
+                                        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${isSelected ? 'bg-amber-100 text-amber-600' : 'bg-slate-50 text-slate-400'}`}
+                                      >
+                                        <Github className="h-4 w-4" />
+                                      </div>
+                                      <div className="flex min-w-0 flex-col">
+                                        <span className="truncate font-bold tracking-tight">
+                                          {repo.customName?.trim() ||
+                                            repo.name ||
+                                            'Unnamed Repository'}
+                                        </span>
+                                        <span className="truncate text-[10px] text-slate-400">
+                                          {repo.fullName}
+                                        </span>
+                                      </div>
                                     </div>
-                                    <div className="flex min-w-0 flex-col">
-                                      <span className="truncate font-bold tracking-tight">
-                                        {repo.customName?.trim() || repo.name || 'Unnamed Repository'}
-                                      </span>
-                                      <span className="truncate text-[10px] text-slate-400">
-                                        {repo.fullName}
-                                      </span>
-                                    </div>
-                                  </div>
-                                  {isSelected && <Check className="h-4 w-4 shrink-0 text-amber-600" />}
-                                </button>
-                              );
-                            })}
+                                    {isSelected && (
+                                      <Check className="h-4 w-4 shrink-0 text-amber-600" />
+                                    )}
+                                  </button>
+                                );
+                              })}
                           </div>
                         </div>
                       </>
@@ -502,9 +527,13 @@ export function ProjectDetailsPage() {
 
                 <div className="hidden shrink-0 items-center gap-3 sm:flex">
                   <div className="flex flex-col items-end text-right">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Sync Status</span>
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                      Sync Status
+                    </span>
                     <div className="mt-0.5 flex items-center gap-1.5">
-                      <div className={`h-1.5 w-1.5 rounded-full ${activeRepository.syncStatus === 'SUCCESS' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-slate-300'}`} />
+                      <div
+                        className={`h-1.5 w-1.5 rounded-full ${activeRepository.syncStatus === 'SUCCESS' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-slate-300'}`}
+                      />
                       <span className="text-xs font-bold text-slate-600">
                         {activeRepository.syncStatus === 'SUCCESS' ? 'Healthy' : 'Pending'}
                       </span>
