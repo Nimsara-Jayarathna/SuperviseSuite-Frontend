@@ -1,4 +1,6 @@
+import { CalendarDays } from 'lucide-react';
 import { buttonStyles } from '@/components/ui/Button';
+import { StatusBadge } from '@/components/ui/StatusBadge';
 import { RepositorySection } from './RepositorySection';
 import { FIELD_LIMITS, LIFECYCLE_OPTIONS, dateFormatter } from '../../projectDetails.shared';
 import type { OverviewState } from '../../hooks/useProjectDetailsPageState';
@@ -8,23 +10,25 @@ type OverviewTabSectionProps = {
   project: SupervisorProjectDetail;
   overview: OverviewState;
   onProjectUpdate: (updatedProject: SupervisorProjectDetail) => void;
-  pendingGitHubInstallationId?: number | null;
-  onPendingGitHubInstallationHandled?: () => void;
+  pendingGitHubSourceId?: string | null;
+  pendingGitHubFlowType?: 'INSTALLATION_DIRECT' | 'INSTALLATION_REQUESTED' | null;
+  onPendingGitHubSourceHandled?: () => void;
 };
 
 export function OverviewTabSection({
   project,
   overview,
   onProjectUpdate,
-  pendingGitHubInstallationId,
-  onPendingGitHubInstallationHandled,
+  pendingGitHubSourceId,
+  pendingGitHubFlowType,
+  onPendingGitHubSourceHandled,
 }: OverviewTabSectionProps) {
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
       <section className="space-y-6">
-        <div className="rounded-3xl border border-border bg-white p-6 shadow-sm">
+        <div className="rounded-3xl border border-border bg-white p-6 shadow-sm transition-all hover:shadow-md">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="text-lg font-semibold text-foreground">Project summary</h2>
+            <h2 className="text-lg font-semibold text-foreground">Project details</h2>
             {!overview.isEditingOverview && (
               <button
                 type="button"
@@ -141,28 +145,45 @@ export function OverviewTabSection({
               </div>
             </form>
           ) : (
-            <div className="mt-5 grid gap-4 sm:grid-cols-2">
+            <div className="mt-6 grid gap-6 sm:grid-cols-2">
               <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Batch</p>
-                <p className="mt-1 font-medium text-foreground">{project.batch ?? 'Not set'}</p>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Semester</p>
-                <p className="mt-1 font-medium text-foreground">{project.semester ?? 'Not set'}</p>
-              </div>
-              <div className="sm:col-span-2">
-                <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Summary</p>
-                <p className="mt-1 text-sm leading-7 text-muted-foreground">
-                  {project.summary ?? 'No summary recorded yet.'}
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
+                  Batch
                 </p>
+                <p className="mt-1 font-semibold text-slate-700">{project.batch ?? 'Not set'}</p>
+              </div>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
+                  Semester
+                </p>
+                <p className="mt-1 font-semibold text-slate-700">{project.semester ?? 'Not set'}</p>
               </div>
               <div className="sm:col-span-2">
-                <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
                   Health note
                 </p>
-                <p className="mt-1 text-sm leading-7 text-muted-foreground">
-                  {project.healthNote ?? 'No health note recorded yet.'}
+                <div className="mt-2 rounded-2xl bg-amber-50/50 p-4 border border-amber-100/50">
+                  <p className="text-sm leading-relaxed text-slate-600">
+                    {project.healthNote ?? 'No health note recorded yet.'}
+                  </p>
+                </div>
+              </div>
+              <div className="sm:col-span-2">
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
+                  Project leader
                 </p>
+                <div className="mt-2 flex items-center gap-3">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-600">
+                    {project.leader
+                      ? (project.leader.firstName?.[0] || project.leader.email[0]).toUpperCase()
+                      : '?'}
+                  </div>
+                  <p className="font-semibold text-slate-700">
+                    {project.leader
+                      ? `${project.leader.firstName} ${project.leader.lastName}`
+                      : 'No leader assigned'}
+                  </p>
+                </div>
               </div>
             </div>
           )}
@@ -171,13 +192,14 @@ export function OverviewTabSection({
         <RepositorySection
           project={project}
           onUpdate={onProjectUpdate}
-          pendingInstallationId={pendingGitHubInstallationId}
-          onPendingInstallationHandled={onPendingGitHubInstallationHandled}
+          pendingSourceId={pendingGitHubSourceId}
+          pendingFlowType={pendingGitHubFlowType}
+          onPendingSourceHandled={onPendingGitHubSourceHandled}
         />
 
-        <div className="rounded-3xl border border-border bg-white p-6 shadow-sm">
+        <div className="rounded-3xl border border-border bg-white p-6 shadow-sm transition-all hover:shadow-md">
           <h2 className="text-lg font-semibold text-foreground">Current scope</h2>
-          <p className="mt-3 text-sm leading-7 text-muted-foreground">
+          <p className="mt-3 text-sm leading-relaxed text-slate-500">
             This detail view currently shows only backend-backed project data: core project fields,
             assigned members, and milestone records. Workflow features such as meetings, files,
             action items, and integrations are not part of this endpoint yet.
@@ -185,23 +207,33 @@ export function OverviewTabSection({
         </div>
       </section>
 
-      <aside className="rounded-3xl border border-border bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-foreground">Primary milestone</h2>
-        {project.milestones.length > 0 ? (
-          <div className="mt-4 space-y-3">
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-              <p className="font-medium text-foreground">{project.milestones[0].title}</p>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Due {dateFormatter.format(new Date(project.milestones[0].dueDate))}
-              </p>
-              <p className="mt-2 text-sm leading-7 text-muted-foreground">
-                {project.milestones[0].description ?? 'No description provided.'}
-              </p>
+      <aside className="space-y-6">
+        <div className="rounded-3xl border border-border bg-white p-6 shadow-sm transition-all hover:shadow-md">
+          <h2 className="text-lg font-semibold text-foreground">Primary milestone</h2>
+          {project.milestones.length > 0 ? (
+            <div className="mt-5">
+              <div className="rounded-2xl border border-indigo-100 bg-indigo-50/30 p-5">
+                <div className="flex items-center justify-between">
+                  <p className="font-bold text-slate-800">{project.milestones[0].title}</p>
+                  <StatusBadge tone="student" className="text-[10px] font-black uppercase">
+                    {project.milestones[0].status}
+                  </StatusBadge>
+                </div>
+                <div className="mt-3 flex items-center gap-2 text-sm text-indigo-600 font-medium">
+                  <CalendarDays className="h-4 w-4" />
+                  <span>Due {dateFormatter.format(new Date(project.milestones[0].dueDate))}</span>
+                </div>
+                <p className="mt-4 text-sm leading-relaxed text-slate-500 line-clamp-3">
+                  {project.milestones[0].description ?? 'No description provided.'}
+                </p>
+              </div>
             </div>
-          </div>
-        ) : (
-          <p className="mt-4 text-sm text-muted-foreground">No milestones recorded yet.</p>
-        )}
+          ) : (
+            <div className="mt-5 rounded-2xl border border-dashed border-slate-200 p-8 text-center">
+              <p className="text-sm text-muted-foreground">No milestones recorded yet.</p>
+            </div>
+          )}
+        </div>
       </aside>
     </div>
   );

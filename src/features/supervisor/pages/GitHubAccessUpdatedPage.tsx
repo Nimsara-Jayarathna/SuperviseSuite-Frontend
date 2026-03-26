@@ -26,6 +26,9 @@ export function GitHubAccessUpdatedPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const token = useMemo(() => searchParams.get('token')?.trim() ?? '', [searchParams]);
+  const projectId = useMemo(() => searchParams.get('projectId')?.trim() ?? '', [searchParams]);
+  const sourceId = useMemo(() => searchParams.get('sourceId')?.trim() ?? '', [searchParams]);
+  const flowType = useMemo(() => searchParams.get('flowType')?.trim() ?? '', [searchParams]);
   const setupStatus = useMemo(() => searchParams.get('status')?.trim() ?? '', [searchParams]);
 
   const [summary, setSummary] = useState<GitHubAccessUpdatedSummary | null>(null);
@@ -39,7 +42,7 @@ export function GitHubAccessUpdatedPage() {
   const showFailedStatus = setupStatus.toLowerCase() === 'failed';
 
   const loadSummary = useCallback(async () => {
-    if (!token) {
+    if (!token && !projectId) {
       setSummary(null);
       setStatus('error');
       setTitle('GitHub access update failed');
@@ -52,12 +55,16 @@ export function GitHubAccessUpdatedPage() {
     setMessage('Verifying callback state and loading updated repository access summary.');
 
     try {
-      const data = await supervisorApi.getPublicGitHubAccessUpdatedSummary(token);
+      const data = token
+        ? await supervisorApi.getPublicGitHubAccessUpdatedSummary(token)
+        : await supervisorApi.getProjectGitHubAccessUpdatedSummary(projectId);
       setSummary(data);
       setStatus('success');
       setTitle('GitHub access updated successfully');
       setMessage(
-        'Your available repositories have been refreshed. You can remove repository access anytime from GitHub App settings.',
+        token
+          ? 'Your available repositories have been refreshed. You can remove repository access anytime from GitHub App settings.'
+          : `GitHub access for project "${data.projectTitle}" has been refreshed. Please confirm the details below.`,
       );
     } catch (error) {
       const nextMessage = isApiException(error) ? error.apiError.message : INVALID_LINK_MESSAGE;
@@ -66,10 +73,10 @@ export function GitHubAccessUpdatedPage() {
       setTitle('GitHub access update failed');
       setMessage(nextMessage || INVALID_LINK_MESSAGE);
     }
-  }, [token]);
+  }, [projectId, token]);
 
   useEffect(() => {
-    if (showFailedStatus && !token) {
+    if (showFailedStatus && !token && !projectId) {
       setSummary(null);
       setStatus('error');
       setTitle('GitHub access update failed');
@@ -77,23 +84,34 @@ export function GitHubAccessUpdatedPage() {
       return;
     }
     void loadSummary();
-  }, [showFailedStatus, token, loadSummary]);
+  }, [showFailedStatus, token, projectId, loadSummary]);
 
   async function handleConfirmAndContinue() {
-    if (!token) {
+    const resolvedProjectId = projectId || summary?.projectId || '';
+    if (!resolvedProjectId) {
       navigate('/', { replace: true });
       return;
     }
 
-    setIsAcknowledging(true);
-    try {
-      await supervisorApi.acknowledgePublicGitHubAccessUpdated(token);
-    } catch {
-      // If acknowledge fails, still continue to avoid trapping user on public callback page.
-    } finally {
-      setIsAcknowledging(false);
-      navigate('/', { replace: true });
+    const resolvedSourceId = sourceId || summary?.sourceId || '';
+    const resolvedFlowType =
+      flowType || summary?.flowType || (token ? 'INSTALLATION_REQUESTED' : 'INSTALLATION_DIRECT');
+
+    const nextParams = new URLSearchParams();
+    nextParams.set('githubSetup', 'success');
+    nextParams.set('tab', 'overview');
+    nextParams.set('githubAccessUpdated', 'true');
+    if (resolvedSourceId) {
+      nextParams.set('githubSourceId', resolvedSourceId);
     }
+    if (resolvedFlowType) {
+      nextParams.set('githubFlow', resolvedFlowType);
+    }
+
+    setIsAcknowledging(true);
+    navigate(`/supervisor/projects/${resolvedProjectId}?${nextParams.toString()}`, {
+      replace: true,
+    });
   }
 
   return (
@@ -104,8 +122,13 @@ export function GitHubAccessUpdatedPage() {
         title={title}
         message={message}
         autoCloseOnSuccess={false}
-        onClose={status === 'loading' ? undefined : () => navigate('/', { replace: true })}
-        onRetry={status === 'error' && token ? () => void loadSummary() : undefined}
+        onClose={
+          status === 'loading'
+            ? undefined
+            : () =>
+                navigate(projectId ? `/supervisor/projects/${projectId}` : '/', { replace: true })
+        }
+        onRetry={status === 'error' && (token || projectId) ? () => void loadSummary() : undefined}
         content={
           status === 'success' && summary ? (
             <div className="space-y-3 text-left">
@@ -158,7 +181,7 @@ export function GitHubAccessUpdatedPage() {
                 onClick={() => void handleConfirmAndContinue()}
                 disabled={isAcknowledging}
               >
-                {isAcknowledging ? 'Finishing...' : 'Confirm and continue'}
+                {isAcknowledging ? 'Opening repository selection...' : 'Review repositories'}
               </button>
             </div>
           ) : undefined

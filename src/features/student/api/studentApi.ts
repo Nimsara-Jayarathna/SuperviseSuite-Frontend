@@ -15,8 +15,9 @@ import type { ProjectGitHubActivity, StudentProjectDetail, StudentProjectSummary
 
 const cachedProjectsById: Partial<Record<string, StudentProjectDetail>> = {};
 const inFlightProjectRequests: Partial<Record<string, Promise<StudentProjectDetail>>> = {};
-const cachedProjectGitHubById: Partial<Record<string, ProjectGitHubActivity>> = {};
-const inFlightProjectGitHubRequests: Partial<Record<string, Promise<ProjectGitHubActivity>>> = {};
+const cachedProjectGitHubByKey: Partial<Record<string, ProjectGitHubActivity>> = {};
+const inFlightProjectGitHubRequestsByKey: Partial<Record<string, Promise<ProjectGitHubActivity>>> =
+  {};
 
 function clearRecord(record: Partial<Record<string, unknown>>) {
   for (const key of Object.keys(record)) {
@@ -27,8 +28,16 @@ function clearRecord(record: Partial<Record<string, unknown>>) {
 function clearStudentApiCache() {
   clearRecord(cachedProjectsById);
   clearRecord(inFlightProjectRequests);
-  clearRecord(cachedProjectGitHubById);
-  clearRecord(inFlightProjectGitHubRequests);
+  clearRecord(cachedProjectGitHubByKey);
+  clearRecord(inFlightProjectGitHubRequestsByKey);
+}
+
+function appendQuery(url: string, params: URLSearchParams): string {
+  const query = params.toString();
+  if (!query) {
+    return url;
+  }
+  return `${url}${url.includes('?') ? '&' : '?'}${query}`;
 }
 
 registerSessionCacheClearer(clearStudentApiCache);
@@ -45,36 +54,52 @@ export const studentApi = {
   async getProjectGitHubDashboard(
     projectId: string,
     forceRefresh = false,
+    linkedRepositoryId?: string | null,
   ): Promise<ProjectGitHubActivity> {
-    if (!forceRefresh && cachedProjectGitHubById[projectId]) {
-      return cachedProjectGitHubById[projectId];
+    const key = `${projectId}:${linkedRepositoryId ?? ''}`;
+
+    if (!forceRefresh && cachedProjectGitHubByKey[key]) {
+      return cachedProjectGitHubByKey[key];
     }
 
-    if (!forceRefresh && inFlightProjectGitHubRequests[projectId]) {
-      return inFlightProjectGitHubRequests[projectId];
+    if (!forceRefresh && inFlightProjectGitHubRequestsByKey[key]) {
+      return inFlightProjectGitHubRequestsByKey[key];
     }
 
+    const params = new URLSearchParams();
+    if (linkedRepositoryId) {
+      params.set('linkedRepositoryId', linkedRepositoryId);
+    }
+    const suffix = params.toString() ? `?${params.toString()}` : '';
     const request = apiClient.get<ProjectGitHubActivity>(
-      `/api/student/projects/${projectId}/github`,
+      `/api/student/projects/${projectId}/github${suffix}`,
     );
-    inFlightProjectGitHubRequests[projectId] = request;
+    inFlightProjectGitHubRequestsByKey[key] = request;
 
     try {
       const dashboard = await request;
-      cachedProjectGitHubById[projectId] = dashboard;
+      cachedProjectGitHubByKey[key] = dashboard;
       return dashboard;
     } finally {
-      delete inFlightProjectGitHubRequests[projectId];
+      delete inFlightProjectGitHubRequestsByKey[key];
     }
   },
 
   async getProjectGitHubActivityPage(
     projectId: string,
     page: number,
+    linkedRepositoryId?: string | null,
   ): Promise<PaginatedListResult<ProjectGitHubRecentCommit>> {
+    const params = new URLSearchParams();
+    if (linkedRepositoryId) {
+      params.set('linkedRepositoryId', linkedRepositoryId);
+    }
     try {
       const payload = await apiClient.get<unknown>(
-        buildPagedUrl(`/api/student/projects/${projectId}/github/activity`, page),
+        appendQuery(
+          buildPagedUrl(`/api/student/projects/${projectId}/github/activity`, page),
+          params,
+        ),
       );
       return normalizePaginatedPayload<ProjectGitHubRecentCommit>(payload, page);
     } catch (error) {
@@ -82,7 +107,7 @@ export const studentApi = {
         throw error;
       }
 
-      const dashboard = await this.getProjectGitHubDashboard(projectId);
+      const dashboard = await this.getProjectGitHubDashboard(projectId, false, linkedRepositoryId);
       return fallbackSlicePage<ProjectGitHubRecentCommit>(
         dashboard.recentCommitsPreview ?? [],
         page,
@@ -93,10 +118,18 @@ export const studentApi = {
   async getProjectGitHubContributorsPage(
     projectId: string,
     page: number,
+    linkedRepositoryId?: string | null,
   ): Promise<PaginatedListResult<ProjectGitHubContributor>> {
+    const params = new URLSearchParams();
+    if (linkedRepositoryId) {
+      params.set('linkedRepositoryId', linkedRepositoryId);
+    }
     try {
       const payload = await apiClient.get<unknown>(
-        buildPagedUrl(`/api/student/projects/${projectId}/github/contributors`, page),
+        appendQuery(
+          buildPagedUrl(`/api/student/projects/${projectId}/github/contributors`, page),
+          params,
+        ),
       );
       return normalizePaginatedPayload<ProjectGitHubContributor>(payload, page);
     } catch (error) {
@@ -104,7 +137,7 @@ export const studentApi = {
         throw error;
       }
 
-      const dashboard = await this.getProjectGitHubDashboard(projectId);
+      const dashboard = await this.getProjectGitHubDashboard(projectId, false, linkedRepositoryId);
       return fallbackSlicePage<ProjectGitHubContributor>(dashboard.contributorsPreview ?? [], page);
     }
   },

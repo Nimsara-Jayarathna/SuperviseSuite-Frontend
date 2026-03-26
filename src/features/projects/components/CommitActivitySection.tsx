@@ -1,6 +1,23 @@
 import { useState } from 'react';
+import {
+  Users,
+  GitCommit,
+  Clock,
+  Activity,
+  Github,
+  ChevronRight,
+  RefreshCw,
+  ExternalLink,
+  GitMerge,
+  Terminal,
+  FileText,
+  Settings,
+  ShieldCheck,
+  Zap,
+} from 'lucide-react';
 import type { ApiError } from '@/types';
 import { buttonStyles } from '@/components/ui/Button';
+import { TimeAgo } from '@/components/ui/TimeAgo';
 import type {
   PaginatedListResult,
   ProjectGitHubContributor,
@@ -22,6 +39,7 @@ type CommitActivitySectionProps = {
   isRefreshing: boolean;
   onRefresh?: () => void;
   onNavigateToOverview?: () => void;
+  emptyStateDescription?: string;
 };
 
 const dateTimeFormatter = new Intl.DateTimeFormat('en', {
@@ -122,77 +140,107 @@ function getCommitType(message: string): CommitType | null {
 
 function commitTypeBadgeClass(type: CommitType) {
   if (type === 'merge') {
-    return 'bg-slate-200 text-slate-700';
+    return 'bg-slate-100 text-slate-600 border-slate-200';
   }
   if (type === 'feat') {
-    return 'bg-emerald-100 text-emerald-700';
+    return 'bg-emerald-50 text-emerald-700 border-emerald-100';
   }
   if (type === 'fix') {
-    return 'bg-sky-100 text-sky-700';
+    return 'bg-rose-50 text-rose-700 border-rose-100';
   }
   if (type === 'refactor') {
-    return 'bg-violet-100 text-violet-700';
+    return 'bg-indigo-50 text-indigo-700 border-indigo-100';
   }
   if (type === 'ci' || type === 'build') {
-    return 'bg-cyan-100 text-cyan-700';
+    return 'bg-cyan-50 text-cyan-700 border-cyan-100';
   }
   if (type === 'docs') {
-    return 'bg-amber-100 text-amber-700';
+    return 'bg-amber-50 text-amber-700 border-amber-100';
   }
   if (type === 'test') {
-    return 'bg-fuchsia-100 text-fuchsia-700';
+    return 'bg-fuchsia-50 text-fuchsia-700 border-fuchsia-100';
   }
   if (type === 'perf') {
-    return 'bg-teal-100 text-teal-700';
+    return 'bg-teal-50 text-teal-700 border-teal-100';
   }
   if (type === 'revert') {
-    return 'bg-rose-100 text-rose-700';
+    return 'bg-rose-50 text-rose-700 border-rose-100';
   }
   if (type === 'style') {
-    return 'bg-lime-100 text-lime-700';
+    return 'bg-lime-50 text-lime-700 border-lime-100';
   }
-  return 'bg-zinc-100 text-zinc-700';
+  return 'bg-zinc-50 text-zinc-600 border-zinc-100';
+}
+
+function CommitTypeIcon({ type, className }: { type: CommitType | null; className?: string }) {
+  if (type === 'merge') return <GitMerge className={className} />;
+  if (type === 'feat') return <Zap className={className} />;
+  if (type === 'fix') return <ShieldCheck className={className} />;
+  if (type === 'refactor') return <Settings className={className} />;
+  if (type === 'ci' || type === 'build') return <Terminal className={className} />;
+  if (type === 'docs') return <FileText className={className} />;
+  return <GitCommit className={className} />;
 }
 
 function renderCommitCard(commit: ProjectGitHubRecentCommit, index: number) {
   const type = getCommitType(commit.message);
   const shortSha = commit.sha ? commit.sha.slice(0, 7) : null;
+  const authorAvatarUrl = commit.author ? `https://github.com/${commit.author}.png` : null;
 
   return (
     <article
       key={`${commit.sha ?? 'commit'}-${index}`}
-      className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
+      className="group relative flex gap-4 rounded-2xl border border-slate-100 bg-white p-4 transition-all hover:border-amber-200 hover:shadow-md"
     >
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2">
-        <p
-          className="text-sm font-medium text-foreground break-words [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2] overflow-hidden"
-          title={commit.message || 'No message'}
-        >
-          {commit.message || 'No message'}
-        </p>
-        {type ? (
-          <span
-            className={`justify-self-end self-start whitespace-nowrap rounded-full px-2 py-1 text-[11px] font-semibold uppercase ${commitTypeBadgeClass(type)}`}
-          >
-            {type}
-          </span>
-        ) : null}
+      <div className="flex shrink-0 flex-col items-center gap-2 pt-1">
+        <div className="relative h-10 w-10 overflow-hidden rounded-full border border-slate-200 bg-slate-50 transition-transform group-hover:scale-110">
+          {authorAvatarUrl ? (
+            <img
+              src={authorAvatarUrl}
+              alt={commit.author || 'Author'}
+              className="h-full w-full object-cover"
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = 'none';
+              }}
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center text-xs font-bold text-slate-400">
+              {commit.author?.slice(0, 2).toUpperCase() || '??'}
+            </div>
+          )}
+        </div>
+        <div className="h-full w-px bg-slate-100 group-last:hidden" />
       </div>
-      <div className="mt-3 grid gap-2 text-xs text-muted-foreground sm:grid-cols-3">
-        <div className="min-w-0">
-          <p className="uppercase tracking-[0.16em] text-[10px] text-slate-500">Author</p>
-          <p className="truncate text-slate-700" title={commit.author || 'Unknown'}>
-            {commit.author || 'Unknown'}
-          </p>
+
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-slate-800">
+              {commit.author || 'Unknown Author'}
+            </span>
+            <span className="text-slate-300">•</span>
+            {commit.committedAt && (
+              <TimeAgo date={commit.committedAt} className="text-xs font-medium text-slate-400" />
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            {type && (
+              <span
+                className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${commitTypeBadgeClass(type)}`}
+              >
+                <CommitTypeIcon type={type} className="h-3 w-3" />
+                {type}
+              </span>
+            )}
+            <code className="rounded bg-slate-50 px-1.5 py-0.5 font-mono text-[10px] font-medium text-slate-500 hover:bg-slate-100 hover:text-slate-700">
+              {shortSha ?? 'N/A'}
+            </code>
+          </div>
         </div>
-        <div>
-          <p className="uppercase tracking-[0.16em] text-[10px] text-slate-500">Time</p>
-          <p className="truncate text-slate-700">{formatDateTime(commit.committedAt)}</p>
-        </div>
-        <div>
-          <p className="uppercase tracking-[0.16em] text-[10px] text-slate-500">SHA</p>
-          <p className="font-mono text-slate-700">{shortSha ?? 'N/A'}</p>
-        </div>
+
+        <p className="mt-1.5 text-sm leading-6 text-slate-600 transition-colors group-hover:text-slate-900">
+          {commit.message || 'No commit message provided.'}
+        </p>
       </div>
     </article>
   );
@@ -273,8 +321,10 @@ function normalizeDashboardPayload(
           id: repository.id ?? null,
           name: repository.name ?? 'Repository',
           url: repository.url ?? '',
-          defaultBranch: repository.defaultBranch ?? 'main',
+          defaultBranch: repository.defaultBranch ?? 'unknown',
           lastSyncedAt: repository.lastSyncedAt ?? null,
+          createdAt: new Date(0).toISOString(),
+          updatedAt: null,
         }))
       : legacy.repository
         ? [
@@ -282,8 +332,10 @@ function normalizeDashboardPayload(
               id: null,
               name: legacy.repository.name ?? 'Repository',
               url: legacy.repository.url ?? '',
-              defaultBranch: legacy.repository.defaultBranch ?? 'main',
+              defaultBranch: legacy.repository.defaultBranch ?? 'unknown',
               lastSyncedAt: null,
+              createdAt: new Date(0).toISOString(),
+              updatedAt: null,
             },
           ]
         : [],
@@ -322,6 +374,7 @@ export function CommitActivitySection({
   isRefreshing,
   onRefresh,
   onNavigateToOverview,
+  emptyStateDescription,
 }: CommitActivitySectionProps) {
   const [openModal, setOpenModal] = useState<'activity' | 'contributors' | null>(null);
 
@@ -379,6 +432,35 @@ export function CommitActivitySection({
   const normalized = normalizeDashboardPayload(data);
   const repositoryItems = normalized.repositoryLinked ? normalized.repositories.slice(0, 1) : [];
   const hasLinkedRepository = repositoryItems.length > 0;
+
+  if (!hasLinkedRepository) {
+    return (
+      <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-slate-200 bg-slate-50/50 p-12 text-center">
+        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-slate-100">
+          <Github className="h-8 w-8 text-slate-400" />
+        </div>
+        <h3 className="mt-6 text-lg font-bold text-slate-800">No repository connected</h3>
+        <p className="mt-2 max-w-xs text-sm leading-relaxed text-slate-500">
+          {emptyStateDescription ||
+            'Connect a GitHub repository to this project to start tracking commits, activity, and contributor data.'}
+        </p>
+        {onNavigateToOverview && (
+          <button
+            type="button"
+            className={buttonStyles({
+              variant: 'primary',
+              size: 'sm',
+              className: 'mt-6 rounded-xl hover:shadow-lg transition-all',
+            })}
+            onClick={onNavigateToOverview}
+          >
+            Link a Repository
+          </button>
+        )}
+      </div>
+    );
+  }
+
   const topContributors = normalized.contributorsPreview.slice(0, 4);
   const recentCommits = normalized.recentCommitsPreview.slice(0, 6);
 
@@ -387,7 +469,7 @@ export function CommitActivitySection({
       <section className="rounded-3xl border border-border bg-white p-6 shadow-sm">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-lg font-semibold text-foreground">Repository Overview</h2>
-          {canRefresh && hasLinkedRepository ? (
+          {canRefresh ? (
             <button
               type="button"
               className={buttonStyles({ variant: 'secondary', size: 'sm' })}
@@ -398,125 +480,242 @@ export function CommitActivitySection({
             </button>
           ) : null}
         </div>
-        {repositoryItems.length > 0 ? (
-          <div className="mt-4 space-y-3">
-            {repositoryItems.map((repository) => (
+        <div className="mt-6">
+          {repositoryItems.map((repository) => {
+            const [owner] = repository.url.split('github.com/')[1]?.split('/') || [];
+            const ownerAvatarUrl = owner ? `https://github.com/${owner}.png` : null;
+
+            return (
               <article
                 key={repository.url}
-                className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
+                className="group relative overflow-hidden rounded-3xl border border-slate-100 bg-slate-50/50 p-5 transition-all hover:bg-white hover:shadow-lg"
               >
-                <p className="text-sm font-medium text-foreground">{repository.name}</p>
-                <a
-                  href={repository.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mt-2 block text-sm text-primary hover:underline"
-                >
-                  {repository.url}
-                </a>
-                <p className="mt-2 text-xs text-muted-foreground">
-                  Default branch: {repository.defaultBranch || 'main'}
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Last synced: {formatDateTime(repository.lastSyncedAt)}
-                </p>
+                <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
+                  <div className="flex shrink-0 items-center justify-center">
+                    <div className="relative h-16 w-16 overflow-hidden rounded-2xl border-2 border-white bg-white shadow-sm transition-transform group-hover:scale-110">
+                      {ownerAvatarUrl ? (
+                        <img
+                          src={ownerAvatarUrl}
+                          alt={owner}
+                          className="h-full w-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src =
+                              `https://ui-avatars.com/api/?name=${encodeURIComponent(repository.name)}&background=f1f5f9&color=94a3b8`;
+                          }}
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center bg-slate-100 text-slate-400">
+                          <Github className="h-8 w-8" />
+                        </div>
+                      )}
+                      <div className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-lg bg-amber-500 text-white shadow-sm">
+                        <Github className="h-3 w-3" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <h3 className="text-xl font-black tracking-tight text-slate-800">
+                        {repository.name}
+                      </h3>
+                      <a
+                        href={repository.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-400 shadow-sm transition-all hover:text-amber-600 hover:shadow-md"
+                      >
+                        <ExternalLink className="h-3 w-3" />
+                        Visit Repository
+                      </a>
+                    </div>
+
+                    <div className="mt-4 flex flex-wrap items-center gap-6">
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                          Default Branch
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <GitMerge className="h-3.5 w-3.5 text-indigo-500" />
+                          <span className="text-sm font-bold text-slate-600">
+                            {repository.defaultBranch || 'unknown'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="h-8 w-px bg-slate-200 hidden sm:block" />
+
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                          Last Synced
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <RefreshCw className="h-3.5 w-3.5 text-emerald-500" />
+                          <span className="text-sm font-bold text-slate-600">
+                            {repository.lastSyncedAt ? (
+                              <TimeAgo date={repository.lastSyncedAt} />
+                            ) : (
+                              'Never synced'
+                            )}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="absolute -bottom-6 -right-6 h-24 w-24 rounded-full bg-amber-50/30 transition-transform group-hover:scale-150" />
               </article>
-            ))}
-          </div>
-        ) : (
-          <div className="mt-3 space-y-3">
-            <p className="text-sm text-muted-foreground">No repository connected.</p>
-            <p className="text-sm text-muted-foreground">
-              Link a repository to start tracking GitHub activity.
-            </p>
-            {onNavigateToOverview ? (
-              <button
-                type="button"
-                className={buttonStyles({ variant: 'secondary', size: 'sm' })}
-                onClick={onNavigateToOverview}
-              >
-                Go to Overview
-              </button>
-            ) : null}
-          </div>
-        )}
+            );
+          })}
+        </div>
       </section>
 
-      <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-foreground">Activity Summary</h2>
-        <div className="grid gap-3 sm:grid-cols-3">
-          <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
-            <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
-              Total commits
-            </p>
-            <p className="mt-2 text-2xl font-semibold text-foreground">
-              {normalized.activitySummary.totalCommits}
-            </p>
+      <section className="space-y-4">
+        <div className="grid gap-4 sm:grid-cols-3">
+          <div className="relative overflow-hidden rounded-3xl border border-slate-100 bg-white p-5 shadow-sm transition-all hover:shadow-md">
+            <div className="absolute -right-2 -top-2 h-16 w-16 rounded-full bg-indigo-50/50" />
+            <div className="relative">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
+                <GitCommit className="h-5 w-5" />
+              </div>
+              <p className="mt-4 text-xs font-bold uppercase tracking-[0.15em] text-slate-400">
+                Total commits
+              </p>
+              <p className="mt-1 text-3xl font-black text-slate-800">
+                {normalized.activitySummary.totalCommits}
+              </p>
+            </div>
           </div>
-          <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
-            <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
-              Last activity
-            </p>
-            <p className="mt-2 text-sm font-semibold text-foreground">
-              {formatDateTime(normalized.activitySummary.lastActivityAt)}
-            </p>
+
+          <div className="relative overflow-hidden rounded-3xl border border-slate-100 bg-white p-5 shadow-sm transition-all hover:shadow-md">
+            <div className="absolute -right-2 -top-2 h-16 w-16 rounded-full bg-amber-50/50" />
+            <div className="relative">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-50 text-amber-600">
+                <Clock className="h-5 w-5" />
+              </div>
+              <p className="mt-4 text-xs font-bold uppercase tracking-[0.15em] text-slate-400">
+                Last activity
+              </p>
+              <div className="mt-1">
+                {normalized.activitySummary.lastActivityAt ? (
+                  <div className="flex flex-col">
+                    <TimeAgo
+                      date={normalized.activitySummary.lastActivityAt}
+                      className="text-lg font-black text-slate-800"
+                    />
+                    <span className="text-[10px] font-medium text-slate-400">
+                      {formatDateTime(normalized.activitySummary.lastActivityAt)}
+                    </span>
+                  </div>
+                ) : (
+                  <p className="text-lg font-black text-slate-800">None</p>
+                )}
+              </div>
+            </div>
           </div>
-          <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
-            <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
-              Status
-            </p>
-            <p className="mt-2 text-2xl font-semibold text-foreground">
-              {toDisplayStatus(normalized.activitySummary.status)}
-            </p>
+
+          <div className="relative overflow-hidden rounded-3xl border border-slate-100 bg-white p-5 shadow-sm transition-all hover:shadow-md">
+            <div className="absolute -right-2 -top-2 h-16 w-16 rounded-full bg-emerald-50/50" />
+            <div className="relative">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
+                <Activity className="h-5 w-5" />
+              </div>
+              <p className="mt-4 text-xs font-bold uppercase tracking-[0.15em] text-slate-400">
+                Sync Status
+              </p>
+              <div className="mt-1 flex items-center gap-2">
+                <p className="text-3xl font-black text-slate-800">
+                  {toDisplayStatus(normalized.activitySummary.status)}
+                </p>
+                <div
+                  className={`h-2.5 w-2.5 rounded-full ${normalized.activitySummary.status === 'active' ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]' : 'bg-slate-300'}`}
+                />
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      <section className="rounded-3xl border border-border bg-white p-6 shadow-sm">
+      <section className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold text-foreground">Contributors Preview</h2>
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
+              <Users className="h-4 w-4" />
+            </div>
+            <h2 className="text-lg font-bold tracking-tight text-slate-800">Contributors</h2>
+          </div>
           <button
             type="button"
-            className="text-sm font-medium text-primary"
+            className="group flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-amber-600 transition-all hover:text-amber-700 disabled:cursor-not-allowed disabled:opacity-40"
             onClick={() => setOpenModal('contributors')}
+            disabled={!hasLinkedRepository || normalized.contributorsPreview.length === 0}
           >
-            View all contributors →
+            View all
+            <ChevronRight className="h-3 w-3 transition-transform group-last:translate-x-0.5" />
           </button>
         </div>
         {topContributors.length > 0 ? (
-          <div className="mt-4 space-y-3">
-            {topContributors.map((contributor) => (
-              <article
-                key={contributor.name}
-                className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
-              >
-                <p className="text-sm font-medium text-foreground">{contributor.name}</p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {contributor.commitCount} commit{contributor.commitCount === 1 ? '' : 's'}
-                </p>
-              </article>
-            ))}
+          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {topContributors.map((contributor) => {
+              const avatarUrl = `https://github.com/${contributor.name}.png`;
+              return (
+                <article
+                  key={contributor.name}
+                  className="flex items-center gap-3 rounded-2xl border border-slate-50 bg-slate-50/50 p-3 transition-all hover:bg-white hover:shadow-sm"
+                >
+                  <div className="h-10 w-10 overflow-hidden rounded-full border border-white bg-white shadow-sm">
+                    <img
+                      src={avatarUrl}
+                      alt={contributor.name}
+                      className="h-full w-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src =
+                          `https://ui-avatars.com/api/?name=${encodeURIComponent(contributor.name)}&background=f1f5f9&color=94a3b8`;
+                      }}
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-bold text-slate-700">{contributor.name}</p>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                      {contributor.commitCount} commits
+                    </p>
+                  </div>
+                </article>
+              );
+            })}
           </div>
         ) : (
-          <p className="mt-4 text-sm text-muted-foreground">No contributor activity yet.</p>
+          <div className="mt-4 rounded-2xl border border-dashed border-slate-200 p-8 text-center text-sm text-slate-400">
+            No contributor activity recorded for this repository.
+          </div>
         )}
       </section>
 
-      <section className="rounded-3xl border border-border bg-white p-6 shadow-sm">
+      <section className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold text-foreground">Activity Feed</h2>
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+              <Activity className="h-4 w-4" />
+            </div>
+            <h2 className="text-lg font-bold tracking-tight text-slate-800">Activity Feed</h2>
+          </div>
           <button
             type="button"
-            className="text-sm font-medium text-primary"
+            className="group flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-amber-600 transition-all hover:text-amber-700 disabled:cursor-not-allowed disabled:opacity-40"
             onClick={() => setOpenModal('activity')}
+            disabled={!hasLinkedRepository || normalized.recentCommitsPreview.length === 0}
           >
-            View full activity →
+            View full feed
+            <ChevronRight className="h-3 w-3 transition-transform group-last:translate-x-0.5" />
           </button>
         </div>
         {recentCommits.length > 0 ? (
-          <div className="mt-4 space-y-3">{recentCommits.map(renderCommitCard)}</div>
+          <div className="mt-6 flex flex-col gap-4">{recentCommits.map(renderCommitCard)}</div>
         ) : (
-          <p className="mt-4 text-sm text-muted-foreground">No recent activity found.</p>
+          <div className="mt-4 rounded-2xl border border-dashed border-slate-200 p-8 text-center text-sm text-slate-400">
+            No recent activity found.
+          </div>
         )}
       </section>
 
