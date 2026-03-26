@@ -1,15 +1,16 @@
 # Brand Feature
 
-Logo component and static SVG asset used across the application.
+Logo component and optimized static brand assets used across the application.
 
 ## Asset
 
 | File | Purpose |
 |------|---------|
-| `public/logo.svg` | Primary brand asset — served at `/logo.svg`; used as favicon and logo `<img>` source |
-| `index.html` | References `/logo.svg` as `<link rel="icon" type="image/svg+xml">` |
+| `public/logo.webp` | Primary logo asset — served at `/logo.webp`; used by the `LogoMark` component |
+| `public/favicon.ico` | Browser favicon asset served at `/favicon.ico` |
+| `index.html` | References `/favicon.ico` as `<link rel="icon" type="image/x-icon">` |
 
-**SVG spec:** 1024 × 890 viewBox, transparent background, multi-path raster-traced mark.
+**Asset note:** logo is intentionally optimized for transfer size and rendered as a square mark.
 
 ---
 
@@ -17,7 +18,7 @@ Logo component and static SVG asset used across the application.
 
 ### `LogoMark`
 
-Renders the logo mark at a given height. Width auto-scales using the native 1024:890 aspect ratio.
+Renders the logo mark at a given size.
 
 ```tsx
 import { LogoMark } from '@/components/brand/Logo';
@@ -29,7 +30,7 @@ import { LogoMark } from '@/components/brand/Logo';
 
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
-| `size` | `number` | `40` | Height in px; width scales proportionally |
+| `size` | `number` | `40` | Render size in px (square mark) |
 | `className` | `string` | — | Additional Tailwind classes |
 
 ### `Logo`
@@ -59,6 +60,6 @@ import { Logo } from '@/components/brand/Logo';
 | `HeroSection` | `LogoMark` | larger decorative hero usage |
 | `LoginPage` | `LogoMark` wrapped in `<Link to="/">` | `52` |
 | `RegisterPage` | `LogoMark` wrapped in `<Link to="/">` | `52` |
-| `index.html` | Static `/logo.svg` | favicon |
+| `index.html` | Static `/favicon.ico` | favicon |
 
 Clicking the logo in the top bar and auth pages navigates back to the appropriate route.

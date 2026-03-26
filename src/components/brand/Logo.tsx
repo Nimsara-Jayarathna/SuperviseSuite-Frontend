@@ -1,7 +1,7 @@
 import { cn } from '@/lib/cn';
 
 type LogoMarkProps = {
-  /** Height in px — width scales proportionally (aspect ratio 1024:890) */
+  /** Render size in px (logo image is optimized as a square asset). */
   size?: number;
   className?: string;
 };
@@ -13,15 +13,13 @@ type LogoProps = LogoMarkProps & {
 
 /**
  * LogoMark — renders the SuperviseSuite logo mark at the given height.
- * Width auto-scales using the SVG's native 1024:890 aspect ratio.
  */
 export function LogoMark({ size = 40, className }: LogoMarkProps) {
-  const width = Math.round(size * (1024 / 890));
   return (
     <img
-      src="/logo.svg"
+      src="/logo.webp"
       alt="SuperviseSuite"
-      width={width}
+      width={size}
       height={size}
       className={cn('inline-block flex-shrink-0', className)}
       draggable={false}
