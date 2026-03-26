@@ -40,6 +40,7 @@ import type {
   UpdateSupervisorProjectRequest,
   UpdateSupervisorProjectStatusRequest,
 } from '../types';
+import { normalizeGitHubRepositoryUrl } from '../utils/githubRepositoryUrl';
 
 const cachedProjectsById: Partial<Record<string, SupervisorProjectDetail>> = {};
 const inFlightProjectRequests: Partial<Record<string, Promise<SupervisorProjectDetail>>> = {};
@@ -203,9 +204,13 @@ export const supervisorApi = {
     projectId: string,
     repositoryUrl: string,
   ): Promise<GitHubAvailableRepositories> {
+    const normalizedRepositoryUrl = normalizeGitHubRepositoryUrl(repositoryUrl);
+    if (!normalizedRepositoryUrl) {
+      throw new Error('Invalid GitHub repository URL.');
+    }
     return apiClient.post<GitHubAvailableRepositories>('/api/github/access-source/public', {
       projectId,
-      repositoryUrl,
+      repositoryUrl: normalizedRepositoryUrl,
     });
   },
 
@@ -506,7 +511,9 @@ export const supervisorApi = {
     projectId: string,
     repositoryUrl: string | null,
   ): Promise<SupervisorProjectDetail> {
-    const body: UpdateRepositoryRequest = { repositoryUrl };
+    const normalizedRepositoryUrl =
+      typeof repositoryUrl === 'string' ? normalizeGitHubRepositoryUrl(repositoryUrl) : null;
+    const body: UpdateRepositoryRequest = { repositoryUrl: normalizedRepositoryUrl };
     const updated = await apiClient.patch<SupervisorProjectDetail>(
       `/api/supervisor/projects/${projectId}/repository`,
       body,

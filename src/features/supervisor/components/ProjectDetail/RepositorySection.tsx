@@ -9,6 +9,7 @@ import { useAvailableRepositories } from '../../hooks/useAvailableRepositories';
 import { useGitHubSetupFlow } from '../../hooks/useGitHubSetupFlow';
 import { useProjectRepositories } from '../../hooks/useProjectRepositories';
 import { useRepositorySelection } from '../../hooks/useRepositorySelection';
+import { normalizeGitHubRepositoryUrl } from '../../utils/githubRepositoryUrl';
 import type {
   GitHubRepositoryOption,
   ProjectGitHubRepositories,
@@ -32,8 +33,6 @@ type RepositorySectionProps = {
   onPendingSourceHandled?: () => void;
 };
 
-const GITHUB_REPOSITORY_URL_PATTERN = /^https:\/\/github\.com\/[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+$/;
-
 type ModalStep = 'method' | 'repository-selection';
 type RepositorySelectionEntryMode = 'manual' | 'callback-direct' | 'callback-requested';
 
@@ -54,10 +53,6 @@ function toSyncLabel(value: string | null | undefined): string {
 
 function toSourceLabel(source: ProjectGitHubRepositories['accessSources'][number]): string {
   return `${source.ownerLogin} (${source.accessType})`;
-}
-
-function isValidRepositoryUrl(value: string): boolean {
-  return GITHUB_REPOSITORY_URL_PATTERN.test(value.trim());
 }
 
 export function RepositorySection({
@@ -388,12 +383,12 @@ export function RepositorySection({
   }
 
   async function handleSubmitPublicRepository() {
-    const repositoryUrl = publicRepositoryUrl.trim();
-    if (!isValidRepositoryUrl(repositoryUrl)) {
+    const repositoryUrl = normalizeGitHubRepositoryUrl(publicRepositoryUrl);
+    if (!repositoryUrl) {
       openRequestModal(
         'error',
         'Invalid repository URL',
-        'Enter a valid https://github.com/owner/repo URL.',
+        'Enter a valid GitHub repository URL (for example: https://github.com/owner/repo).',
       );
       return;
     }
