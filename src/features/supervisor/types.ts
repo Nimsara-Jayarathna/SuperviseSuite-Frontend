@@ -323,6 +323,8 @@ export type GitHubAccessUpdatedSummary = {
   projectId: string;
   projectTitle: string;
   installationId: number;
+  sourceId?: string | null;
+  flowType?: 'INSTALLATION_DIRECT' | 'INSTALLATION_REQUESTED' | null;
   accessScope: string;
   accessibleRepositoryCount: number;
   repositories: GitHubInstallationRepository[];

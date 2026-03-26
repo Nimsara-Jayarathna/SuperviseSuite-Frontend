@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { buttonStyles } from '@/components/ui/Button';
 import { RequestStateModal } from '@/components/ui/RequestStateModal';
 import { GithubDetailsModal } from '@/features/projects/components/GithubDetailsModal';
@@ -68,7 +67,6 @@ export function RepositorySection({
   pendingFlowType,
   onPendingSourceHandled,
 }: RepositorySectionProps) {
-  const navigate = useNavigate();
   const {
     data: repositoriesData,
     isLoading: isLoadingRepositoriesData,
@@ -88,6 +86,8 @@ export function RepositorySection({
   const [isSubmittingPublicRepository, setIsSubmittingPublicRepository] = useState(false);
   const [isCreatingAccessRequest, setIsCreatingAccessRequest] = useState(false);
   const [isConfirmingRepositorySelection, setIsConfirmingRepositorySelection] = useState(false);
+  const [isDismissingPendingAccess, setIsDismissingPendingAccess] = useState(false);
+  const [isResolvingPendingAccess, setIsResolvingPendingAccess] = useState(false);
   const [isMutatingLinks, setIsMutatingLinks] = useState(false);
   const [isAccessRequestLinkCopied, setIsAccessRequestLinkCopied] = useState(false);
   const [generatedAccessRequestUrl, setGeneratedAccessRequestUrl] = useState<string | null>(null);
@@ -272,6 +272,17 @@ export function RepositorySection({
     await reloadRepositoriesData();
     const updatedProject = await supervisorApi.getProjectById(projectId, true);
     onUpdate(updatedProject);
+  }
+
+  async function acknowledgePendingAccessIfPresent() {
+    if (!project.github.hasUnacknowledgedAccess) {
+      return;
+    }
+    try {
+      await supervisorApi.acknowledgeProjectGitHubAccessUpdated(project.id);
+    } catch {
+      // Linking should still succeed even if acknowledge fails.
+    }
   }
 
   function openRequestModal(
@@ -478,6 +489,7 @@ export function RepositorySection({
         sourceId: selectedSourceId,
         repositories: selection.selectionsPayload,
       });
+      await acknowledgePendingAccessIfPresent();
       await reloadProjectAndRepositories(project.id);
       setIsModalOpen(false);
       openRequestModal('success', 'Repositories linked', 'Selected repositories were linked successfully.');
@@ -617,6 +629,7 @@ export function RepositorySection({
           },
         ],
       });
+      await acknowledgePendingAccessIfPresent();
       await reloadProjectAndRepositories(project.id);
       openRequestModal('success', 'Repository enabled', 'Repository is now linked to this project.');
     } catch (error) {
@@ -667,6 +680,76 @@ export function RepositorySection({
       return;
     }
     await handleEnableRepository(row);
+  }
+
+  async function handleDismissPendingAccessAlert() {
+    setIsDismissingPendingAccess(true);
+    try {
+      await supervisorApi.acknowledgeProjectGitHubAccessUpdated(project.id);
+      await reloadProjectAndRepositories(project.id);
+      openRequestModal('success', 'Access update dismissed', 'Access update alert was dismissed.');
+    } catch (error) {
+      const message = isApiException(error)
+        ? error.apiError.message
+        : 'Unable to dismiss access update alert right now.';
+      openRequestModal('error', 'Dismiss failed', message);
+    } finally {
+      setIsDismissingPendingAccess(false);
+    }
+  }
+
+  async function handleOpenManageRepositories() {
+    if (!project.github.hasUnacknowledgedAccess) {
+      setIsManagementModalOpen(true);
+      return;
+    }
+
+    setIsResolvingPendingAccess(true);
+    openRequestModal(
+      'loading',
+      'Loading granted repositories',
+      'Preparing repository selection for newly granted GitHub access.',
+    );
+
+    try {
+      const summary = await supervisorApi.getProjectGitHubAccessUpdatedSummary(project.id);
+      const resolvedSourceId = summary.sourceId?.trim() ?? '';
+      const resolvedFlowType =
+        summary.flowType === 'INSTALLATION_DIRECT' || summary.flowType === 'INSTALLATION_REQUESTED'
+          ? summary.flowType
+          : 'INSTALLATION_REQUESTED';
+
+      if (!resolvedSourceId) {
+        closeRequestModal();
+        setIsManagementModalOpen(true);
+        openRequestModal(
+          'error',
+          'Access source not available',
+          'No active access source was found for this granted access. Open manage repositories and reconnect access if needed.',
+        );
+        return;
+      }
+
+      closeRequestModal();
+      setSelectedMethod(
+        resolvedFlowType === 'INSTALLATION_REQUESTED'
+          ? 'INSTALLATION_REQUESTED'
+          : 'INSTALLATION_DIRECT',
+      );
+      setSelectionEntryMode(
+        resolvedFlowType === 'INSTALLATION_REQUESTED' ? 'callback-requested' : 'callback-direct',
+      );
+      setSelectedSourceId(resolvedSourceId);
+      setModalStep('repository-selection');
+      setIsModalOpen(true);
+    } catch (error) {
+      const message = isApiException(error)
+        ? error.apiError.message
+        : 'Unable to load newly granted repositories right now.';
+      openRequestModal('error', 'Failed to load granted repositories', message);
+    } finally {
+      setIsResolvingPendingAccess(false);
+    }
   }
 
   return (
@@ -793,15 +876,10 @@ export function RepositorySection({
             <button
               type="button"
               className={buttonStyles({ variant: 'secondary', size: 'sm' })}
-              onClick={() => {
-                if (project.github.hasUnacknowledgedAccess) {
-                  navigate(`/github/access-updated?projectId=${project.id}`);
-                } else {
-                  setIsManagementModalOpen(true);
-                }
-              }}
+              onClick={() => void handleOpenManageRepositories()}
+              disabled={isResolvingPendingAccess}
             >
-              Manage repositories
+              {isResolvingPendingAccess ? 'Loading...' : 'Manage repositories'}
             </button>
             {project.github.hasUnacknowledgedAccess && (
               <span className="absolute -right-1 -top-1 flex h-3 w-3">
@@ -810,6 +888,16 @@ export function RepositorySection({
               </span>
             )}
           </div>
+          {project.github.hasUnacknowledgedAccess ? (
+            <button
+              type="button"
+              className={buttonStyles({ variant: 'ghost', size: 'sm' })}
+              onClick={() => void handleDismissPendingAccessAlert()}
+              disabled={isDismissingPendingAccess}
+            >
+              {isDismissingPendingAccess ? 'Dismissing...' : 'Dismiss access alert'}
+            </button>
+          ) : null}
           <button
             type="button"
             className={buttonStyles({ variant: 'primary', size: 'sm' })}

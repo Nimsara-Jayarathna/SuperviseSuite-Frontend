@@ -27,6 +27,8 @@ export function GitHubAccessUpdatedPage() {
   const navigate = useNavigate();
   const token = useMemo(() => searchParams.get('token')?.trim() ?? '', [searchParams]);
   const projectId = useMemo(() => searchParams.get('projectId')?.trim() ?? '', [searchParams]);
+  const sourceId = useMemo(() => searchParams.get('sourceId')?.trim() ?? '', [searchParams]);
+  const flowType = useMemo(() => searchParams.get('flowType')?.trim() ?? '', [searchParams]);
   const setupStatus = useMemo(() => searchParams.get('status')?.trim() ?? '', [searchParams]);
 
   const [summary, setSummary] = useState<GitHubAccessUpdatedSummary | null>(null);
@@ -71,7 +73,7 @@ export function GitHubAccessUpdatedPage() {
       setTitle('GitHub access update failed');
       setMessage(nextMessage || INVALID_LINK_MESSAGE);
     }
-  }, [token]);
+  }, [projectId, token]);
 
   useEffect(() => {
     if (showFailedStatus && !token && !projectId) {
@@ -85,24 +87,31 @@ export function GitHubAccessUpdatedPage() {
   }, [showFailedStatus, token, projectId, loadSummary]);
 
   async function handleConfirmAndContinue() {
-    if (!token && !projectId) {
+    const resolvedProjectId = projectId || summary?.projectId || '';
+    if (!resolvedProjectId) {
       navigate('/', { replace: true });
       return;
     }
 
-    setIsAcknowledging(true);
-    try {
-      if (token) {
-        await supervisorApi.acknowledgePublicGitHubAccessUpdated(token);
-      } else {
-        await supervisorApi.acknowledgeProjectGitHubAccessUpdated(projectId);
-      }
-    } catch {
-      // If acknowledge fails, still continue to avoid trapping user on callback page.
-    } finally {
-      setIsAcknowledging(false);
-      navigate(projectId ? `/supervisor/projects/${projectId}` : '/', { replace: true });
+    const resolvedSourceId = sourceId || summary?.sourceId || '';
+    const resolvedFlowType =
+      flowType ||
+      summary?.flowType ||
+      (token ? 'INSTALLATION_REQUESTED' : 'INSTALLATION_DIRECT');
+
+    const nextParams = new URLSearchParams();
+    nextParams.set('githubSetup', 'success');
+    nextParams.set('tab', 'overview');
+    nextParams.set('githubAccessUpdated', 'true');
+    if (resolvedSourceId) {
+      nextParams.set('githubSourceId', resolvedSourceId);
     }
+    if (resolvedFlowType) {
+      nextParams.set('githubFlow', resolvedFlowType);
+    }
+
+    setIsAcknowledging(true);
+    navigate(`/supervisor/projects/${resolvedProjectId}?${nextParams.toString()}`, { replace: true });
   }
 
   return (
@@ -167,7 +176,7 @@ export function GitHubAccessUpdatedPage() {
                 onClick={() => void handleConfirmAndContinue()}
                 disabled={isAcknowledging}
               >
-                {isAcknowledging ? 'Finishing...' : 'Confirm and continue'}
+                {isAcknowledging ? 'Opening repository selection...' : 'Review repositories'}
               </button>
             </div>
           ) : undefined
