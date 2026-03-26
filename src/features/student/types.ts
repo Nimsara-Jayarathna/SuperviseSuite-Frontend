@@ -1,3 +1,6 @@
+import type { ProjectGitHubPreview } from '@/features/projects/types';
+import type { ProjectGitHubRepositories } from '@/features/supervisor/types';
+
 export type StudentProjectLifecycle = 'PLANNING' | 'ACTIVE' | 'AT_RISK' | 'BEHIND' | 'COMPLETED';
 
 export type StudentProjectSummary = {
@@ -12,6 +15,8 @@ export type StudentProjectSummary = {
   progressPercent: number | null;
   supervisorName: string | null;
 };
+
+export type ProjectGitHubActivity = ProjectGitHubPreview;
 
 export type StudentProjectDetailMember = {
   id: string;
@@ -31,6 +36,14 @@ export type StudentProjectDetailMilestone = {
   sequenceNo: number;
 };
 
+export type StudentProjectDetailLeader = {
+  id: string;
+  firstName: string | null;
+  lastName: string | null;
+  email: string;
+  registrationNumber: string | null;
+};
+
 export type StudentProjectDetail = {
   id: string;
   title: string;
@@ -42,8 +55,12 @@ export type StudentProjectDetail = {
   lastActivityAt: string | null;
   progressPercent: number | null;
   healthNote: string | null;
+  repositoryUrl?: string | null;
+  github: ProjectGitHubPreview;
+  githubRepositories?: ProjectGitHubRepositories | null;
+  leader: StudentProjectDetailLeader | null;
   members: StudentProjectDetailMember[];
   milestones: StudentProjectDetailMilestone[];
 };
 
-export type StudentProjectDetailTab = 'overview' | 'team' | 'milestones';
+export type StudentProjectDetailTab = 'overview' | 'team' | 'milestones' | 'github';

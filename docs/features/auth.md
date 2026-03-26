@@ -302,6 +302,10 @@ API request   → browser automatically sends ss_access_token cookie (Path=/api)
                 on success: retries original request transparently
                 on failure: clears localStorage, redirects to /login
 
+auth endpoint 401 (e.g. /api/auth/login, /api/auth/refresh)
+              → apiClient does NOT attempt refresh retry
+                login failures surface backend message directly (e.g. "Invalid email or password.")
+
 logout        → POST /api/auth/logout revokes refresh token + sets Max-Age=0 on both cookies
                 frontend clears localStorage, navigates to /
 ```

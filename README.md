@@ -2,7 +2,7 @@
 
 React + Vite + Tailwind CSS frontend for SuperviseSuite.
 
-This branch is now UI-complete enough to cover the public landing flow, auth screens, the student workspace, and the supervisor workspace. Core project flows are backend-connected, while some dashboard/advanced workflow sections still use local mock data and UI-only route guards.
+Current scope covers the public landing flow, auth screens, student workspace, and supervisor workspace with backend-connected project and GitHub integration flows (including project-scoped request-access callback routes).
 
 ## Local Development
 
@@ -14,11 +14,28 @@ This branch is now UI-complete enough to cover the public landing flow, auth scr
 ### Environment
 
 1. Copy `.env.example` to `.env`.
-2. Update values as needed for local development.
+2. Use backend-aligned local values.
 
 Default example:
 
 `VITE_API_BASE_URL=http://localhost:8081`
+
+GitHub App setup/install links are now backend-managed via `GITHUB_APP_INSTALL_URL`
+in the backend environment.
+
+Local auth/refresh reliability notes:
+
+- Ensure backend `APP_PORT=8081` and frontend `VITE_API_BASE_URL` points to the same port.
+- Ensure backend `CORS_ALLOWED_ORIGINS=http://localhost:5173`.
+- Use `localhost` consistently in FE and BE (do not mix with `127.0.0.1`).
+
+Docker/CI note:
+
+- Pass `VITE_API_BASE_URL` as a single build argument.
+- Example:
+  `docker build --build-arg VITE_API_BASE_URL=https://stg.supervisesuite.blipzo.xyz .`
+- FE container-level gzip compression is configured in `nginx.conf` for text assets (`gzip_min_length 1024`).
+- If Nginx Proxy Manager also applies compression, keep only one compression layer active to avoid redundant work.
 
 ### Install and Run
 
@@ -89,9 +106,11 @@ CI is intentionally not configured yet. In a later phase, automated pipelines wi
 - Public routes are implemented for `/`, `/login`, and `/register`.
 - Student UI routes are implemented for `/student`, `/student/projects`, and `/student/projects/:projectId`.
 - Supervisor UI routes are implemented for `/supervisor`, `/supervisor/dashboard`, `/supervisor/projects`, `/supervisor/projects/new`, and `/supervisor/projects/:projectId`.
+- Public GitHub callback routes are implemented for `/github/request-access` and `/github/access-updated`.
 - Legacy aliases (`/dashboard`, `/project`, `/project/new`, `/project/:projectId`, `/projects`, `/projects/new`, `/projects/:projectId`) redirect into the correct student or supervisor route based on the stored user.
 - Student and supervisor routes share the same top-bar shell (`AppShell` + `TopBar`) and the same shared button system.
 - Student project list/detail and supervisor dashboard/list/detail/create flows are backend-connected.
+- Supervisor GitHub flow supports backend-managed setup start, installation-level access authorization, explicit repository selection, and repository link/remove management.
 - Some advanced workflow panels (for example meetings/files/action-items as full modules) remain out of scope or partially mock-derived until dedicated APIs are added.
 - Route guards support a UI-only cross-role preview mode in local development. This is not a security boundary and must be enforced by the backend.
 
@@ -106,6 +125,7 @@ CI is intentionally not configured yet. In a later phase, automated pipelines wi
 
 - Overview index: `docs/README.md`
 - Feature guides: `docs/features/*.md`
+- Branch/fix docs: `docs/branches/*.md` (including SCRUM-80, SCRUM-81, SCRUM-97 major-fixes)
 - Shared UI notes: `docs/ui/*.md`
 
 ## Note

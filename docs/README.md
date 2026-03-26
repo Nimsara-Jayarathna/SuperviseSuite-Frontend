@@ -10,9 +10,17 @@ Technical notes, architecture summaries, and feature guides for the SuperviseSui
 |------|-------------|
 | [features/landing.md](features/landing.md) | Landing page route, shell, hero composition, and CTA behaviour |
 | [features/auth.md](features/auth.md) | Auth pages, forms, `useAuth`, `tokenStorage`, and guard behaviour |
-| [features/student.md](features/student.md) | Student routes, API-backed project list flow, current mock-backed detail flow, and empty state behaviour |
-| [features/supervisor.md](features/supervisor.md) | Supervisor routes, dashboard, projects, create flow, and detail views |
+| [features/student.md](features/student.md) | Student routes, API-backed project list/detail flows, GitHub repository read-only tab behavior, and empty state behaviour |
+| [features/supervisor.md](features/supervisor.md) | Supervisor routes, dashboard, projects, detail views, guided GitHub linking, and project-scoped request-access callbacks |
 | [features/brand.md](features/brand.md) | Logo component and SVG asset usage |
+
+### Major Fixes
+
+| File | Description |
+|------|-------------|
+| [branches/major-fixes-scrum-97-supervisor-ui-workflow.md](branches/major-fixes-scrum-97-supervisor-ui-workflow.md) | Major frontend fixes for supervisor workflow: guided creation, milestone UX, leader management, and landing card interaction stabilization |
+| [branches/major-fixes-scrum-80-github-dashboard-integration.md](branches/major-fixes-scrum-80-github-dashboard-integration.md) | GitHub dashboard integration plus follow-up updates for explicit repo selection, project-scoped request-access flow, and callback summary UX |
+| [branches/major-fixes-scrum-81-multiple-github-repositories.md](branches/major-fixes-scrum-81-multiple-github-repositories.md) | Dedicated SCRUM-81 record for supervisor GitHub App authorization, explicit installation repository selection, and access-request callback flow alignment |
 
 ### UI
 
@@ -24,4 +32,4 @@ Technical notes, architecture summaries, and feature guides for the SuperviseSui
 
 | File | Description |
 |------|-------------|
-| [api/error-handling.md](api/error-handling.md) | Frontend error contract — `ApiError` types, `apiClient`, `ErrorState` |
+| [api/error-handling.md](api/error-handling.md) | Frontend API envelope/error handling — `apiClient` normalization, `ApiError` types, refresh/retry rules |

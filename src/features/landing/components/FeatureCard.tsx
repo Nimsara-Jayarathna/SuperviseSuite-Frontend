@@ -9,8 +9,9 @@ type FeatureCardProps = Omit<LandingFeatureCard, 'id'> & {
 export function FeatureCard({ icon: Icon, title, description, onClick }: FeatureCardProps) {
   return (
     <Card
+      surface="frosted"
       className={cn(
-        'group flex h-full flex-col rounded-2xl bg-card transition-all duration-200 hover:border-primary/20 hover:shadow-md',
+        'relative flex h-full flex-col rounded-2xl border-transparent',
         onClick && 'cursor-pointer',
       )}
       padding="md"
@@ -25,11 +26,14 @@ export function FeatureCard({ icon: Icon, title, description, onClick }: Feature
         }
       }}
     >
-      <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
-        <Icon size={20} />
+      <div className="pointer-events-none absolute inset-0 rounded-[inherit] bg-[linear-gradient(145deg,rgba(255,255,255,0.8)_0%,rgba(255,255,255,0.45)_56%,rgba(14,165,233,0.14)_100%)]" />
+      <div className="relative z-10">
+        <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          <Icon size={20} />
+        </div>
+        <h3 className="mb-1.5 text-sm font-semibold text-foreground">{title}</h3>
+        <p className="text-sm leading-relaxed text-muted-foreground">{description}</p>
       </div>
-      <h3 className="mb-1.5 text-sm font-semibold text-foreground">{title}</h3>
-      <p className="text-sm leading-relaxed text-muted-foreground">{description}</p>
     </Card>
   );
 }

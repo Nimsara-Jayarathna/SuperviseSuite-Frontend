@@ -5,13 +5,26 @@ import { LandingPage } from '@/features/landing';
 import { StudentProjectDetailsPage, StudentProjectsPage } from '@/features/student';
 import {
   CreateProjectPage,
+  GitHubAccessUpdatedPage,
   ProjectDetailsPage,
+  RequestGitHubRepositoryAccessPage,
   SupervisorDashboardPage,
   SupervisorProjectsPage,
 } from '@/features/supervisor';
 import { tokenStorage } from '@/services/tokenStorage';
 import { Navigate, Route, Routes, useParams } from 'react-router-dom';
 import { RequireGuest, RequireRole } from './route-guards';
+import { ROLE_HOME } from './roleHome';
+
+function RootRoute() {
+  const user = tokenStorage.getUser();
+
+  if (!user) {
+    return <LandingPage />;
+  }
+
+  return <Navigate to={ROLE_HOME[user.role] ?? '/login'} replace />;
+}
 
 function LegacyDashboardRedirect() {
   const user = tokenStorage.getUser();
@@ -73,7 +86,9 @@ export function AppRoutes() {
   return (
     <Routes>
       {/* Public */}
-      <Route path="/" element={<LandingPage />} />
+      <Route path="/" element={<RootRoute />} />
+      <Route path="/github/request-access" element={<RequestGitHubRepositoryAccessPage />} />
+      <Route path="/github/access-updated" element={<GitHubAccessUpdatedPage />} />
 
       {/* Guest-only — redirect authenticated users to their dashboard */}
       <Route element={<RequireGuest />}>
