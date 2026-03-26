@@ -34,7 +34,11 @@ import {
   dateTimeFormatter,
   toTabLabel,
 } from '../projectDetails.shared';
-import type { SupervisorProjectDetailTab, SupervisorProjectLifecycle } from '../types';
+import type {
+  ProjectGitHubActivity,
+  SupervisorProjectDetailTab,
+  SupervisorProjectLifecycle,
+} from '../types';
 
 function getLifecycleTone(status: SupervisorProjectLifecycle): any {
   switch (status) {
@@ -64,6 +68,7 @@ export function ProjectDetailsPage() {
     },
   );
   const [isRefreshingGitHub, setIsRefreshingGitHub] = useState(false);
+  const [isGitHubViewLoading, setIsGitHubViewLoading] = useState(false);
   const [pendingGitHubSourceId, setPendingGitHubSourceId] = useState<string | null>(null);
   const [pendingGitHubFlowType, setPendingGitHubFlowType] = useState<
     'INSTALLATION_DIRECT' | 'INSTALLATION_REQUESTED' | null
@@ -71,6 +76,9 @@ export function ProjectDetailsPage() {
   const [selectedGitHubRepositoryLinkId, setSelectedGitHubRepositoryLinkId] = useState<
     string | null
   >(null);
+  const [githubView, setGithubView] = useState<ProjectGitHubActivity | null>(
+    loadedProject?.github ?? null,
+  );
   const handlePendingGitHubSourceHandled = useCallback(() => {
     setPendingGitHubSourceId(null);
     setPendingGitHubFlowType(null);
@@ -100,18 +108,22 @@ export function ProjectDetailsPage() {
       if (!projectId) {
         return Promise.resolve({ items: [], hasMore: false, page, size: 10 });
       }
-      return supervisorApi.getProjectGitHubActivityPage(projectId, page);
+      return supervisorApi.getProjectGitHubActivityPage(projectId, page, selectedGitHubRepositoryLinkId);
     },
-    [projectId],
+    [projectId, selectedGitHubRepositoryLinkId],
   );
   const loadContributorsPage = useCallback(
     (page: number) => {
       if (!projectId) {
         return Promise.resolve({ items: [], hasMore: false, page, size: 10 });
       }
-      return supervisorApi.getProjectGitHubContributorsPage(projectId, page);
+      return supervisorApi.getProjectGitHubContributorsPage(
+        projectId,
+        page,
+        selectedGitHubRepositoryLinkId,
+      );
     },
-    [projectId],
+    [projectId, selectedGitHubRepositoryLinkId],
   );
 
   async function handleGitHubRefresh() {
@@ -130,6 +142,14 @@ export function ProjectDetailsPage() {
     try {
       await supervisorApi.refreshProjectGitHub(projectId);
       await reload();
+      if (selectedGitHubRepositoryLinkId) {
+        const refreshedView = await supervisorApi.getProjectGitHubDashboard(
+          projectId,
+          true,
+          selectedGitHubRepositoryLinkId,
+        );
+        setGithubView(refreshedView);
+      }
       setRefreshRequestModal({
         isOpen: true,
         status: 'success',
@@ -200,6 +220,10 @@ export function ProjectDetailsPage() {
   }, [projectId, searchParams, setSearchParams]);
 
   useEffect(() => {
+    setGithubView(project?.github ?? null);
+  }, [project?.github]);
+
+  useEffect(() => {
     const primaryLink =
       projectRepositories?.repositories.find((repository) => repository.primary) ??
       projectRepositories?.repositories[0] ??
@@ -207,8 +231,23 @@ export function ProjectDetailsPage() {
     setSelectedGitHubRepositoryLinkId(primaryLink?.id ?? null);
   }, [projectRepositories?.repositories]);
 
-  function handleSelectGitHubRepository(linkedRepositoryId: string) {
+  async function handleSelectGitHubRepository(linkedRepositoryId: string) {
+    if (!projectId) {
+      setSelectedGitHubRepositoryLinkId(linkedRepositoryId);
+      return;
+    }
     setSelectedGitHubRepositoryLinkId(linkedRepositoryId);
+    setIsGitHubViewLoading(true);
+    try {
+      const nextView = await supervisorApi.getProjectGitHubDashboard(
+        projectId,
+        false,
+        linkedRepositoryId,
+      );
+      setGithubView(nextView);
+    } finally {
+      setIsGitHubViewLoading(false);
+    }
   }
 
   const requestedTab = searchParams.get('tab') as SupervisorProjectDetailTab | null;
@@ -477,9 +516,9 @@ export function ProjectDetailsPage() {
           ) : null}
 
           <CommitActivitySection
-            isLoading={isLoading}
+            isLoading={isLoading || isGitHubViewLoading}
             error={null}
-            data={project.github}
+            data={githubView}
             onRetry={() => void reload()}
             loadActivityPage={loadActivityPage}
             loadContributorsPage={loadContributorsPage}

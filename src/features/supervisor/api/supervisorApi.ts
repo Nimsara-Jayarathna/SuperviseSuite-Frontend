@@ -43,8 +43,8 @@ import type {
 
 const cachedProjectsById: Partial<Record<string, SupervisorProjectDetail>> = {};
 const inFlightProjectRequests: Partial<Record<string, Promise<SupervisorProjectDetail>>> = {};
-const cachedProjectGitHubById: Partial<Record<string, ProjectGitHubActivity>> = {};
-const inFlightProjectGitHubRequests: Partial<Record<string, Promise<ProjectGitHubActivity>>> = {};
+const cachedProjectGitHubByKey: Partial<Record<string, ProjectGitHubActivity>> = {};
+const inFlightProjectGitHubRequestsByKey: Partial<Record<string, Promise<ProjectGitHubActivity>>> = {};
 
 function clearRecord(record: Partial<Record<string, unknown>>) {
   for (const key of Object.keys(record)) {
@@ -55,8 +55,8 @@ function clearRecord(record: Partial<Record<string, unknown>>) {
 function clearSupervisorApiCache() {
   clearRecord(cachedProjectsById);
   clearRecord(inFlightProjectRequests);
-  clearRecord(cachedProjectGitHubById);
-  clearRecord(inFlightProjectGitHubRequests);
+  clearRecord(cachedProjectGitHubByKey);
+  clearRecord(inFlightProjectGitHubRequestsByKey);
 }
 
 function invalidateProjectCaches(projectId: string | null | undefined) {
@@ -65,8 +65,16 @@ function invalidateProjectCaches(projectId: string | null | undefined) {
   }
   delete cachedProjectsById[projectId];
   delete inFlightProjectRequests[projectId];
-  delete cachedProjectGitHubById[projectId];
-  delete inFlightProjectGitHubRequests[projectId];
+  for (const key of Object.keys(cachedProjectGitHubByKey)) {
+    if (key.startsWith(`${projectId}:`)) {
+      delete cachedProjectGitHubByKey[key];
+    }
+  }
+  for (const key of Object.keys(inFlightProjectGitHubRequestsByKey)) {
+    if (key.startsWith(`${projectId}:`)) {
+      delete inFlightProjectGitHubRequestsByKey[key];
+    }
+  }
 }
 
 registerSessionCacheClearer(clearSupervisorApiCache);
@@ -83,36 +91,50 @@ export const supervisorApi = {
   async getProjectGitHubDashboard(
     projectId: string,
     forceRefresh = false,
+    linkedRepositoryId?: string | null,
   ): Promise<ProjectGitHubActivity> {
-    if (!forceRefresh && cachedProjectGitHubById[projectId]) {
-      return cachedProjectGitHubById[projectId];
+    const key = `${projectId}:${linkedRepositoryId ?? ''}`;
+
+    if (!forceRefresh && cachedProjectGitHubByKey[key]) {
+      return cachedProjectGitHubByKey[key];
     }
 
-    if (!forceRefresh && inFlightProjectGitHubRequests[projectId]) {
-      return inFlightProjectGitHubRequests[projectId];
+    if (!forceRefresh && inFlightProjectGitHubRequestsByKey[key]) {
+      return inFlightProjectGitHubRequestsByKey[key];
     }
 
+    const params = new URLSearchParams();
+    if (linkedRepositoryId) {
+      params.set('linkedRepositoryId', linkedRepositoryId);
+    }
+    const suffix = params.toString() ? `?${params.toString()}` : '';
     const request = apiClient.get<ProjectGitHubActivity>(
-      `/api/supervisor/projects/${projectId}/github`,
+      `/api/supervisor/projects/${projectId}/github${suffix}`,
     );
-    inFlightProjectGitHubRequests[projectId] = request;
+    inFlightProjectGitHubRequestsByKey[key] = request;
 
     try {
       const dashboard = await request;
-      cachedProjectGitHubById[projectId] = dashboard;
+      cachedProjectGitHubByKey[key] = dashboard;
       return dashboard;
     } finally {
-      delete inFlightProjectGitHubRequests[projectId];
+      delete inFlightProjectGitHubRequestsByKey[key];
     }
   },
 
   async getProjectGitHubActivityPage(
     projectId: string,
     page: number,
+    linkedRepositoryId?: string | null,
   ): Promise<PaginatedListResult<ProjectGitHubRecentCommit>> {
+    const params = new URLSearchParams();
+    if (linkedRepositoryId) {
+      params.set('linkedRepositoryId', linkedRepositoryId);
+    }
+    const suffix = params.toString() ? `&${params.toString()}` : '';
     try {
       const payload = await apiClient.get<unknown>(
-        buildPagedUrl(`/api/supervisor/projects/${projectId}/github/activity`, page),
+        `${buildPagedUrl(`/api/supervisor/projects/${projectId}/github/activity`, page)}${suffix}`,
       );
       return normalizePaginatedPayload<ProjectGitHubRecentCommit>(payload, page);
     } catch (error) {
@@ -120,7 +142,7 @@ export const supervisorApi = {
         throw error;
       }
 
-      const dashboard = await this.getProjectGitHubDashboard(projectId);
+      const dashboard = await this.getProjectGitHubDashboard(projectId, false, linkedRepositoryId);
       return fallbackSlicePage<ProjectGitHubRecentCommit>(
         dashboard.recentCommitsPreview ?? [],
         page,
@@ -131,10 +153,16 @@ export const supervisorApi = {
   async getProjectGitHubContributorsPage(
     projectId: string,
     page: number,
+    linkedRepositoryId?: string | null,
   ): Promise<PaginatedListResult<ProjectGitHubContributor>> {
+    const params = new URLSearchParams();
+    if (linkedRepositoryId) {
+      params.set('linkedRepositoryId', linkedRepositoryId);
+    }
+    const suffix = params.toString() ? `&${params.toString()}` : '';
     try {
       const payload = await apiClient.get<unknown>(
-        buildPagedUrl(`/api/supervisor/projects/${projectId}/github/contributors`, page),
+        `${buildPagedUrl(`/api/supervisor/projects/${projectId}/github/contributors`, page)}${suffix}`,
       );
       return normalizePaginatedPayload<ProjectGitHubContributor>(payload, page);
     } catch (error) {
@@ -142,7 +170,7 @@ export const supervisorApi = {
         throw error;
       }
 
-      const dashboard = await this.getProjectGitHubDashboard(projectId);
+      const dashboard = await this.getProjectGitHubDashboard(projectId, false, linkedRepositoryId);
       return fallbackSlicePage<ProjectGitHubContributor>(dashboard.contributorsPreview ?? [], page);
     }
   },
@@ -371,7 +399,11 @@ export const supervisorApi = {
       body,
     );
     delete cachedProjectsById[projectId];
-    delete cachedProjectGitHubById[projectId];
+    for (const key of Object.keys(cachedProjectGitHubByKey)) {
+      if (key.startsWith(`${projectId}:`)) {
+        delete cachedProjectGitHubByKey[key];
+      }
+    }
     return linked;
   },
 
@@ -383,7 +415,11 @@ export const supervisorApi = {
       {},
     );
     cachedProjectsById[projectId] = updated;
-    delete cachedProjectGitHubById[projectId];
+    for (const key of Object.keys(cachedProjectGitHubByKey)) {
+      if (key.startsWith(`${projectId}:`)) {
+        delete cachedProjectGitHubByKey[key];
+      }
+    }
     return updated;
   },
 

@@ -1,4 +1,5 @@
 import type { ProjectGitHubPreview } from '@/features/projects/types';
+import type { ProjectGitHubRepositories } from '@/features/supervisor/types';
 
 export type StudentProjectLifecycle = 'PLANNING' | 'ACTIVE' | 'AT_RISK' | 'BEHIND' | 'COMPLETED';
 
@@ -56,6 +57,7 @@ export type StudentProjectDetail = {
   healthNote: string | null;
   repositoryUrl?: string | null;
   github: ProjectGitHubPreview;
+  githubRepositories?: ProjectGitHubRepositories | null;
   leader: StudentProjectDetailLeader | null;
   members: StudentProjectDetailMember[];
   milestones: StudentProjectDetailMilestone[];

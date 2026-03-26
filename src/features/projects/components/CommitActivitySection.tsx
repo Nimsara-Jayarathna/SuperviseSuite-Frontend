@@ -324,6 +324,8 @@ function normalizeDashboardPayload(
           url: repository.url ?? '',
           defaultBranch: repository.defaultBranch ?? 'main',
           lastSyncedAt: repository.lastSyncedAt ?? null,
+          createdAt: new Date(0).toISOString(),
+          updatedAt: null,
         }))
       : legacy.repository
         ? [
@@ -333,6 +335,8 @@ function normalizeDashboardPayload(
               url: legacy.repository.url ?? '',
               defaultBranch: legacy.repository.defaultBranch ?? 'main',
               lastSyncedAt: null,
+              createdAt: new Date(0).toISOString(),
+              updatedAt: null,
             },
           ]
         : [],

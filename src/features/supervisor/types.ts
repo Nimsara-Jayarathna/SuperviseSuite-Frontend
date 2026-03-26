@@ -56,6 +56,7 @@ export type SupervisorProjectDetail = {
   lastActivityAt: string | null;
   repositoryUrl?: string | null;
   github: ProjectGitHubPreview;
+  githubRepositories?: ProjectGitHubRepositories | null;
   leader: SupervisorProjectLeader | null;
   members: SupervisorProjectDetailMember[];
   milestones: SupervisorProjectDetailMilestone[];
