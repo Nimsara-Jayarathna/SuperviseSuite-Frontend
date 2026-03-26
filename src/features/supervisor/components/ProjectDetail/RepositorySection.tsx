@@ -225,7 +225,8 @@ export function RepositorySection({
     setSelectionEntryMode(
       pendingFlowType === 'INSTALLATION_REQUESTED' ? 'callback-requested' : 'callback-direct',
     );
-  }, [pendingFlowType, pendingSourceId]);
+    onPendingSourceHandled?.();
+  }, [onPendingSourceHandled, pendingFlowType, pendingSourceId]);
 
   useEffect(() => {
     if (!isModalOpen && !pendingSourceId) {
