@@ -1,4 +1,4 @@
-import { CalendarDays, ExternalLink, Github, Users } from 'lucide-react';
+import { CalendarDays } from 'lucide-react';
 import { buttonStyles } from '@/components/ui/Button';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { RepositorySection } from './RepositorySection';

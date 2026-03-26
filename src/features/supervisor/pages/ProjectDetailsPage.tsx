@@ -1,13 +1,4 @@
-import {
-  CalendarDays,
-  Clock3,
-  Users,
-  ChevronDown,
-  Check,
-  Github,
-  RefreshCw,
-  ExternalLink,
-} from 'lucide-react';
+import { CalendarDays, Clock3, Users, ChevronDown, Check, Github } from 'lucide-react';
 import { useCallback, useEffect, useState, useMemo } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { ErrorState } from '@/components/feedback/ErrorState';
@@ -15,7 +6,6 @@ import { buttonStyles } from '@/components/ui/Button';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { PageTabs } from '@/components/ui/PageTabs';
 import { RequestStateModal } from '@/components/ui/RequestStateModal';
-import { StatusBadge } from '@/components/ui/StatusBadge';
 import { CommitActivitySection } from '@/features/projects/components/CommitActivitySection';
 import { ProjectDetailsSkeleton } from '../components/ProjectDetailsSkeleton';
 import { MilestonesTabSection } from '../components/ProjectDetail/MilestonesTabSection';
@@ -39,23 +29,6 @@ import type {
   SupervisorProjectDetailTab,
   SupervisorProjectLifecycle,
 } from '../types';
-
-function getLifecycleTone(status: SupervisorProjectLifecycle): any {
-  switch (status) {
-    case 'PLANNING':
-      return 'student';
-    case 'ACTIVE':
-      return 'success';
-    case 'AT_RISK':
-      return 'warning';
-    case 'BEHIND':
-      return 'danger';
-    case 'COMPLETED':
-      return 'neutral';
-    default:
-      return 'neutral';
-  }
-}
 
 export function ProjectDetailsPage() {
   const { projectId } = useParams();

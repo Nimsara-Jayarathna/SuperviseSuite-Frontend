@@ -35,14 +35,8 @@ type RepositoryManagementModalContentProps = {
   onToggleEnabled: (row: RepositoryManagementRow) => void;
   onUnlinkRepository: (linkId: string) => void;
   onDisconnectSource: (sourceId: string) => void;
-  editingDisplayNameRowKey: string | null;
-  editingDisplayNameDraft: string;
-  displayNameEditError: string | null;
   isSavingDisplayName: boolean;
   onStartDisplayNameEdit: (row: RepositoryManagementRow) => void;
-  onDisplayNameDraftChange: (value: string) => void;
-  onCancelDisplayNameEdit: () => void;
-  onSaveDisplayNameEdit: (row: RepositoryManagementRow) => void;
 };
 
 function formatAccessTypeLabel(value: string | null | undefined): string {
@@ -74,14 +68,8 @@ export function RepositoryManagementModalContent({
   onToggleEnabled,
   onUnlinkRepository,
   onDisconnectSource,
-  editingDisplayNameRowKey,
-  editingDisplayNameDraft,
-  displayNameEditError,
   isSavingDisplayName,
   onStartDisplayNameEdit,
-  onDisplayNameDraftChange,
-  onCancelDisplayNameEdit,
-  onSaveDisplayNameEdit,
 }: RepositoryManagementModalContentProps) {
   const linkedLimitReached = linkedCount >= maxLinkedRepositories;
   const enabledLimitReached = enabledCount >= maxEnabledRepositories;
@@ -204,7 +192,6 @@ export function RepositoryManagementModalContent({
                 const blockedByEnabledLimit = !row.enabled && remainingEnabledSlots < 1;
                 const blockedByLinkedLimit = !row.enabled && !row.linkId && remainingLinkSlots < 1;
                 const enableBlocked = blockedByEnabledLimit || blockedByLinkedLimit;
-                const isEditingDisplayName = editingDisplayNameRowKey === row.rowKey;
                 return (
                   <tr
                     key={row.rowKey}

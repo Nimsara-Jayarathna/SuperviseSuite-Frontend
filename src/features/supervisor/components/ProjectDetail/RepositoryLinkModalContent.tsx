@@ -4,7 +4,6 @@ import {
   Github,
   Link2,
   ShieldCheck,
-  ChevronRight,
   Info,
   Check,
   Copy,

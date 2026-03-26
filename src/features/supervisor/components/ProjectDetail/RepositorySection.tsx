@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { buttonStyles } from '@/components/ui/Button';
 import { RequestStateModal } from '@/components/ui/RequestStateModal';
 import { GithubDetailsModal } from '@/features/projects/components/GithubDetailsModal';
@@ -121,8 +121,14 @@ export function RepositorySection({
     reload: reloadAvailableRepositories,
   } = useAvailableRepositories(modalStep === 'repository-selection' ? selectedSourceId : null);
 
-  const linkedRepositories = repositoriesData?.repositories ?? [];
-  const accessSources = repositoriesData?.accessSources ?? [];
+  const linkedRepositories = useMemo(
+    () => repositoriesData?.repositories ?? [],
+    [repositoriesData?.repositories],
+  );
+  const accessSources = useMemo(
+    () => repositoriesData?.accessSources ?? [],
+    [repositoriesData?.accessSources],
+  );
   const maxLinkedRepositories = repositoriesData?.maxLinkedRepositories ?? 5;
   const maxEnabledRepositories = repositoriesData?.maxEnabledRepositories ?? maxLinkedRepositories;
   const linkedCount = linkedRepositories.length;
@@ -135,9 +141,6 @@ export function RepositorySection({
   const repositorySelectionCapacity = remainingLinkSlots;
 
   const managementRows = useMemo<RepositoryManagementRow[]>(() => {
-    const linkedByRepoId = new Map(
-      linkedRepositories.map((repository) => [repository.githubRepoId, repository]),
-    );
     const rowsByRepoId = new Map<number, RepositoryManagementRow>();
 
     // 1. Process all linked repositories first to ensure they are the "authoritative" rows
@@ -203,6 +206,7 @@ export function RepositorySection({
   const selection = useRepositorySelection(
     repositorySelectionCapacity > 0 ? repositorySelectionCapacity : 0,
   );
+  const clearSelection = selection.clear;
 
   const sourceById = useMemo(() => {
     return new Map(accessSources.map((source) => [source.id, source]));
@@ -239,11 +243,11 @@ export function RepositorySection({
       setSelectedSourceId(null);
       setSelectionEntryMode('manual');
       setModalStep('method');
-      selection.clear();
+      clearSelection();
     }
-  }, [isModalOpen, pendingSourceId, selection.clear]);
+  }, [clearSelection, isModalOpen, pendingSourceId]);
 
-  async function loadRepositoryInventory() {
+  const loadRepositoryInventory = useCallback(async () => {
     setIsLoadingInventory(true);
     setInventoryError(null);
     try {
@@ -261,7 +265,7 @@ export function RepositorySection({
     } finally {
       setIsLoadingInventory(false);
     }
-  }
+  }, [project.id]);
 
   useEffect(() => {
     if (!isManagementModalOpen) {
@@ -271,7 +275,7 @@ export function RepositorySection({
       return;
     }
     void loadRepositoryInventory();
-  }, [accessSources, isManagementModalOpen]);
+  }, [accessSources, isManagementModalOpen, loadRepositoryInventory]);
 
   async function reloadProjectAndRepositories(projectId: string) {
     await reloadRepositoriesData();
@@ -905,14 +909,8 @@ export function RepositorySection({
           onToggleEnabled={(row) => void handleToggleRepositoryEnabled(row)}
           onUnlinkRepository={(linkId) => void handleUnlinkRepository(linkId)}
           onDisconnectSource={(sourceId) => void handleDisconnectAccessSource(sourceId)}
-          editingDisplayNameRowKey={editingDisplayNameRowKey}
-          editingDisplayNameDraft={editingDisplayNameDraft}
-          displayNameEditError={displayNameEditError}
           isSavingDisplayName={isSavingDisplayName}
           onStartDisplayNameEdit={startDisplayNameEdit}
-          onDisplayNameDraftChange={setEditingDisplayNameDraft}
-          onCancelDisplayNameEdit={cancelDisplayNameEdit}
-          onSaveDisplayNameEdit={(row) => void saveDisplayNameEdit(row)}
         />
       </GithubDetailsModal>
 

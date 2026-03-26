@@ -1,5 +1,4 @@
 import {
-  Users,
   UserPlus,
   ShieldCheck,
   Crown,
@@ -7,7 +6,6 @@ import {
   X,
   Check,
   Plus,
-  ArrowRight,
   RefreshCw,
   AlertCircle,
 } from 'lucide-react';

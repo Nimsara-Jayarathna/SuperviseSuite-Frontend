@@ -5,7 +5,6 @@ import {
   ChevronDown,
   Check,
   Github,
-  RefreshCw,
   ExternalLink,
   CheckCircle2,
   Circle,
@@ -15,10 +14,8 @@ import {
   Flag,
   ShieldCheck,
   Crown,
-  X,
-  Plus,
 } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ComponentProps } from 'react';
 import { CommitActivitySection } from '@/features/projects/components/CommitActivitySection';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { ErrorState } from '@/components/feedback/ErrorState';
@@ -65,7 +62,9 @@ function toTabLabel(tab: string) {
   return tab.charAt(0).toUpperCase() + tab.slice(1);
 }
 
-function getLifecycleTone(status: string): any {
+type StatusBadgeTone = NonNullable<ComponentProps<typeof StatusBadge>['tone']>;
+
+function getLifecycleTone(status: string): StatusBadgeTone {
   switch (status) {
     case 'PLANNING':
       return 'student';
@@ -82,7 +81,7 @@ function getLifecycleTone(status: string): any {
   }
 }
 
-function getMilestoneTone(status: string): any {
+function getMilestoneTone(status: string): StatusBadgeTone {
   switch (status) {
     case 'COMPLETED':
       return 'success';

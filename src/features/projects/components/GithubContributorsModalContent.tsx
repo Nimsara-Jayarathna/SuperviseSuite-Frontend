@@ -5,21 +5,6 @@ import { isApiException } from '@/services/apiClient';
 import type { ProjectGitHubContributor } from '../types';
 import type { PaginatedListResult } from '../types';
 
-function initialsOf(name: string) {
-  const parts = name
-    .split(' ')
-    .map((part) => part.trim())
-    .filter(Boolean);
-
-  if (parts.length === 0) {
-    return 'U';
-  }
-
-  const first = parts[0][0] ?? '';
-  const second = parts.length > 1 ? (parts[1][0] ?? '') : '';
-  return `${first}${second}`.toUpperCase();
-}
-
 type GithubContributorsModalContentProps = {
   isOpen: boolean;
   fetchPage: (page: number) => Promise<PaginatedListResult<ProjectGitHubContributor>>;

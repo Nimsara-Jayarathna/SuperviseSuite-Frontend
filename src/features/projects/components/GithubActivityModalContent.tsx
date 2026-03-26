@@ -15,21 +15,6 @@ import { isApiException } from '@/services/apiClient';
 import type { ProjectGitHubRecentCommit } from '../types';
 import type { PaginatedListResult } from '../types';
 
-const dateTimeFormatter = new Intl.DateTimeFormat('en', {
-  month: 'short',
-  day: 'numeric',
-  year: 'numeric',
-  hour: 'numeric',
-  minute: '2-digit',
-});
-
-function formatDateTime(value: string | null) {
-  if (!value) {
-    return 'Not recorded';
-  }
-  return dateTimeFormatter.format(new Date(value));
-}
-
 type CommitType =
   | 'merge'
   | 'feat'

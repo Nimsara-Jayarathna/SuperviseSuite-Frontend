@@ -8,6 +8,7 @@ import {
   XCircle,
   Clock,
 } from 'lucide-react';
+import { type ComponentProps } from 'react';
 import { buttonStyles } from '@/components/ui/Button';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { FIELD_LIMITS, MILESTONE_STATUS_OPTIONS, dateFormatter } from '../../projectDetails.shared';
@@ -20,7 +21,9 @@ type MilestonesTabSectionProps = {
   milestones: MilestonesState;
 };
 
-function getMilestoneTone(status: MilestoneStatus): any {
+type StatusBadgeTone = NonNullable<ComponentProps<typeof StatusBadge>['tone']>;
+
+function getMilestoneTone(status: MilestoneStatus): StatusBadgeTone {
   switch (status) {
     case 'COMPLETED':
       return 'success';
