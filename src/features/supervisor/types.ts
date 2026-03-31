@@ -91,7 +91,13 @@ export type SupervisorProjectTab =
   | 'action-items'
   | 'files';
 
-export type SupervisorProjectDetailTab = 'overview' | 'team' | 'milestones' | 'github' | 'jira';
+export type SupervisorProjectDetailTab =
+  | 'overview'
+  | 'team'
+  | 'milestones'
+  | 'github'
+  | 'integrations'
+  | 'jira';
 
 export type SupervisorProjectMember = {
   id: string;

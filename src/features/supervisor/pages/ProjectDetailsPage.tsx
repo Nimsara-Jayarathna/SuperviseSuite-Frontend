@@ -8,7 +8,7 @@ import { PageTabs } from '@/components/ui/PageTabs';
 import { RequestStateModal } from '@/components/ui/RequestStateModal';
 import { CommitActivitySection } from '@/features/projects/components/CommitActivitySection';
 import { ProjectDetailsSkeleton } from '../components/ProjectDetailsSkeleton';
-import { JiraTabSection } from '../components/ProjectDetail/JiraTabSection';
+import { IntegrationsTabSection } from '../components/ProjectDetail/IntegrationsTabSection';
 import { MilestonesTabSection } from '../components/ProjectDetail/MilestonesTabSection';
 import { OverviewTabSection } from '../components/ProjectDetail/OverviewTabSection';
 import { TeamTabSection } from '../components/ProjectDetail/TeamTabSection';
@@ -562,14 +562,7 @@ export function ProjectDetailsPage() {
       />
 
       {activeTab === 'overview' ? (
-        <OverviewTabSection
-          project={project}
-          overview={overview}
-          onProjectUpdate={actions.handleProjectUpdate}
-          pendingGitHubSourceId={pendingGitHubSourceId}
-          pendingGitHubFlowType={pendingGitHubFlowType}
-          onPendingGitHubSourceHandled={handlePendingGitHubSourceHandled}
-        />
+        <OverviewTabSection project={project} overview={overview} />
       ) : null}
 
       {activeTab === 'team' ? <TeamTabSection project={project} team={team} /> : null}
@@ -692,18 +685,50 @@ export function ProjectDetailsPage() {
             canRefresh
             isRefreshing={isRefreshingGitHub}
             onRefresh={() => void handleGitHubRefresh()}
-            onNavigateToOverview={() => handleTabChange('overview')}
+            onNavigateToOverview={() => handleTabChange('integrations')}
           />
         </div>
       ) : null}
 
       {activeTab === 'jira' ? (
-        <JiraTabSection
+        project.jira?.connected ? (
+          <section className="rounded-3xl border border-border bg-white p-6 shadow-sm">
+            <h2 className="text-lg font-semibold text-foreground">Jira tab moved</h2>
+            <p className="mt-3 text-sm text-slate-600">
+              Jira integration settings are available under the Integrations tab.
+            </p>
+          </section>
+        ) : (
+          <section className="rounded-3xl border border-border bg-white p-6 shadow-sm">
+            <h2 className="text-lg font-semibold text-foreground">No Jira workspace connected</h2>
+            <p className="mt-3 text-sm text-slate-600">
+              Connect Jira from Integrations to enable workspace linking and project-level Jira
+              visibility.
+            </p>
+            <div className="mt-5">
+              <button
+                type="button"
+                className={buttonStyles({ variant: 'primary', size: 'sm' })}
+                onClick={() => handleTabChange('integrations')}
+              >
+                Go to Integrations
+              </button>
+            </div>
+          </section>
+        )
+      ) : null}
+
+      {activeTab === 'integrations' ? (
+        <IntegrationsTabSection
           project={project}
+          onProjectUpdate={actions.handleProjectUpdate}
           onConnectJira={handleConnectJira}
           onDisconnectJira={handleDisconnectJira}
           isConnectingJira={isConnectingJira}
           isDisconnectingJira={isDisconnectingJira}
+          pendingGitHubSourceId={pendingGitHubSourceId}
+          pendingGitHubFlowType={pendingGitHubFlowType}
+          onPendingGitHubSourceHandled={handlePendingGitHubSourceHandled}
         />
       ) : null}
     </div>
