@@ -17,6 +17,8 @@ export function JiraTabSection({
   isConnectingJira,
   isDisconnectingJira,
 }: JiraTabSectionProps) {
+  const jira = project.jira;
+
   return (
     <section className="space-y-6">
       <div className="rounded-3xl border border-border bg-white p-6 shadow-sm transition-all hover:shadow-md">
@@ -46,25 +48,25 @@ export function JiraTabSection({
           </div>
         </div>
 
-        {project.jira?.connected ? (
+        {jira?.connected ? (
           <article className="mt-4 rounded-2xl border border-border/70 bg-slate-50/50 p-4 transition-colors hover:border-border">
             <div className="grid grid-cols-1 gap-2 text-xs text-slate-500 sm:grid-cols-12 sm:gap-4">
               <div className="flex min-w-0 items-center gap-1.5 hover:text-foreground sm:col-span-5">
                 <Link2 className="h-3.5 w-3.5 shrink-0" />
-                {project.jira.workspaceUrl ? (
+                {jira.workspaceUrl ? (
                   <a
-                    href={project.jira.workspaceUrl}
+                    href={jira.workspaceUrl}
                     target="_blank"
                     rel="noreferrer"
                     className="inline-flex min-w-0 items-center gap-1 truncate font-medium text-slate-700 hover:underline"
-                    title={project.jira.workspaceUrl}
+                    title={jira.workspaceUrl}
                   >
-                    <span className="truncate">{project.jira.workspaceName ?? 'Workspace'}</span>
+                    <span className="truncate">{jira.workspaceName ?? 'Workspace'}</span>
                     <ExternalLink className="h-3 w-3 shrink-0" />
                   </a>
                 ) : (
                   <span className="truncate font-medium text-slate-700">
-                    {project.jira.workspaceName ?? 'Workspace'}
+                    {jira.workspaceName ?? 'Workspace'}
                   </span>
                 )}
               </div>

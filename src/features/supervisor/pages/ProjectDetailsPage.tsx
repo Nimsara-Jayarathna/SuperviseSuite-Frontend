@@ -32,6 +32,7 @@ import type {
 } from '../types';
 
 const JIRA_COMPLETION_PROCESSING_TTL_MS = 5 * 60 * 1000;
+const JIRA_RESULT_KEY_PREFIX = 'jira-oauth:';
 
 function hashFlowKey(value: string): string {
   let hash = 2166136261;
@@ -40,6 +41,51 @@ function hashFlowKey(value: string): string {
     hash = Math.imul(hash, 16777619);
   }
   return (hash >>> 0).toString(36);
+}
+
+function readJiraOAuthResultFromStorage(rawKey: string | null): {
+  code?: string | null;
+  state?: string | null;
+  error?: string | null;
+  errorDescription?: string | null;
+} | null {
+  if (!rawKey || !rawKey.startsWith(JIRA_RESULT_KEY_PREFIX)) {
+    return null;
+  }
+  try {
+    const raw = sessionStorage.getItem(rawKey);
+    sessionStorage.removeItem(rawKey);
+    if (!raw) {
+      return null;
+    }
+    const parsed: unknown = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object') {
+      return null;
+    }
+    const payload = parsed as Record<string, unknown>;
+    return {
+      code: typeof payload.code === 'string' ? payload.code : null,
+      state: typeof payload.state === 'string' ? payload.state : null,
+      error: typeof payload.error === 'string' ? payload.error : null,
+      errorDescription:
+        typeof payload.errorDescription === 'string' ? payload.errorDescription : null,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function isValidJiraAuthUrl(value: string): boolean {
+  try {
+    const parsed = new URL(value);
+    if (parsed.protocol !== 'https:') {
+      return false;
+    }
+    const host = parsed.hostname.toLowerCase();
+    return host === 'auth.atlassian.com' || host.endsWith('.atlassian.com');
+  } catch {
+    return false;
+  }
 }
 
 export function ProjectDetailsPage() {
@@ -215,11 +261,19 @@ export function ProjectDetailsPage() {
   }, [projectId, searchParams, setSearchParams]);
 
   useEffect(() => {
-    const jiraCode = searchParams.get('jiraCode');
-    const jiraState = searchParams.get('jiraState');
-    const jiraError = searchParams.get('jiraError');
-    const jiraErrorDescription = searchParams.get('jiraErrorDescription');
+    const jiraResultKey = searchParams.get('jiraResultKey');
+    const storedPayload = readJiraOAuthResultFromStorage(jiraResultKey);
+    const jiraCode = storedPayload?.code ?? searchParams.get('jiraCode');
+    const jiraState = storedPayload?.state ?? searchParams.get('jiraState');
+    const jiraError = storedPayload?.error ?? searchParams.get('jiraError');
+    const jiraErrorDescription =
+      storedPayload?.errorDescription ?? searchParams.get('jiraErrorDescription');
     if (!jiraCode && !jiraState && !jiraError && !jiraErrorDescription) {
+      if (jiraResultKey) {
+        const nextParams = new URLSearchParams(searchParams);
+        nextParams.delete('jiraResultKey');
+        setSearchParams(nextParams, { replace: true });
+      }
       return;
     }
 
@@ -285,6 +339,7 @@ export function ProjectDetailsPage() {
         });
       } finally {
         const nextParams = new URLSearchParams(searchParams);
+        nextParams.delete('jiraResultKey');
         nextParams.delete('jiraCode');
         nextParams.delete('jiraState');
         nextParams.delete('jiraError');
@@ -332,6 +387,9 @@ export function ProjectDetailsPage() {
       const auth = await supervisorApi.getProjectJiraAuthUrl(projectId);
       if (!auth.url?.trim()) {
         throw new Error('Missing Jira authorization URL.');
+      }
+      if (!isValidJiraAuthUrl(auth.url)) {
+        throw new Error('Invalid Jira authorization URL.');
       }
       window.location.assign(auth.url);
     } catch (error) {

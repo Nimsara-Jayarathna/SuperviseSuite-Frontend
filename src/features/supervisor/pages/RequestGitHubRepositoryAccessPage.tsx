@@ -8,6 +8,19 @@ import { supervisorApi } from '../api/supervisorApi';
 const INVALID_LINK_MESSAGE =
   'This access request link is invalid or has expired. Please create a new access request from the project.';
 
+function isValidGitHubAuthorizeUrl(value: string): boolean {
+  try {
+    const parsed = new URL(value);
+    if (parsed.protocol !== 'https:') {
+      return false;
+    }
+    const host = parsed.hostname.toLowerCase();
+    return host === 'github.com' || host.endsWith('.github.com');
+  } catch {
+    return false;
+  }
+}
+
 export function RequestGitHubRepositoryAccessPage() {
   const [searchParams] = useSearchParams();
   const token = useMemo(() => searchParams.get('token')?.trim() ?? '', [searchParams]);
@@ -30,6 +43,10 @@ export function RequestGitHubRepositoryAccessPage() {
       const data = await supervisorApi.startGitHubAccessSourceInstall({ requestToken: token });
       if (!data.githubAuthorizeUrl?.trim()) {
         setErrorMessage('GitHub authorization URL could not be prepared. Please try again.');
+        return;
+      }
+      if (!isValidGitHubAuthorizeUrl(data.githubAuthorizeUrl)) {
+        setErrorMessage('GitHub authorization URL is invalid. Please try again.');
         return;
       }
       window.location.assign(data.githubAuthorizeUrl);

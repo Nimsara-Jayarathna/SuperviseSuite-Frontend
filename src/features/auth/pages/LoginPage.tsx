@@ -19,8 +19,9 @@ export function LoginPage() {
   const [searchParams] = useSearchParams();
   const returnToKey = searchParams.get('returnToKey');
   const returnToFromQuery = searchParams.get('returnTo');
+  const RETURN_TO_KEY_PREFIX = 'login-return:';
   let returnTo: string | undefined;
-  if (returnToKey) {
+  if (returnToKey?.startsWith(RETURN_TO_KEY_PREFIX)) {
     try {
       returnTo = sessionStorage.getItem(returnToKey) ?? undefined;
       sessionStorage.removeItem(returnToKey);
