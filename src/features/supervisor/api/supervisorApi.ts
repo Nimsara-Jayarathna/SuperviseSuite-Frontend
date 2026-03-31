@@ -109,6 +109,13 @@ export const supervisorApi = {
     return apiClient.post<JiraOAuthCompleteResult>('/api/supervisor/jira/oauth/complete', payload);
   },
 
+  disconnectProjectJira(projectId: string): Promise<SupervisorProjectDetail> {
+    return apiClient.post<SupervisorProjectDetail>(
+      `/api/supervisor/projects/${projectId}/jira/disconnect`,
+      {},
+    );
+  },
+
   async getProjectGitHubDashboard(
     projectId: string,
     forceRefresh = false,

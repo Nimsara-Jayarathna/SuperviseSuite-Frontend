@@ -2,12 +2,13 @@ import { CalendarDays, Clock3, Users, ChevronDown, Check, Github } from 'lucide-
 import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { ErrorState } from '@/components/feedback/ErrorState';
-import { buttonStyles } from '@/components/ui/Button';
+import { Button, buttonStyles } from '@/components/ui/Button';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { PageTabs } from '@/components/ui/PageTabs';
 import { RequestStateModal } from '@/components/ui/RequestStateModal';
 import { CommitActivitySection } from '@/features/projects/components/CommitActivitySection';
 import { ProjectDetailsSkeleton } from '../components/ProjectDetailsSkeleton';
+import { JiraTabSection } from '../components/ProjectDetail/JiraTabSection';
 import { MilestonesTabSection } from '../components/ProjectDetail/MilestonesTabSection';
 import { OverviewTabSection } from '../components/ProjectDetail/OverviewTabSection';
 import { TeamTabSection } from '../components/ProjectDetail/TeamTabSection';
@@ -72,6 +73,8 @@ export function ProjectDetailsPage() {
 
   const [isRepoSelectorOpen, setIsRepoSelectorOpen] = useState(false);
   const [isConnectingJira, setIsConnectingJira] = useState(false);
+  const [isDisconnectingJira, setIsDisconnectingJira] = useState(false);
+  const [isJiraDisconnectConfirmOpen, setIsJiraDisconnectConfirmOpen] = useState(false);
   const jiraCompletionGuardRef = useRef<string | null>(null);
 
   const activeRepository = useMemo(() => {
@@ -325,6 +328,44 @@ export function ProjectDetailsPage() {
     }
   }
 
+  async function handleDisconnectJira() {
+    setIsJiraDisconnectConfirmOpen(true);
+  }
+
+  async function confirmDisconnectJira() {
+    if (!projectId) return;
+    setIsJiraDisconnectConfirmOpen(false);
+    setIsDisconnectingJira(true);
+    setRefreshRequestModal({
+      isOpen: true,
+      status: 'loading',
+      title: 'Disconnecting Jira',
+      message: 'Removing Jira workspace link from this project.',
+    });
+    try {
+      await supervisorApi.disconnectProjectJira(projectId);
+      await reload();
+      setRefreshRequestModal({
+        isOpen: true,
+        status: 'success',
+        title: 'Jira disconnected',
+        message: 'Jira workspace was disconnected from this project.',
+      });
+    } catch (error) {
+      const message = isApiException(error)
+        ? error.apiError.message
+        : 'Unable to disconnect Jira right now.';
+      setRefreshRequestModal({
+        isOpen: true,
+        status: 'error',
+        title: 'Jira disconnect failed',
+        message,
+      });
+    } finally {
+      setIsDisconnectingJira(false);
+    }
+  }
+
   const requestedTab = searchParams.get('tab') as SupervisorProjectDetailTab | null;
   const activeTab = requestedTab && TABS.includes(requestedTab) ? requestedTab : 'overview';
 
@@ -380,6 +421,34 @@ export function ProjectDetailsPage() {
         onClose={refreshRequestModal.status === 'loading' ? undefined : closeRefreshRequestModal}
         onRetry={
           refreshRequestModal.status === 'error' ? refreshRequestModal.retryAction : undefined
+        }
+      />
+      <RequestStateModal
+        isOpen={isJiraDisconnectConfirmOpen}
+        status="error"
+        title="Disconnect Jira workspace?"
+        message="This project will stop receiving Jira-linked data until you connect again."
+        onClose={() => setIsJiraDisconnectConfirmOpen(false)}
+        autoCloseOnSuccess={false}
+        footer={
+          <div className="flex flex-wrap justify-center gap-3">
+            <Button
+              type="button"
+              variant="secondary"
+              size="md"
+              onClick={() => setIsJiraDisconnectConfirmOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="danger"
+              size="md"
+              onClick={() => void confirmDisconnectJira()}
+            >
+              Disconnect
+            </Button>
+          </div>
         }
       />
 
@@ -497,8 +566,6 @@ export function ProjectDetailsPage() {
           project={project}
           overview={overview}
           onProjectUpdate={actions.handleProjectUpdate}
-          onConnectJira={handleConnectJira}
-          isConnectingJira={isConnectingJira}
           pendingGitHubSourceId={pendingGitHubSourceId}
           pendingGitHubFlowType={pendingGitHubFlowType}
           onPendingGitHubSourceHandled={handlePendingGitHubSourceHandled}
@@ -628,6 +695,16 @@ export function ProjectDetailsPage() {
             onNavigateToOverview={() => handleTabChange('overview')}
           />
         </div>
+      ) : null}
+
+      {activeTab === 'jira' ? (
+        <JiraTabSection
+          project={project}
+          onConnectJira={handleConnectJira}
+          onDisconnectJira={handleDisconnectJira}
+          isConnectingJira={isConnectingJira}
+          isDisconnectingJira={isDisconnectingJira}
+        />
       ) : null}
     </div>
   );
