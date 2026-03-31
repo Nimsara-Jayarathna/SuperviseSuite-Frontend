@@ -383,6 +383,7 @@ export function ProjectDetailsPage() {
   async function handleConnectJira() {
     if (!projectId) return;
     setIsConnectingJira(true);
+    let redirecting = false;
     try {
       const auth = await supervisorApi.getProjectJiraAuthUrl(projectId);
       if (!auth.url?.trim()) {
@@ -391,6 +392,7 @@ export function ProjectDetailsPage() {
       if (!isValidJiraAuthUrl(auth.url)) {
         throw new Error('Invalid Jira authorization URL.');
       }
+      redirecting = true;
       window.location.assign(auth.url);
     } catch (error) {
       const message = isApiException(error)
@@ -403,7 +405,9 @@ export function ProjectDetailsPage() {
         message,
       });
     } finally {
-      setIsConnectingJira(false);
+      if (!redirecting) {
+        setIsConnectingJira(false);
+      }
     }
   }
 
