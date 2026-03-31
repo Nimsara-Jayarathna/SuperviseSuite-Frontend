@@ -748,10 +748,11 @@ export function StudentProjectDetailsPage() {
                         href={project.jira.workspaceUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className="truncate font-medium text-slate-700 hover:underline"
+                        className="inline-flex min-w-0 items-center gap-1 truncate font-medium text-slate-700 hover:underline"
                         title={project.jira.workspaceUrl}
                       >
-                        {project.jira.workspaceName ?? 'Workspace'}
+                        <span className="truncate">{project.jira.workspaceName ?? 'Workspace'}</span>
+                        <ExternalLink className="h-3 w-3 shrink-0" />
                       </a>
                     ) : (
                       <span className="truncate font-medium text-slate-700">

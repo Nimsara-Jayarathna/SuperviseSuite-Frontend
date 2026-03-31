@@ -1,4 +1,4 @@
-import { Link2, RefreshCw } from 'lucide-react';
+import { ExternalLink, KanbanSquare, Link2, RefreshCw } from 'lucide-react';
 import { buttonStyles } from '@/components/ui/Button';
 import type { SupervisorProjectDetail } from '../../types';
 
@@ -35,11 +35,12 @@ export function JiraTabSection({
             ) : (
               <button
                 type="button"
-                className={buttonStyles({ variant: 'primary', size: 'sm' })}
+                className={buttonStyles({ variant: 'primary', size: 'sm', className: 'gap-1.5' })}
                 disabled={isConnectingJira}
                 onClick={() => void onConnectJira()}
               >
-                {isConnectingJira ? 'Redirecting...' : 'Connect Jira'}
+                <KanbanSquare className="h-3.5 w-3.5" />
+                {isConnectingJira ? 'Redirecting...' : 'Link Jira Project'}
               </button>
             )}
           </div>
@@ -55,10 +56,11 @@ export function JiraTabSection({
                     href={project.jira.workspaceUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="truncate font-medium text-slate-700 hover:underline"
+                    className="inline-flex min-w-0 items-center gap-1 truncate font-medium text-slate-700 hover:underline"
                     title={project.jira.workspaceUrl}
                   >
-                    {project.jira.workspaceName ?? 'Workspace'}
+                    <span className="truncate">{project.jira.workspaceName ?? 'Workspace'}</span>
+                    <ExternalLink className="h-3 w-3 shrink-0" />
                   </a>
                 ) : (
                   <span className="truncate font-medium text-slate-700">

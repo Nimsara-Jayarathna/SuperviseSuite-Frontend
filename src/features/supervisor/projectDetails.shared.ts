@@ -25,8 +25,8 @@ export const TABS: SupervisorProjectDetailTab[] = [
   'overview',
   'team',
   'milestones',
-  'github',
   'integrations',
+  'github',
   'jira',
 ];
 
