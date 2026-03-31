@@ -60,6 +60,7 @@ export type SupervisorProjectDetail = {
   jira?: {
     connected: boolean;
     workspaceName: string | null;
+    workspaceUrl?: string | null;
   } | null;
   leader: SupervisorProjectLeader | null;
   members: SupervisorProjectDetailMember[];
