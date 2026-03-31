@@ -32,6 +32,8 @@ import type {
   ProjectGitHubActivity,
   ProjectGitHubRepositoryLink,
   JiraAuthUrl,
+  JiraOAuthCompletePayload,
+  JiraOAuthCompleteResult,
   SupervisorDashboard,
   SupervisorProjectDetail,
   SupervisorProjectSummary,
@@ -101,6 +103,10 @@ export const supervisorApi = {
 
   getProjectJiraAuthUrl(projectId: string): Promise<JiraAuthUrl> {
     return apiClient.get<JiraAuthUrl>(`/api/supervisor/projects/${projectId}/jira/auth-url`);
+  },
+
+  completeJiraOAuth(payload: JiraOAuthCompletePayload): Promise<JiraOAuthCompleteResult> {
+    return apiClient.post<JiraOAuthCompleteResult>('/api/supervisor/jira/oauth/complete', payload);
   },
 
   async getProjectGitHubDashboard(

@@ -7,6 +7,7 @@ import { StudentProjectDetailsPage, StudentProjectsPage } from '@/features/stude
 import {
   CreateProjectPage,
   GitHubAccessUpdatedPage,
+  JiraOAuthCallbackPage,
   ProjectDetailsPage,
   RequestGitHubRepositoryAccessPage,
   SupervisorDashboardPage,
@@ -112,6 +113,7 @@ export function AppRoutes() {
       {/* Supervisor-only */}
       <Route element={<RequireRole role="SUPERVISOR" />}>
         <Route path="/supervisor" element={<SupervisorLayout />}>
+          <Route path="jira/callback" element={<JiraOAuthCallbackPage />} />
           <Route index element={<SupervisorDashboardPage />} />
           <Route path="dashboard" element={<SupervisorDashboardPage />} />
           <Route path="project" element={<Navigate to="/supervisor/projects" replace />} />

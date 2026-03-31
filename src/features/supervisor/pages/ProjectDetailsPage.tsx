@@ -200,6 +200,41 @@ export function ProjectDetailsPage() {
   }, [projectId, searchParams, setSearchParams]);
 
   useEffect(() => {
+    const jiraSetup = searchParams.get('jiraSetup');
+    if (!jiraSetup) {
+      return;
+    }
+
+    if (jiraSetup === 'success') {
+      const jiraWorkspace = searchParams.get('jiraWorkspace');
+      setRefreshRequestModal({
+        isOpen: true,
+        status: 'success',
+        title: 'Jira connected',
+        message: jiraWorkspace
+          ? `Jira workspace "${jiraWorkspace}" was connected successfully.`
+          : 'Jira workspace connected successfully.',
+      });
+      void reload();
+    } else {
+      setRefreshRequestModal({
+        isOpen: true,
+        status: 'error',
+        title: 'Jira connection failed',
+        message:
+          searchParams.get('jiraMessage') ??
+          'Jira authorization was not completed. Please try again.',
+      });
+    }
+
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete('jiraSetup');
+    nextParams.delete('jiraWorkspace');
+    nextParams.delete('jiraMessage');
+    setSearchParams(nextParams, { replace: true });
+  }, [reload, searchParams, setSearchParams]);
+
+  useEffect(() => {
     setGithubView(project?.github ?? null);
   }, [project?.github]);
 

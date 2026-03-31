@@ -70,6 +70,18 @@ export type JiraAuthUrl = {
   url: string;
 };
 
+export type JiraOAuthCompletePayload = {
+  code?: string | null;
+  state?: string | null;
+  error?: string | null;
+  errorDescription?: string | null;
+};
+
+export type JiraOAuthCompleteResult = {
+  projectId: string;
+  workspaceName: string;
+};
+
 export type SupervisorProjectTab =
   | 'overview'
   | 'team'
