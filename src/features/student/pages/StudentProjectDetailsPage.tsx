@@ -14,6 +14,8 @@ import {
   Flag,
   ShieldCheck,
   Crown,
+  Link2,
+  RefreshCw,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState, type ComponentProps } from 'react';
 import { CommitActivitySection } from '@/features/projects/components/CommitActivitySection';
@@ -238,7 +240,7 @@ export function StudentProjectDetailsPage() {
   }
 
   const requestedTab = searchParams.get('tab') as StudentProjectDetailTab | null;
-  const tabs: StudentProjectDetailTab[] = [...BASE_TABS, 'github'];
+  const tabs: StudentProjectDetailTab[] = [...BASE_TABS, 'github', 'jira'];
   const activeTab = requestedTab && tabs.includes(requestedTab) ? requestedTab : 'overview';
 
   return (
@@ -718,6 +720,72 @@ export function StudentProjectDetailsPage() {
             emptyStateDescription="Please wait for your supervisor to link a GitHub repository to this project. Repository management is restricted to supervisors."
           />
         </div>
+      ) : null}
+
+      {activeTab === 'jira' ? (
+        <section className="space-y-4">
+          <div className="rounded-3xl border border-border bg-white p-6 shadow-sm transition-all hover:shadow-md">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-lg font-semibold text-foreground">Jira integration</h2>
+              <span
+                className={`rounded-full px-3 py-1 text-[11px] font-semibold ${
+                  project.jira?.connected
+                    ? 'bg-emerald-100 text-emerald-700'
+                    : 'bg-slate-100 text-slate-600'
+                }`}
+              >
+                {project.jira?.connected ? 'Workspace connected' : 'Not connected'}
+              </span>
+            </div>
+
+            {project.jira?.connected ? (
+              <article className="mt-4 rounded-2xl border border-border/70 bg-slate-50/50 p-4 transition-colors hover:border-border">
+                <div className="grid grid-cols-1 gap-2 text-xs text-slate-500 sm:grid-cols-12 sm:gap-4">
+                  <div className="flex min-w-0 items-center gap-1.5 hover:text-foreground sm:col-span-5">
+                    <Link2 className="h-3.5 w-3.5 shrink-0" />
+                    {project.jira.workspaceUrl ? (
+                      <a
+                        href={project.jira.workspaceUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="truncate font-medium text-slate-700 hover:underline"
+                        title={project.jira.workspaceUrl}
+                      >
+                        {project.jira.workspaceName ?? 'Workspace'}
+                      </a>
+                    ) : (
+                      <span className="truncate font-medium text-slate-700">
+                        {project.jira.workspaceName ?? 'Workspace'}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex min-w-0 items-center sm:col-span-4">
+                    <span className="truncate">
+                      Integration:{' '}
+                      <span className="font-medium text-slate-700">Atlassian OAuth</span>
+                    </span>
+                  </div>
+                  <div className="flex min-w-0 items-center gap-1.5 sm:col-span-3 sm:justify-end">
+                    <RefreshCw className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
+                    <span className="truncate font-medium text-emerald-700">
+                      Workspace connected
+                    </span>
+                  </div>
+                </div>
+              </article>
+            ) : (
+              <div className="mt-6 rounded-3xl border border-dashed border-slate-200 p-12 text-center text-slate-400">
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-50 shadow-inner">
+                  <Link2 className="h-6 w-6" />
+                </div>
+                <p className="mt-4 text-sm font-bold">No Jira workspace linked yet.</p>
+                <p className="mt-2 text-xs text-slate-400">
+                  Ask your supervisor to connect Jira for this project.
+                </p>
+              </div>
+            )}
+          </div>
+        </section>
       ) : null}
     </div>
   );
