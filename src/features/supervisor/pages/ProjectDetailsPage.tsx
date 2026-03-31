@@ -239,10 +239,7 @@ export function ProjectDetailsPage() {
     const existingProcessing = sessionStorage.getItem(processKey);
     if (existingProcessing) {
       const startedAt = Number(existingProcessing);
-      if (
-        !Number.isNaN(startedAt) &&
-        Date.now() - startedAt < JIRA_COMPLETION_PROCESSING_TTL_MS
-      ) {
+      if (!Number.isNaN(startedAt) && Date.now() - startedAt < JIRA_COMPLETION_PROCESSING_TTL_MS) {
         return;
       }
       sessionStorage.removeItem(processKey);

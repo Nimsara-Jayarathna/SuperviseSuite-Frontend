@@ -7,11 +7,7 @@ import { ROLE_HOME } from './roleHome';
 // Backend authorization must still enforce the real role restrictions.
 const ALLOW_CROSS_ROLE_PREVIEW = import.meta.env.DEV;
 
-function buildLoginRedirectPath(
-  pathname: string,
-  search: string,
-  hash: string,
-): string {
+function buildLoginRedirectPath(pathname: string, search: string, hash: string): string {
   const returnTo = `${pathname}${search}${hash}`;
   return `/login?returnTo=${encodeURIComponent(returnTo)}`;
 }
