@@ -17,7 +17,19 @@ import type { LoginRequest } from '../types';
  */
 export function LoginPage() {
   const [searchParams] = useSearchParams();
-  const returnTo = searchParams.get('returnTo') ?? undefined;
+  const returnToKey = searchParams.get('returnToKey');
+  const returnToFromQuery = searchParams.get('returnTo');
+  let returnTo: string | undefined;
+  if (returnToKey) {
+    try {
+      returnTo = sessionStorage.getItem(returnToKey) ?? undefined;
+      sessionStorage.removeItem(returnToKey);
+    } catch {
+      returnTo = undefined;
+    }
+  } else {
+    returnTo = returnToFromQuery ?? undefined;
+  }
   const { login, isLoading, error, clearError } = useAuth();
   const requestModalStatus = isLoading ? 'loading' : 'error';
   const requestModalOpen = isLoading || Boolean(error);

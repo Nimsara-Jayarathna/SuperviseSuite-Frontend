@@ -349,8 +349,9 @@ export function ProjectDetailsPage() {
     }
   }
 
-  async function handleDisconnectJira() {
+  function handleDisconnectJira(): Promise<void> {
     setIsJiraDisconnectConfirmOpen(true);
+    return Promise.resolve();
   }
 
   async function confirmDisconnectJira() {
