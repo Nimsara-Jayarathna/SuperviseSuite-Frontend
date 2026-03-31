@@ -57,9 +57,30 @@ export type SupervisorProjectDetail = {
   repositoryUrl?: string | null;
   github: ProjectGitHubPreview;
   githubRepositories?: ProjectGitHubRepositories | null;
+  jira?: {
+    connected: boolean;
+    workspaceName: string | null;
+    workspaceUrl?: string | null;
+  } | null;
   leader: SupervisorProjectLeader | null;
   members: SupervisorProjectDetailMember[];
   milestones: SupervisorProjectDetailMilestone[];
+};
+
+export type JiraAuthUrl = {
+  url: string;
+};
+
+export type JiraOAuthCompletePayload = {
+  code?: string | null;
+  state?: string | null;
+  error?: string | null;
+  errorDescription?: string | null;
+};
+
+export type JiraOAuthCompleteResult = {
+  projectId: string;
+  workspaceName: string;
 };
 
 export type SupervisorProjectTab =
@@ -70,7 +91,13 @@ export type SupervisorProjectTab =
   | 'action-items'
   | 'files';
 
-export type SupervisorProjectDetailTab = 'overview' | 'team' | 'milestones' | 'github';
+export type SupervisorProjectDetailTab =
+  | 'overview'
+  | 'team'
+  | 'milestones'
+  | 'github'
+  | 'integrations'
+  | 'jira';
 
 export type SupervisorProjectMember = {
   id: string;

@@ -2,10 +2,12 @@ import { SupervisorLayout } from '@/app/layout/SupervisorLayout';
 import { StudentLayout } from '@/app/layout/StudentLayout';
 import { LoginPage, RegisterPage } from '@/features/auth';
 import { LandingPage } from '@/features/landing';
+import { PrivacyPolicyPage, SupportPage, TermsOfServicePage } from '@/features/legal';
 import { StudentProjectDetailsPage, StudentProjectsPage } from '@/features/student';
 import {
   CreateProjectPage,
   GitHubAccessUpdatedPage,
+  JiraOAuthCallbackPage,
   ProjectDetailsPage,
   RequestGitHubRepositoryAccessPage,
   SupervisorDashboardPage,
@@ -87,6 +89,9 @@ export function AppRoutes() {
     <Routes>
       {/* Public */}
       <Route path="/" element={<RootRoute />} />
+      <Route path="/legal/privacy" element={<PrivacyPolicyPage />} />
+      <Route path="/legal/terms" element={<TermsOfServicePage />} />
+      <Route path="/support" element={<SupportPage />} />
       <Route path="/github/request-access" element={<RequestGitHubRepositoryAccessPage />} />
       <Route path="/github/access-updated" element={<GitHubAccessUpdatedPage />} />
 
@@ -108,6 +113,7 @@ export function AppRoutes() {
       {/* Supervisor-only */}
       <Route element={<RequireRole role="SUPERVISOR" />}>
         <Route path="/supervisor" element={<SupervisorLayout />}>
+          <Route path="jira/callback" element={<JiraOAuthCallbackPage />} />
           <Route index element={<SupervisorDashboardPage />} />
           <Route path="dashboard" element={<SupervisorDashboardPage />} />
           <Route path="project" element={<Navigate to="/supervisor/projects" replace />} />

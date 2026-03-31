@@ -1,13 +1,14 @@
 import { CalendarDays, Clock3, Users, ChevronDown, Check, Github } from 'lucide-react';
-import { useCallback, useEffect, useState, useMemo } from 'react';
+import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { ErrorState } from '@/components/feedback/ErrorState';
-import { buttonStyles } from '@/components/ui/Button';
+import { Button, buttonStyles } from '@/components/ui/Button';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { PageTabs } from '@/components/ui/PageTabs';
 import { RequestStateModal } from '@/components/ui/RequestStateModal';
 import { CommitActivitySection } from '@/features/projects/components/CommitActivitySection';
 import { ProjectDetailsSkeleton } from '../components/ProjectDetailsSkeleton';
+import { IntegrationsTabSection } from '../components/ProjectDetail/IntegrationsTabSection';
 import { MilestonesTabSection } from '../components/ProjectDetail/MilestonesTabSection';
 import { OverviewTabSection } from '../components/ProjectDetail/OverviewTabSection';
 import { TeamTabSection } from '../components/ProjectDetail/TeamTabSection';
@@ -29,6 +30,63 @@ import type {
   SupervisorProjectDetailTab,
   SupervisorProjectLifecycle,
 } from '../types';
+
+const JIRA_COMPLETION_PROCESSING_TTL_MS = 5 * 60 * 1000;
+const JIRA_RESULT_KEY_PREFIX = 'jira-oauth:';
+
+function hashFlowKey(value: string): string {
+  let hash = 2166136261;
+  for (let i = 0; i < value.length; i += 1) {
+    hash ^= value.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0).toString(36);
+}
+
+function readJiraOAuthResultFromStorage(rawKey: string | null): {
+  code?: string | null;
+  state?: string | null;
+  error?: string | null;
+  errorDescription?: string | null;
+} | null {
+  if (!rawKey || !rawKey.startsWith(JIRA_RESULT_KEY_PREFIX)) {
+    return null;
+  }
+  try {
+    const raw = sessionStorage.getItem(rawKey);
+    sessionStorage.removeItem(rawKey);
+    if (!raw) {
+      return null;
+    }
+    const parsed: unknown = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object') {
+      return null;
+    }
+    const payload = parsed as Record<string, unknown>;
+    return {
+      code: typeof payload.code === 'string' ? payload.code : null,
+      state: typeof payload.state === 'string' ? payload.state : null,
+      error: typeof payload.error === 'string' ? payload.error : null,
+      errorDescription:
+        typeof payload.errorDescription === 'string' ? payload.errorDescription : null,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function isValidJiraAuthUrl(value: string): boolean {
+  try {
+    const parsed = new URL(value);
+    if (parsed.protocol !== 'https:') {
+      return false;
+    }
+    const host = parsed.hostname.toLowerCase();
+    return host === 'auth.atlassian.com' || host.endsWith('.atlassian.com');
+  } catch {
+    return false;
+  }
+}
 
 export function ProjectDetailsPage() {
   const { projectId } = useParams();
@@ -71,6 +129,10 @@ export function ProjectDetailsPage() {
   });
 
   const [isRepoSelectorOpen, setIsRepoSelectorOpen] = useState(false);
+  const [isConnectingJira, setIsConnectingJira] = useState(false);
+  const [isDisconnectingJira, setIsDisconnectingJira] = useState(false);
+  const [isJiraDisconnectConfirmOpen, setIsJiraDisconnectConfirmOpen] = useState(false);
+  const jiraCompletionGuardRef = useRef<string | null>(null);
 
   const activeRepository = useMemo(() => {
     return (
@@ -199,6 +261,95 @@ export function ProjectDetailsPage() {
   }, [projectId, searchParams, setSearchParams]);
 
   useEffect(() => {
+    const jiraResultKey = searchParams.get('jiraResultKey');
+    const storedPayload = readJiraOAuthResultFromStorage(jiraResultKey);
+    const jiraCode = storedPayload?.code ?? searchParams.get('jiraCode');
+    const jiraState = storedPayload?.state ?? searchParams.get('jiraState');
+    const jiraError = storedPayload?.error ?? searchParams.get('jiraError');
+    const jiraErrorDescription =
+      storedPayload?.errorDescription ?? searchParams.get('jiraErrorDescription');
+    if (!jiraCode && !jiraState && !jiraError && !jiraErrorDescription) {
+      if (jiraResultKey) {
+        const nextParams = new URLSearchParams(searchParams);
+        nextParams.delete('jiraResultKey');
+        setSearchParams(nextParams, { replace: true });
+      }
+      return;
+    }
+
+    const flowKey = `${jiraCode ?? ''}:${jiraState ?? ''}:${jiraError ?? ''}:${jiraErrorDescription ?? ''}`;
+    if (jiraCompletionGuardRef.current === flowKey) {
+      return;
+    }
+    jiraCompletionGuardRef.current = flowKey;
+    const flowStorageId = hashFlowKey(flowKey);
+
+    const processKey = `jira-complete:${flowStorageId}:processing`;
+    const doneKey = `jira-complete:${flowStorageId}:done`;
+    if (sessionStorage.getItem(doneKey) === 'true') {
+      return;
+    }
+
+    const existingProcessing = sessionStorage.getItem(processKey);
+    if (existingProcessing) {
+      const startedAt = Number(existingProcessing);
+      if (!Number.isNaN(startedAt) && Date.now() - startedAt < JIRA_COMPLETION_PROCESSING_TTL_MS) {
+        return;
+      }
+      sessionStorage.removeItem(processKey);
+    }
+    sessionStorage.setItem(processKey, String(Date.now()));
+
+    setRefreshRequestModal({
+      isOpen: true,
+      status: 'loading',
+      title: 'Connecting Jira',
+      message: 'Finalizing Jira workspace authorization.',
+    });
+
+    (async () => {
+      try {
+        const result = await supervisorApi.completeJiraOAuth({
+          code: jiraCode,
+          state: jiraState,
+          error: jiraError,
+          errorDescription: jiraErrorDescription,
+        });
+        sessionStorage.setItem(doneKey, 'true');
+        sessionStorage.removeItem(processKey);
+        setRefreshRequestModal({
+          isOpen: true,
+          status: 'success',
+          title: 'Jira connected',
+          message: result.workspaceName
+            ? `Jira workspace "${result.workspaceName}" was connected successfully.`
+            : 'Jira workspace connected successfully.',
+        });
+        await reload();
+      } catch (error) {
+        sessionStorage.removeItem(processKey);
+        const message = isApiException(error)
+          ? error.apiError.message
+          : 'Jira authorization was not completed. Please try again.';
+        setRefreshRequestModal({
+          isOpen: true,
+          status: 'error',
+          title: 'Jira connection failed',
+          message,
+        });
+      } finally {
+        const nextParams = new URLSearchParams(searchParams);
+        nextParams.delete('jiraResultKey');
+        nextParams.delete('jiraCode');
+        nextParams.delete('jiraState');
+        nextParams.delete('jiraError');
+        nextParams.delete('jiraErrorDescription');
+        setSearchParams(nextParams, { replace: true });
+      }
+    })();
+  }, [reload, searchParams, setSearchParams]);
+
+  useEffect(() => {
     setGithubView(project?.github ?? null);
   }, [project?.github]);
 
@@ -226,6 +377,76 @@ export function ProjectDetailsPage() {
       setGithubView(nextView);
     } finally {
       setIsGitHubViewLoading(false);
+    }
+  }
+
+  async function handleConnectJira() {
+    if (!projectId) return;
+    setIsConnectingJira(true);
+    let redirecting = false;
+    try {
+      const auth = await supervisorApi.getProjectJiraAuthUrl(projectId);
+      if (!auth.url?.trim()) {
+        throw new Error('Missing Jira authorization URL.');
+      }
+      if (!isValidJiraAuthUrl(auth.url)) {
+        throw new Error('Invalid Jira authorization URL.');
+      }
+      redirecting = true;
+      window.location.assign(auth.url);
+    } catch (error) {
+      const message = isApiException(error)
+        ? error.apiError.message
+        : 'Unable to start Jira connection right now.';
+      setRefreshRequestModal({
+        isOpen: true,
+        status: 'error',
+        title: 'Jira connection failed',
+        message,
+      });
+    } finally {
+      if (!redirecting) {
+        setIsConnectingJira(false);
+      }
+    }
+  }
+
+  function handleDisconnectJira(): Promise<void> {
+    setIsJiraDisconnectConfirmOpen(true);
+    return Promise.resolve();
+  }
+
+  async function confirmDisconnectJira() {
+    if (!projectId) return;
+    setIsJiraDisconnectConfirmOpen(false);
+    setIsDisconnectingJira(true);
+    setRefreshRequestModal({
+      isOpen: true,
+      status: 'loading',
+      title: 'Disconnecting Jira',
+      message: 'Removing Jira workspace link from this project.',
+    });
+    try {
+      await supervisorApi.disconnectProjectJira(projectId);
+      await reload();
+      setRefreshRequestModal({
+        isOpen: true,
+        status: 'success',
+        title: 'Jira disconnected',
+        message: 'Jira workspace was disconnected from this project.',
+      });
+    } catch (error) {
+      const message = isApiException(error)
+        ? error.apiError.message
+        : 'Unable to disconnect Jira right now.';
+      setRefreshRequestModal({
+        isOpen: true,
+        status: 'error',
+        title: 'Jira disconnect failed',
+        message,
+      });
+    } finally {
+      setIsDisconnectingJira(false);
     }
   }
 
@@ -284,6 +505,34 @@ export function ProjectDetailsPage() {
         onClose={refreshRequestModal.status === 'loading' ? undefined : closeRefreshRequestModal}
         onRetry={
           refreshRequestModal.status === 'error' ? refreshRequestModal.retryAction : undefined
+        }
+      />
+      <RequestStateModal
+        isOpen={isJiraDisconnectConfirmOpen}
+        status="warning"
+        title="Disconnect Jira workspace?"
+        message="This project will stop receiving Jira-linked data until you connect again."
+        onClose={() => setIsJiraDisconnectConfirmOpen(false)}
+        autoCloseOnSuccess={false}
+        footer={
+          <div className="flex flex-wrap justify-center gap-3">
+            <Button
+              type="button"
+              variant="secondary"
+              size="md"
+              onClick={() => setIsJiraDisconnectConfirmOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="danger"
+              size="md"
+              onClick={() => void confirmDisconnectJira()}
+            >
+              Disconnect
+            </Button>
+          </div>
         }
       />
 
@@ -397,14 +646,7 @@ export function ProjectDetailsPage() {
       />
 
       {activeTab === 'overview' ? (
-        <OverviewTabSection
-          project={project}
-          overview={overview}
-          onProjectUpdate={actions.handleProjectUpdate}
-          pendingGitHubSourceId={pendingGitHubSourceId}
-          pendingGitHubFlowType={pendingGitHubFlowType}
-          onPendingGitHubSourceHandled={handlePendingGitHubSourceHandled}
-        />
+        <OverviewTabSection project={project} overview={overview} />
       ) : null}
 
       {activeTab === 'team' ? <TeamTabSection project={project} team={team} /> : null}
@@ -527,9 +769,51 @@ export function ProjectDetailsPage() {
             canRefresh
             isRefreshing={isRefreshingGitHub}
             onRefresh={() => void handleGitHubRefresh()}
-            onNavigateToOverview={() => handleTabChange('overview')}
+            onNavigateToOverview={() => handleTabChange('integrations')}
           />
         </div>
+      ) : null}
+
+      {activeTab === 'jira' ? (
+        project.jira?.connected ? (
+          <section className="rounded-3xl border border-border bg-white p-6 shadow-sm">
+            <h2 className="text-lg font-semibold text-foreground">Jira tab moved</h2>
+            <p className="mt-3 text-sm text-slate-600">
+              Jira integration settings are available under the Integrations tab.
+            </p>
+          </section>
+        ) : (
+          <section className="rounded-3xl border border-border bg-white p-6 shadow-sm">
+            <h2 className="text-lg font-semibold text-foreground">No Jira workspace connected</h2>
+            <p className="mt-3 text-sm text-slate-600">
+              Connect Jira from Integrations to enable workspace linking and project-level Jira
+              visibility.
+            </p>
+            <div className="mt-5">
+              <button
+                type="button"
+                className={buttonStyles({ variant: 'primary', size: 'sm' })}
+                onClick={() => handleTabChange('integrations')}
+              >
+                Go to Integrations
+              </button>
+            </div>
+          </section>
+        )
+      ) : null}
+
+      {activeTab === 'integrations' ? (
+        <IntegrationsTabSection
+          project={project}
+          onProjectUpdate={actions.handleProjectUpdate}
+          onConnectJira={handleConnectJira}
+          onDisconnectJira={handleDisconnectJira}
+          isConnectingJira={isConnectingJira}
+          isDisconnectingJira={isDisconnectingJira}
+          pendingGitHubSourceId={pendingGitHubSourceId}
+          pendingGitHubFlowType={pendingGitHubFlowType}
+          onPendingGitHubSourceHandled={handlePendingGitHubSourceHandled}
+        />
       ) : null}
     </div>
   );

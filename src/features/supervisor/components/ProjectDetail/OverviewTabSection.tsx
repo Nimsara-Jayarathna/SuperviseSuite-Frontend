@@ -1,28 +1,17 @@
 import { CalendarDays } from 'lucide-react';
 import { buttonStyles } from '@/components/ui/Button';
 import { StatusBadge } from '@/components/ui/StatusBadge';
-import { RepositorySection } from './RepositorySection';
 import { FIELD_LIMITS, LIFECYCLE_OPTIONS, dateFormatter } from '../../projectDetails.shared';
 import type { OverviewState } from '../../hooks/useProjectDetailsPageState';
-import type { SupervisorProjectDetail, SupervisorProjectLifecycle } from '../../types';
+import type { SupervisorProjectLifecycle } from '../../types';
+import type { SupervisorProjectDetail } from '../../types';
 
 type OverviewTabSectionProps = {
   project: SupervisorProjectDetail;
   overview: OverviewState;
-  onProjectUpdate: (updatedProject: SupervisorProjectDetail) => void;
-  pendingGitHubSourceId?: string | null;
-  pendingGitHubFlowType?: 'INSTALLATION_DIRECT' | 'INSTALLATION_REQUESTED' | null;
-  onPendingGitHubSourceHandled?: () => void;
 };
 
-export function OverviewTabSection({
-  project,
-  overview,
-  onProjectUpdate,
-  pendingGitHubSourceId,
-  pendingGitHubFlowType,
-  onPendingGitHubSourceHandled,
-}: OverviewTabSectionProps) {
+export function OverviewTabSection({ project, overview }: OverviewTabSectionProps) {
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
       <section className="space-y-6">
@@ -188,14 +177,6 @@ export function OverviewTabSection({
             </div>
           )}
         </div>
-
-        <RepositorySection
-          project={project}
-          onUpdate={onProjectUpdate}
-          pendingSourceId={pendingGitHubSourceId}
-          pendingFlowType={pendingGitHubFlowType}
-          onPendingSourceHandled={onPendingGitHubSourceHandled}
-        />
 
         <div className="rounded-3xl border border-border bg-white p-6 shadow-sm transition-all hover:shadow-md">
           <h2 className="text-lg font-semibold text-foreground">Current scope</h2>

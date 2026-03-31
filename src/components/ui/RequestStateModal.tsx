@@ -1,12 +1,12 @@
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/cn';
-import { CheckCircle, Loader2, XCircle } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Loader2, XCircle } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 
 type RequestStateModalProps = {
   isOpen: boolean;
-  status: 'loading' | 'success' | 'error';
+  status: 'loading' | 'success' | 'error' | 'warning';
   title: string;
   message: string;
   onClose?: () => void;
@@ -35,6 +35,10 @@ const STATUS_STYLES: Record<
     iconContainer: 'bg-rose-100/85 text-rose-700',
     gradientOverlay: 'from-rose-100/85 via-white/70 to-rose-200/55',
   },
+  warning: {
+    iconContainer: 'bg-amber-100/85 text-amber-700',
+    gradientOverlay: 'from-amber-100/85 via-white/70 to-amber-200/55',
+  },
 };
 
 function StatusIcon({ status }: { status: RequestStateModalProps['status'] }) {
@@ -62,6 +66,19 @@ function StatusIcon({ status }: { status: RequestStateModalProps['status'] }) {
         )}
       >
         <CheckCircle className="h-6 w-6" />
+      </span>
+    );
+  }
+
+  if (status === 'warning') {
+    return (
+      <span
+        className={cn(
+          'inline-flex h-12 w-12 items-center justify-center rounded-full',
+          styles.iconContainer,
+        )}
+      >
+        <AlertTriangle className="h-6 w-6" />
       </span>
     );
   }

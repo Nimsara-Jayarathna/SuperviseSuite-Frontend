@@ -1,6 +1,19 @@
 import { useState } from 'react';
 import { supervisorApi } from '../api/supervisorApi';
 
+function isValidGitHubAuthorizeUrl(value: string): boolean {
+  try {
+    const parsed = new URL(value);
+    if (parsed.protocol !== 'https:') {
+      return false;
+    }
+    const host = parsed.hostname.toLowerCase();
+    return host === 'github.com' || host.endsWith('.github.com');
+  } catch {
+    return false;
+  }
+}
+
 export type GitHubSetupRedirectState = {
   setupStatus: 'success' | 'failed' | null;
   sourceId: string | null;
@@ -49,6 +62,9 @@ export function useGitHubSetupFlow(projectId: string | undefined) {
       if (!response.githubAuthorizeUrl?.trim()) {
         throw new Error('GitHub authorize URL is missing.');
       }
+      if (!isValidGitHubAuthorizeUrl(response.githubAuthorizeUrl)) {
+        throw new Error('GitHub authorize URL is invalid.');
+      }
       window.location.assign(response.githubAuthorizeUrl);
     } finally {
       setIsStartingOwnerInstall(false);
@@ -66,6 +82,9 @@ export function useGitHubSetupFlow(projectId: string | undefined) {
       const response = await supervisorApi.startGitHubAccessSourceInstall({ requestToken: token });
       if (!response.githubAuthorizeUrl?.trim()) {
         throw new Error('GitHub authorize URL is missing.');
+      }
+      if (!isValidGitHubAuthorizeUrl(response.githubAuthorizeUrl)) {
+        throw new Error('GitHub authorize URL is invalid.');
       }
       window.location.assign(response.githubAuthorizeUrl);
     } finally {
