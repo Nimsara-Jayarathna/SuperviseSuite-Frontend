@@ -1,6 +1,9 @@
 import { useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 export function JiraOAuthCallbackPage() {
   const [searchParams] = useSearchParams();
 
@@ -10,7 +13,7 @@ export function JiraOAuthCallbackPage() {
     const error = searchParams.get('error');
     const errorDescription = searchParams.get('error_description');
     const stateProjectId = state?.split(':').pop();
-    if (!stateProjectId) {
+    if (!stateProjectId || !UUID_PATTERN.test(stateProjectId)) {
       window.location.replace('/supervisor/projects');
       return;
     }
@@ -27,7 +30,8 @@ export function JiraOAuthCallbackPage() {
     if (errorDescription) {
       next.set('jiraErrorDescription', errorDescription);
     }
-    window.location.replace(`/supervisor/projects/${stateProjectId}?${next.toString()}`);
+    const safeProjectId = encodeURIComponent(stateProjectId);
+    window.location.replace(`/supervisor/projects/${safeProjectId}?${next.toString()}`);
   }, [searchParams]);
 
   return null;

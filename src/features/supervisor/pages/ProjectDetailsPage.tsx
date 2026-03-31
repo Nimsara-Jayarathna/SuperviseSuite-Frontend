@@ -31,6 +31,17 @@ import type {
   SupervisorProjectLifecycle,
 } from '../types';
 
+const JIRA_COMPLETION_PROCESSING_TTL_MS = 5 * 60 * 1000;
+
+function hashFlowKey(value: string): string {
+  let hash = 2166136261;
+  for (let i = 0; i < value.length; i += 1) {
+    hash ^= value.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0).toString(36);
+}
+
 export function ProjectDetailsPage() {
   const { projectId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -217,16 +228,26 @@ export function ProjectDetailsPage() {
       return;
     }
     jiraCompletionGuardRef.current = flowKey;
+    const flowStorageId = hashFlowKey(flowKey);
 
-    const processKey = `jira-complete:${flowKey}:processing`;
-    const doneKey = `jira-complete:${flowKey}:done`;
-    if (
-      sessionStorage.getItem(doneKey) === 'true' ||
-      sessionStorage.getItem(processKey) === 'true'
-    ) {
+    const processKey = `jira-complete:${flowStorageId}:processing`;
+    const doneKey = `jira-complete:${flowStorageId}:done`;
+    if (sessionStorage.getItem(doneKey) === 'true') {
       return;
     }
-    sessionStorage.setItem(processKey, 'true');
+
+    const existingProcessing = sessionStorage.getItem(processKey);
+    if (existingProcessing) {
+      const startedAt = Number(existingProcessing);
+      if (
+        !Number.isNaN(startedAt) &&
+        Date.now() - startedAt < JIRA_COMPLETION_PROCESSING_TTL_MS
+      ) {
+        return;
+      }
+      sessionStorage.removeItem(processKey);
+    }
+    sessionStorage.setItem(processKey, String(Date.now()));
 
     setRefreshRequestModal({
       isOpen: true,
@@ -428,7 +449,7 @@ export function ProjectDetailsPage() {
       />
       <RequestStateModal
         isOpen={isJiraDisconnectConfirmOpen}
-        status="error"
+        status="warning"
         title="Disconnect Jira workspace?"
         message="This project will stop receiving Jira-linked data until you connect again."
         onClose={() => setIsJiraDisconnectConfirmOpen(false)}

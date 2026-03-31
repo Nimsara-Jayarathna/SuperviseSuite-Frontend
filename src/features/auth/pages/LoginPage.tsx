@@ -1,8 +1,9 @@
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { LogoMark } from '@/components/brand/Logo';
 import { RequestStateModal } from '@/components/ui/RequestStateModal';
 import { useAuth } from '../hooks/useAuth';
 import { LoginForm } from '../components/LoginForm';
+import type { LoginRequest } from '../types';
 
 /**
  * Composition root for the login flow.
@@ -15,6 +16,8 @@ import { LoginForm } from '../components/LoginForm';
  * not a concrete hook — the hook lives here, at the boundary layer.
  */
 export function LoginPage() {
+  const [searchParams] = useSearchParams();
+  const returnTo = searchParams.get('returnTo') ?? undefined;
   const { login, isLoading, error, clearError } = useAuth();
   const requestModalStatus = isLoading ? 'loading' : 'error';
   const requestModalOpen = isLoading || Boolean(error);
@@ -56,7 +59,7 @@ export function LoginPage() {
 
         {/* Form — receives hook state via props (Dependency Inversion) */}
         <LoginForm
-          onSubmit={login}
+          onSubmit={(values: LoginRequest) => login(values, returnTo)}
           isLoading={isLoading}
           error={error}
           onClearError={clearError}
