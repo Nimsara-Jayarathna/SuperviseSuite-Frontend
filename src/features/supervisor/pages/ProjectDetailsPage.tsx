@@ -71,6 +71,7 @@ export function ProjectDetailsPage() {
   });
 
   const [isRepoSelectorOpen, setIsRepoSelectorOpen] = useState(false);
+  const [isConnectingJira, setIsConnectingJira] = useState(false);
 
   const activeRepository = useMemo(() => {
     return (
@@ -226,6 +227,20 @@ export function ProjectDetailsPage() {
       setGithubView(nextView);
     } finally {
       setIsGitHubViewLoading(false);
+    }
+  }
+
+  async function handleConnectJira() {
+    if (!projectId) return;
+    setIsConnectingJira(true);
+    try {
+      const auth = await supervisorApi.getProjectJiraAuthUrl(projectId);
+      if (!auth.url?.trim()) {
+        throw new Error('Missing Jira authorization URL.');
+      }
+      window.location.assign(auth.url);
+    } finally {
+      setIsConnectingJira(false);
     }
   }
 
@@ -401,6 +416,8 @@ export function ProjectDetailsPage() {
           project={project}
           overview={overview}
           onProjectUpdate={actions.handleProjectUpdate}
+          onConnectJira={handleConnectJira}
+          isConnectingJira={isConnectingJira}
           pendingGitHubSourceId={pendingGitHubSourceId}
           pendingGitHubFlowType={pendingGitHubFlowType}
           onPendingGitHubSourceHandled={handlePendingGitHubSourceHandled}

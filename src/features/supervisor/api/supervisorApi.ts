@@ -31,6 +31,7 @@ import type {
   LinkProjectGitHubRepositoryRequest,
   ProjectGitHubActivity,
   ProjectGitHubRepositoryLink,
+  JiraAuthUrl,
   SupervisorDashboard,
   SupervisorProjectDetail,
   SupervisorProjectSummary,
@@ -96,6 +97,10 @@ export const supervisorApi = {
 
   getDashboard(): Promise<SupervisorDashboard> {
     return apiClient.get<SupervisorDashboard>('/api/supervisor/dashboard');
+  },
+
+  getProjectJiraAuthUrl(projectId: string): Promise<JiraAuthUrl> {
+    return apiClient.get<JiraAuthUrl>(`/api/supervisor/projects/${projectId}/jira/auth-url`);
   },
 
   async getProjectGitHubDashboard(

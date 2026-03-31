@@ -10,6 +10,8 @@ type OverviewTabSectionProps = {
   project: SupervisorProjectDetail;
   overview: OverviewState;
   onProjectUpdate: (updatedProject: SupervisorProjectDetail) => void;
+  onConnectJira: () => Promise<void>;
+  isConnectingJira: boolean;
   pendingGitHubSourceId?: string | null;
   pendingGitHubFlowType?: 'INSTALLATION_DIRECT' | 'INSTALLATION_REQUESTED' | null;
   onPendingGitHubSourceHandled?: () => void;
@@ -19,6 +21,8 @@ export function OverviewTabSection({
   project,
   overview,
   onProjectUpdate,
+  onConnectJira,
+  isConnectingJira,
   pendingGitHubSourceId,
   pendingGitHubFlowType,
   onPendingGitHubSourceHandled,
@@ -196,6 +200,41 @@ export function OverviewTabSection({
           pendingFlowType={pendingGitHubFlowType}
           onPendingSourceHandled={onPendingGitHubSourceHandled}
         />
+
+        <div className="rounded-3xl border border-border bg-white p-6 shadow-sm transition-all hover:shadow-md">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-lg font-semibold text-foreground">Jira integration</h2>
+            <span
+              className={`rounded-full px-3 py-1 text-[11px] font-semibold ${
+                project.jira?.connected
+                  ? 'bg-emerald-100 text-emerald-700'
+                  : 'bg-slate-100 text-slate-600'
+              }`}
+            >
+              {project.jira?.connected ? 'Connected' : 'Not connected'}
+            </span>
+          </div>
+          <p className="mt-3 text-sm leading-relaxed text-slate-500">
+            Connect Jira with Atlassian OAuth. SuperviseSuite requests read-only Jira permissions
+            and never asks you to enter API keys manually.
+          </p>
+          <div className="mt-4 flex items-center justify-between gap-3">
+            <p className="text-sm text-slate-600">
+              Workspace:{' '}
+              <span className="font-medium text-slate-800">
+                {project.jira?.workspaceName ?? 'Not linked'}
+              </span>
+            </p>
+            <button
+              type="button"
+              className={buttonStyles({ variant: 'primary', size: 'sm' })}
+              disabled={isConnectingJira}
+              onClick={() => void onConnectJira()}
+            >
+              {isConnectingJira ? 'Redirecting...' : 'Connect Jira'}
+            </button>
+          </div>
+        </div>
 
         <div className="rounded-3xl border border-border bg-white p-6 shadow-sm transition-all hover:shadow-md">
           <h2 className="text-lg font-semibold text-foreground">Current scope</h2>

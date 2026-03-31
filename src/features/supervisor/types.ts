@@ -57,9 +57,17 @@ export type SupervisorProjectDetail = {
   repositoryUrl?: string | null;
   github: ProjectGitHubPreview;
   githubRepositories?: ProjectGitHubRepositories | null;
+  jira?: {
+    connected: boolean;
+    workspaceName: string | null;
+  } | null;
   leader: SupervisorProjectLeader | null;
   members: SupervisorProjectDetailMember[];
   milestones: SupervisorProjectDetailMilestone[];
+};
+
+export type JiraAuthUrl = {
+  url: string;
 };
 
 export type SupervisorProjectTab =
