@@ -2,6 +2,7 @@ import { SupervisorLayout } from '@/app/layout/SupervisorLayout';
 import { StudentLayout } from '@/app/layout/StudentLayout';
 import { LoginPage, RegisterPage } from '@/features/auth';
 import { LandingPage } from '@/features/landing';
+import { PrivacyPolicyPage, SupportPage, TermsOfServicePage } from '@/features/legal';
 import { StudentProjectDetailsPage, StudentProjectsPage } from '@/features/student';
 import {
   CreateProjectPage,
@@ -87,6 +88,9 @@ export function AppRoutes() {
     <Routes>
       {/* Public */}
       <Route path="/" element={<RootRoute />} />
+      <Route path="/legal/privacy" element={<PrivacyPolicyPage />} />
+      <Route path="/legal/terms" element={<TermsOfServicePage />} />
+      <Route path="/support" element={<SupportPage />} />
       <Route path="/github/request-access" element={<RequestGitHubRepositoryAccessPage />} />
       <Route path="/github/access-updated" element={<GitHubAccessUpdatedPage />} />
 
