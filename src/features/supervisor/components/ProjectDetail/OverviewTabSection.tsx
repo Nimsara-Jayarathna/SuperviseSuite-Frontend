@@ -204,15 +204,18 @@ export function OverviewTabSection({
         <div className="rounded-3xl border border-border bg-white p-6 shadow-sm transition-all hover:shadow-md">
           <div className="flex items-center justify-between gap-3">
             <h2 className="text-lg font-semibold text-foreground">Jira integration</h2>
-            <span
-              className={`rounded-full px-3 py-1 text-[11px] font-semibold ${
-                project.jira?.connected
-                  ? 'bg-emerald-100 text-emerald-700'
-                  : 'bg-slate-100 text-slate-600'
-              }`}
+            <button
+              type="button"
+              className={buttonStyles({ variant: 'primary', size: 'sm' })}
+              disabled={isConnectingJira || Boolean(project.jira?.connected)}
+              onClick={() => void onConnectJira()}
             >
-              {project.jira?.connected ? 'Connected' : 'Not connected'}
-            </span>
+              {project.jira?.connected
+                ? 'Already connected'
+                : isConnectingJira
+                  ? 'Redirecting...'
+                  : 'Connect Jira'}
+            </button>
           </div>
           <p className="mt-3 text-sm leading-relaxed text-slate-500">
             Connect Jira with Atlassian OAuth. SuperviseSuite requests read-only Jira permissions
@@ -220,19 +223,22 @@ export function OverviewTabSection({
           </p>
           <div className="mt-4 flex items-center justify-between gap-3">
             <p className="text-sm text-slate-600">
-              Workspace:{' '}
+              Status:{' '}
               <span className="font-medium text-slate-800">
-                {project.jira?.workspaceName ?? 'Not linked'}
+                {project.jira?.connected
+                  ? `${project.jira?.workspaceName ?? 'Workspace'} connected`
+                  : 'No workspace connected'}
               </span>
             </p>
-            <button
-              type="button"
-              className={buttonStyles({ variant: 'primary', size: 'sm' })}
-              disabled={isConnectingJira}
-              onClick={() => void onConnectJira()}
+            <span
+              className={`rounded-full px-3 py-1 text-[11px] font-semibold ${
+                project.jira?.connected
+                  ? 'bg-emerald-100 text-emerald-700'
+                  : 'bg-slate-100 text-slate-600'
+              }`}
             >
-              {isConnectingJira ? 'Redirecting...' : 'Connect Jira'}
-            </button>
+              {project.jira?.connected ? 'Workspace connected' : 'Not connected'}
+            </span>
           </div>
         </div>
 

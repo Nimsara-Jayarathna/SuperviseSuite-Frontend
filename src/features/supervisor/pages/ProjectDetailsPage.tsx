@@ -1,5 +1,5 @@
 import { CalendarDays, Clock3, Users, ChevronDown, Check, Github } from 'lucide-react';
-import { useCallback, useEffect, useState, useMemo } from 'react';
+import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { ErrorState } from '@/components/feedback/ErrorState';
 import { buttonStyles } from '@/components/ui/Button';
@@ -72,6 +72,7 @@ export function ProjectDetailsPage() {
 
   const [isRepoSelectorOpen, setIsRepoSelectorOpen] = useState(false);
   const [isConnectingJira, setIsConnectingJira] = useState(false);
+  const jiraCompletionGuardRef = useRef<string | null>(null);
 
   const activeRepository = useMemo(() => {
     return (
@@ -200,38 +201,73 @@ export function ProjectDetailsPage() {
   }, [projectId, searchParams, setSearchParams]);
 
   useEffect(() => {
-    const jiraSetup = searchParams.get('jiraSetup');
-    if (!jiraSetup) {
+    const jiraCode = searchParams.get('jiraCode');
+    const jiraState = searchParams.get('jiraState');
+    const jiraError = searchParams.get('jiraError');
+    const jiraErrorDescription = searchParams.get('jiraErrorDescription');
+    if (!jiraCode && !jiraState && !jiraError && !jiraErrorDescription) {
       return;
     }
 
-    if (jiraSetup === 'success') {
-      const jiraWorkspace = searchParams.get('jiraWorkspace');
-      setRefreshRequestModal({
-        isOpen: true,
-        status: 'success',
-        title: 'Jira connected',
-        message: jiraWorkspace
-          ? `Jira workspace "${jiraWorkspace}" was connected successfully.`
-          : 'Jira workspace connected successfully.',
-      });
-      void reload();
-    } else {
-      setRefreshRequestModal({
-        isOpen: true,
-        status: 'error',
-        title: 'Jira connection failed',
-        message:
-          searchParams.get('jiraMessage') ??
-          'Jira authorization was not completed. Please try again.',
-      });
+    const flowKey = `${jiraCode ?? ''}:${jiraState ?? ''}:${jiraError ?? ''}:${jiraErrorDescription ?? ''}`;
+    if (jiraCompletionGuardRef.current === flowKey) {
+      return;
     }
+    jiraCompletionGuardRef.current = flowKey;
 
-    const nextParams = new URLSearchParams(searchParams);
-    nextParams.delete('jiraSetup');
-    nextParams.delete('jiraWorkspace');
-    nextParams.delete('jiraMessage');
-    setSearchParams(nextParams, { replace: true });
+    const processKey = `jira-complete:${flowKey}:processing`;
+    const doneKey = `jira-complete:${flowKey}:done`;
+    if (sessionStorage.getItem(doneKey) === 'true' || sessionStorage.getItem(processKey) === 'true') {
+      return;
+    }
+    sessionStorage.setItem(processKey, 'true');
+
+    setRefreshRequestModal({
+      isOpen: true,
+      status: 'loading',
+      title: 'Connecting Jira',
+      message: 'Finalizing Jira workspace authorization.',
+    });
+
+    (async () => {
+      try {
+        const result = await supervisorApi.completeJiraOAuth({
+          code: jiraCode,
+          state: jiraState,
+          error: jiraError,
+          errorDescription: jiraErrorDescription,
+        });
+        sessionStorage.setItem(doneKey, 'true');
+        sessionStorage.removeItem(processKey);
+        setRefreshRequestModal({
+          isOpen: true,
+          status: 'success',
+          title: 'Jira connected',
+          message: result.workspaceName
+            ? `Jira workspace "${result.workspaceName}" was connected successfully.`
+            : 'Jira workspace connected successfully.',
+        });
+        await reload();
+      } catch (error) {
+        sessionStorage.removeItem(processKey);
+        const message = isApiException(error)
+          ? error.apiError.message
+          : 'Jira authorization was not completed. Please try again.';
+        setRefreshRequestModal({
+          isOpen: true,
+          status: 'error',
+          title: 'Jira connection failed',
+          message,
+        });
+      } finally {
+        const nextParams = new URLSearchParams(searchParams);
+        nextParams.delete('jiraCode');
+        nextParams.delete('jiraState');
+        nextParams.delete('jiraError');
+        nextParams.delete('jiraErrorDescription');
+        setSearchParams(nextParams, { replace: true });
+      }
+    })();
   }, [reload, searchParams, setSearchParams]);
 
   useEffect(() => {
@@ -274,6 +310,16 @@ export function ProjectDetailsPage() {
         throw new Error('Missing Jira authorization URL.');
       }
       window.location.assign(auth.url);
+    } catch (error) {
+      const message = isApiException(error)
+        ? error.apiError.message
+        : 'Unable to start Jira connection right now.';
+      setRefreshRequestModal({
+        isOpen: true,
+        status: 'error',
+        title: 'Jira connection failed',
+        message,
+      });
     } finally {
       setIsConnectingJira(false);
     }
