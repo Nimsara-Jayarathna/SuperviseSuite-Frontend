@@ -220,7 +220,10 @@ export function ProjectDetailsPage() {
 
     const processKey = `jira-complete:${flowKey}:processing`;
     const doneKey = `jira-complete:${flowKey}:done`;
-    if (sessionStorage.getItem(doneKey) === 'true' || sessionStorage.getItem(processKey) === 'true') {
+    if (
+      sessionStorage.getItem(doneKey) === 'true' ||
+      sessionStorage.getItem(processKey) === 'true'
+    ) {
       return;
     }
     sessionStorage.setItem(processKey, 'true');

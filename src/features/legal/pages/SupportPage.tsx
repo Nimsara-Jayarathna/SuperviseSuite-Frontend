@@ -9,8 +9,8 @@ export function SupportPage() {
       <section className="mt-8 space-y-4 text-sm leading-7 text-slate-700">
         <p>For support, contact the SuperviseSuite team through your organization admin channel.</p>
         <p>
-          If you are troubleshooting Jira connection issues, include your project ID and the time
-          of the failed attempt.
+          If you are troubleshooting Jira connection issues, include your project ID and the time of
+          the failed attempt.
         </p>
         <p>This local environment support page is intended for development and QA usage.</p>
       </section>
