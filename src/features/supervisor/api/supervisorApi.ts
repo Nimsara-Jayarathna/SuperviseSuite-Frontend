@@ -34,6 +34,7 @@ import type {
   JiraAuthUrl,
   JiraOAuthCompletePayload,
   JiraOAuthCompleteResult,
+  TeamWorkloadResponse,
   SupervisorDashboard,
   SupervisorProjectDetail,
   SupervisorProjectSummary,
@@ -113,6 +114,12 @@ export const supervisorApi = {
     return apiClient.post<SupervisorProjectDetail>(
       `/api/supervisor/projects/${projectId}/jira/disconnect`,
       {},
+    );
+  },
+
+  getProjectTeamWorkload(projectId: string): Promise<TeamWorkloadResponse> {
+    return apiClient.get<TeamWorkloadResponse>(
+      `/api/supervisor/projects/${projectId}/jira/team-workload`,
     );
   },
 

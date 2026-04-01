@@ -83,6 +83,27 @@ export type JiraOAuthCompleteResult = {
   workspaceName: string;
 };
 
+export type TeamWorkloadStudent = {
+  assigneeAccountId: string;
+  displayName: string;
+  assigned: number;
+  completed: number;
+  inProgress: number;
+  overdue: number;
+  storyPointsAssigned: number;
+  storyPointsCompleted: number;
+  completionRate: number;
+  lastActiveDate: string | null;
+};
+
+export type TeamWorkloadResponse = {
+  students: TeamWorkloadStudent[];
+  unassignedIssues: number;
+  imbalanceDetected: boolean;
+  imbalanceMessage: string | null;
+  dueDateAvailable: boolean;
+};
+
 export type SupervisorProjectTab =
   | 'overview'
   | 'team'
