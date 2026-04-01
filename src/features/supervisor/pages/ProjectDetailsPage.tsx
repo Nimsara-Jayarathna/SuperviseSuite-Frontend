@@ -137,6 +137,17 @@ export function ProjectDetailsPage() {
   const [jiraWorkload, setJiraWorkload] = useState<TeamWorkloadResponse | null>(null);
   const [isJiraWorkloadLoading, setIsJiraWorkloadLoading] = useState(false);
   const [jiraWorkloadError, setJiraWorkloadError] = useState<string | null>(null);
+
+  const jiraConnectionKey = project?.jira?.connected 
+    ? (project.jira.workspaceName ?? 'connected') 
+    : 'disconnected';
+
+  useEffect(() => {
+    // reset workload whenever connection identity changes
+    setJiraWorkload(null);
+    setJiraWorkloadError(null);
+  }, [jiraConnectionKey]);
+
   const jiraCompletionGuardRef = useRef<string | null>(null);
 
   const activeRepository = useMemo(() => {
@@ -830,39 +841,59 @@ export function ProjectDetailsPage() {
 
       {activeTab === 'jira' ? (
         project.jira?.connected ? (
-          <section className="rounded-3xl border border-border bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-foreground">Team workload analytics</h2>
+          <div className="space-y-4">
             {isJiraWorkloadLoading ? (
-              <p className="mt-3 text-sm text-slate-600">Loading Jira workload data...</p>
+              <div className="space-y-4">
+                <div className="rounded-3xl border border-border bg-white p-6 shadow-sm space-y-4 animate-pulse">
+                  <div className="h-5 w-48 rounded-lg bg-slate-200" />
+                  <div className="space-y-2">
+                    <div className="h-3 w-full rounded bg-slate-100" />
+                    <div className="h-3 w-5/6 rounded bg-slate-100" />
+                    <div className="h-3 w-4/6 rounded bg-slate-100" />
+                  </div>
+                  <div className="h-24 w-full rounded-2xl bg-slate-100" />
+                </div>
+              </div>
             ) : null}
             {!isJiraWorkloadLoading && jiraWorkloadError ? (
-              <div className="mt-3 space-y-3">
+              <div className="rounded-3xl border border-border bg-white p-6 shadow-sm space-y-3">
                 <p className="text-sm text-red-600">{jiraWorkloadError}</p>
-                <Button type="button" size="sm" variant="secondary" onClick={() => void loadJiraWorkload()}>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => void loadJiraWorkload()}
+                >
                   Retry
                 </Button>
               </div>
             ) : null}
             {!isJiraWorkloadLoading && !jiraWorkloadError && jiraWorkload ? (
-              <div className="mt-4">
-                <TeamWorkloadSection workload={jiraWorkload} />
-              </div>
+              <TeamWorkloadSection 
+                workload={jiraWorkload} 
+                onRefresh={() => void loadJiraWorkload()}
+                isRefreshing={isJiraWorkloadLoading}
+              />
             ) : null}
-          </section>
+          </div>
         ) : (
           <section className="rounded-3xl border border-border bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-foreground">No Jira workspace connected</h2>
-            <p className="mt-3 text-sm text-slate-600">
-              Connect Jira from Integrations to enable workspace linking and project-level Jira
-              visibility.
-            </p>
-            <div className="mt-5">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-semibold text-foreground">
+                  No Jira workspace connected
+                </h2>
+                <p className="mt-2 text-sm text-slate-600">
+                  Link a Jira project to this workspace to enable team workload analytics and contribution tracking.
+                </p>
+              </div>
               <button
                 type="button"
                 className={buttonStyles({ variant: 'primary', size: 'sm' })}
-                onClick={() => handleTabChange('integrations')}
+                disabled={isConnectingJira}
+                onClick={() => void handleConnectJira()}
               >
-                Go to Integrations
+                {isConnectingJira ? 'Redirecting...' : 'Connect Jira'}
               </button>
             </div>
           </section>
