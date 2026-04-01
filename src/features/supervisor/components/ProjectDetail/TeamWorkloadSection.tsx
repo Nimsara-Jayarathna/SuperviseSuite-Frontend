@@ -39,6 +39,9 @@ function renderLastActiveCell(student: TeamWorkloadStudent, now: Date) {
 
 export function TeamWorkloadSection({ workload }: TeamWorkloadSectionProps) {
   const now = new Date();
+  const hasNoStudentRows = workload.students.length === 0;
+  const hasNoUnassignedIssues = workload.unassignedIssues === 0;
+  const hasNoWorkloadData = hasNoStudentRows && hasNoUnassignedIssues;
   const maxAssigned = Math.max(0, ...workload.students.map((student) => student.assigned));
   const outlierAssigneeId =
     workload.imbalanceDetected && workload.students.length > 0
@@ -54,14 +57,21 @@ export function TeamWorkloadSection({ workload }: TeamWorkloadSectionProps) {
         </p>
       </header>
 
-      {workload.imbalanceDetected && workload.imbalanceMessage ? (
+      {hasNoWorkloadData ? (
+        <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-sm text-slate-600">
+          No Jira work items were found for this project yet.
+        </div>
+      ) : null}
+
+      {!hasNoWorkloadData && workload.imbalanceDetected && workload.imbalanceMessage ? (
         <div className="rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           <p className="font-semibold">Workload imbalance detected</p>
           <p className="mt-1">{workload.imbalanceMessage}</p>
         </div>
       ) : null}
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-4">
+      {!hasNoWorkloadData ? (
+        <section className="rounded-2xl border border-slate-200 bg-white p-4">
         <h3 className="text-sm font-semibold text-slate-800">Workload by student</h3>
         {workload.students.length === 0 ? (
           <p className="mt-3 text-sm text-slate-500">No assigned student workload to visualize.</p>
@@ -87,9 +97,11 @@ export function TeamWorkloadSection({ workload }: TeamWorkloadSectionProps) {
             })}
           </div>
         )}
-      </section>
+        </section>
+      ) : null}
 
-      <section className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
+      {!hasNoWorkloadData ? (
+        <section className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
         <table className="min-w-full divide-y divide-slate-200 text-sm">
           <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-[0.14em] text-muted-foreground">
             <tr>
@@ -144,9 +156,10 @@ export function TeamWorkloadSection({ workload }: TeamWorkloadSectionProps) {
             )}
           </tbody>
         </table>
-      </section>
+        </section>
+      ) : null}
 
-      {workload.unassignedIssues > 0 ? (
+      {!hasNoWorkloadData && workload.unassignedIssues > 0 ? (
         <section className="rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           <p className="font-semibold">Unassigned Jira issues: {workload.unassignedIssues}</p>
           <p className="mt-1">

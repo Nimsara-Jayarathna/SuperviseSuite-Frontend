@@ -11,6 +11,7 @@ import { ProjectDetailsSkeleton } from '../components/ProjectDetailsSkeleton';
 import { IntegrationsTabSection } from '../components/ProjectDetail/IntegrationsTabSection';
 import { MilestonesTabSection } from '../components/ProjectDetail/MilestonesTabSection';
 import { OverviewTabSection } from '../components/ProjectDetail/OverviewTabSection';
+import { TeamWorkloadSection } from '../components/ProjectDetail/TeamWorkloadSection';
 import { TeamTabSection } from '../components/ProjectDetail/TeamTabSection';
 import { useProjectRepositories } from '../hooks/useProjectRepositories';
 import { parseGitHubSetupRedirect } from '../hooks/useGitHubSetupFlow';
@@ -495,7 +496,7 @@ export function ProjectDetailsPage() {
       return;
     }
 
-    if (!project.jira?.connected) {
+    if (!project?.jira?.connected) {
       setJiraWorkload(null);
       setJiraWorkloadError(null);
       setIsJiraWorkloadLoading(false);
@@ -512,7 +513,7 @@ export function ProjectDetailsPage() {
     isJiraWorkloadLoading,
     jiraWorkload,
     loadJiraWorkload,
-    project.jira?.connected,
+    project?.jira?.connected,
     projectId,
   ]);
 
@@ -843,9 +844,9 @@ export function ProjectDetailsPage() {
               </div>
             ) : null}
             {!isJiraWorkloadLoading && !jiraWorkloadError && jiraWorkload ? (
-              <p className="mt-3 text-sm text-slate-600">
-                Jira workload data is loaded and ready for the analytics view.
-              </p>
+              <div className="mt-4">
+                <TeamWorkloadSection workload={jiraWorkload} />
+              </div>
             ) : null}
           </section>
         ) : (
