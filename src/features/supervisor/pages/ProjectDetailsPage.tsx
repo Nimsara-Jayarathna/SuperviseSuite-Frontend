@@ -27,6 +27,7 @@ import {
 } from '../projectDetails.shared';
 import type {
   ProjectGitHubActivity,
+  TeamWorkloadResponse,
   SupervisorProjectDetailTab,
   SupervisorProjectLifecycle,
 } from '../types';
@@ -132,6 +133,9 @@ export function ProjectDetailsPage() {
   const [isConnectingJira, setIsConnectingJira] = useState(false);
   const [isDisconnectingJira, setIsDisconnectingJira] = useState(false);
   const [isJiraDisconnectConfirmOpen, setIsJiraDisconnectConfirmOpen] = useState(false);
+  const [jiraWorkload, setJiraWorkload] = useState<TeamWorkloadResponse | null>(null);
+  const [isJiraWorkloadLoading, setIsJiraWorkloadLoading] = useState(false);
+  const [jiraWorkloadError, setJiraWorkloadError] = useState<string | null>(null);
   const jiraCompletionGuardRef = useRef<string | null>(null);
 
   const activeRepository = useMemo(() => {
@@ -463,6 +467,55 @@ export function ProjectDetailsPage() {
     setSearchParams(nextParams, { replace: true });
   }
 
+  const loadJiraWorkload = useCallback(async () => {
+    if (!projectId) {
+      return;
+    }
+    setIsJiraWorkloadLoading(true);
+    setJiraWorkloadError(null);
+    try {
+      const response = await supervisorApi.getProjectTeamWorkload(projectId);
+      setJiraWorkload(response);
+    } catch (error) {
+      const message = isApiException(error)
+        ? error.apiError.message
+        : 'Unable to load Jira workload right now.';
+      setJiraWorkloadError(message);
+      setJiraWorkload(null);
+    } finally {
+      setIsJiraWorkloadLoading(false);
+    }
+  }, [projectId]);
+
+  useEffect(() => {
+    if (!projectId) {
+      setJiraWorkload(null);
+      setJiraWorkloadError(null);
+      setIsJiraWorkloadLoading(false);
+      return;
+    }
+
+    if (!project.jira?.connected) {
+      setJiraWorkload(null);
+      setJiraWorkloadError(null);
+      setIsJiraWorkloadLoading(false);
+      return;
+    }
+
+    if (activeTab !== 'jira' || jiraWorkload || isJiraWorkloadLoading) {
+      return;
+    }
+
+    void loadJiraWorkload();
+  }, [
+    activeTab,
+    isJiraWorkloadLoading,
+    jiraWorkload,
+    loadJiraWorkload,
+    project.jira?.connected,
+    projectId,
+  ]);
+
   if (isLoading) return <ProjectDetailsSkeleton />;
 
   if (error) {
@@ -777,10 +830,23 @@ export function ProjectDetailsPage() {
       {activeTab === 'jira' ? (
         project.jira?.connected ? (
           <section className="rounded-3xl border border-border bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-foreground">Jira tab moved</h2>
-            <p className="mt-3 text-sm text-slate-600">
-              Jira integration settings are available under the Integrations tab.
-            </p>
+            <h2 className="text-lg font-semibold text-foreground">Team workload analytics</h2>
+            {isJiraWorkloadLoading ? (
+              <p className="mt-3 text-sm text-slate-600">Loading Jira workload data...</p>
+            ) : null}
+            {!isJiraWorkloadLoading && jiraWorkloadError ? (
+              <div className="mt-3 space-y-3">
+                <p className="text-sm text-red-600">{jiraWorkloadError}</p>
+                <Button type="button" size="sm" variant="secondary" onClick={() => void loadJiraWorkload()}>
+                  Retry
+                </Button>
+              </div>
+            ) : null}
+            {!isJiraWorkloadLoading && !jiraWorkloadError && jiraWorkload ? (
+              <p className="mt-3 text-sm text-slate-600">
+                Jira workload data is loaded and ready for the analytics view.
+              </p>
+            ) : null}
           </section>
         ) : (
           <section className="rounded-3xl border border-border bg-white p-6 shadow-sm">
