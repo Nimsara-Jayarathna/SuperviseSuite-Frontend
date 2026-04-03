@@ -501,10 +501,13 @@ export function ProjectDetailsPage() {
         ? error.apiError.message
         : 'Unable to load Jira workload right now.';
       const errorCode = isApiException(error) ? error.apiError.code : null;
+      const reconnectRequired =
+        message.toLowerCase().includes('jira authorization is no longer valid') ||
+        message.toLowerCase().includes('disconnect and reconnect jira');
       setJiraWorkloadError(message);
       setJiraWorkloadErrorCode(errorCode);
       setJiraWorkload(null);
-      if (errorCode === 'SERVICE_UNAVAILABLE') {
+      if (errorCode === 'SERVICE_UNAVAILABLE' && !reconnectRequired) {
         setJiraNetworkRetryCount((current) => Math.min(current + 1, MAX_JIRA_NETWORK_RETRIES));
       } else {
         setJiraNetworkRetryCount(0);

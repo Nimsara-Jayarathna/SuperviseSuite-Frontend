@@ -6,6 +6,7 @@ import {
   shouldFallbackToDashboard,
 } from '@/features/projects/api/githubPagination';
 import { registerSessionCacheClearer } from '@/services/sessionCache';
+import type { TeamWorkloadResponse } from '@/features/supervisor/types';
 import type {
   PaginatedListResult,
   ProjectGitHubContributor,
@@ -161,5 +162,11 @@ export const studentApi = {
     } finally {
       delete inFlightProjectRequests[projectId];
     }
+  },
+
+  getProjectTeamWorkload(projectId: string): Promise<TeamWorkloadResponse> {
+    return apiClient.get<TeamWorkloadResponse>(
+      `/api/student/projects/${projectId}/jira/team-workload`,
+    );
   },
 };

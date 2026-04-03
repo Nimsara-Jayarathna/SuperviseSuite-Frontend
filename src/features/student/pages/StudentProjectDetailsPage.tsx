@@ -19,8 +19,11 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState, type ComponentProps } from 'react';
 import { CommitActivitySection } from '@/features/projects/components/CommitActivitySection';
+import { TeamWorkloadSection } from '@/features/supervisor/components/ProjectDetail/TeamWorkloadSection';
+import type { TeamWorkloadResponse } from '@/features/supervisor/types';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { ErrorState } from '@/components/feedback/ErrorState';
+import { isApiException } from '@/services/apiClient';
 import { buttonStyles } from '@/components/ui/Button';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { PageTabs } from '@/components/ui/PageTabs';
@@ -130,6 +133,9 @@ export function StudentProjectDetailsPage() {
     project?.github ?? null,
   );
   const [isGitHubViewLoading, setIsGitHubViewLoading] = useState(false);
+  const [jiraWorkload, setJiraWorkload] = useState<TeamWorkloadResponse | null>(null);
+  const [isJiraWorkloadLoading, setIsJiraWorkloadLoading] = useState(false);
+  const [jiraWorkloadError, setJiraWorkloadError] = useState<string | null>(null);
 
   const enabledRepositories = useMemo(
     () =>
@@ -201,6 +207,27 @@ export function StudentProjectDetailsPage() {
     [projectId, selectedGitHubRepositoryLinkId],
   );
 
+  const loadJiraWorkload = useCallback(async () => {
+    if (!projectId) {
+      return;
+    }
+
+    setIsJiraWorkloadLoading(true);
+    setJiraWorkloadError(null);
+    try {
+      const response = await studentApi.getProjectTeamWorkload(projectId);
+      setJiraWorkload(response);
+    } catch (error) {
+      const message = isApiException(error)
+        ? error.apiError.message
+        : 'Unable to load Jira workload right now.';
+      setJiraWorkloadError(message);
+      setJiraWorkload(null);
+    } finally {
+      setIsJiraWorkloadLoading(false);
+    }
+  }, [projectId]);
+
   function handleTabChange(tab: StudentProjectDetailTab) {
     const nextParams = new URLSearchParams(searchParams);
     if (tab === 'overview') {
@@ -210,6 +237,37 @@ export function StudentProjectDetailsPage() {
     }
     setSearchParams(nextParams, { replace: true });
   }
+
+  const requestedTab = searchParams.get('tab') as StudentProjectDetailTab | null;
+  const tabs: StudentProjectDetailTab[] = [...BASE_TABS, 'github', 'jira'];
+  const activeTab = requestedTab && tabs.includes(requestedTab) ? requestedTab : 'overview';
+
+  useEffect(() => {
+    if (activeTab !== 'jira') {
+      return;
+    }
+
+    if (!projectId || !jira?.connected) {
+      setJiraWorkload(null);
+      setJiraWorkloadError(null);
+      setIsJiraWorkloadLoading(false);
+      return;
+    }
+
+    if (jiraWorkload || jiraWorkloadError || isJiraWorkloadLoading) {
+      return;
+    }
+
+    void loadJiraWorkload();
+  }, [
+    activeTab,
+    isJiraWorkloadLoading,
+    jira?.connected,
+    jiraWorkload,
+    jiraWorkloadError,
+    loadJiraWorkload,
+    projectId,
+  ]);
 
   if (isLoading) {
     return <StudentProjectDetailsSkeleton />;
@@ -239,10 +297,6 @@ export function StudentProjectDetailsPage() {
   if (!project) {
     return null;
   }
-
-  const requestedTab = searchParams.get('tab') as StudentProjectDetailTab | null;
-  const tabs: StudentProjectDetailTab[] = [...BASE_TABS, 'github', 'jira'];
-  const activeTab = requestedTab && tabs.includes(requestedTab) ? requestedTab : 'overview';
 
   return (
     <div className="space-y-6">
@@ -740,41 +794,72 @@ export function StudentProjectDetailsPage() {
             </div>
 
             {jira?.connected ? (
-              <article className="mt-4 rounded-2xl border border-border/70 bg-slate-50/50 p-4 transition-colors hover:border-border">
-                <div className="grid grid-cols-1 gap-2 text-xs text-slate-500 sm:grid-cols-12 sm:gap-4">
-                  <div className="flex min-w-0 items-center gap-1.5 hover:text-foreground sm:col-span-5">
-                    <Link2 className="h-3.5 w-3.5 shrink-0" />
-                    {jira.workspaceUrl ? (
-                      <a
-                        href={jira.workspaceUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex min-w-0 items-center gap-1 truncate font-medium text-slate-700 hover:underline"
-                        title={jira.workspaceUrl}
-                      >
-                        <span className="truncate">{jira.workspaceName ?? 'Workspace'}</span>
-                        <ExternalLink className="h-3 w-3 shrink-0" />
-                      </a>
-                    ) : (
-                      <span className="truncate font-medium text-slate-700">
-                        {jira.workspaceName ?? 'Workspace'}
+              <div className="mt-4 space-y-4">
+                <article className="rounded-2xl border border-border/70 bg-slate-50/50 p-4 transition-colors hover:border-border">
+                  <div className="grid grid-cols-1 gap-2 text-xs text-slate-500 sm:grid-cols-12 sm:gap-4">
+                    <div className="flex min-w-0 items-center gap-1.5 hover:text-foreground sm:col-span-5">
+                      <Link2 className="h-3.5 w-3.5 shrink-0" />
+                      {jira.workspaceUrl ? (
+                        <a
+                          href={jira.workspaceUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex min-w-0 items-center gap-1 truncate font-medium text-slate-700 hover:underline"
+                          title={jira.workspaceUrl}
+                        >
+                          <span className="truncate">{jira.workspaceName ?? 'Workspace'}</span>
+                          <ExternalLink className="h-3 w-3 shrink-0" />
+                        </a>
+                      ) : (
+                        <span className="truncate font-medium text-slate-700">
+                          {jira.workspaceName ?? 'Workspace'}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex min-w-0 items-center sm:col-span-4">
+                      <span className="truncate">
+                        Integration:{' '}
+                        <span className="font-medium text-slate-700">Atlassian OAuth</span>
                       </span>
-                    )}
+                    </div>
+                    <div className="flex min-w-0 items-center gap-1.5 sm:col-span-3 sm:justify-end">
+                      <RefreshCw className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
+                      <span className="truncate font-medium text-emerald-700">
+                        Workspace connected
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex min-w-0 items-center sm:col-span-4">
-                    <span className="truncate">
-                      Integration:{' '}
-                      <span className="font-medium text-slate-700">Atlassian OAuth</span>
-                    </span>
+                </article>
+
+                {isJiraWorkloadLoading ? (
+                  <div className="rounded-3xl border border-border bg-white p-6 shadow-sm space-y-4 animate-pulse">
+                    <div className="h-5 w-48 rounded-lg bg-slate-200" />
+                    <div className="space-y-2">
+                      <div className="h-3 w-full rounded bg-slate-100" />
+                      <div className="h-3 w-5/6 rounded bg-slate-100" />
+                      <div className="h-3 w-4/6 rounded bg-slate-100" />
+                    </div>
+                    <div className="h-24 w-full rounded-2xl bg-slate-100" />
                   </div>
-                  <div className="flex min-w-0 items-center gap-1.5 sm:col-span-3 sm:justify-end">
-                    <RefreshCw className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
-                    <span className="truncate font-medium text-emerald-700">
-                      Workspace connected
-                    </span>
+                ) : null}
+
+                {!isJiraWorkloadLoading && jiraWorkloadError ? (
+                  <div className="rounded-3xl border border-border bg-white p-6 shadow-sm space-y-3">
+                    <p className="text-sm text-red-600">{jiraWorkloadError}</p>
+                    <button
+                      type="button"
+                      className={buttonStyles({ variant: 'secondary', size: 'sm' })}
+                      onClick={() => void loadJiraWorkload()}
+                    >
+                      Retry
+                    </button>
                   </div>
-                </div>
-              </article>
+                ) : null}
+
+                {!isJiraWorkloadLoading && !jiraWorkloadError && jiraWorkload ? (
+                  <TeamWorkloadSection workload={jiraWorkload} />
+                ) : null}
+              </div>
             ) : (
               <div className="mt-6 rounded-3xl border border-dashed border-slate-200 p-12 text-center text-slate-400">
                 <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-50 shadow-inner">
