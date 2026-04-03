@@ -54,6 +54,11 @@ export function TeamWorkloadSection({ workload, onRefresh, isRefreshing }: TeamW
       ? workload.students[0].assigneeAccountId
       : null;
 
+  const studentKey = (student: TeamWorkloadStudent, index: number): string => {
+    const primary = student.assigneeAccountId || student.displayName || 'student';
+    return `${primary}-${index}`;
+  };
+
   return (
     <section className="space-y-5 rounded-3xl border border-border bg-white p-6 shadow-sm">
       <header className="flex items-start justify-between gap-4">
@@ -98,13 +103,13 @@ export function TeamWorkloadSection({ workload, onRefresh, isRefreshing }: TeamW
             </p>
           ) : (
             <div className="mt-4 space-y-3">
-              {workload.students.map((student) => {
+              {workload.students.map((student, index) => {
                 const isOutlier =
                   outlierAssigneeId !== null && student.assigneeAccountId === outlierAssigneeId;
                 const openIssues = Math.max(0, student.assigned - student.completed);
                 const fillWidth = getBarFillWidth(openIssues, maxOpenIssues);
                 return (
-                  <div key={student.assigneeAccountId} className="space-y-1">
+                  <div key={studentKey(student, index)} className="space-y-1">
                     <div className="flex items-center justify-between gap-3 text-xs">
                       <span className="font-semibold text-slate-700">{student.displayName}</span>
                       <span className="font-semibold text-slate-600">
@@ -170,11 +175,11 @@ export function TeamWorkloadSection({ workload, onRefresh, isRefreshing }: TeamW
                   </td>
                 </tr>
               ) : (
-                workload.students.map((student) => {
+                workload.students.map((student, index) => {
                   const lowCompletion = student.completionRate < 50;
                   const hasOverdue = student.overdue > 0;
                   return (
-                    <tr key={student.assigneeAccountId} className="align-middle">
+                    <tr key={studentKey(student, index)} className="align-middle">
                       <td className="px-4 py-3 font-medium text-slate-800">
                         {student.displayName}
                       </td>

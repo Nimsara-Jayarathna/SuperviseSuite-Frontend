@@ -35,6 +35,8 @@ import type {
 
 const JIRA_COMPLETION_PROCESSING_TTL_MS = 5 * 60 * 1000;
 const JIRA_RESULT_KEY_PREFIX = 'jira-oauth:';
+const JIRA_NETWORK_RETRY_DELAY_MS = 3000;
+const MAX_JIRA_NETWORK_RETRIES = 6;
 
 function hashFlowKey(value: string): string {
   let hash = 2166136261;
@@ -137,15 +139,19 @@ export function ProjectDetailsPage() {
   const [jiraWorkload, setJiraWorkload] = useState<TeamWorkloadResponse | null>(null);
   const [isJiraWorkloadLoading, setIsJiraWorkloadLoading] = useState(false);
   const [jiraWorkloadError, setJiraWorkloadError] = useState<string | null>(null);
+  const [jiraWorkloadErrorCode, setJiraWorkloadErrorCode] = useState<string | null>(null);
+  const [jiraNetworkRetryCount, setJiraNetworkRetryCount] = useState(0);
 
   const jiraConnectionKey = project?.jira?.connected 
-    ? (project.jira.workspaceName ?? 'connected') 
+    ? `${project.jira.workspaceName ?? 'connected'}:${project.lastActivityAt ?? ''}`
     : 'disconnected';
 
   useEffect(() => {
     // reset workload whenever connection identity changes
     setJiraWorkload(null);
     setJiraWorkloadError(null);
+    setJiraWorkloadErrorCode(null);
+    setJiraNetworkRetryCount(0);
   }, [jiraConnectionKey]);
 
   const jiraCompletionGuardRef = useRef<string | null>(null);
@@ -485,15 +491,24 @@ export function ProjectDetailsPage() {
     }
     setIsJiraWorkloadLoading(true);
     setJiraWorkloadError(null);
+    setJiraWorkloadErrorCode(null);
     try {
       const response = await supervisorApi.getProjectTeamWorkload(projectId);
       setJiraWorkload(response);
+      setJiraNetworkRetryCount(0);
     } catch (error) {
       const message = isApiException(error)
         ? error.apiError.message
         : 'Unable to load Jira workload right now.';
+      const errorCode = isApiException(error) ? error.apiError.code : null;
       setJiraWorkloadError(message);
+      setJiraWorkloadErrorCode(errorCode);
       setJiraWorkload(null);
+      if (errorCode === 'SERVICE_UNAVAILABLE') {
+        setJiraNetworkRetryCount((current) => Math.min(current + 1, MAX_JIRA_NETWORK_RETRIES));
+      } else {
+        setJiraNetworkRetryCount(0);
+      }
     } finally {
       setIsJiraWorkloadLoading(false);
     }
@@ -510,11 +525,13 @@ export function ProjectDetailsPage() {
     if (!project?.jira?.connected) {
       setJiraWorkload(null);
       setJiraWorkloadError(null);
+      setJiraWorkloadErrorCode(null);
+      setJiraNetworkRetryCount(0);
       setIsJiraWorkloadLoading(false);
       return;
     }
 
-    if (activeTab !== 'jira' || jiraWorkload || isJiraWorkloadLoading) {
+    if (activeTab !== 'jira' || jiraWorkload || jiraWorkloadError || isJiraWorkloadLoading) {
       return;
     }
 
@@ -523,9 +540,39 @@ export function ProjectDetailsPage() {
     activeTab,
     isJiraWorkloadLoading,
     jiraWorkload,
+    jiraWorkloadError,
     loadJiraWorkload,
     project?.jira?.connected,
     projectId,
+  ]);
+
+  useEffect(() => {
+    if (activeTab !== 'jira' || !project?.jira?.connected || isJiraWorkloadLoading) {
+      return;
+    }
+
+    if (jiraWorkloadErrorCode !== 'SERVICE_UNAVAILABLE') {
+      return;
+    }
+
+    if (jiraNetworkRetryCount >= MAX_JIRA_NETWORK_RETRIES) {
+      return;
+    }
+
+    const retryTimer = window.setTimeout(() => {
+      void loadJiraWorkload();
+    }, JIRA_NETWORK_RETRY_DELAY_MS);
+
+    return () => {
+      window.clearTimeout(retryTimer);
+    };
+  }, [
+    activeTab,
+    isJiraWorkloadLoading,
+    jiraNetworkRetryCount,
+    jiraWorkloadErrorCode,
+    loadJiraWorkload,
+    project?.jira?.connected,
   ]);
 
   if (isLoading) return <ProjectDetailsSkeleton />;
@@ -858,6 +905,13 @@ export function ProjectDetailsPage() {
             {!isJiraWorkloadLoading && jiraWorkloadError ? (
               <div className="rounded-3xl border border-border bg-white p-6 shadow-sm space-y-3">
                 <p className="text-sm text-red-600">{jiraWorkloadError}</p>
+                {jiraWorkloadErrorCode === 'SERVICE_UNAVAILABLE' &&
+                jiraNetworkRetryCount > 0 &&
+                jiraNetworkRetryCount < MAX_JIRA_NETWORK_RETRIES ? (
+                  <p className="text-xs text-slate-500">
+                    Retrying automatically... ({jiraNetworkRetryCount}/{MAX_JIRA_NETWORK_RETRIES})
+                  </p>
+                ) : null}
                 <Button
                   type="button"
                   size="sm"
