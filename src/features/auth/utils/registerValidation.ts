@@ -29,8 +29,17 @@ export function validateRegisterForm(fields: {
   password: string;
   confirmPassword: string;
   registrationNumber: string;
+  requireRegistrationNumber?: boolean;
 }): RegisterFieldErrors {
-  const { firstName, lastName, email, password, confirmPassword, registrationNumber } = fields;
+  const {
+    firstName,
+    lastName,
+    email,
+    password,
+    confirmPassword,
+    registrationNumber,
+    requireRegistrationNumber = true,
+  } = fields;
   const errors: RegisterFieldErrors = {};
 
   if (!firstName.trim()) errors.firstName = 'First name is required.';
@@ -50,7 +59,9 @@ export function validateRegisterForm(fields: {
   if (!confirmPassword) errors.confirmPassword = 'Please confirm your password.';
   else if (password !== confirmPassword) errors.confirmPassword = 'Passwords do not match.';
 
-  if (!registrationNumber.trim()) errors.registrationNumber = 'Registration number is required.';
+  if (requireRegistrationNumber && !registrationNumber.trim()) {
+    errors.registrationNumber = 'Registration number is required.';
+  }
 
   return errors;
 }

@@ -1,4 +1,10 @@
-import type { LoginResponse, LoginRequest, RegisterRequest, RegisterResponse } from '../types';
+import type {
+  LoginResponse,
+  LoginRequest,
+  RegisterRequest,
+  RegisterResponse,
+  SupervisorRegisterRequest,
+} from '../types';
 import { apiClient } from '@/services/apiClient';
 
 // Switch to false once the backend /api/auth/* endpoints are live.
@@ -42,6 +48,21 @@ export const authApi = {
       };
     }
     return apiClient.post<RegisterResponse>('/api/auth/register', body);
+  },
+
+  async registerSupervisor(body: SupervisorRegisterRequest): Promise<RegisterResponse> {
+    if (USE_MOCK) {
+      await mockDelay();
+      return {
+        id: 'mock-user-id',
+        email: body.email,
+        firstName: body.firstName,
+        lastName: body.lastName,
+        registrationNumber: null,
+        role: 'SUPERVISOR',
+      };
+    }
+    return apiClient.post<RegisterResponse>('/api/auth/register/supervisor', body);
   },
 
   /**
