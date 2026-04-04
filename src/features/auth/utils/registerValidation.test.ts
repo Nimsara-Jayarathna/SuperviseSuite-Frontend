@@ -88,6 +88,33 @@ describe('validateRegisterForm', () => {
       const { email } = validateRegisterForm(validFields({ email: 'user@university.ac.lk' }));
       expect(email).toBeUndefined();
     });
+
+    it('accepts @sliit.lk emails for supervisor mode', () => {
+      const { email } = validateRegisterForm({
+        ...validFields({ email: 'Jane.Doe@SLIIT.LK' }),
+        requireRegistrationNumber: false,
+        requireSliitEmail: true,
+      });
+      expect(email).toBeUndefined();
+    });
+
+    it('rejects @my.sliit.lk emails for supervisor mode', () => {
+      const { email } = validateRegisterForm({
+        ...validFields({ email: 'student@my.sliit.lk' }),
+        requireRegistrationNumber: false,
+        requireSliitEmail: true,
+      });
+      expect(email).toBe('Email must be a valid SLIIT institutional email (@sliit.lk).');
+    });
+
+    it('rejects non-sliit domains for supervisor mode', () => {
+      const { email } = validateRegisterForm({
+        ...validFields({ email: 'user@gmail.com' }),
+        requireRegistrationNumber: false,
+        requireSliitEmail: true,
+      });
+      expect(email).toBe('Email must be a valid SLIIT institutional email (@sliit.lk).');
+    });
   });
 
   describe('password', () => {

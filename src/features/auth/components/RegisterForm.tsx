@@ -70,6 +70,7 @@ export function RegisterForm({
       confirmPassword,
       registrationNumber,
       requireRegistrationNumber: role === 'student',
+      requireSliitEmail: role === 'supervisor',
     });
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
@@ -174,7 +175,7 @@ export function RegisterForm({
           id="reg-email"
           type="email"
           autoComplete="email"
-          placeholder="you@example.com"
+          placeholder={role === 'supervisor' ? 'name@sliit.lk' : 'you@example.com'}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           className={inputClass}
