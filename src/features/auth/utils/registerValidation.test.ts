@@ -163,6 +163,14 @@ describe('validateRegisterForm', () => {
       );
       expect(registrationNumber).toBe('Registration number is required.');
     });
+
+    it('does not require registrationNumber for supervisor mode', () => {
+      const { registrationNumber } = validateRegisterForm({
+        ...validFields({ registrationNumber: '' }),
+        requireRegistrationNumber: false,
+      });
+      expect(registrationNumber).toBeUndefined();
+    });
   });
 
   describe('multiple errors', () => {
