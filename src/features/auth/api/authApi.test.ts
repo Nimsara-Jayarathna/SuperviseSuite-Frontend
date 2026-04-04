@@ -1,13 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('@/services/apiClient', () => ({
+vi.mock('../../../services/apiClient', () => ({
   apiClient: {
     post: vi.fn(),
   },
 }));
 
 import { authApi } from './authApi';
-import { apiClient } from '@/services/apiClient';
+import { apiClient } from '../../../services/apiClient';
 
 describe('authApi.registerSupervisor', () => {
   beforeEach(() => {

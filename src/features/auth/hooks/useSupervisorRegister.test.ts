@@ -1,8 +1,8 @@
-import { vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
-import { authApi } from '@/features/auth/api/authApi';
-import { ApiException } from '@/services/apiClient';
-import type { ApiError } from '@/types';
+import { authApi } from '../api/authApi';
+import { ApiException } from '../../../services/apiClient';
+import type { ApiError } from '../../../types';
 import { useSupervisorRegister } from './useSupervisorRegister';
 
 const mockNavigate = vi.hoisted(() => vi.fn());
@@ -11,7 +11,7 @@ vi.mock('react-router-dom', () => ({
   useNavigate: () => mockNavigate,
 }));
 
-vi.mock('@/features/auth/api/authApi', () => ({
+vi.mock('../api/authApi', () => ({
   authApi: { registerSupervisor: vi.fn() },
 }));
 
