@@ -142,7 +142,7 @@ export function ProjectDetailsPage() {
   const [jiraWorkloadErrorCode, setJiraWorkloadErrorCode] = useState<string | null>(null);
   const [jiraNetworkRetryCount, setJiraNetworkRetryCount] = useState(0);
 
-  const jiraConnectionKey = project?.jira?.connected 
+  const jiraConnectionKey = project?.jira?.connected
     ? `${project.jira.workspaceName ?? 'connected'}:${project.lastActivityAt ?? ''}`
     : 'disconnected';
 
@@ -926,8 +926,8 @@ export function ProjectDetailsPage() {
               </div>
             ) : null}
             {!isJiraWorkloadLoading && !jiraWorkloadError && jiraWorkload ? (
-              <TeamWorkloadSection 
-                workload={jiraWorkload} 
+              <TeamWorkloadSection
+                workload={jiraWorkload}
                 onRefresh={() => void loadJiraWorkload()}
                 isRefreshing={isJiraWorkloadLoading}
               />
@@ -941,7 +941,8 @@ export function ProjectDetailsPage() {
                   No Jira workspace connected
                 </h2>
                 <p className="mt-2 text-sm text-slate-600">
-                  Link a Jira project to this workspace to enable team workload analytics and contribution tracking.
+                  Link a Jira project to this workspace to enable team workload analytics and
+                  contribution tracking.
                 </p>
               </div>
               <button

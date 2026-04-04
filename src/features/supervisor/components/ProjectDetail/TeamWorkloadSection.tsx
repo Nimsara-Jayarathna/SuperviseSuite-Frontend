@@ -40,14 +40,18 @@ function renderLastActiveCell(student: TeamWorkloadStudent, now: Date) {
   );
 }
 
-export function TeamWorkloadSection({ workload, onRefresh, isRefreshing }: TeamWorkloadSectionProps) {
+export function TeamWorkloadSection({
+  workload,
+  onRefresh,
+  isRefreshing,
+}: TeamWorkloadSectionProps) {
   const now = new Date();
   const hasNoStudentRows = workload.students.length === 0;
   const hasNoUnassignedIssues = workload.unassignedIssues === 0;
   const hasNoWorkloadData = hasNoStudentRows && hasNoUnassignedIssues;
   const maxOpenIssues = Math.max(
-    0, 
-    ...workload.students.map((s) => Math.max(0, s.assigned - s.completed))
+    0,
+    ...workload.students.map((s) => Math.max(0, s.assigned - s.completed)),
   );
   const outlierAssigneeId =
     workload.imbalanceDetected && workload.students.length > 0
@@ -107,9 +111,7 @@ export function TeamWorkloadSection({ workload, onRefresh, isRefreshing }: TeamW
                 <div key={studentKey(student, index)} className="space-y-1">
                   <div className="flex items-center justify-between gap-3 text-xs">
                     <span className="font-semibold text-slate-700">{student.displayName}</span>
-                    <span className="font-semibold text-slate-600">
-                      {openIssues} open
-                    </span>
+                    <span className="font-semibold text-slate-600">{openIssues} open</span>
                   </div>
                   <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100 ring-1 ring-inset ring-slate-200">
                     <div
@@ -122,7 +124,7 @@ export function TeamWorkloadSection({ workload, onRefresh, isRefreshing }: TeamW
             })}
           </div>
           <p className="mt-3 text-xs text-slate-500">
-            Bar width reflects open (incomplete) issues only. 
+            Bar width reflects open (incomplete) issues only.
             <span className="ml-2 inline-flex items-center gap-1">
               <span className="inline-block h-2 w-3 rounded-full bg-emerald-500" /> Balanced
             </span>
@@ -167,20 +169,22 @@ export function TeamWorkloadSection({ workload, onRefresh, isRefreshing }: TeamW
                 const hasOverdue = student.overdue > 0;
                 return (
                   <tr key={studentKey(student, index)} className="align-middle">
-                    <td className="px-4 py-3 font-medium text-slate-800">
-                      {student.displayName}
-                    </td>
+                    <td className="px-4 py-3 font-medium text-slate-800">{student.displayName}</td>
                     <td className="px-4 py-3 text-right text-slate-700">{student.assigned}</td>
                     <td className="px-4 py-3 text-right text-slate-700">{student.completed}</td>
                     <td className="px-4 py-3 text-right text-slate-700">
-                      {student.storyPointsAssigned > 0
-                        ? student.storyPointsAssigned
-                        : <span className="text-slate-400">—</span>}
+                      {student.storyPointsAssigned > 0 ? (
+                        student.storyPointsAssigned
+                      ) : (
+                        <span className="text-slate-400">—</span>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-right text-slate-700">
-                      {student.storyPointsCompleted > 0
-                        ? student.storyPointsCompleted
-                        : <span className="text-slate-400">—</span>}
+                      {student.storyPointsCompleted > 0 ? (
+                        student.storyPointsCompleted
+                      ) : (
+                        <span className="text-slate-400">—</span>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-right text-slate-700">{student.inProgress}</td>
                     <td
