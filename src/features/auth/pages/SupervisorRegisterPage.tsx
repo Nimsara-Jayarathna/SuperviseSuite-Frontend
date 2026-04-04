@@ -5,13 +5,13 @@ import { RegisterForm } from '../components/RegisterForm';
 import { useSupervisorRegister } from '../hooks/useSupervisorRegister';
 
 export function SupervisorRegisterPage() {
-  const { register, isLoading, error, clearError } = useSupervisorRegister();
-  const requestModalStatus = isLoading ? 'loading' : 'error';
-  const requestModalOpen = isLoading || Boolean(error);
-  const requestModalTitle = isLoading ? 'Creating supervisor account' : 'Unable to create account';
+  const { register, isLoading, isSuccess, error, clearError } = useSupervisorRegister();
+  const requestModalStatus = isLoading ? 'loading' : 'success';
+  const requestModalOpen = isLoading || isSuccess;
+  const requestModalTitle = isLoading ? 'Creating supervisor account' : 'Registration successful';
   const requestModalMessage = isLoading
     ? 'Please wait while we create your supervisor account.'
-    : (error?.message ?? 'Unable to create your account right now. Please try again.');
+    : 'Your supervisor account has been created. Redirecting you to sign in...';
 
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-white px-4 py-12">
@@ -24,8 +24,8 @@ export function SupervisorRegisterPage() {
           status={requestModalStatus}
           title={requestModalTitle}
           message={requestModalMessage}
-          onClose={isLoading ? undefined : clearError}
-          onRetry={isLoading ? undefined : clearError}
+          onClose={undefined}
+          onRetry={undefined}
         />
 
         <div className="mb-6 flex flex-col items-center gap-2">
@@ -47,7 +47,7 @@ export function SupervisorRegisterPage() {
           isLoading={isLoading}
           error={error}
           onClearError={clearError}
-          feedbackMode="modal"
+          feedbackMode="inline"
         />
 
         <p className="mt-8 text-center text-xs text-muted-foreground">

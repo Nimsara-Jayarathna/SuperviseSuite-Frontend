@@ -15,13 +15,13 @@ import { useRegister } from '../hooks/useRegister';
  * not a concrete hook — the hook lives here, at the boundary layer.
  */
 export function RegisterPage() {
-  const { register, isLoading, error, clearError } = useRegister();
-  const requestModalStatus = isLoading ? 'loading' : 'error';
-  const requestModalOpen = isLoading || Boolean(error);
-  const requestModalTitle = isLoading ? 'Creating account' : 'Unable to create account';
+  const { register, isLoading, isSuccess, error, clearError } = useRegister();
+  const requestModalStatus = isLoading ? 'loading' : 'success';
+  const requestModalOpen = isLoading || isSuccess;
+  const requestModalTitle = isLoading ? 'Creating account' : 'Registration successful';
   const requestModalMessage = isLoading
     ? 'Please wait while we create your account.'
-    : (error?.message ?? 'Unable to create your account right now. Please try again.');
+    : 'Your account has been created. Redirecting you to sign in...';
 
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-white px-4 py-12">
@@ -36,8 +36,8 @@ export function RegisterPage() {
           status={requestModalStatus}
           title={requestModalTitle}
           message={requestModalMessage}
-          onClose={isLoading ? undefined : clearError}
-          onRetry={isLoading ? undefined : clearError}
+          onClose={undefined}
+          onRetry={undefined}
         />
 
         {/* Logo */}
@@ -67,7 +67,7 @@ export function RegisterPage() {
           isLoading={isLoading}
           error={error}
           onClearError={clearError}
-          feedbackMode="modal"
+          feedbackMode="inline"
         />
 
         {/* Footer */}

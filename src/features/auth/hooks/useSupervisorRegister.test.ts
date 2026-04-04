@@ -39,9 +39,14 @@ function makeApiError(overrides: Partial<ApiError> = {}): ApiError {
 describe('useSupervisorRegister', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.useFakeTimers();
   });
 
-  it('calls authApi.registerSupervisor with payload and navigates to /login on success', async () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('calls authApi.registerSupervisor and redirects to /login after success delay', async () => {
     vi.mocked(authApi.registerSupervisor).mockResolvedValue(undefined as never);
 
     const { result } = renderHook(() => useSupervisorRegister());
@@ -51,6 +56,13 @@ describe('useSupervisorRegister', () => {
     });
 
     expect(authApi.registerSupervisor).toHaveBeenCalledWith(validPayload);
+    expect(result.current.isSuccess).toBe(true);
+    expect(mockNavigate).not.toHaveBeenCalled();
+
+    act(() => {
+      vi.runAllTimers();
+    });
+
     expect(mockNavigate).toHaveBeenCalledWith('/login');
     expect(result.current.error).toBeNull();
   });
@@ -73,6 +85,7 @@ describe('useSupervisorRegister', () => {
     });
 
     expect(result.current.error).toEqual(validationError);
+    expect(result.current.isSuccess).toBe(false);
     expect(mockNavigate).not.toHaveBeenCalled();
   });
 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { isApiException } from '@/services/apiClient';
 import type { ApiError } from '@/types';
@@ -7,8 +7,11 @@ import type { RegisterRequest } from '../types';
 
 type RegisterState = {
   isLoading: boolean;
+  isSuccess: boolean;
   error: ApiError | null;
 };
+
+const SUCCESS_REDIRECT_DELAY_MS = 1200;
 
 /**
  * Narrow hook that owns only the student registration concern.
@@ -21,11 +24,24 @@ type RegisterState = {
  */
 export function useRegister() {
   const navigate = useNavigate();
+  const redirectTimerRef = useRef<number | null>(null);
 
-  const [state, setState] = useState<RegisterState>({ isLoading: false, error: null });
+  const [state, setState] = useState<RegisterState>({
+    isLoading: false,
+    isSuccess: false,
+    error: null,
+  });
 
-  const setLoading = () => setState({ isLoading: true, error: null });
-  const setError = (error: ApiError) => setState({ isLoading: false, error });
+  const setLoading = () => setState({ isLoading: true, isSuccess: false, error: null });
+  const setError = (error: ApiError) => setState({ isLoading: false, isSuccess: false, error });
+
+  useEffect(() => {
+    return () => {
+      if (redirectTimerRef.current !== null) {
+        window.clearTimeout(redirectTimerRef.current);
+      }
+    };
+  }, []);
 
   function clearError(): void {
     setState((s) => ({ ...s, error: null }));
@@ -34,6 +50,7 @@ export function useRegister() {
   function setUnexpectedError(): void {
     setState({
       isLoading: false,
+      isSuccess: false,
       error: {
         code: 'INTERNAL_ERROR',
         message: 'Something went wrong. Please try again.',
@@ -51,9 +68,10 @@ export function useRegister() {
     setLoading();
     try {
       await authApi.register(body);
-      // Registration only creates the account — the student must sign in separately.
-      setState({ isLoading: false, error: null });
-      navigate('/login');
+      setState({ isLoading: false, isSuccess: true, error: null });
+      redirectTimerRef.current = window.setTimeout(() => {
+        navigate('/login');
+      }, SUCCESS_REDIRECT_DELAY_MS);
     } catch (err) {
       if (isApiException(err)) setError(err.apiError);
       else setUnexpectedError();
@@ -63,6 +81,7 @@ export function useRegister() {
   return {
     register,
     isLoading: state.isLoading,
+    isSuccess: state.isSuccess,
     error: state.error,
     clearError,
   };
