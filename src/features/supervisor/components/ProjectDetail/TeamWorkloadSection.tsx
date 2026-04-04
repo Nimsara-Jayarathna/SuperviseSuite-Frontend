@@ -94,39 +94,33 @@ export function TeamWorkloadSection({ workload, onRefresh, isRefreshing }: TeamW
         </div>
       ) : null}
 
-      {!hasNoWorkloadData ? (
+      {!hasNoStudentRows ? (
         <section className="rounded-2xl border border-slate-200 bg-white p-4">
           <h3 className="text-sm font-semibold text-slate-800">Workload by student</h3>
-          {workload.students.length === 0 ? (
-            <p className="mt-3 text-sm text-slate-500">
-              No assigned student workload to visualize.
-            </p>
-          ) : (
-            <div className="mt-4 space-y-3">
-              {workload.students.map((student, index) => {
-                const isOutlier =
-                  outlierAssigneeId !== null && student.assigneeAccountId === outlierAssigneeId;
-                const openIssues = Math.max(0, student.assigned - student.completed);
-                const fillWidth = getBarFillWidth(openIssues, maxOpenIssues);
-                return (
-                  <div key={studentKey(student, index)} className="space-y-1">
-                    <div className="flex items-center justify-between gap-3 text-xs">
-                      <span className="font-semibold text-slate-700">{student.displayName}</span>
-                      <span className="font-semibold text-slate-600">
-                        {openIssues} open
-                      </span>
-                    </div>
-                    <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100 ring-1 ring-inset ring-slate-200">
-                      <div
-                        className={`h-full rounded-full transition-all duration-500 ${isOutlier ? 'bg-amber-500' : 'bg-emerald-500'}`}
-                        style={{ width: `${fillWidth}%` }}
-                      />
-                    </div>
+          <div className="mt-4 space-y-3">
+            {workload.students.map((student, index) => {
+              const isOutlier =
+                outlierAssigneeId !== null && student.assigneeAccountId === outlierAssigneeId;
+              const openIssues = Math.max(0, student.assigned - student.completed);
+              const fillWidth = getBarFillWidth(openIssues, maxOpenIssues);
+              return (
+                <div key={studentKey(student, index)} className="space-y-1">
+                  <div className="flex items-center justify-between gap-3 text-xs">
+                    <span className="font-semibold text-slate-700">{student.displayName}</span>
+                    <span className="font-semibold text-slate-600">
+                      {openIssues} open
+                    </span>
                   </div>
-                );
-              })}
-            </div>
-          )}
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100 ring-1 ring-inset ring-slate-200">
+                    <div
+                      className={`h-full rounded-full transition-all duration-500 ${isOutlier ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                      style={{ width: `${fillWidth}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
           <p className="mt-3 text-xs text-slate-500">
             Bar width reflects open (incomplete) issues only. 
             <span className="ml-2 inline-flex items-center gap-1">
@@ -139,7 +133,7 @@ export function TeamWorkloadSection({ workload, onRefresh, isRefreshing }: TeamW
         </section>
       ) : null}
 
-      {!hasNoWorkloadData ? (
+      {!hasNoStudentRows ? (
         <section className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
           <table className="min-w-full divide-y divide-slate-200 text-sm">
             <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-[0.14em] text-muted-foreground">
@@ -168,55 +162,47 @@ export function TeamWorkloadSection({ workload, onRefresh, isRefreshing }: TeamW
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {workload.students.length === 0 ? (
-                <tr>
-                  <td className="px-4 py-6 text-center text-sm text-slate-500" colSpan={9}>
-                    No student workload records found.
-                  </td>
-                </tr>
-              ) : (
-                workload.students.map((student, index) => {
-                  const lowCompletion = student.completionRate < 50;
-                  const hasOverdue = student.overdue > 0;
-                  return (
-                    <tr key={studentKey(student, index)} className="align-middle">
-                      <td className="px-4 py-3 font-medium text-slate-800">
-                        {student.displayName}
-                      </td>
-                      <td className="px-4 py-3 text-right text-slate-700">{student.assigned}</td>
-                      <td className="px-4 py-3 text-right text-slate-700">{student.completed}</td>
-                      <td className="px-4 py-3 text-right text-slate-700">
-                        {student.storyPointsAssigned > 0 
-                          ? student.storyPointsAssigned 
-                          : <span className="text-slate-400">—</span>}
-                      </td>
-                      <td className="px-4 py-3 text-right text-slate-700">
-                        {student.storyPointsCompleted > 0 
-                          ? student.storyPointsCompleted 
-                          : <span className="text-slate-400">—</span>}
-                      </td>
-                      <td className="px-4 py-3 text-right text-slate-700">{student.inProgress}</td>
-                      <td
-                        className={`px-4 py-3 text-right font-semibold ${hasOverdue ? 'text-rose-700' : 'text-slate-700'}`}
-                      >
-                        {student.overdue}
-                      </td>
-                      <td
-                        className={`px-4 py-3 text-right font-semibold ${lowCompletion ? 'text-amber-700' : 'text-slate-700'}`}
-                      >
-                        {student.completionRate}%
-                      </td>
-                      <td className="px-4 py-3 text-right">{renderLastActiveCell(student, now)}</td>
-                    </tr>
-                  );
-                })
-              )}
+              {workload.students.map((student, index) => {
+                const lowCompletion = student.completionRate < 50;
+                const hasOverdue = student.overdue > 0;
+                return (
+                  <tr key={studentKey(student, index)} className="align-middle">
+                    <td className="px-4 py-3 font-medium text-slate-800">
+                      {student.displayName}
+                    </td>
+                    <td className="px-4 py-3 text-right text-slate-700">{student.assigned}</td>
+                    <td className="px-4 py-3 text-right text-slate-700">{student.completed}</td>
+                    <td className="px-4 py-3 text-right text-slate-700">
+                      {student.storyPointsAssigned > 0
+                        ? student.storyPointsAssigned
+                        : <span className="text-slate-400">—</span>}
+                    </td>
+                    <td className="px-4 py-3 text-right text-slate-700">
+                      {student.storyPointsCompleted > 0
+                        ? student.storyPointsCompleted
+                        : <span className="text-slate-400">—</span>}
+                    </td>
+                    <td className="px-4 py-3 text-right text-slate-700">{student.inProgress}</td>
+                    <td
+                      className={`px-4 py-3 text-right font-semibold ${hasOverdue ? 'text-rose-700' : 'text-slate-700'}`}
+                    >
+                      {student.overdue}
+                    </td>
+                    <td
+                      className={`px-4 py-3 text-right font-semibold ${lowCompletion ? 'text-amber-700' : 'text-slate-700'}`}
+                    >
+                      {student.completionRate}%
+                    </td>
+                    <td className="px-4 py-3 text-right">{renderLastActiveCell(student, now)}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </section>
       ) : null}
 
-      {!hasNoWorkloadData && workload.unassignedIssues > 0 ? (
+      {workload.unassignedIssues > 0 ? (
         <section className="rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           <p className="font-semibold">Unassigned Jira issues: {workload.unassignedIssues}</p>
           <p className="mt-1">Assign these in Jira to include them in workload tracking.</p>

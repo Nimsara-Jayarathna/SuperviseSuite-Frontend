@@ -38,6 +38,7 @@ Supervisor feature currently uses these APIs:
 - `GET /api/supervisor/projects/{projectId}/github`
 - `GET /api/supervisor/projects/{projectId}/github/activity?page=...&size=...`
 - `GET /api/supervisor/projects/{projectId}/github/contributors?page=...&size=...`
+- `GET /api/supervisor/projects/{projectId}/jira/team-workload`
 - `GET /api/supervisor/projects/{projectId}/github/installations/{installationId}/repositories?page=...&size=...`
 - `POST /api/supervisor/projects/{projectId}/github/link`
 - `POST /api/supervisor/projects/{projectId}/github/access/remove`
@@ -72,6 +73,7 @@ Supervisor feature currently uses these APIs:
 | `src/features/supervisor/pages/GitHubAccessUpdatedPage.tsx` | Public callback result page that shows updated accessible repositories and acknowledges completion |
 | `src/features/supervisor/components/ProjectDetail/RepositorySection.tsx` | Supervisor Overview repository management card (single-link action, remove action, GitHub App/manual link entrypoint) |
 | `src/features/supervisor/components/ProjectDetail/RepositoryLinkModalContent.tsx` | Guided modal with method-first UX, installation repository selection, loading skeletons, and GitHub App/request-access actions |
+| `src/features/supervisor/components/ProjectDetail/TeamWorkloadSection.tsx` | Shared Jira workload analytics panel used in supervisor and student Jira tabs |
 | `src/features/supervisor/components/SupervisorProjectCard.tsx` | Clickable summary card (full-card navigation) with compact status/progress layout |
 | `src/features/supervisor/components/SupervisorProjectCardSkeleton.tsx` | List loading placeholder |
 | `src/features/supervisor/components/ProjectDetailsSkeleton.tsx` | Detail loading placeholder |
@@ -178,9 +180,11 @@ Supervisor feature currently uses these APIs:
 ### Tabs
 
 - `Overview`
-- `GitHub`
 - `Team`
 - `Milestones`
+- `Integrations`
+- `GitHub`
+- `Jira`
 
 ### Header status control
 
@@ -257,6 +261,22 @@ Supervisor feature currently uses these APIs:
   - supervisor-only
   - calls `POST /api/supervisor/projects/{projectId}/github/refresh`
   - then re-fetches project detail payload
+
+### Jira tab: team workload analytics
+
+- Loads workload using `GET /api/supervisor/projects/{projectId}/jira/team-workload`.
+- Shows loading skeleton while fetching and retry action on error.
+- Uses shared `TeamWorkloadSection` with supervisor refresh control enabled.
+- Includes transient retry messaging for service-unavailable network failures.
+- When Jira is connected, panel sections include:
+  - conditional imbalance banner
+  - workload bar chart (open issues)
+  - per-student comparison table
+  - conditional unassigned warning card
+- No-assignee case behavior:
+  - bar chart and comparison table are hidden when student workload rows are absent
+  - unassigned warning card remains visible when `unassignedIssues > 0`
+- Jira-not-connected case shows connect call-to-action state.
 
 ### Team tab: add-student management (add-only)
 

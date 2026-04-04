@@ -27,6 +27,7 @@ Student pages currently use:
 - `GET /api/student/projects/{projectId}/github`
 - `GET /api/student/projects/{projectId}/github/activity?page=...&size=...`
 - `GET /api/student/projects/{projectId}/github/contributors?page=...&size=...`
+- `GET /api/student/projects/{projectId}/jira/team-workload`
 
 ---
 
@@ -43,6 +44,7 @@ Student pages currently use:
 | `src/features/student/hooks/useStudentProject.ts` | Detail hook |
 | `src/features/student/api/studentApi.ts` | Student API client |
 | `src/features/student/types.ts` | Student list/detail API models |
+| `src/features/supervisor/components/ProjectDetail/TeamWorkloadSection.tsx` | Shared read-only Jira workload analytics panel reused by student view |
 
 ---
 
@@ -86,6 +88,7 @@ Student pages currently use:
 - `Team`
 - `Milestones`
 - `GitHub`
+- `Jira`
 
 ### Header chips
 
@@ -106,6 +109,12 @@ Student pages currently use:
   - supports paginated full-list modals for commits/contributors
   - no add/edit/remove/refresh controls are rendered for students
   - when no repository is linked, shows a read-only CTA to navigate to Overview tab guidance
+- Jira (read-only shared workload analytics):
+  - loads via `GET /api/student/projects/{projectId}/jira/team-workload`
+  - reuses shared `TeamWorkloadSection` with no refresh controls
+  - shows loading skeleton and retry action on fetch errors
+  - when workload has no student rows, bar/table are hidden while unassigned warning remains visible
+  - when Jira is not connected, shows read-only "Ask your supervisor to connect Jira" state
 
 ### UX states
 
