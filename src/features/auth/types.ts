@@ -25,13 +25,21 @@ export type RegisterRequest = {
   registrationNumber: string;
 };
 
+/** POST /api/auth/register/supervisor request body */
+export type SupervisorRegisterRequest = {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+};
+
 /** POST /api/auth/register — newly created student's public profile (no tokens issued) */
 export type RegisterResponse = {
   id: string;
   email: string;
   firstName: string;
   lastName: string;
-  registrationNumber: string;
+  registrationNumber: string | null;
   role: UserRole;
 };
 

@@ -54,6 +54,11 @@ function makeApiError(overrides: Partial<ApiError> = {}): ApiError {
 describe('useRegister', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   // -------------------------------------------------------------------------
@@ -98,11 +103,18 @@ describe('useRegister', () => {
       expect(calledWith).not.toHaveProperty('role');
     });
 
-    it('navigates to /login after success (no auto-login)', async () => {
+    it('sets success state and redirects to /login after delay', async () => {
       const { result } = renderHook(() => useRegister());
 
       await act(async () => {
         await result.current.register(validPayload);
+      });
+
+      expect(result.current.isSuccess).toBe(true);
+      expect(mockNavigate).not.toHaveBeenCalled();
+
+      act(() => {
+        vi.runAllTimers();
       });
 
       expect(mockNavigate).toHaveBeenCalledOnce();
@@ -118,6 +130,7 @@ describe('useRegister', () => {
 
       expect(result.current.isLoading).toBe(false);
       expect(result.current.error).toBeNull();
+      expect(result.current.isSuccess).toBe(true);
     });
   });
 
@@ -144,6 +157,7 @@ describe('useRegister', () => {
 
       expect(result.current.error).toEqual(conflictError);
       expect(result.current.isLoading).toBe(false);
+      expect(result.current.isSuccess).toBe(false);
     });
 
     it('sets error for a backend VALIDATION_ERROR response', async () => {
@@ -165,6 +179,7 @@ describe('useRegister', () => {
 
       expect(result.current.error?.code).toBe('VALIDATION_ERROR');
       expect(result.current.error?.details).toHaveLength(1);
+      expect(result.current.isSuccess).toBe(false);
     });
 
     it('does not navigate to /login when registration fails', async () => {

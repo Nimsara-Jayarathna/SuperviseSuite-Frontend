@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { isApiException } from '@/services/apiClient';
 import type { ApiError } from '@/types';
 import { authApi } from '../api/authApi';
-import type { RegisterRequest } from '../types';
+import type { SupervisorRegisterRequest } from '../types';
 
 type RegisterState = {
   isLoading: boolean;
@@ -13,16 +13,7 @@ type RegisterState = {
 
 const SUCCESS_REDIRECT_DELAY_MS = 1200;
 
-/**
- * Narrow hook that owns only the student registration concern.
- *
- * Interface Segregation: consumers of this hook are not burdened with
- * login, logout, or user-session state from the broader {@code useAuth} hook.
- *
- * Single Responsibility: this hook does one thing — submit a registration
- * request and navigate to /login on success.
- */
-export function useRegister() {
+export function useSupervisorRegister() {
   const navigate = useNavigate();
   const redirectTimerRef = useRef<number | null>(null);
 
@@ -64,10 +55,10 @@ export function useRegister() {
     });
   }
 
-  async function register(body: RegisterRequest): Promise<void> {
+  async function register(body: SupervisorRegisterRequest): Promise<void> {
     setLoading();
     try {
-      await authApi.register(body);
+      await authApi.registerSupervisor(body);
       setState({ isLoading: false, isSuccess: true, error: null });
       redirectTimerRef.current = window.setTimeout(() => {
         navigate('/login');

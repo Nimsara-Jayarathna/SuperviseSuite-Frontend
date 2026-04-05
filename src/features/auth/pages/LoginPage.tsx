@@ -65,7 +65,13 @@ export function LoginPage() {
           <p className="text-sm text-muted-foreground">
             Don&apos;t have an account?{' '}
             <Link to="/register" className="font-medium text-primary hover:underline">
-              Sign up
+              Student sign up
+            </Link>
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Are you a supervisor?{' '}
+            <Link to="/register/supervisor" className="font-medium text-primary hover:underline">
+              Register here
             </Link>
           </p>
         </div>

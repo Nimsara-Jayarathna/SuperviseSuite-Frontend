@@ -370,4 +370,83 @@ describe('RegisterForm', () => {
       expect(screen.queryByText(/went wrong/i)).not.toBeInTheDocument();
     });
   });
+
+  // -------------------------------------------------------------------------
+  // Supervisor mode
+  // -------------------------------------------------------------------------
+
+  describe('supervisor mode', () => {
+    function renderSupervisorForm(props: Partial<RegisterFormProps> = {}) {
+      const defaults: RegisterFormProps = {
+        role: 'supervisor',
+        onSubmit: vi.fn().mockResolvedValue(undefined),
+        isLoading: false,
+        error: null,
+        onClearError: vi.fn(),
+      };
+      return render(<RegisterForm {...defaults} {...props} />);
+    }
+
+    async function fillValidSupervisorForm(user: ReturnType<typeof userEvent.setup>) {
+      await user.type(screen.getByLabelText('First Name'), 'Jane');
+      await user.type(screen.getByLabelText('Last Name'), 'Doe');
+      await user.type(screen.getByLabelText('Email'), 'jane.doe@sliit.lk');
+      await user.type(screen.getByLabelText('Password'), 'Test@1234');
+      await user.type(screen.getByLabelText('Confirm Password'), 'Test@1234');
+    }
+
+    it('hides registration number field', () => {
+      renderSupervisorForm();
+      expect(screen.queryByLabelText('Registration Number')).not.toBeInTheDocument();
+    });
+
+    it('rejects @my.sliit.lk email', async () => {
+      const user = userEvent.setup();
+      renderSupervisorForm();
+
+      await user.type(screen.getByLabelText('First Name'), 'Jane');
+      await user.type(screen.getByLabelText('Last Name'), 'Doe');
+      await user.type(screen.getByLabelText('Email'), 'student@my.sliit.lk');
+      await user.type(screen.getByLabelText('Password'), 'Test@1234');
+      await user.type(screen.getByLabelText('Confirm Password'), 'Test@1234');
+      await user.click(screen.getByRole('button', { name: 'Create Account' }));
+
+      expect(
+        screen.getByText('Email must be a valid SLIIT institutional email (@sliit.lk).'),
+      ).toBeInTheDocument();
+    });
+
+    it('rejects non-sliit email domain', async () => {
+      const user = userEvent.setup();
+      renderSupervisorForm();
+
+      await user.type(screen.getByLabelText('First Name'), 'Jane');
+      await user.type(screen.getByLabelText('Last Name'), 'Doe');
+      await user.type(screen.getByLabelText('Email'), 'user@gmail.com');
+      await user.type(screen.getByLabelText('Password'), 'Test@1234');
+      await user.type(screen.getByLabelText('Confirm Password'), 'Test@1234');
+      await user.click(screen.getByRole('button', { name: 'Create Account' }));
+
+      expect(
+        screen.getByText('Email must be a valid SLIIT institutional email (@sliit.lk).'),
+      ).toBeInTheDocument();
+    });
+
+    it('submits successfully with valid @sliit.lk email and no registration number', async () => {
+      const user = userEvent.setup();
+      const onSubmit = vi.fn().mockResolvedValue(undefined);
+      renderSupervisorForm({ onSubmit });
+
+      await fillValidSupervisorForm(user);
+      await user.click(screen.getByRole('button', { name: 'Create Account' }));
+
+      expect(onSubmit).toHaveBeenCalledWith({
+        firstName: 'Jane',
+        lastName: 'Doe',
+        email: 'jane.doe@sliit.lk',
+        password: 'Test@1234',
+      });
+      expect(onSubmit.mock.calls[0][0]).not.toHaveProperty('registrationNumber');
+    });
+  });
 });

@@ -1,6 +1,6 @@
 import { SupervisorLayout } from '@/app/layout/SupervisorLayout';
 import { StudentLayout } from '@/app/layout/StudentLayout';
-import { LoginPage, RegisterPage } from '@/features/auth';
+import { LoginPage, RegisterPage, SupervisorRegisterPage } from '@/features/auth';
 import { LandingPage } from '@/features/landing';
 import { PrivacyPolicyPage, SupportPage, TermsOfServicePage } from '@/features/legal';
 import { StudentProjectDetailsPage, StudentProjectsPage } from '@/features/student';
@@ -99,6 +99,7 @@ export function AppRoutes() {
       <Route element={<RequireGuest />}>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/register/supervisor" element={<SupervisorRegisterPage />} />
       </Route>
 
       {/* Student-only */}
