@@ -32,6 +32,7 @@ import type {
   ProjectGitHubActivity,
   ProjectGitHubRepositoryLink,
   JiraAuthUrl,
+  JiraHealth,
   JiraOAuthCompletePayload,
   JiraOAuthCompleteResult,
   SupervisorDashboard,
@@ -114,6 +115,10 @@ export const supervisorApi = {
       `/api/supervisor/projects/${projectId}/jira/disconnect`,
       {},
     );
+  },
+
+  getJiraHealth(projectId: string): Promise<JiraHealth> {
+    return apiClient.get<JiraHealth>(`/api/supervisor/projects/${projectId}/jira/health`);
   },
 
   async getProjectGitHubDashboard(

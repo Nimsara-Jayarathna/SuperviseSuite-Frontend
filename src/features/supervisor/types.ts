@@ -83,6 +83,28 @@ export type JiraOAuthCompleteResult = {
   workspaceName: string;
 };
 
+export type JiraStatusBreakdown = {
+  toDo: number;
+  inProgress: number;
+  done: number;
+};
+
+export type JiraTypeDistributionItem = {
+  type: string;
+  count: number;
+};
+
+export type JiraHealth = {
+  completionPercent: number;
+  openIssues: number;
+  overdueIssues: number;
+  highPriorityOpen: number;
+  statusBreakdown: JiraStatusBreakdown;
+  typeDistribution: JiraTypeDistributionItem[];
+  bugRatio: number;
+  lastSyncedAt: string | null;
+};
+
 export type SupervisorProjectTab =
   | 'overview'
   | 'team'
@@ -199,6 +221,7 @@ export type SupervisorDashboardProjectItem = {
   lastActivityAt: string | null;
   progressPercent: number | null;
   healthNote: string | null;
+  jiraHealthIndicator: 'AT_RISK' | 'BEHIND' | 'HEALTHY' | 'NOT_CONNECTED' | null;
 };
 
 export type SupervisorDashboard = {
@@ -209,6 +232,8 @@ export type SupervisorDashboard = {
   behindProjects: number;
   completedProjects: number;
   upcomingMilestonesCount: number;
+  jiraAtRiskCount: number;
+  jiraBehindCount: number;
   projects: SupervisorDashboardProjectItem[];
   recentProjects: SupervisorDashboardProjectItem[];
 };
