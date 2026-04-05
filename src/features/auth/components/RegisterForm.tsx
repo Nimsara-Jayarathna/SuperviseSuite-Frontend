@@ -36,15 +36,9 @@ type SupervisorRegisterFormProps = RegisterFormCommonProps & {
 
 export type RegisterFormProps = StudentRegisterFormProps | SupervisorRegisterFormProps;
 
-export function RegisterForm({
-  onSubmit,
-  isLoading,
-  error,
-  onClearError,
-  onSuccess,
-  feedbackMode = 'inline',
-  role = 'student',
-}: RegisterFormProps) {
+export function RegisterForm(props: RegisterFormProps) {
+  const { isLoading, error, onClearError, onSuccess, feedbackMode = 'inline' } = props;
+  const role = props.role ?? 'student';
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -80,10 +74,16 @@ export function RegisterForm({
 
     // Role is assigned server-side — the backend always sets STUDENT for public registration.
     try {
-      if (role === 'supervisor') {
-        await onSubmit({ firstName, lastName, email, password } as SupervisorRegisterRequest);
+      if (props.role === 'supervisor') {
+        await props.onSubmit({ firstName, lastName, email, password });
       } else {
-        await onSubmit({ firstName, lastName, email, password, registrationNumber } as RegisterRequest);
+        await props.onSubmit({
+          firstName,
+          lastName,
+          email,
+          password,
+          registrationNumber,
+        });
       }
       onSuccess?.();
     } catch {

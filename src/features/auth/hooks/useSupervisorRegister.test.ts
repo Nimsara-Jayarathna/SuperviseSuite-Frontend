@@ -73,7 +73,9 @@ describe('useSupervisorRegister', () => {
       error: 'Bad Request',
       code: 'VALIDATION_ERROR',
       message: 'Validation failed.',
-      details: [{ field: 'email', message: 'Email must be a valid SLIIT institutional email (@sliit.lk).' }],
+      details: [
+        { field: 'email', message: 'Email must be a valid SLIIT institutional email (@sliit.lk).' },
+      ],
     });
 
     vi.mocked(authApi.registerSupervisor).mockRejectedValue(new ApiException(validationError));
