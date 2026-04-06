@@ -23,14 +23,29 @@ function statusClasses(status: string) {
   return 'border-sky-200 bg-sky-50 text-sky-700';
 }
 
+function jiraIndicatorClasses(indicator: string | null) {
+  if (indicator === 'AT_RISK') return 'border-amber-200 bg-amber-50 text-amber-700';
+  if (indicator === 'BEHIND') return 'border-rose-200 bg-rose-50 text-rose-700';
+  if (indicator === 'HEALTHY') return 'border-emerald-200 bg-emerald-50 text-emerald-700';
+  return 'border-slate-200 bg-slate-100 text-slate-400';
+}
+
+function jiraIndicatorLabel(indicator: string | null) {
+  if (indicator === 'AT_RISK') return 'At Risk';
+  if (indicator === 'BEHIND') return 'Behind';
+  if (indicator === 'HEALTHY') return 'Healthy';
+  if (indicator === 'NOT_CONNECTED') return 'Not linked';
+  return '—';
+}
+
 function formatMilestoneDate(value: string | null) {
   return value ? dateFormatter.format(new Date(value)) : 'Not set';
 }
 
 function DashboardStatsSkeleton() {
   return (
-    <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-      {Array.from({ length: 5 }).map((_, index) => (
+    <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-7">
+      {Array.from({ length: 7 }).map((_, index) => (
         <Card
           key={`dashboard-stat-skeleton-${index}`}
           className="animate-pulse rounded-2xl"
@@ -106,7 +121,7 @@ export function SupervisorDashboardPage() {
       {isLoading || !dashboard ? (
         <DashboardStatsSkeleton />
       ) : (
-        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-7">
           <Card className="rounded-2xl" padding="md">
             <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
               Total projects
@@ -143,6 +158,22 @@ export function SupervisorDashboardPage() {
             </p>
             <p className="mt-3 text-3xl font-semibold text-foreground">
               {dashboard.upcomingMilestonesCount}
+            </p>
+          </Card>
+          <Card className="rounded-2xl border-l-2 border-l-amber-300" padding="md">
+            <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
+              Jira at risk
+            </p>
+            <p className="mt-3 text-3xl font-semibold text-amber-600">
+              {dashboard.jiraAtRiskCount}
+            </p>
+          </Card>
+          <Card className="rounded-2xl border-l-2 border-l-rose-300" padding="md">
+            <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
+              Jira behind
+            </p>
+            <p className="mt-3 text-3xl font-semibold text-rose-600">
+              {dashboard.jiraBehindCount}
             </p>
           </Card>
         </section>
@@ -184,6 +215,7 @@ export function SupervisorDashboardPage() {
                     <th className="px-3 py-3">Status</th>
                     <th className="px-3 py-3">Milestone</th>
                     <th className="px-3 py-3">Progress</th>
+                    <th className="px-3 py-3">Jira Health</th>
                     <th className="px-3 py-3">Quick links</th>
                   </tr>
                 </thead>
@@ -208,6 +240,13 @@ export function SupervisorDashboardPage() {
                       </td>
                       <td className="px-3 py-4 align-top text-muted-foreground">
                         {project.progressPercent ?? 0}%
+                      </td>
+                      <td className="px-3 py-4 align-top">
+                        <span
+                          className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${jiraIndicatorClasses(project.jiraHealthIndicator)}`}
+                        >
+                          {jiraIndicatorLabel(project.jiraHealthIndicator)}
+                        </span>
                       </td>
                       <td className="px-3 py-4 align-top">
                         <Link
