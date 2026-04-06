@@ -1,6 +1,8 @@
 import { ExternalLink, KanbanSquare, Link2, RefreshCw } from 'lucide-react';
 import { buttonStyles } from '@/components/ui/Button';
+import { supervisorApi } from '../../api/supervisorApi';
 import type { SupervisorProjectDetail } from '../../types';
+import { JiraHealthOverview } from './jira/JiraHealthOverview';
 
 type JiraTabSectionProps = {
   project: SupervisorProjectDetail;
@@ -92,6 +94,14 @@ export function JiraTabSection({
           </div>
         )}
       </div>
+
+      {/* Health overview — only rendered when a workspace is connected */}
+      {jira?.connected && (
+        <JiraHealthOverview
+          fetcher={supervisorApi.getJiraHealth}
+          projectId={project.id}
+        />
+      )}
     </section>
   );
 }
