@@ -3,8 +3,8 @@ type JiraBugRatioBarProps = {
 };
 
 function ratioColor(ratio: number): { bar: string; label: string } {
-  if (ratio > 50) return { bar: 'bg-red-500', label: 'text-red-600' };
-  if (ratio > 20) return { bar: 'bg-amber-400', label: 'text-amber-600' };
+  if (ratio > 35) return { bar: 'bg-red-500', label: 'text-red-600' };
+  if (ratio >= 20) return { bar: 'bg-amber-400', label: 'text-amber-600' };
   return { bar: 'bg-emerald-500', label: 'text-emerald-600' };
 }
 
@@ -34,7 +34,7 @@ export function JiraBugRatioBar({ bugRatio }: JiraBugRatioBarProps) {
 
       <div className="mt-1.5 flex justify-between text-[10px] text-slate-400">
         <span>0%</span>
-        <span>50%</span>
+        <span>35%</span>
         <span>100%</span>
       </div>
     </div>

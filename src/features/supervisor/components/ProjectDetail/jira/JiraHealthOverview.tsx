@@ -12,6 +12,8 @@ import { JiraTypeDistribution } from './JiraTypeDistribution';
 type JiraHealthOverviewProps = {
   /** Pass supervisorApi.getJiraHealth or studentApi.getJiraHealth */
   fetcher: (projectId: string) => Promise<JiraHealth>;
+  /** Optional sync action (supervisor-only) to pull fresh issues from Jira before reload. */
+  syncer?: (projectId: string) => Promise<JiraHealth>;
   projectId: string;
 };
 
@@ -25,8 +27,18 @@ function formatSyncedAt(iso: string): string {
   });
 }
 
-export function JiraHealthOverview({ fetcher, projectId }: JiraHealthOverviewProps) {
+export function JiraHealthOverview({ fetcher, syncer, projectId }: JiraHealthOverviewProps) {
   const { health, isLoading, error, reload } = useJiraHealth(fetcher, projectId);
+
+  async function handleRefresh() {
+    try {
+      if (syncer) {
+        await syncer(projectId);
+      }
+    } finally {
+      await reload();
+    }
+  }
 
   if (isLoading) {
     return <JiraHealthSkeleton />;
@@ -42,7 +54,7 @@ export function JiraHealthOverview({ fetcher, projectId }: JiraHealthOverviewPro
       <EmptyState
         title="Sync in progress"
         description="Jira issue data is being fetched for the first time. This usually takes a few seconds. Refresh to check if it's ready."
-        secondaryAction={{ label: 'Refresh', onClick: reload }}
+        secondaryAction={{ label: 'Refresh', onClick: () => void handleRefresh() }}
       />
     );
   }

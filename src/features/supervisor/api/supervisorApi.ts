@@ -121,6 +121,10 @@ export const supervisorApi = {
     return apiClient.get<JiraHealth>(`/api/supervisor/projects/${projectId}/jira/health`);
   },
 
+  refreshProjectJira(projectId: string): Promise<JiraHealth> {
+    return apiClient.post<JiraHealth>(`/api/supervisor/projects/${projectId}/jira/refresh`, {});
+  },
+
   async getProjectGitHubDashboard(
     projectId: string,
     forceRefresh = false,

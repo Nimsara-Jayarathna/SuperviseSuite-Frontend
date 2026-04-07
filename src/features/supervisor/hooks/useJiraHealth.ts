@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { isApiException } from '@/services/apiClient';
 import type { ApiError } from '@/types';
 import type { JiraHealth } from '../types';
@@ -37,7 +37,7 @@ export function useJiraHealth(
     error: null,
   });
 
-  async function loadHealth() {
+  const loadHealth = useCallback(async () => {
     setState((current) => ({ ...current, isLoading: true, error: null }));
 
     try {
@@ -66,17 +66,17 @@ export function useJiraHealth(
             },
       });
     }
-  }
+  }, [fetcher, projectId]);
 
   useEffect(() => {
     if (!projectId) return;
     void loadHealth();
-  }, [projectId]);
+  }, [loadHealth]);
 
   return {
     health: state.health,
     isLoading: state.isLoading,
     error: state.error,
-    reload: () => loadHealth(),
+    reload: loadHealth,
   };
 }
