@@ -6,9 +6,7 @@ type JiraTabSectionProps = {
   project: SupervisorProjectDetail;
 };
 
-export function JiraTabSection({
-  project,
-}: JiraTabSectionProps) {
+export function JiraTabSection({ project }: JiraTabSectionProps) {
   const jira = project.jira;
 
   return (

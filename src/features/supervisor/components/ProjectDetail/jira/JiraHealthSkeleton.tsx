@@ -54,7 +54,10 @@ export function JiraHealthSkeleton() {
             {Array.from({ length: 4 }).map((_, i) => (
               <div key={`jira-bar-skeleton-${i}`} className="space-y-1">
                 <div className="h-2.5 w-20 rounded bg-slate-100" />
-                <div className="h-3 rounded-full bg-slate-200" style={{ width: `${65 - i * 12}%` }} />
+                <div
+                  className="h-3 rounded-full bg-slate-200"
+                  style={{ width: `${65 - i * 12}%` }}
+                />
               </div>
             ))}
           </div>

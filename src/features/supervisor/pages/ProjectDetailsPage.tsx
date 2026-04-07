@@ -775,9 +775,7 @@ export function ProjectDetailsPage() {
         </div>
       ) : null}
 
-      {activeTab === 'jira' ? (
-        <JiraTabSection project={project} />
-      ) : null}
+      {activeTab === 'jira' ? <JiraTabSection project={project} /> : null}
 
       {activeTab === 'integrations' ? (
         <IntegrationsTabSection

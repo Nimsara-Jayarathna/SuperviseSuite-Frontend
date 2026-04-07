@@ -20,9 +20,7 @@ function truncate(s: string, max = 20): string {
 
 export function JiraTypeDistribution({ health }: JiraTypeDistributionProps) {
   // Show up to 6 types, sorted descending by count
-  const items = [...health.typeDistribution]
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 6);
+  const items = [...health.typeDistribution].sort((a, b) => b.count - a.count).slice(0, 6);
 
   if (items.length === 0) {
     return (

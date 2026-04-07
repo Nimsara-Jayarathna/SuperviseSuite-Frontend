@@ -47,7 +47,9 @@ export function JiraBugRatioBar({ bugRatio }: JiraBugRatioBarProps) {
         </div>
         <div className="text-right">
           <p className={`text-base font-semibold tabular-nums ${label}`}>{clamped.toFixed(1)}%</p>
-          <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${badgeTone}`}>
+          <span
+            className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${badgeTone}`}
+          >
             {badge}
           </span>
         </div>

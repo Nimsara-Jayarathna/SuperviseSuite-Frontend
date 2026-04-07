@@ -12,11 +12,7 @@ type StatCardProps = {
 
 function StatCard({ label, value, accent = 'neutral' }: StatCardProps) {
   const valueColor =
-    accent === 'red'
-      ? 'text-red-600'
-      : accent === 'amber'
-        ? 'text-amber-600'
-        : 'text-slate-900';
+    accent === 'red' ? 'text-red-600' : accent === 'amber' ? 'text-amber-600' : 'text-slate-900';
 
   const cardTone =
     accent === 'red'

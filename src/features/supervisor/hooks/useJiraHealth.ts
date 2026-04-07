@@ -71,7 +71,7 @@ export function useJiraHealth(
   useEffect(() => {
     if (!projectId) return;
     void loadHealth();
-  }, [loadHealth]);
+  }, [loadHealth, projectId]);
 
   const applyHealth = useCallback((health: JiraHealth) => {
     setState({

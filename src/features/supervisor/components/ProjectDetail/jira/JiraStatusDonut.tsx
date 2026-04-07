@@ -12,9 +12,9 @@ const CIRCUMFERENCE = 2 * Math.PI * R; // ≈ 339.3
 const ARC_GAP = 4;
 
 const SEGMENTS = [
-  { key: 'done', label: 'Done', color: '#10B981' },          // emerald-500
+  { key: 'done', label: 'Done', color: '#10B981' }, // emerald-500
   { key: 'inProgress', label: 'In Progress', color: '#60A5FA' }, // blue-400
-  { key: 'toDo', label: 'To Do', color: '#CBD5E1' },       // slate-300
+  { key: 'toDo', label: 'To Do', color: '#CBD5E1' }, // slate-300
 ] as const;
 
 function buildArcs(statusBreakdown: JiraHealth['statusBreakdown']) {
@@ -43,7 +43,8 @@ function buildArcs(statusBreakdown: JiraHealth['statusBreakdown']) {
 
 export function JiraStatusDonut({ health }: JiraStatusDonutProps) {
   const arcs = buildArcs(health.statusBreakdown);
-  const total = health.statusBreakdown.toDo + health.statusBreakdown.inProgress + health.statusBreakdown.done;
+  const total =
+    health.statusBreakdown.toDo + health.statusBreakdown.inProgress + health.statusBreakdown.done;
   const completionLabel = `${Math.round(health.completionPercent)}%`;
 
   return (
@@ -61,14 +62,7 @@ export function JiraStatusDonut({ health }: JiraStatusDonutProps) {
           role="img"
         >
           {/* Background track */}
-          <circle
-            cx={CX}
-            cy={CY}
-            r={R}
-            fill="none"
-            stroke="#F1F5F9"
-            strokeWidth={STROKE_WIDTH}
-          />
+          <circle cx={CX} cy={CY} r={R} fill="none" stroke="#F1F5F9" strokeWidth={STROKE_WIDTH} />
 
           {total > 0 &&
             arcs.map(

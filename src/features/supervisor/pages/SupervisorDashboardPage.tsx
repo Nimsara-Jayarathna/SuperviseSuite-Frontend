@@ -172,9 +172,7 @@ export function SupervisorDashboardPage() {
             <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
               Jira behind
             </p>
-            <p className="mt-3 text-3xl font-semibold text-rose-600">
-              {dashboard.jiraBehindCount}
-            </p>
+            <p className="mt-3 text-3xl font-semibold text-rose-600">{dashboard.jiraBehindCount}</p>
           </Card>
         </section>
       )}
