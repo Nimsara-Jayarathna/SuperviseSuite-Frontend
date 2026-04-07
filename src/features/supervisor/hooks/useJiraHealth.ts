@@ -73,10 +73,19 @@ export function useJiraHealth(
     void loadHealth();
   }, [loadHealth]);
 
+  const applyHealth = useCallback((health: JiraHealth) => {
+    setState({
+      health,
+      isLoading: false,
+      error: null,
+    });
+  }, []);
+
   return {
     health: state.health,
     isLoading: state.isLoading,
     error: state.error,
     reload: loadHealth,
+    applyHealth,
   };
 }

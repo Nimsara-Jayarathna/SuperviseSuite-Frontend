@@ -4,15 +4,6 @@ type JiraTypeDistributionProps = {
   health: JiraHealth;
 };
 
-// Coordinate space for the SVG bar chart
-const SVG_WIDTH = 280;
-const ROW_HEIGHT = 32;
-const LABEL_X = 0;
-const BAR_X = 82; // left edge of bars
-const BAR_MAX_WIDTH = 158; // max bar width in SVG units
-const BAR_HEIGHT = 13;
-const COUNT_X = SVG_WIDTH; // count label right-aligned
-
 // Bar colours — cycled for each type
 const BAR_COLORS = [
   '#6366F1', // indigo-500
@@ -23,7 +14,7 @@ const BAR_COLORS = [
   '#F43F5E', // rose-500
 ];
 
-function truncate(s: string, max = 11): string {
+function truncate(s: string, max = 20): string {
   return s.length > max ? `${s.slice(0, max)}\u2026` : s;
 }
 
@@ -35,89 +26,52 @@ export function JiraTypeDistribution({ health }: JiraTypeDistributionProps) {
 
   if (items.length === 0) {
     return (
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
+      <div className="h-full rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-600">
           Issue types
         </p>
-        <p className="mt-4 text-center text-xs text-slate-400">No issue type data</p>
+        <p className="mt-4 text-center text-sm text-slate-500">No issue type data</p>
       </div>
     );
   }
 
   const maxCount = Math.max(...items.map((i) => i.count), 1);
-  const svgHeight = items.length * ROW_HEIGHT;
+  const total = items.reduce((sum, item) => sum + item.count, 0);
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-      <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
+    <div className="h-full rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-600">
         Issue types
       </p>
 
-      <div className="mt-4">
-        <svg
-          viewBox={`0 0 ${SVG_WIDTH} ${svgHeight}`}
-          width="100%"
-          height={svgHeight}
-          aria-label="Issue type distribution bar chart"
-          role="img"
-        >
-          {items.map((item, index) => {
-            const cy = index * ROW_HEIGHT + ROW_HEIGHT / 2;
-            const barWidth = (item.count / maxCount) * BAR_MAX_WIDTH;
-            const color = BAR_COLORS[index % BAR_COLORS.length];
+      <div className="mt-4 space-y-2.5" aria-label="Issue type distribution bar chart" role="img">
+        {items.map((item, index) => {
+          const color = BAR_COLORS[index % BAR_COLORS.length];
+          const width = (item.count / maxCount) * 100;
+          const share = total > 0 ? (item.count / total) * 100 : 0;
 
-            return (
-              <g key={`${item.type}-${index}`}>
-                {/* Type label */}
-                <text
-                  x={LABEL_X}
-                  y={cy + 4}
-                  fontSize={10}
-                  fontWeight={500}
-                  fill="#94A3B8"
-                  fontFamily="inherit"
-                >
-                  {truncate(item.type)}
-                </text>
+          return (
+            <article
+              key={`${item.type}-${index}`}
+              className="rounded-xl border border-slate-100 bg-slate-50/60 px-3 py-2.5"
+            >
+              <div className="flex items-center justify-between gap-3">
+                <p className="truncate text-sm font-medium text-slate-800">{truncate(item.type)}</p>
+                <p className="shrink-0 text-sm font-semibold tabular-nums text-slate-800">
+                  {item.count}{' '}
+                  <span className="text-xs font-medium text-slate-600">({Math.round(share)}%)</span>
+                </p>
+              </div>
 
-                {/* Background track */}
-                <rect
-                  x={BAR_X}
-                  y={cy - BAR_HEIGHT / 2}
-                  width={BAR_MAX_WIDTH}
-                  height={BAR_HEIGHT}
-                  rx={4}
-                  fill="#F1F5F9"
+              <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-200/70">
+                <div
+                  className="h-full rounded-full transition-[width] duration-500"
+                  style={{ width: `${width}%`, backgroundColor: color }}
                 />
-
-                {/* Filled bar */}
-                {barWidth > 0 && (
-                  <rect
-                    x={BAR_X}
-                    y={cy - BAR_HEIGHT / 2}
-                    width={barWidth}
-                    height={BAR_HEIGHT}
-                    rx={4}
-                    fill={color}
-                  />
-                )}
-
-                {/* Count label */}
-                <text
-                  x={COUNT_X}
-                  y={cy + 4}
-                  fontSize={10}
-                  fontWeight={600}
-                  fill="#475569"
-                  textAnchor="end"
-                  fontFamily="inherit"
-                >
-                  {item.count}
-                </text>
-              </g>
-            );
-          })}
-        </svg>
+              </div>
+            </article>
+          );
+        })}
       </div>
     </div>
   );

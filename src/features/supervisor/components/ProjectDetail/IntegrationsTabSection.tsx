@@ -30,6 +30,14 @@ export function IntegrationsTabSection({
 
   return (
     <div className="space-y-6">
+      <RepositorySection
+        project={project}
+        onUpdate={onProjectUpdate}
+        pendingSourceId={pendingGitHubSourceId}
+        pendingFlowType={pendingGitHubFlowType}
+        onPendingSourceHandled={onPendingGitHubSourceHandled}
+      />
+
       <section className="rounded-3xl border border-border bg-white p-6 shadow-sm transition-all hover:shadow-md">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-lg font-semibold text-foreground">Jira integration</h2>
@@ -101,14 +109,6 @@ export function IntegrationsTabSection({
           </div>
         )}
       </section>
-
-      <RepositorySection
-        project={project}
-        onUpdate={onProjectUpdate}
-        pendingSourceId={pendingGitHubSourceId}
-        pendingFlowType={pendingGitHubFlowType}
-        onPendingSourceHandled={onPendingGitHubSourceHandled}
-      />
     </div>
   );
 }

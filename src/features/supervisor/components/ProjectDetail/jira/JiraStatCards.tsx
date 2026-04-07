@@ -16,11 +16,33 @@ function StatCard({ label, value, accent = 'neutral' }: StatCardProps) {
       ? 'text-red-600'
       : accent === 'amber'
         ? 'text-amber-600'
-        : 'text-slate-800';
+        : 'text-slate-900';
+
+  const cardTone =
+    accent === 'red'
+      ? 'border-red-200 bg-red-50/50'
+      : accent === 'amber'
+        ? 'border-amber-200 bg-amber-50/50'
+        : 'border-slate-200 bg-white';
+
+  const railTone = accent === 'red' ? 'bg-red-500' : accent === 'amber' ? 'bg-amber-500' : null;
+
+  const statusLabel = accent === 'red' ? 'Critical' : accent === 'amber' ? 'Watch' : null;
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
-      <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">{label}</p>
+    <div className={`relative overflow-hidden rounded-2xl border px-4 py-4 shadow-sm ${cardTone}`}>
+      {railTone ? <div className={`absolute inset-y-0 left-0 w-1 ${railTone}`} /> : null}
+
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-600">{label}</p>
+        {statusLabel ? (
+          <span
+            className={`rounded-full px-2 py-0.5 text-xs font-semibold ${accent === 'red' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}
+          >
+            {statusLabel}
+          </span>
+        ) : null}
+      </div>
       <p className={`mt-2 text-2xl font-semibold tabular-nums ${valueColor}`}>{value}</p>
     </div>
   );
