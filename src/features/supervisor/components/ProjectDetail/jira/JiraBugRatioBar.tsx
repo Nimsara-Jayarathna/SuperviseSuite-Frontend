@@ -35,6 +35,7 @@ function ratioColor(ratio: number): {
 export function JiraBugRatioBar({ bugRatio }: JiraBugRatioBarProps) {
   const clamped = Math.min(100, Math.max(0, bugRatio));
   const { bar, label, badge, badgeTone } = ratioColor(clamped);
+  const isZero = clamped === 0;
 
   return (
     <div>
@@ -50,7 +51,7 @@ export function JiraBugRatioBar({ bugRatio }: JiraBugRatioBarProps) {
           <span
             className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${badgeTone}`}
           >
-            {badge}
+            {isZero ? 'No open bugs' : badge}
           </span>
         </div>
       </div>
@@ -85,6 +86,8 @@ export function JiraBugRatioBar({ bugRatio }: JiraBugRatioBarProps) {
         <span>35%</span>
         <span>100%</span>
       </div>
+
+      {isZero ? <p className="mt-1.5 text-xs font-medium text-emerald-700">No open bugs</p> : null}
 
       <p className="mt-1.5 text-xs text-slate-600">
         Healthy {'<'}20% | At risk 20-35% | Critical {'>'}35%
