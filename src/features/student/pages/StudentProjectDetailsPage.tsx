@@ -797,7 +797,11 @@ export function StudentProjectDetailsPage() {
 
           {/* Health overview — read-only, reuses the same component as the supervisor tab */}
           {jira?.connected && projectId && (
-            <JiraHealthOverview fetcher={studentApi.getJiraHealth} projectId={projectId} />
+            <JiraHealthOverview
+              fetcher={studentApi.getJiraHealth}
+              sprintFetcher={studentApi.getJiraSprintProgress}
+              projectId={projectId}
+            />
           )}
         </section>
       ) : null}

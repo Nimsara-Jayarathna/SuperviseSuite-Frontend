@@ -33,6 +33,7 @@ import type {
   ProjectGitHubRepositoryLink,
   JiraAuthUrl,
   JiraHealth,
+  JiraSprintProgress,
   JiraOAuthCompletePayload,
   JiraOAuthCompleteResult,
   SupervisorDashboard,
@@ -119,6 +120,12 @@ export const supervisorApi = {
 
   getJiraHealth(projectId: string): Promise<JiraHealth> {
     return apiClient.get<JiraHealth>(`/api/supervisor/projects/${projectId}/jira/health`);
+  },
+
+  getJiraSprintProgress(projectId: string): Promise<JiraSprintProgress> {
+    return apiClient.get<JiraSprintProgress>(
+      `/api/supervisor/projects/${projectId}/jira/sprint-progress`,
+    );
   },
 
   refreshProjectJira(projectId: string): Promise<JiraHealth> {
