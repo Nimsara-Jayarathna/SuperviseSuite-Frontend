@@ -99,7 +99,11 @@ describe('JiraSprintProgressSection', () => {
 
     expect(screen.getByText('Sprint progress')).toBeInTheDocument();
     expect(screen.getByText('Active sprint')).toBeInTheDocument();
-    expect(screen.getByText('Weekly velocity')).toBeInTheDocument();
+    expect(screen.getByText('Issue completion')).toBeInTheDocument();
+    expect(screen.getByText('Story points completion')).toBeInTheDocument();
+    expect(screen.getByText(/Est\./)).toBeInTheDocument();
+    expect(screen.getByText('Sprint velocity')).toBeInTheDocument();
+    expect(screen.getByText('Backlog trend')).toBeInTheDocument();
     expect(screen.getByText('Recent sprints')).toBeInTheDocument();
     expect(screen.getByText('Backlog is growing')).toBeInTheDocument();
   });
