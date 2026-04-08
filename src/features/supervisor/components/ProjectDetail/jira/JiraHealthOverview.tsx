@@ -6,16 +6,19 @@ import { ErrorState } from '@/components/feedback/ErrorState';
 import { isApiException } from '@/services/apiClient';
 import type { ApiError } from '@/types';
 import { useJiraHealth } from '../../../hooks/useJiraHealth';
-import type { JiraHealth } from '../../../types';
+import type { JiraHealth, JiraSprintProgress } from '../../../types';
 import { JiraHealthSkeleton } from './JiraHealthSkeleton';
 import { JiraStatCards } from './JiraStatCards';
 import { JiraBugRatioBar } from './JiraBugRatioBar';
 import { JiraStatusDonut } from './JiraStatusDonut';
 import { JiraTypeDistribution } from './JiraTypeDistribution';
+import { JiraSprintProgressSection } from './JiraSprintProgressSection';
 
 type JiraHealthOverviewProps = {
   /** Pass supervisorApi.getJiraHealth or studentApi.getJiraHealth */
   fetcher: (projectId: string) => Promise<JiraHealth>;
+  /** Optional sprint progress fetcher shared by supervisor and student views. */
+  sprintFetcher?: (projectId: string) => Promise<JiraSprintProgress>;
   /** Optional sync action (supervisor-only) to pull fresh issues from Jira before reload. */
   syncer?: (projectId: string) => Promise<JiraHealth>;
   projectId: string;
@@ -60,6 +63,7 @@ function toRefreshApiError(error: unknown): ApiError {
 
 export function JiraHealthOverview({
   fetcher,
+  sprintFetcher,
   syncer,
   projectId,
   workspaceName,
@@ -237,6 +241,16 @@ export function JiraHealthOverview({
               Distribution
             </a>
           </li>
+          {sprintFetcher ? (
+            <li>
+              <a
+                href="#jira-sprint-progress"
+                className="inline-flex rounded-xl border border-slate-200 bg-white px-3 py-2 transition-colors hover:bg-slate-100"
+              >
+                Sprint Progress
+              </a>
+            </li>
+          ) : null}
         </ul>
       </nav>
 
@@ -271,6 +285,10 @@ export function JiraHealthOverview({
           <JiraTypeDistribution health={health} />
         </div>
       </section>
+
+      {sprintFetcher ? (
+        <JiraSprintProgressSection fetcher={sprintFetcher} projectId={projectId} />
+      ) : null}
     </div>
   );
 }

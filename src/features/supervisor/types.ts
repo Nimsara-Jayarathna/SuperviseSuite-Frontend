@@ -116,6 +116,34 @@ export type JiraHealth = {
   lastSyncedAt: string | null;
 };
 
+export type JiraSprintSummary = {
+  sprintId: number | null;
+  sprintName: string | null;
+  sprintState: string | null;
+  startDate: string | null;
+  endDate: string | null;
+  completionPercent: number;
+  issuesDone: number;
+  issuesTotal: number;
+  sprintPointsDone: number;
+  sprintPointsTotal: number;
+  sprintPointsAvailable: boolean;
+};
+
+export type JiraVelocityWeek = {
+  weekStart: string;
+  created: number;
+  resolved: number;
+};
+
+export type JiraSprintProgress = {
+  activeSprint: JiraSprintSummary | null;
+  recentSprints: JiraSprintSummary[];
+  velocityWeeks: JiraVelocityWeek[];
+  backlogGrowing: boolean;
+  sprintDataAvailable: boolean;
+};
+
 export type SupervisorProjectTab =
   | 'overview'
   | 'team'
