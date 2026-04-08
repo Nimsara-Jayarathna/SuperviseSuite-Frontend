@@ -1,4 +1,20 @@
 import { AlertTriangle, TrendingDown, TrendingUp } from 'lucide-react';
+import {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  LabelList,
+  Line,
+  LineChart,
+  ReferenceDot,
+  ReferenceLine,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
 import { EmptyState } from '@/components/feedback/EmptyState';
 import { ErrorState } from '@/components/feedback/ErrorState';
 import { useJiraSprintProgress } from '../../../hooks/useJiraSprintProgress';
@@ -7,11 +23,6 @@ import type { JiraSprintProgress, JiraSprintSummary } from '../../../types';
 type JiraSprintProgressSectionProps = {
   fetcher: (projectId: string) => Promise<JiraSprintProgress>;
   projectId: string;
-};
-
-type Point = {
-  x: number;
-  y: number;
 };
 
 function formatSprintRange(startDate: string | null, endDate: string | null): string {
@@ -74,24 +85,12 @@ function clampPercent(value: number): number {
   return Math.max(0, Math.min(100, value));
 }
 
-function toPolylinePoints(values: number[], width: number, height: number): Point[] {
-  if (values.length === 0) {
-    return [];
-  }
-
-  const minValue = Math.min(0, ...values);
-  const maxValue = Math.max(0, ...values);
-  const range = Math.max(1, maxValue - minValue);
-
-  return values.map((value, index) => {
-    const x = values.length === 1 ? width / 2 : (index / (values.length - 1)) * width;
-    const y = height - ((value - minValue) / range) * height;
-    return { x, y };
+function formatWeekShort(isoDate: string): string {
+  const date = new Date(isoDate);
+  return date.toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
   });
-}
-
-function toSvgPath(points: Point[]): string {
-  return points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ');
 }
 
 function ceilDaysBetween(start: Date, end: Date): number {
@@ -194,27 +193,57 @@ export function JiraSprintProgressSection({ fetcher, projectId }: JiraSprintProg
     .map((sprint, index) => ({
       id: sprint.sprintId ?? index,
       label: sprint.sprintName?.trim() || `Sprint ${index}`,
-      completedPoints: sprint.sprintPointsAvailable ? sprint.sprintPointsDone : 0,
-      pointsAvailable: sprint.sprintPointsAvailable,
+      value: sprint.sprintPointsAvailable ? Number(sprint.sprintPointsDone.toFixed(1)) : 0,
     }));
-  const maxSprintVelocity = Math.max(
-    1,
-    ...sprintVelocitySeries.map((item) => item.completedPoints),
-  );
   const sprintVelocityAverage =
     sprintVelocitySeries.length > 0
-      ? sprintVelocitySeries.reduce((sum, item) => sum + item.completedPoints, 0) /
+      ? sprintVelocitySeries.reduce((sum, item) => sum + item.value, 0) /
         sprintVelocitySeries.length
       : 0;
 
-  const netChartWidth = 420;
-  const netChartHeight = 100;
-  const netPoints = toPolylinePoints(cumulativeNetSeries, netChartWidth, netChartHeight);
-  const netPath = toSvgPath(netPoints);
-  const minNetValue = Math.min(0, ...cumulativeNetSeries);
-  const maxNetValue = Math.max(0, ...cumulativeNetSeries);
-  const netRange = Math.max(1, maxNetValue - minNetValue);
-  const zeroLineY = netChartHeight - ((0 - minNetValue) / netRange) * netChartHeight;
+  const backlogTrendData = progress.velocityWeeks.map((week, index) => ({
+    week: formatWeekShort(week.weekStart),
+    net: cumulativeNetSeries[index] ?? 0,
+    lastLabel:
+      index === progress.velocityWeeks.length - 1
+        ? `Net ${(cumulativeNetSeries[index] ?? 0) > 0 ? '+' : ''}${cumulativeNetSeries[index] ?? 0}`
+        : '',
+  }));
+
+  const burndownData = (() => {
+    if (!activeSprint || !activeSprint.sprintPointsAvailable || totalPoints <= 0) {
+      return [] as Array<{
+        day: string;
+        idealRemaining: number;
+        actualRemaining: number;
+        dayIndex: number;
+      }>;
+    }
+
+    const velocityPerDay = elapsedSprintDays > 0 ? donePoints / elapsedSprintDays : 0;
+    const projectedPerDay = velocityPerDay;
+
+    return Array.from({ length: totalSprintDays + 1 }, (_, dayIndex) => {
+      const idealRemaining = Math.max(0, totalPoints - (totalPoints * dayIndex) / totalSprintDays);
+      let actualRemaining = totalPoints;
+      if (dayIndex <= elapsedSprintDays) {
+        actualRemaining = Math.max(0, totalPoints - velocityPerDay * dayIndex);
+      } else {
+        const doneAtToday = velocityPerDay * elapsedSprintDays;
+        actualRemaining = Math.max(
+          0,
+          totalPoints - doneAtToday - projectedPerDay * (dayIndex - elapsedSprintDays),
+        );
+      }
+
+      return {
+        day: `D${dayIndex}`,
+        idealRemaining: Number(idealRemaining.toFixed(2)),
+        actualRemaining: Number(actualRemaining.toFixed(2)),
+        dayIndex,
+      };
+    });
+  })();
 
   return (
     <section id="jira-sprint-progress" className="space-y-3">
@@ -328,44 +357,66 @@ export function JiraSprintProgressSection({ fetcher, projectId }: JiraSprintProg
                 {activeSprint.sprintPointsAvailable && hasValidSprintWindow ? (
                   <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-2">
                     <div className="flex items-center justify-between gap-2">
-                      <svg viewBox="0 0 180 36" className="h-10 w-full max-w-[180px]">
-                        <line
-                          x1="0"
-                          y1="4"
-                          x2="180"
-                          y2="32"
-                          stroke="#cbd5e1"
-                          strokeWidth="1.5"
-                          strokeDasharray="3 2"
-                        />
-                        <path
-                          d={(() => {
-                            const actualRemaining = Math.max(0, totalPoints - donePoints);
-                            const projectedRemaining = Math.max(
-                              0,
-                              totalPoints -
-                                (elapsedSprintDays > 0
-                                  ? (donePoints / elapsedSprintDays) * totalSprintDays
-                                  : donePoints),
-                            );
-                            const dayX =
-                              totalSprintDays > 0 ? (elapsedSprintDays / totalSprintDays) * 180 : 0;
-                            const todayY =
-                              totalPoints > 0
-                                ? 32 - ((totalPoints - actualRemaining) / totalPoints) * 28
-                                : 32;
-                            const projectedY =
-                              totalPoints > 0
-                                ? 32 - ((totalPoints - projectedRemaining) / totalPoints) * 28
-                                : 32;
-                            return `M 0 32 L ${dayX} ${todayY} L 180 ${projectedY}`;
-                          })()}
-                          fill="none"
-                          stroke="#0f766e"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                        />
-                      </svg>
+                      <div className="h-10 w-full max-w-[220px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart
+                            data={burndownData}
+                            margin={{ top: 4, right: 8, left: 0, bottom: 0 }}
+                          >
+                            <CartesianGrid
+                              strokeDasharray="3 3"
+                              stroke="#D3D1C7"
+                              vertical={false}
+                            />
+                            <XAxis
+                              dataKey="day"
+                              hide
+                              tick={{ fill: '#5F5E5A', fontSize: 12 }}
+                              axisLine={false}
+                              tickLine={false}
+                            />
+                            <YAxis
+                              hide
+                              tick={{ fill: '#5F5E5A', fontSize: 12 }}
+                              axisLine={false}
+                              tickLine={false}
+                            />
+                            <Tooltip
+                              formatter={(value) => [
+                                `${Number(value ?? 0).toFixed(1)} pts remaining`,
+                                '',
+                              ]}
+                              contentStyle={{
+                                fontSize: 12,
+                                borderRadius: 8,
+                                border: '0.5px solid #D3D1C7',
+                              }}
+                            />
+                            <Line
+                              type="monotone"
+                              dataKey="idealRemaining"
+                              stroke="#B4B2A9"
+                              strokeDasharray="4 3"
+                              strokeWidth={1.5}
+                              dot={false}
+                            />
+                            <Line
+                              type="monotone"
+                              dataKey="actualRemaining"
+                              stroke="#1D9E75"
+                              strokeWidth={2.5}
+                              dot={false}
+                            />
+                            <ReferenceDot
+                              x={`D${elapsedSprintDays}`}
+                              y={Math.max(0, Number((totalPoints - donePoints).toFixed(2)))}
+                              r={3.5}
+                              fill="#1D9E75"
+                              stroke="#1D9E75"
+                            />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
                       <p className="shrink-0 text-[11px] font-semibold text-slate-700">
                         {Math.abs(pointsDeltaVsIdeal)} pts{' '}
                         {pointsDeltaVsIdeal >= 0 ? 'ahead of ideal' : 'behind ideal'}
@@ -395,38 +446,55 @@ export function JiraSprintProgressSection({ fetcher, projectId }: JiraSprintProg
 
               {sprintVelocitySeries.length > 0 ? (
                 <div className="mt-3">
-                  <div className="relative flex h-32 items-end justify-between gap-3 rounded-lg border border-slate-200 bg-white px-3 pb-2 pt-3">
-                    {sprintVelocitySeries.map((item) => {
-                      const height = (item.completedPoints / maxSprintVelocity) * 80;
-                      return (
-                        <div
-                          key={item.id}
-                          className="flex min-w-0 flex-1 flex-col items-center gap-1"
-                        >
-                          <p className="text-[11px] font-semibold text-slate-700">
-                            {Math.round(item.completedPoints)}
-                          </p>
-                          <div className="flex h-20 w-full items-end justify-center">
-                            <div
-                              className={`w-7 rounded-t-md ${item.pointsAvailable ? 'bg-sky-500' : 'bg-slate-300'}`}
-                              style={{ height: `${Math.max(6, height)}px` }}
-                              aria-label={`${item.label} completed points ${item.completedPoints}`}
-                            />
-                          </div>
-                          <p className="truncate text-[11px] text-slate-600" title={item.label}>
-                            {item.label}
-                          </p>
-                        </div>
-                      );
-                    })}
-
-                    <div
-                      className="pointer-events-none absolute left-3 right-3 border-t border-dashed border-amber-500"
-                      style={{
-                        bottom: `${8 + (sprintVelocityAverage / maxSprintVelocity) * 80}px`,
-                      }}
-                      aria-hidden
-                    />
+                  <div className="h-36 rounded-lg border border-slate-200 bg-white px-2 py-2">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={sprintVelocitySeries}
+                        margin={{ top: 12, right: 12, left: 4, bottom: 4 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" stroke="#D3D1C7" vertical={false} />
+                        <XAxis
+                          dataKey="label"
+                          tick={{ fill: '#5F5E5A', fontSize: 12 }}
+                          axisLine={false}
+                          tickLine={false}
+                        />
+                        <YAxis
+                          tick={{ fill: '#5F5E5A', fontSize: 12 }}
+                          axisLine={false}
+                          tickLine={false}
+                        />
+                        <Tooltip
+                          formatter={(value) => [
+                            `${Number(value ?? 0).toFixed(1)} pts`,
+                            'Completed',
+                          ]}
+                          contentStyle={{
+                            fontSize: 12,
+                            borderRadius: 8,
+                            border: '0.5px solid #D3D1C7',
+                          }}
+                        />
+                        <ReferenceLine
+                          y={Number(sprintVelocityAverage.toFixed(1))}
+                          stroke="#EF9F27"
+                          strokeDasharray="4 3"
+                          label={{
+                            value: `Avg: ${Math.round(sprintVelocityAverage)} pts`,
+                            position: 'right',
+                            fill: '#5F5E5A',
+                            fontSize: 12,
+                          }}
+                        />
+                        <Bar dataKey="value" fill="#378ADD" stroke="#185FA5" radius={[4, 4, 0, 0]}>
+                          <LabelList
+                            dataKey="value"
+                            position="top"
+                            style={{ fontWeight: 500, fontSize: 13, fill: '#5F5E5A' }}
+                          />
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
                   </div>
 
                   <p className="mt-2 text-xs text-slate-600">
@@ -451,26 +519,51 @@ export function JiraSprintProgressSection({ fetcher, projectId }: JiraSprintProg
                 </p>
               </div>
 
-              <svg viewBox={`0 0 ${netChartWidth} ${netChartHeight}`} className="mt-2 h-10 w-full">
-                <line
-                  x1="0"
-                  y1={zeroLineY}
-                  x2={netChartWidth}
-                  y2={zeroLineY}
-                  stroke="#cbd5e1"
-                  strokeWidth="1"
-                  strokeDasharray="4 3"
-                />
-                {netPath ? (
-                  <path
-                    d={netPath}
-                    fill="none"
-                    stroke={latestNetBalance > 0 ? '#f59e0b' : '#10b981'}
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                  />
-                ) : null}
-              </svg>
+              <div className="mt-2 h-20 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart
+                    data={backlogTrendData}
+                    margin={{ top: 6, right: 50, left: 4, bottom: 0 }}
+                  >
+                    <XAxis
+                      dataKey="week"
+                      hide
+                      tick={{ fill: '#5F5E5A', fontSize: 12 }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <YAxis
+                      hide
+                      tick={{ fill: '#5F5E5A', fontSize: 12 }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <Tooltip
+                      formatter={(value) => [`${Number(value ?? 0).toFixed(0)}`, 'Net backlog']}
+                      contentStyle={{
+                        fontSize: 12,
+                        borderRadius: 8,
+                        border: '0.5px solid #D3D1C7',
+                      }}
+                    />
+                    <ReferenceLine y={0} stroke="#B4B2A9" strokeWidth={1} />
+                    <Area
+                      type="monotone"
+                      dataKey="net"
+                      stroke="#BA7517"
+                      strokeWidth={2}
+                      fill="#FAEEDA"
+                      fillOpacity={0.6}
+                    >
+                      <LabelList
+                        dataKey="lastLabel"
+                        position="right"
+                        style={{ fill: '#5F5E5A', fontSize: 12, fontWeight: 500 }}
+                      />
+                    </Area>
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
 
               <p className="mt-2 inline-flex items-center gap-1 text-xs font-semibold">
                 {progress.backlogGrowing ? (
