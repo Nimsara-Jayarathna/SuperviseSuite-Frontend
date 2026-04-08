@@ -28,6 +28,7 @@ import {
 } from '../projectDetails.shared';
 import type {
   ProjectGitHubActivity,
+  JiraWorkspaceOption,
   SupervisorProjectDetailTab,
   SupervisorProjectLifecycle,
 } from '../types';
@@ -122,6 +123,7 @@ export function ProjectDetailsPage() {
     title: string;
     message: string;
     retryAction?: () => void;
+    redirectToJiraOnClose?: boolean;
   }>({
     isOpen: false,
     status: 'loading',
@@ -133,6 +135,21 @@ export function ProjectDetailsPage() {
   const [isConnectingJira, setIsConnectingJira] = useState(false);
   const [isDisconnectingJira, setIsDisconnectingJira] = useState(false);
   const [isJiraDisconnectConfirmOpen, setIsJiraDisconnectConfirmOpen] = useState(false);
+  const [jiraWorkspaceSelection, setJiraWorkspaceSelection] = useState<{
+    isOpen: boolean;
+    selectionToken: string | null;
+    selectedCloudId: string | null;
+    workspaceOptions: JiraWorkspaceOption[];
+    processKey: string | null;
+    doneKey: string | null;
+  }>({
+    isOpen: false,
+    selectionToken: null,
+    selectedCloudId: null,
+    workspaceOptions: [],
+    processKey: null,
+    doneKey: null,
+  });
   const jiraCompletionGuardRef = useRef<string | null>(null);
 
   const activeRepository = useMemo(() => {
@@ -214,7 +231,14 @@ export function ProjectDetailsPage() {
   }
 
   function closeRefreshRequestModal() {
-    setRefreshRequestModal((current) => ({ ...current, isOpen: false }));
+    setRefreshRequestModal((current) => {
+      if (current.redirectToJiraOnClose) {
+        const nextParams = new URLSearchParams(searchParams);
+        nextParams.set('tab', 'jira');
+        setSearchParams(nextParams, { replace: true });
+      }
+      return { ...current, isOpen: false, redirectToJiraOnClose: false };
+    });
   }
 
   useEffect(() => {
@@ -316,6 +340,24 @@ export function ProjectDetailsPage() {
           error: jiraError,
           errorDescription: jiraErrorDescription,
         });
+
+        if (result.requiresWorkspaceSelection) {
+          if (!result.selectionToken || result.workspaceOptions.length === 0) {
+            throw new Error('Workspace selection details were not returned by the server.');
+          }
+
+          setRefreshRequestModal((current) => ({ ...current, isOpen: false }));
+          setJiraWorkspaceSelection({
+            isOpen: true,
+            selectionToken: result.selectionToken,
+            selectedCloudId: result.workspaceOptions[0]?.cloudId ?? null,
+            workspaceOptions: result.workspaceOptions,
+            processKey,
+            doneKey,
+          });
+          return;
+        }
+
         sessionStorage.setItem(doneKey, 'true');
         sessionStorage.removeItem(processKey);
         setRefreshRequestModal({
@@ -325,6 +367,7 @@ export function ProjectDetailsPage() {
           message: result.workspaceName
             ? `Jira workspace "${result.workspaceName}" was connected successfully.`
             : 'Jira workspace connected successfully.',
+          redirectToJiraOnClose: true,
         });
         await reload();
       } catch (error) {
@@ -349,6 +392,92 @@ export function ProjectDetailsPage() {
       }
     })();
   }, [reload, searchParams, setSearchParams]);
+
+  async function hydrateJiraAfterConnect(connectedProjectId: string | null | undefined) {
+    if (!connectedProjectId) {
+      return;
+    }
+    try {
+      await supervisorApi.refreshProjectJira(connectedProjectId);
+    } catch {
+      // Keep connect success UX even if immediate refresh fails; Jira tab retry still works.
+    }
+  }
+
+  async function confirmJiraWorkspaceSelection() {
+    if (!jiraWorkspaceSelection.selectionToken || !jiraWorkspaceSelection.selectedCloudId) {
+      setRefreshRequestModal({
+        isOpen: true,
+        status: 'error',
+        title: 'Jira connection failed',
+        message: 'Select a Jira workspace to continue.',
+      });
+      return;
+    }
+
+    setRefreshRequestModal({
+      isOpen: true,
+      status: 'loading',
+      title: 'Connecting Jira',
+      message: 'Finalizing Jira workspace selection.',
+    });
+
+    try {
+      const result = await supervisorApi.completeJiraOAuth({
+        selectionToken: jiraWorkspaceSelection.selectionToken,
+        selectedCloudId: jiraWorkspaceSelection.selectedCloudId,
+      });
+      if (jiraWorkspaceSelection.doneKey) {
+        sessionStorage.setItem(jiraWorkspaceSelection.doneKey, 'true');
+      }
+      if (jiraWorkspaceSelection.processKey) {
+        sessionStorage.removeItem(jiraWorkspaceSelection.processKey);
+      }
+      setJiraWorkspaceSelection({
+        isOpen: false,
+        selectionToken: null,
+        selectedCloudId: null,
+        workspaceOptions: [],
+        processKey: null,
+        doneKey: null,
+      });
+      await hydrateJiraAfterConnect(result.projectId || projectId);
+      setRefreshRequestModal({
+        isOpen: true,
+        status: 'success',
+        title: 'Jira connected',
+        message: result.workspaceName
+          ? `Jira workspace "${result.workspaceName}" was connected successfully.`
+          : 'Jira workspace connected successfully.',
+        redirectToJiraOnClose: true,
+      });
+      await reload();
+    } catch (error) {
+      const message = isApiException(error)
+        ? error.apiError.message
+        : 'Jira workspace selection was not completed. Please try again.';
+      setRefreshRequestModal({
+        isOpen: true,
+        status: 'error',
+        title: 'Jira connection failed',
+        message,
+      });
+    }
+  }
+
+  function cancelJiraWorkspaceSelection() {
+    if (jiraWorkspaceSelection.processKey) {
+      sessionStorage.removeItem(jiraWorkspaceSelection.processKey);
+    }
+    setJiraWorkspaceSelection({
+      isOpen: false,
+      selectionToken: null,
+      selectedCloudId: null,
+      workspaceOptions: [],
+      processKey: null,
+      doneKey: null,
+    });
+  }
 
   useEffect(() => {
     setGithubView(project?.github ?? null);
@@ -507,6 +636,7 @@ export function ProjectDetailsPage() {
         onRetry={
           refreshRequestModal.status === 'error' ? refreshRequestModal.retryAction : undefined
         }
+        autoCloseOnSuccess={!refreshRequestModal.redirectToJiraOnClose}
       />
       <RequestStateModal
         isOpen={isJiraDisconnectConfirmOpen}
@@ -532,6 +662,67 @@ export function ProjectDetailsPage() {
               onClick={() => void confirmDisconnectJira()}
             >
               Disconnect
+            </Button>
+          </div>
+        }
+      />
+      <RequestStateModal
+        isOpen={jiraWorkspaceSelection.isOpen}
+        status="warning"
+        title="Select Jira workspace"
+        message="Multiple Jira workspaces are available for this account. Choose one to connect this project."
+        onClose={cancelJiraWorkspaceSelection}
+        autoCloseOnSuccess={false}
+        content={
+          <div className="max-h-60 space-y-2 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-3 text-left">
+            {jiraWorkspaceSelection.workspaceOptions.map((option) => (
+              <label
+                key={option.cloudId}
+                className="flex cursor-pointer items-start gap-2 rounded-xl border border-slate-200 p-2 hover:bg-slate-50"
+              >
+                <input
+                  type="radio"
+                  name="jira-workspace-option"
+                  className="mt-1"
+                  checked={jiraWorkspaceSelection.selectedCloudId === option.cloudId}
+                  onChange={() =>
+                    setJiraWorkspaceSelection((current) => ({
+                      ...current,
+                      selectedCloudId: option.cloudId,
+                    }))
+                  }
+                />
+                <span className="min-w-0">
+                  <span className="block truncate text-sm font-semibold text-slate-900">
+                    {option.workspaceName}
+                  </span>
+                  {option.workspaceUrl ? (
+                    <span className="block truncate text-xs text-slate-600">
+                      {option.workspaceUrl}
+                    </span>
+                  ) : null}
+                </span>
+              </label>
+            ))}
+          </div>
+        }
+        footer={
+          <div className="flex flex-wrap justify-center gap-3">
+            <Button
+              type="button"
+              variant="secondary"
+              size="md"
+              onClick={cancelJiraWorkspaceSelection}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              size="md"
+              onClick={() => void confirmJiraWorkspaceSelection()}
+            >
+              Connect selected workspace
             </Button>
           </div>
         }
