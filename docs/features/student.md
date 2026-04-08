@@ -27,6 +27,7 @@ Student pages currently use:
 - `GET /api/student/projects/{projectId}/github`
 - `GET /api/student/projects/{projectId}/github/activity?page=...&size=...`
 - `GET /api/student/projects/{projectId}/github/contributors?page=...&size=...`
+- `GET /api/student/projects/{projectId}/jira/health`
 
 ---
 
@@ -86,6 +87,7 @@ Student pages currently use:
 - `Team`
 - `Milestones`
 - `GitHub`
+- `Jira`
 
 ### Header chips
 
@@ -106,6 +108,11 @@ Student pages currently use:
   - supports paginated full-list modals for commits/contributors
   - no add/edit/remove/refresh controls are rendered for students
   - when no repository is linked, shows a read-only CTA to navigate to Overview tab guidance
+- Jira (read-only shared health view):
+  - renders the same Jira health overview component used by supervisor
+  - fetches data via `GET /api/student/projects/{projectId}/jira/health`
+  - no connect/disconnect/refresh mutation controls are exposed for student role
+  - when Jira integration is not connected, displays read-only empty state guidance
 
 ### UX states
 
@@ -120,3 +127,4 @@ Student pages currently use:
 - Student list and detail routes are backend-connected.
 - Student mock project seed data is removed from active list/detail rendering.
 - GitHub tab is always present in detail tabs, but displays role-safe empty state when no repository is linked.
+- Jira tab is always present in detail tabs and remains read-only for students.

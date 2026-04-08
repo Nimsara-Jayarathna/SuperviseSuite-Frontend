@@ -29,6 +29,13 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { StudentProjectDetailsSkeleton } from '../components/StudentProjectDetailsSkeleton';
 import { useStudentProject } from '../hooks/useStudentProject';
 import { studentApi } from '../api/studentApi';
+// NOTE: intentional cross-feature import. JiraHealthOverview is a shared
+// presentational component used by both supervisor and student roles.
+// student/types and student/api already import from the supervisor feature,
+// establishing this as an accepted pattern in this codebase.
+// If a stricter module boundary is introduced, move the jira/ subfolder to
+// src/components/jira/ and update all import paths.
+import { JiraHealthOverview } from '@/features/supervisor/components/ProjectDetail/jira/JiraHealthOverview';
 import type {
   ProjectGitHubActivity,
   StudentProjectDetailLeader,
@@ -787,6 +794,11 @@ export function StudentProjectDetailsPage() {
               </div>
             )}
           </div>
+
+          {/* Health overview — read-only, reuses the same component as the supervisor tab */}
+          {jira?.connected && projectId && (
+            <JiraHealthOverview fetcher={studentApi.getJiraHealth} projectId={projectId} />
+          )}
         </section>
       ) : null}
     </div>

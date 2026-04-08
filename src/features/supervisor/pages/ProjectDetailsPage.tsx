@@ -9,6 +9,7 @@ import { RequestStateModal } from '@/components/ui/RequestStateModal';
 import { CommitActivitySection } from '@/features/projects/components/CommitActivitySection';
 import { ProjectDetailsSkeleton } from '../components/ProjectDetailsSkeleton';
 import { IntegrationsTabSection } from '../components/ProjectDetail/IntegrationsTabSection';
+import { JiraTabSection } from '../components/ProjectDetail/JiraTabSection';
 import { MilestonesTabSection } from '../components/ProjectDetail/MilestonesTabSection';
 import { OverviewTabSection } from '../components/ProjectDetail/OverviewTabSection';
 import { TeamTabSection } from '../components/ProjectDetail/TeamTabSection';
@@ -774,33 +775,7 @@ export function ProjectDetailsPage() {
         </div>
       ) : null}
 
-      {activeTab === 'jira' ? (
-        project.jira?.connected ? (
-          <section className="rounded-3xl border border-border bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-foreground">Jira tab moved</h2>
-            <p className="mt-3 text-sm text-slate-600">
-              Jira integration settings are available under the Integrations tab.
-            </p>
-          </section>
-        ) : (
-          <section className="rounded-3xl border border-border bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-foreground">No Jira workspace connected</h2>
-            <p className="mt-3 text-sm text-slate-600">
-              Connect Jira from Integrations to enable workspace linking and project-level Jira
-              visibility.
-            </p>
-            <div className="mt-5">
-              <button
-                type="button"
-                className={buttonStyles({ variant: 'primary', size: 'sm' })}
-                onClick={() => handleTabChange('integrations')}
-              >
-                Go to Integrations
-              </button>
-            </div>
-          </section>
-        )
-      ) : null}
+      {activeTab === 'jira' ? <JiraTabSection project={project} /> : null}
 
       {activeTab === 'integrations' ? (
         <IntegrationsTabSection

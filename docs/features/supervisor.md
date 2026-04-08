@@ -45,6 +45,11 @@ Supervisor feature currently uses these APIs:
 - `GET /api/supervisor/projects/{projectId}/github/access-requests/validate?token=...`
 - `POST /api/supervisor/projects/{projectId}/github/access-requests/continue?token=...`
 - `POST /api/supervisor/projects/{projectId}/github/refresh`
+- `GET /api/supervisor/projects/{projectId}/jira/auth-url`
+- `POST /api/supervisor/jira/oauth/complete`
+- `POST /api/supervisor/projects/{projectId}/jira/disconnect`
+- `GET /api/supervisor/projects/{projectId}/jira/health`
+- `POST /api/supervisor/projects/{projectId}/jira/refresh`
 - `GET /api/github/access-requests/validate?token=...`
 - `POST /api/github/access-requests/continue?token=...`
 - `GET /api/github/access-updated/summary?token=...`
@@ -72,10 +77,14 @@ Supervisor feature currently uses these APIs:
 | `src/features/supervisor/pages/GitHubAccessUpdatedPage.tsx` | Public callback result page that shows updated accessible repositories and acknowledges completion |
 | `src/features/supervisor/components/ProjectDetail/RepositorySection.tsx` | Supervisor Overview repository management card (single-link action, remove action, GitHub App/manual link entrypoint) |
 | `src/features/supervisor/components/ProjectDetail/RepositoryLinkModalContent.tsx` | Guided modal with method-first UX, installation repository selection, loading skeletons, and GitHub App/request-access actions |
+| `src/features/supervisor/components/ProjectDetail/IntegrationsTabSection.tsx` | Integrations tab containing GitHub repository controls and Jira connect/disconnect actions |
+| `src/features/supervisor/components/ProjectDetail/JiraTabSection.tsx` | Jira tab shell for Jira workspace context and Jira health overview rendering |
+| `src/features/supervisor/components/ProjectDetail/jira/JiraHealthOverview.tsx` | Shared Jira health UI (status metrics, bug ratio, distributions, refresh action) |
 | `src/features/supervisor/components/SupervisorProjectCard.tsx` | Clickable summary card (full-card navigation) with compact status/progress layout |
 | `src/features/supervisor/components/SupervisorProjectCardSkeleton.tsx` | List loading placeholder |
 | `src/features/supervisor/components/ProjectDetailsSkeleton.tsx` | Detail loading placeholder |
 | `src/features/supervisor/api/supervisorApi.ts` | Supervisor API client for read + mutation endpoints |
+| `src/features/supervisor/hooks/useJiraHealth.ts` | Shared Jira health hook used by supervisor/student Jira views |
 | `src/features/supervisor/hooks/useSupervisorDashboard.ts` | Dashboard hook with loading/error/retry |
 | `src/features/supervisor/hooks/useSupervisorProjects.ts` | Project list hook |
 | `src/features/supervisor/hooks/useSupervisorProject.ts` | Project detail hook |
@@ -178,9 +187,11 @@ Supervisor feature currently uses these APIs:
 ### Tabs
 
 - `Overview`
-- `GitHub`
 - `Team`
 - `Milestones`
+- `Integrations`
+- `GitHub`
+- `Jira`
 
 ### Header status control
 
@@ -258,6 +269,29 @@ Supervisor feature currently uses these APIs:
   - calls `POST /api/supervisor/projects/{projectId}/github/refresh`
   - then re-fetches project detail payload
 
+### Integrations tab: GitHub + Jira connection controls
+
+- Shows GitHub integration controls via repository management card.
+- Shows Jira integration card with current workspace state.
+- Jira actions in this tab:
+  - connect Jira (OAuth start)
+  - disconnect Jira workspace
+- Jira connect/disconnect is intentionally isolated to Integrations tab.
+
+### Jira tab: health-focused monitoring view
+
+- Jira tab is health/readiness focused and does not expose connect/disconnect controls.
+- Shows workspace context card (`workspaceName`, `workspaceUrl`, connection badge).
+- Renders health overview using shared component stack:
+  - summary cards
+  - bug ratio bar
+  - status breakdown chart
+  - issue type distribution chart
+- Refresh action in Jira tab:
+  - calls `POST /api/supervisor/projects/{projectId}/jira/refresh`
+  - applies fresh health payload to UI state immediately
+  - updates "Last synced" indicator
+
 ### Team tab: add-student management (add-only)
 
 - `Manage students` mode supports:
@@ -314,4 +348,5 @@ Summary and milestone description show visible counters where applicable in crea
 
 - Supervisor dashboard, projects list, create flow, and detail management are all backend-connected.
 - GitHub tab is intentionally read-only; repository management remains in Overview card.
+- Jira tab is intentionally health/read-only oriented; connect/disconnect remains in Integrations tab.
 - Route guards are still UI-level and not a backend security boundary.
