@@ -3,6 +3,8 @@ import { useState } from 'react';
 import { buttonStyles } from '@/components/ui/Button';
 import { EmptyState } from '@/components/feedback/EmptyState';
 import { ErrorState } from '@/components/feedback/ErrorState';
+import { isApiException } from '@/services/apiClient';
+import type { ApiError } from '@/types';
 import { useJiraHealth } from '../../../hooks/useJiraHealth';
 import type { JiraHealth } from '../../../types';
 import { JiraHealthSkeleton } from './JiraHealthSkeleton';
@@ -31,6 +33,31 @@ function formatSyncedAt(iso: string): string {
   });
 }
 
+function toRefreshApiError(error: unknown): ApiError {
+  if (isApiException(error)) {
+    const apiError = error.apiError;
+    if (apiError.code === 'SERVICE_UNAVAILABLE' || apiError.status === 503) {
+      return {
+        ...apiError,
+        message:
+          'Unable to refresh Jira data right now. Jira may be temporarily unreachable. Please try again.',
+      };
+    }
+    return apiError;
+  }
+
+  return {
+    code: 'INTERNAL_ERROR',
+    message: 'Unable to refresh Jira data right now. Please try again.',
+    details: [],
+    timestamp: new Date().toISOString(),
+    status: 0,
+    error: 'Unexpected Error',
+    path: '',
+    traceId: null,
+  };
+}
+
 export function JiraHealthOverview({
   fetcher,
   syncer,
@@ -41,6 +68,7 @@ export function JiraHealthOverview({
   const { health, isLoading, error, reload, applyHealth } = useJiraHealth(fetcher, projectId);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastRefreshAt, setLastRefreshAt] = useState<string | null>(null);
+  const [refreshError, setRefreshError] = useState<ApiError | null>(null);
   const canRefresh = Boolean(syncer);
 
   async function handleRefresh() {
@@ -49,6 +77,7 @@ export function JiraHealthOverview({
     }
 
     setIsRefreshing(true);
+    setRefreshError(null);
     try {
       if (syncer) {
         const refreshedHealth = await syncer(projectId);
@@ -62,6 +91,8 @@ export function JiraHealthOverview({
       } else {
         await reload();
       }
+    } catch (caughtError) {
+      setRefreshError(toRefreshApiError(caughtError));
     } finally {
       setIsRefreshing(false);
     }
@@ -139,6 +170,12 @@ export function JiraHealthOverview({
     return (
       <div className="space-y-4">
         {contextBar}
+        {refreshError ? (
+          <ErrorState
+            error={refreshError}
+            onRetry={canRefresh ? () => void handleRefresh() : undefined}
+          />
+        ) : null}
         <EmptyState
           title="Sync in progress"
           description="Jira issue data is being fetched for the first time. This usually takes a few seconds. Use Refresh in the Jira header to check again."
@@ -150,6 +187,12 @@ export function JiraHealthOverview({
   return (
     <div className="space-y-5">
       {contextBar}
+      {refreshError ? (
+        <ErrorState
+          error={refreshError}
+          onRetry={canRefresh ? () => void handleRefresh() : undefined}
+        />
+      ) : null}
 
       <nav className="rounded-2xl border border-slate-200 bg-slate-50/70 p-2">
         <ul className="flex flex-wrap gap-2 text-sm font-medium text-slate-700">
