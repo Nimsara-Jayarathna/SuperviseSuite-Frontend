@@ -75,6 +75,34 @@ describe('JiraHealthOverview', () => {
     vi.clearAllMocks();
   });
 
+  it('auto-refreshes once when Jira is connected but has never synced', async () => {
+    const refreshedHealth: JiraHealth = {
+      ...BASE_HEALTH,
+      lastSyncedAt: '2026-04-08T10:20:00Z',
+    };
+    const syncer = vi.fn().mockResolvedValue(refreshedHealth);
+
+    mockJiraHealthHook({
+      health: {
+        ...BASE_HEALTH,
+        lastSyncedAt: null,
+      },
+    });
+
+    render(
+      <JiraHealthOverview
+        fetcher={vi.fn()}
+        syncer={syncer}
+        projectId="project-1"
+        workspaceName="supervise-suite"
+      />,
+    );
+
+    await waitFor(() => {
+      expect(syncer).toHaveBeenCalledTimes(1);
+    });
+  });
+
   it('shows Jira-specific retry guidance when refresh cannot reach Jira', async () => {
     const user = userEvent.setup();
     const { applyHealth } = mockJiraHealthHook();

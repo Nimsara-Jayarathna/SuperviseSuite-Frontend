@@ -1,5 +1,5 @@
 import { ExternalLink, Link2, RefreshCw } from 'lucide-react';
-import { useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { buttonStyles } from '@/components/ui/Button';
 import { EmptyState } from '@/components/feedback/EmptyState';
 import { ErrorState } from '@/components/feedback/ErrorState';
@@ -69,9 +69,10 @@ export function JiraHealthOverview({
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastRefreshAt, setLastRefreshAt] = useState<string | null>(null);
   const [refreshError, setRefreshError] = useState<ApiError | null>(null);
+  const autoRefreshAttemptedProjectId = useRef<string | null>(null);
   const canRefresh = Boolean(syncer);
 
-  async function handleRefresh() {
+  const handleRefresh = useCallback(async () => {
     if (isRefreshing) {
       return;
     }
@@ -96,7 +97,23 @@ export function JiraHealthOverview({
     } finally {
       setIsRefreshing(false);
     }
-  }
+  }, [applyHealth, isRefreshing, projectId, reload, syncer]);
+
+  useEffect(() => {
+    const shouldAutoRefresh =
+      canRefresh &&
+      health?.lastSyncedAt === null &&
+      !isLoading &&
+      !isRefreshing &&
+      autoRefreshAttemptedProjectId.current !== projectId;
+
+    if (!shouldAutoRefresh) {
+      return;
+    }
+
+    autoRefreshAttemptedProjectId.current = projectId;
+    void handleRefresh();
+  }, [canRefresh, handleRefresh, health?.lastSyncedAt, isLoading, isRefreshing, projectId]);
 
   if (isLoading) {
     return <JiraHealthSkeleton />;
