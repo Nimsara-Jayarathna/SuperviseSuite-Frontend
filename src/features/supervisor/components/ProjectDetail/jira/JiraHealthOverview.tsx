@@ -6,7 +6,8 @@ import { ErrorState } from '@/components/feedback/ErrorState';
 import { isApiException } from '@/services/apiClient';
 import type { ApiError } from '@/types';
 import { useJiraHealth } from '../../../hooks/useJiraHealth';
-import type { JiraHealth } from '../../../types';
+import type { JiraHealth, JiraIssueSummary } from '../../../types';
+import { EpicHierarchyView } from './EpicHierarchyView';
 import { JiraHealthSkeleton } from './JiraHealthSkeleton';
 import { JiraStatCards } from './JiraStatCards';
 import { JiraBugRatioBar } from './JiraBugRatioBar';
@@ -18,6 +19,8 @@ type JiraHealthOverviewProps = {
   fetcher: (projectId: string) => Promise<JiraHealth>;
   /** Optional sync action (supervisor-only) to pull fresh issues from Jira before reload. */
   syncer?: (projectId: string) => Promise<JiraHealth>;
+  issuesFetcher?: (projectId: string) => Promise<JiraIssueSummary[]>;
+  onIssueClick?: (issueKey: string) => void;
   projectId: string;
   workspaceName?: string | null;
   workspaceUrl?: string | null;
@@ -61,6 +64,8 @@ function toRefreshApiError(error: unknown): ApiError {
 export function JiraHealthOverview({
   fetcher,
   syncer,
+  issuesFetcher,
+  onIssueClick,
   projectId,
   workspaceName,
   workspaceUrl,
@@ -69,6 +74,7 @@ export function JiraHealthOverview({
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastRefreshAt, setLastRefreshAt] = useState<string | null>(null);
   const [refreshError, setRefreshError] = useState<ApiError | null>(null);
+  const [view, setView] = useState<'analytics' | 'hierarchy'>('analytics');
   const autoRefreshAttemptedProjectId = useRef<string | null>(null);
   const canRefresh = Boolean(syncer);
 
@@ -212,65 +218,98 @@ export function JiraHealthOverview({
       ) : null}
 
       <nav className="rounded-2xl border border-slate-200 bg-slate-50/70 p-2">
-        <ul className="flex flex-wrap gap-2 text-sm font-medium text-slate-700">
-          <li>
-            <a
-              href="#jira-project-health"
-              className="inline-flex rounded-xl border border-slate-200 bg-white px-3 py-2 transition-colors hover:bg-slate-100"
-            >
-              Health
-            </a>
-          </li>
-          <li>
-            <a
-              href="#jira-quality-signals"
-              className="inline-flex rounded-xl border border-slate-200 bg-white px-3 py-2 transition-colors hover:bg-slate-100"
-            >
-              Quality
-            </a>
-          </li>
-          <li>
-            <a
-              href="#jira-distribution"
-              className="inline-flex rounded-xl border border-slate-200 bg-white px-3 py-2 transition-colors hover:bg-slate-100"
-            >
-              Distribution
-            </a>
-          </li>
-        </ul>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          {/* View toggle — left side */}
+          <div className="flex gap-1">
+            {((issuesFetcher ? (['analytics', 'hierarchy'] as const) : (['analytics'] as const))).map((v) => (
+              <button
+                key={v}
+                type="button"
+                onClick={() => setView(v)}
+                className={`rounded-xl px-3 py-2 text-sm font-medium transition-colors ${
+                  view === v
+                    ? 'bg-slate-900 text-white'
+                    : 'text-slate-700 hover:bg-slate-100'
+                }`}
+              >
+                {v === 'analytics' ? 'Analytics' : 'Hierarchy'}
+              </button>
+            ))}
+          </div>
+
+          {/* Anchor links — right side, hidden in hierarchy view */}
+          {view === 'analytics' ? (
+            <ul className="flex flex-wrap gap-2 text-sm font-medium text-slate-700">
+              <li>
+                <a
+                  href="#jira-project-health"
+                  className="inline-flex rounded-xl border border-slate-200 bg-white px-3 py-2 transition-colors hover:bg-slate-100"
+                >
+                  Health
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#jira-quality-signals"
+                  className="inline-flex rounded-xl border border-slate-200 bg-white px-3 py-2 transition-colors hover:bg-slate-100"
+                >
+                  Quality
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#jira-distribution"
+                  className="inline-flex rounded-xl border border-slate-200 bg-white px-3 py-2 transition-colors hover:bg-slate-100"
+                >
+                  Distribution
+                </a>
+              </li>
+            </ul>
+          ) : null}
+        </div>
       </nav>
 
-      <section id="jira-project-health" className="space-y-3">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="text-base font-semibold tracking-wide text-slate-900">Project health</h2>
-          <p className="text-sm text-slate-600">Snapshot from synced Jira issues</p>
-        </div>
-        <JiraStatCards health={health} />
-      </section>
+      {view === 'hierarchy' && issuesFetcher ? (
+        <EpicHierarchyView
+          projectId={projectId}
+          fetcher={issuesFetcher}
+          onIssueClick={onIssueClick ?? (() => {})}
+        />
+      ) : (
+        <>
+          <section id="jira-project-health" className="space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-base font-semibold tracking-wide text-slate-900">Project health</h2>
+              <p className="text-sm text-slate-600">Snapshot from synced Jira issues</p>
+            </div>
+            <JiraStatCards health={health} />
+          </section>
 
-      <section id="jira-quality-signals" className="space-y-3">
-        <div className="flex items-center justify-between gap-3 border-t border-slate-200 pt-4">
-          <h2 className="text-base font-semibold tracking-wide text-slate-900">Quality signals</h2>
-          <p className="text-sm text-slate-600">Open bug pressure over active issues</p>
-        </div>
-        <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
-          <JiraBugRatioBar bugRatio={health.bugRatio} />
-        </div>
-      </section>
+          <section id="jira-quality-signals" className="space-y-3">
+            <div className="flex items-center justify-between gap-3 border-t border-slate-200 pt-4">
+              <h2 className="text-base font-semibold tracking-wide text-slate-900">Quality signals</h2>
+              <p className="text-sm text-slate-600">Open bug pressure over active issues</p>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
+              <JiraBugRatioBar bugRatio={health.bugRatio} />
+            </div>
+          </section>
 
-      <section id="jira-distribution" className="space-y-3">
-        <div className="flex items-center justify-between gap-3 border-t border-slate-200 pt-4">
-          <h2 className="text-base font-semibold tracking-wide text-slate-900">
-            Issue distribution
-          </h2>
-          <p className="text-sm text-slate-600">Status and type composition</p>
-        </div>
+          <section id="jira-distribution" className="space-y-3">
+            <div className="flex items-center justify-between gap-3 border-t border-slate-200 pt-4">
+              <h2 className="text-base font-semibold tracking-wide text-slate-900">
+                Issue distribution
+              </h2>
+              <p className="text-sm text-slate-600">Status and type composition</p>
+            </div>
 
-        <div className="grid items-stretch gap-4 lg:grid-cols-2">
-          <JiraStatusDonut health={health} />
-          <JiraTypeDistribution health={health} />
-        </div>
-      </section>
+            <div className="grid items-stretch gap-4 lg:grid-cols-2">
+              <JiraStatusDonut health={health} />
+              <JiraTypeDistribution health={health} />
+            </div>
+          </section>
+        </>
+      )}
     </div>
   );
 }

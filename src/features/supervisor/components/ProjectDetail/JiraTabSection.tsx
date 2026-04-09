@@ -15,6 +15,12 @@ export function JiraTabSection({ project }: JiraTabSectionProps) {
         <JiraHealthOverview
           fetcher={supervisorApi.getJiraHealth}
           syncer={supervisorApi.refreshProjectJira}
+          issuesFetcher={supervisorApi.getJiraIssues}
+          onIssueClick={(issueKey) => {
+            // TODO: open issue detail panel (shared with US-204)
+            // For now: log to console as a placeholder until US-204 detail panel is integrated
+            console.log('Open issue:', issueKey);
+          }}
           projectId={project.id}
           workspaceName={jira.workspaceName}
           workspaceUrl={jira.workspaceUrl}

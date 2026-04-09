@@ -797,7 +797,15 @@ export function StudentProjectDetailsPage() {
 
           {/* Health overview — read-only, reuses the same component as the supervisor tab */}
           {jira?.connected && projectId && (
-            <JiraHealthOverview fetcher={studentApi.getJiraHealth} projectId={projectId} />
+            <JiraHealthOverview
+              fetcher={studentApi.getJiraHealth}
+              issuesFetcher={studentApi.getJiraIssues}
+              onIssueClick={(issueKey) => {
+                // TODO: open issue detail panel (shared with US-204)
+                console.log('Open issue:', issueKey);
+              }}
+              projectId={projectId}
+            />
           )}
         </section>
       ) : null}
