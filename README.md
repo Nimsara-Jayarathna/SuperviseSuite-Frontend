@@ -2,7 +2,7 @@
 
 React + Vite + Tailwind CSS frontend for SuperviseSuite.
 
-Current scope covers the public landing flow, auth screens, student workspace, and supervisor workspace with backend-connected project and GitHub integration flows (including project-scoped request-access callback routes).
+Current scope covers the public landing flow, auth screens, student workspace, and supervisor workspace with backend-connected project, GitHub integration, and Jira health analytics flows (including the Jira OAuth callback route).
 
 ## Local Development
 
@@ -111,8 +111,38 @@ CI is intentionally not configured yet. In a later phase, automated pipelines wi
 - Student and supervisor routes share the same top-bar shell (`AppShell` + `TopBar`) and the same shared button system.
 - Student project list/detail and supervisor dashboard/list/detail/create flows are backend-connected.
 - Supervisor GitHub flow supports backend-managed setup start, installation-level access authorization, explicit repository selection, and repository link/remove management.
+- Supervisor Jira flow supports workspace connection via Atlassian OAuth and health analytics display (see [Jira Integration](#jira-integration) below).
 - Some advanced workflow panels (for example meetings/files/action-items as full modules) remain out of scope or partially mock-derived until dedicated APIs are added.
 - Route guards support a UI-only cross-role preview mode in local development. This is not a security boundary and must be enforced by the backend.
+
+## Jira Integration
+
+The Jira feature is supervisor-only. It consists of two main parts:
+
+**OAuth callback route**
+
+- Route: `/supervisor/jira/callback`
+- Handled by `JiraOAuthCallbackPage`.
+- The backend initiates the Atlassian OAuth flow from the Integrations tab. After the supervisor authorizes access in Atlassian, the browser is redirected to this route with a `code` and `state` parameter. The frontend exchanges these with the backend to complete the connection.
+- This redirect URI must exactly match `ATLASSIAN_REDIRECT_URI` set in the backend `.env`.
+
+**Jira tab (project detail)**
+
+- Entry point: `JiraTabSection` → `JiraHealthOverview`.
+- Shown only when `project.jira.connected === true`; otherwise displays a prompt to connect from the Integrations tab.
+- `JiraHealthOverview` fetches health data and sprint progress via `supervisorApi.getJiraHealth` and `supervisorApi.getJiraSprintProgress`, and exposes a manual refresh action via `supervisorApi.refreshProjectJira`.
+
+**Jira health components** (all in `src/features/supervisor/components/ProjectDetail/jira/`):
+
+| Component | Description |
+|---|---|
+| `JiraHealthOverview` | Top-level orchestrator: workspace context bar, tab switcher (Health / Sprint Progress), refresh action |
+| `JiraStatCards` | Four stat tiles: Completion %, Open Issues, Overdue, High Priority Open |
+| `JiraBugRatioBar` | Bug ratio gauge with risk zones (Healthy / At Risk / Critical) |
+| `JiraStatusDonut` | Recharts donut chart for status breakdown (Done / In Progress / To Do) |
+| `JiraTypeDistribution` | Horizontal progress bars for issue type distribution |
+| `JiraSprintProgressSection` | Sprint selector, completion rings, story point bars, weekly velocity metrics, and sprint velocity chart |
+| `JiraHealthSkeleton` | Loading skeleton for the full health tab |
 
 ## UI Architecture Notes
 
