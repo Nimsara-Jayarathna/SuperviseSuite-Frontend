@@ -482,3 +482,26 @@ export type ProjectGitHubRepositoryListing = {
   projectId: string;
   inventory: GitHubAvailableRepositories[];
 };
+
+export type JiraIssueSummary = {
+  issueKey: string;
+  summary: string | null;
+  issueType: string | null;
+  statusName: string | null;
+  statusCategoryKey: string | null;
+  assigneeDisplayName: string | null;
+  parentKey: string | null;
+  sprintId: number | null;
+  sprintName: string | null;
+};
+
+export type StoryGroup = {
+  story: JiraIssueSummary;
+  subtasks: JiraIssueSummary[];
+};
+
+export type EpicGroup = {
+  epic: JiraIssueSummary | null;
+  storyGroups: StoryGroup[];
+  orphanIssues: JiraIssueSummary[];
+};
