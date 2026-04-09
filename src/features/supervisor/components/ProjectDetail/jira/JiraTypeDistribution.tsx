@@ -24,7 +24,7 @@ export function JiraTypeDistribution({ health }: JiraTypeDistributionProps) {
 
   if (items.length === 0) {
     return (
-      <div className="h-full rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="h-full rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-slate-300 hover:shadow-md">
         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-600">
           Issue types
         </p>
@@ -37,7 +37,7 @@ export function JiraTypeDistribution({ health }: JiraTypeDistributionProps) {
   const total = items.reduce((sum, item) => sum + item.count, 0);
 
   return (
-    <div className="h-full rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    <div className="h-full rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-slate-300 hover:shadow-md">
       <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-600">
         Issue types
       </p>
@@ -51,7 +51,7 @@ export function JiraTypeDistribution({ health }: JiraTypeDistributionProps) {
           return (
             <article
               key={`${item.type}-${index}`}
-              className="rounded-xl border border-slate-100 bg-slate-50/60 px-3 py-2.5"
+              className="rounded-xl border border-slate-100 bg-slate-50/60 px-3 py-2.5 transition-all hover:border-slate-200 hover:bg-slate-50 hover:shadow-sm"
             >
               <div className="flex items-center justify-between gap-3">
                 <p className="truncate text-sm font-medium text-slate-800">{truncate(item.type)}</p>

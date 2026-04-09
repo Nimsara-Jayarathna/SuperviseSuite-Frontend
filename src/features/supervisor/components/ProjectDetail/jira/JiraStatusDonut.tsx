@@ -48,7 +48,7 @@ export function JiraStatusDonut({ health }: JiraStatusDonutProps) {
   const completionLabel = `${Math.round(health.completionPercent)}%`;
 
   return (
-    <div className="h-full rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    <div className="h-full rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-slate-300 hover:shadow-md">
       <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-600">
         Status breakdown
       </p>

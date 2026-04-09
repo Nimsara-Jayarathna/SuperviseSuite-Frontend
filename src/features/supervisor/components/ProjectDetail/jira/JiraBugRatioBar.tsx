@@ -80,17 +80,16 @@ export function JiraBugRatioBar({ bugRatio }: JiraBugRatioBarProps) {
         />
       </div>
 
-      <div className="mt-1.5 flex items-center justify-between text-xs tabular-nums text-slate-600">
-        <span>0%</span>
-        <span>20%</span>
-        <span>35%</span>
-        <span>100%</span>
+      <div className="mt-1.5 flex items-center justify-between text-xs text-slate-600">
+        <span>Low risk</span>
+        <span>Watch</span>
+        <span>Critical</span>
       </div>
 
       {isZero ? <p className="mt-1.5 text-xs font-medium text-emerald-700">No open bugs</p> : null}
 
       <p className="mt-1.5 text-xs text-slate-600">
-        Healthy {'<'}20% | At risk 20-35% | Critical {'>'}35%
+        Risk bands reflect the current quality policy.
       </p>
     </div>
   );
