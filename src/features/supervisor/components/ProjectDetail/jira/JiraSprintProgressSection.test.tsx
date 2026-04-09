@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { useJiraSprintProgress } from '../../../hooks/useJiraSprintProgress';
 import type { JiraSprintProgress } from '../../../types';
 import { JiraSprintProgressSection } from './JiraSprintProgressSection';
@@ -106,17 +106,26 @@ describe('JiraSprintProgressSection', () => {
     expect(screen.getByText('SP completion')).toBeInTheDocument();
     expect(screen.getByText(/Est\./)).toBeInTheDocument();
     expect(screen.getByText('Sprint velocity')).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        /Backlog net \+35 over 8 weeks - created consistently exceeding resolved\./,
-      ),
-    ).toBeInTheDocument();
     expect(screen.getByText('This week')).toBeInTheDocument();
     expect(screen.getByText('Closed')).toBeInTheDocument();
     expect(screen.getByText('Opened')).toBeInTheDocument();
     expect(screen.getByText('Net')).toBeInTheDocument();
     expect(screen.getByText('Avg cycle')).toBeInTheDocument();
+    expect(screen.getByText('Need at least two weeks of Jira data for comparison insight.')).toBeInTheDocument();
     expect(screen.getByText('Recent sprints')).toBeInTheDocument();
+  });
+
+  it('switches active sprint card content when selecting a past sprint', () => {
+    mockHook();
+
+    render(<JiraSprintProgressSection fetcher={vi.fn()} projectId="project-1" />);
+
+    const selector = screen.getByLabelText('Sprint selector');
+    fireEvent.change(selector, { target: { value: 'id:11' } });
+
+    expect(selector).toHaveValue('id:11');
+    expect(screen.getByText('Selected sprint')).toBeInTheDocument();
+    expect(screen.getByText('18 done of 18 issues')).toBeInTheDocument();
   });
 
   it('renders empty state when sprint data is unavailable', () => {

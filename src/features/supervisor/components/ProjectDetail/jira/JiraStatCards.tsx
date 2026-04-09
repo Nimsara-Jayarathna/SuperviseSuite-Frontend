@@ -26,7 +26,9 @@ function StatCard({ label, value, accent = 'neutral' }: StatCardProps) {
   const statusLabel = accent === 'red' ? 'Critical' : accent === 'amber' ? 'Watch' : null;
 
   return (
-    <div className={`relative overflow-hidden rounded-2xl border px-4 py-4 shadow-sm ${cardTone}`}>
+    <div
+      className={`relative overflow-hidden rounded-2xl border px-4 py-4 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md ${cardTone}`}
+    >
       {railTone ? <div className={`absolute inset-y-0 left-0 w-1 ${railTone}`} /> : null}
 
       <div className="flex items-center justify-between gap-2">
