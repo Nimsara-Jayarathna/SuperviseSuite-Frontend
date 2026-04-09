@@ -111,8 +111,11 @@ Student pages currently use:
 - Jira (read-only shared health view):
   - renders the same Jira health overview component used by supervisor
   - fetches data via `GET /api/student/projects/{projectId}/jira/health`
+  - includes shared sprint progress analytics section in read-only mode
   - no connect/disconnect/refresh mutation controls are exposed for student role
   - when Jira integration is not connected, displays read-only empty state guidance
+
+Jira tab data rules come from backend analytics configuration (no student-side overrides).
 
 ### UX states
 

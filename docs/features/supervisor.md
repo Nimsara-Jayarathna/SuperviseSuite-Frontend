@@ -287,10 +287,23 @@ Supervisor feature currently uses these APIs:
   - bug ratio bar
   - status breakdown chart
   - issue type distribution chart
+  - sprint progress section (active sprint, recent sprints, weekly velocity)
 - Refresh action in Jira tab:
   - calls `POST /api/supervisor/projects/{projectId}/jira/refresh`
   - applies fresh health payload to UI state immediately
   - updates "Last synced" indicator
+
+Jira tab data rules are backend-configurable:
+
+- recent sprint window size
+- backlog-growing consecutive week threshold
+- priority names treated as high priority
+- issue types treated as bugs
+
+Scope note:
+
+- Jira tab remains data/monitoring focused.
+- OAuth connect/disconnect controls remain in Integrations tab.
 
 ### Team tab: add-student management (add-only)
 

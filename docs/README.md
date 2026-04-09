@@ -18,6 +18,8 @@ Technical notes, architecture summaries, and feature guides for the SuperviseSui
 
 | File | Description |
 |------|-------------|
+| [branches/major-fixes-scrum-83-us-203-view-sprint-progress-dashboard.md](branches/major-fixes-scrum-83-us-203-view-sprint-progress-dashboard.md) | SCRUM-83 story notes for Jira tab sprint progress dashboard rendering and API integration |
+| [branches/major-fixes-scrum-84-us-204-sprint-progress-velocity.md](branches/major-fixes-scrum-84-us-204-sprint-progress-velocity.md) | SCRUM-84 story notes for Jira tab sprint/velocity analytics behavior from backend-computed rules |
 | [branches/major-fixes-scrum-97-supervisor-ui-workflow.md](branches/major-fixes-scrum-97-supervisor-ui-workflow.md) | Major frontend fixes for supervisor workflow: guided creation, milestone UX, leader management, and landing card interaction stabilization |
 | [branches/major-fixes-scrum-80-github-dashboard-integration.md](branches/major-fixes-scrum-80-github-dashboard-integration.md) | GitHub dashboard integration plus follow-up updates for explicit repo selection, project-scoped request-access flow, and callback summary UX |
 | [branches/major-fixes-scrum-81-multiple-github-repositories.md](branches/major-fixes-scrum-81-multiple-github-repositories.md) | Dedicated SCRUM-81 record for supervisor GitHub App authorization, explicit installation repository selection, and access-request callback flow alignment |
