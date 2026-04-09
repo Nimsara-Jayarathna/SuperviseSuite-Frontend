@@ -179,7 +179,7 @@ export function JiraSprintProgressSection({ fetcher, projectId }: JiraSprintProg
       : (selectedSprint?.issuesDone ?? 0);
 
   const sprintVelocitySeries = progress.recentSprints
-    .slice(0, 3)
+    .slice(0, 4)
     .reverse()
     .map((sprint, index) => ({
       id: sprint.sprintId ?? index,
@@ -738,7 +738,7 @@ export function JiraSprintProgressSection({ fetcher, projectId }: JiraSprintProg
                   </tr>
                 </thead>
                 <tbody>
-                  {progress.recentSprints.slice(0, 3).map((sprint) => {
+                  {progress.recentSprints.slice(0, 4).map((sprint) => {
                     const completion = Math.max(
                       0,
                       Math.min(100, Math.round(sprint.completionPercent)),
