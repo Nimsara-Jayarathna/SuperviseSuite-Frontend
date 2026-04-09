@@ -41,6 +41,26 @@ function formatSyncedAt(iso: string): string {
 function toRefreshApiError(error: unknown): ApiError {
   if (isApiException(error)) {
     const apiError = error.apiError;
+    if (apiError.code === 'UNAUTHORIZED' || apiError.status === 401) {
+      return {
+        ...apiError,
+        message: 'Jira authorization has expired. Reconnect Jira and try again.',
+      };
+    }
+    if (apiError.code === 'FORBIDDEN' || apiError.status === 403) {
+      return {
+        ...apiError,
+        message:
+          'Jira denied access to this workspace. Check Jira permissions for this project and try again.',
+      };
+    }
+    if (apiError.status === 429) {
+      return {
+        ...apiError,
+        code: 'SERVICE_UNAVAILABLE',
+        message: 'Jira rate limit reached. Wait a minute and try again.',
+      };
+    }
     if (apiError.code === 'SERVICE_UNAVAILABLE' || apiError.status === 503) {
       return {
         ...apiError,

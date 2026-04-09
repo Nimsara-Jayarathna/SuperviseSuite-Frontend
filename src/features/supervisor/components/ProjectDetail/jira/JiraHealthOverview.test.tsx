@@ -33,6 +33,8 @@ const BASE_HEALTH: JiraHealth = {
 
 const JIRA_REFRESH_RETRY_MESSAGE =
   'Unable to refresh Jira data right now. Jira may be temporarily unreachable. Please try again.';
+const JIRA_REAUTH_MESSAGE = 'Jira authorization has expired. Reconnect Jira and try again.';
+const JIRA_RATE_LIMIT_MESSAGE = 'Jira rate limit reached. Wait a minute and try again.';
 
 function makeApiException(overrides: Partial<ApiError> = {}): ApiException {
   return new ApiException({
@@ -172,6 +174,50 @@ describe('JiraHealthOverview', () => {
 
     await waitFor(() => {
       expect(screen.queryByText(JIRA_REFRESH_RETRY_MESSAGE)).toBeNull();
+    });
+  });
+
+  it('shows reconnect guidance when Jira authorization has expired', async () => {
+    const user = userEvent.setup();
+    mockJiraHealthHook();
+    const syncer = vi
+      .fn()
+      .mockRejectedValue(makeApiException({ status: 401, code: 'UNAUTHORIZED', error: 'Unauthorized' }));
+
+    render(
+      <JiraHealthOverview
+        fetcher={vi.fn()}
+        syncer={syncer}
+        projectId="project-1"
+        workspaceName="supervise-suite"
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Refresh' }));
+
+    await waitFor(() => {
+      expect(screen.queryByText(JIRA_REAUTH_MESSAGE)).not.toBeNull();
+    });
+  });
+
+  it('shows rate limit guidance when Jira returns too many requests', async () => {
+    const user = userEvent.setup();
+    mockJiraHealthHook();
+    const syncer = vi.fn().mockRejectedValue(makeApiException({ status: 429 }));
+
+    render(
+      <JiraHealthOverview
+        fetcher={vi.fn()}
+        syncer={syncer}
+        projectId="project-1"
+        workspaceName="supervise-suite"
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Refresh' }));
+
+    await waitFor(() => {
+      expect(screen.queryByText(JIRA_RATE_LIMIT_MESSAGE)).not.toBeNull();
     });
   });
 });

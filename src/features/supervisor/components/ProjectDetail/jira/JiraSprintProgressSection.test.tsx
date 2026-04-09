@@ -111,7 +111,7 @@ describe('JiraSprintProgressSection', () => {
     expect(screen.getByText('Opened')).toBeInTheDocument();
     expect(screen.getByText('Net')).toBeInTheDocument();
     expect(screen.getByText('Avg cycle')).toBeInTheDocument();
-    expect(screen.getByText('Need at least two weeks of Jira data for comparison insight.')).toBeInTheDocument();
+    expect(screen.getByText('Need more Jira history for comparison insight.')).toBeInTheDocument();
     expect(screen.getByText('Recent sprints')).toBeInTheDocument();
   });
 

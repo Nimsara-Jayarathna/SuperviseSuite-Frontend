@@ -262,7 +262,7 @@ export function JiraSprintProgressSection({ fetcher, projectId }: JiraSprintProg
 
   const weeklyInsight = (() => {
     if (previousVelocityWeek === null) {
-      return 'Need at least two weeks of Jira data for comparison insight.';
+      return 'Need more Jira history for comparison insight.';
     }
     if (worstMetric.key === null) {
       return 'Flow remained stable vs last week across throughput and cycle time.';
@@ -606,7 +606,7 @@ export function JiraSprintProgressSection({ fetcher, projectId }: JiraSprintProg
                 Avg completed: {Math.round(sprintCompletedAverage)} SP/sprint
               </p>
             </div>
-            <p className="mt-1 text-xs text-slate-600">Use for Sprint 3 planning baseline.</p>
+            <p className="mt-1 text-xs text-slate-600">Use this trend as the next sprint planning baseline.</p>
 
             {sprintVelocitySeries.length > 0 ? (
               <div className="mt-3">
