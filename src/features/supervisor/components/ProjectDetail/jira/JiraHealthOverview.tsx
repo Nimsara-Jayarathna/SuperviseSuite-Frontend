@@ -1,4 +1,4 @@
-import { Activity, BarChart3, KanbanSquare, ExternalLink, Link2, RefreshCw } from 'lucide-react';
+import { Activity, BarChart3, KanbanSquare, ExternalLink, Link2, RefreshCw, Users } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { buttonStyles } from '@/components/ui/Button';
 import { EmptyState } from '@/components/feedback/EmptyState';
@@ -6,7 +6,8 @@ import { ErrorState } from '@/components/feedback/ErrorState';
 import { isApiException } from '@/services/apiClient';
 import type { ApiError } from '@/types';
 import { useJiraHealth } from '../../../hooks/useJiraHealth';
-import type { JiraHealth, JiraSprintProgress } from '../../../types';
+import type { JiraHealth, JiraSprintProgress, JiraWorkload } from '../../../types';
+import { JiraWorkloadPanel } from './workload/JiraWorkloadPanel';
 import { JiraHealthSkeleton } from './JiraHealthSkeleton';
 import { JiraStatCards } from './JiraStatCards';
 import { JiraBugRatioBar } from './JiraBugRatioBar';
@@ -19,6 +20,8 @@ type JiraHealthOverviewProps = {
   fetcher: (projectId: string) => Promise<JiraHealth>;
   /** Optional sprint progress fetcher shared by supervisor and student views. */
   sprintFetcher?: (projectId: string) => Promise<JiraSprintProgress>;
+  /** Optional workload fetcher shared by supervisor and student views. */
+  workloadFetcher?: (projectId: string) => Promise<JiraWorkload>;
   /** Optional sync action (supervisor-only) to pull fresh issues from Jira before reload. */
   syncer?: (projectId: string) => Promise<JiraHealth>;
   projectId: string;
@@ -26,7 +29,7 @@ type JiraHealthOverviewProps = {
   workspaceUrl?: string | null;
 };
 
-type JiraInsightsTab = 'health' | 'sprint-progress';
+type JiraInsightsTab = 'health' | 'sprint-progress' | 'workload';
 
 function formatSyncedAt(iso: string): string {
   const d = new Date(iso);
@@ -86,6 +89,7 @@ function toRefreshApiError(error: unknown): ApiError {
 export function JiraHealthOverview({
   fetcher,
   sprintFetcher,
+  workloadFetcher,
   syncer,
   projectId,
   workspaceName,
@@ -159,6 +163,9 @@ export function JiraHealthOverview({
     { value: 'health', label: 'Health', icon: Activity },
     ...(sprintFetcher
       ? [{ value: 'sprint-progress' as const, label: 'Sprint Progress', icon: BarChart3 }]
+      : []),
+    ...(workloadFetcher
+      ? [{ value: 'workload' as const, label: 'Team Workload', icon: Users }]
       : []),
   ];
 
@@ -338,6 +345,12 @@ export function JiraHealthOverview({
       {activeInsightsTab === 'sprint-progress' && sprintFetcher ? (
         <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-300 hover:border-slate-300 hover:shadow-md">
           <JiraSprintProgressSection fetcher={sprintFetcher} projectId={projectId} />
+        </div>
+      ) : null}
+
+      {activeInsightsTab === 'workload' && workloadFetcher ? (
+        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-300 hover:border-slate-300 hover:shadow-md">
+          <JiraWorkloadPanel fetcher={workloadFetcher} projectId={projectId} />
         </div>
       ) : null}
     </div>
