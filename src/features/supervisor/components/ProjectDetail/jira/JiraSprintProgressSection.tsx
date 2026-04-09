@@ -67,12 +67,9 @@ function ceilDaysBetween(start: Date, end: Date): number {
 export function JiraSprintProgressSection({ fetcher, projectId }: JiraSprintProgressSectionProps) {
   const { progress, isLoading, error, reload } = useJiraSprintProgress(fetcher, projectId);
   const activeSprint = progress?.activeSprint ?? null;
-  const recentSprints = progress?.recentSprints ?? [];
   const selectableSprints = useMemo(() => {
-    const combined = [
-      ...(activeSprint ? [activeSprint] : []),
-      ...recentSprints,
-    ];
+    const recentSprints = progress?.recentSprints ?? [];
+    const combined = [...(activeSprint ? [activeSprint] : []), ...recentSprints];
     const seen = new Set<string>();
 
     return combined.filter((sprint) => {
@@ -83,7 +80,7 @@ export function JiraSprintProgressSection({ fetcher, projectId }: JiraSprintProg
       seen.add(key);
       return true;
     });
-  }, [activeSprint, recentSprints]);
+  }, [activeSprint, progress?.recentSprints]);
   const [selectedSprintKey, setSelectedSprintKey] = useState<string>('');
 
   useEffect(() => {
@@ -118,9 +115,10 @@ export function JiraSprintProgressSection({ fetcher, projectId }: JiraSprintProg
     );
   }
 
-  const selectedSprint = selectableSprints.find((sprint) => sprintOptionKey(sprint) === selectedSprintKey)
-    ?? activeSprint
-    ?? null;
+  const selectedSprint =
+    selectableSprints.find((sprint) => sprintOptionKey(sprint) === selectedSprintKey) ??
+    activeSprint ??
+    null;
   const isViewingCurrentSprint =
     selectedSprint !== null &&
     activeSprint !== null &&
@@ -203,12 +201,16 @@ export function JiraSprintProgressSection({ fetcher, projectId }: JiraSprintProg
   const velocityWeeks = [...progress.velocityWeeks].sort(
     (a, b) => new Date(a.weekStart).getTime() - new Date(b.weekStart).getTime(),
   );
-  const latestVelocityWeek = velocityWeeks.length > 0 ? velocityWeeks[velocityWeeks.length - 1] : null;
-  const previousVelocityWeek = velocityWeeks.length > 1 ? velocityWeeks[velocityWeeks.length - 2] : null;
+  const latestVelocityWeek =
+    velocityWeeks.length > 0 ? velocityWeeks[velocityWeeks.length - 1] : null;
+  const previousVelocityWeek =
+    velocityWeeks.length > 1 ? velocityWeeks[velocityWeeks.length - 2] : null;
 
   const thisWeekClosed = latestVelocityWeek?.resolved ?? null;
   const thisWeekOpened = latestVelocityWeek?.created ?? null;
-  const thisWeekNet = latestVelocityWeek ? latestVelocityWeek.resolved - latestVelocityWeek.created : null;
+  const thisWeekNet = latestVelocityWeek
+    ? latestVelocityWeek.resolved - latestVelocityWeek.created
+    : null;
   const thisWeekAvgCycleDays = latestVelocityWeek?.averageCycleDays ?? null;
 
   const previousWeekClosed = previousVelocityWeek?.resolved ?? null;
@@ -237,15 +239,18 @@ export function JiraSprintProgressSection({ fetcher, projectId }: JiraSprintProg
   const netNegativeStreak = velocityWeeks
     .slice()
     .reverse()
-    .reduce((streak, week) => {
-      if (streak.stop) {
-        return streak;
-      }
-      if (week.resolved - week.created < 0) {
-        return { count: streak.count + 1, stop: false };
-      }
-      return { ...streak, stop: true };
-    }, { count: 0, stop: false as boolean }).count;
+    .reduce(
+      (streak, week) => {
+        if (streak.stop) {
+          return streak;
+        }
+        if (week.resolved - week.created < 0) {
+          return { count: streak.count + 1, stop: false };
+        }
+        return { ...streak, stop: true };
+      },
+      { count: 0, stop: false as boolean },
+    ).count;
 
   const worseningScores = {
     closed: thisWeekVsPrevious.closed === null ? 0 : Math.max(0, -thisWeekVsPrevious.closed),
@@ -254,11 +259,12 @@ export function JiraSprintProgressSection({ fetcher, projectId }: JiraSprintProg
     avgCycle: thisWeekVsPrevious.avgCycle === null ? 0 : Math.max(0, thisWeekVsPrevious.avgCycle),
   };
 
-  const worstMetric = (Object.entries(worseningScores) as Array<[keyof typeof worseningScores, number]>)
-    .reduce<{ key: keyof typeof worseningScores | null; score: number }>(
-      (worst, [key, score]) => (score > worst.score ? { key, score } : worst),
-      { key: null, score: 0 },
-    );
+  const worstMetric = (
+    Object.entries(worseningScores) as Array<[keyof typeof worseningScores, number]>
+  ).reduce<{ key: keyof typeof worseningScores | null; score: number }>(
+    (worst, [key, score]) => (score > worst.score ? { key, score } : worst),
+    { key: null, score: 0 },
+  );
 
   const weeklyInsight = (() => {
     if (previousVelocityWeek === null) {
@@ -291,9 +297,7 @@ export function JiraSprintProgressSection({ fetcher, projectId }: JiraSprintProg
       ? clampPercent(Math.round((thisWeekClosedCapped / thisWeekOpenedCount) * 100))
       : 0;
   const latestVelocitySprint =
-    sprintVelocitySeries.length > 0
-      ? sprintVelocitySeries[sprintVelocitySeries.length - 1]
-      : null;
+    sprintVelocitySeries.length > 0 ? sprintVelocitySeries[sprintVelocitySeries.length - 1] : null;
   const activeSprintAddedIssues = Math.max(
     0,
     (activeSprint?.issuesTotal ?? 0) - Math.max(0, activeSprint?.sprintStartIssueCount ?? 0),
@@ -462,102 +466,114 @@ export function JiraSprintProgressSection({ fetcher, projectId }: JiraSprintProg
           <section className="rounded-lg border-[0.5px] border-slate-200 bg-white px-4 py-3 shadow-sm transition-all hover:border-slate-300 hover:shadow-md">
             <h3 className="text-sm font-semibold text-slate-900">This week</h3>
             <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
-                {[
-                  {
-                    label: 'Closed',
-                    current: thisWeekClosed,
-                    previous: previousWeekClosed,
-                    delta: thisWeekVsPrevious.closed,
-                    currentLabel: (value: number | null) => (value === null ? 'N/A' : `${value}`),
-                    previousLabel: (value: number | null) => (value === null ? 'N/A last week' : `${value} last week`),
-                    isImproving: (value: number) => value > 0,
-                    currentColor: '#059669',
+              {[
+                {
+                  label: 'Closed',
+                  current: thisWeekClosed,
+                  previous: previousWeekClosed,
+                  delta: thisWeekVsPrevious.closed,
+                  currentLabel: (value: number | null) => (value === null ? 'N/A' : `${value}`),
+                  previousLabel: (value: number | null) =>
+                    value === null ? 'N/A last week' : `${value} last week`,
+                  isImproving: (value: number) => value > 0,
+                  currentColor: '#059669',
+                },
+                {
+                  label: 'Opened',
+                  current: thisWeekOpened,
+                  previous: previousWeekOpened,
+                  delta: thisWeekVsPrevious.opened,
+                  currentLabel: (value: number | null) => (value === null ? 'N/A' : `${value}`),
+                  previousLabel: (value: number | null) =>
+                    value === null ? 'N/A last week' : `${value} last week`,
+                  isImproving: (value: number) => value < 0,
+                  currentColor: '#0F172A',
+                },
+                {
+                  label: 'Net',
+                  current: thisWeekNet,
+                  previous: previousWeekNet,
+                  delta: thisWeekVsPrevious.net,
+                  currentLabel: (value: number | null) => {
+                    if (value === null) {
+                      return 'N/A';
+                    }
+                    return value > 0 ? `+${value}` : `${value}`;
                   },
-                  {
-                    label: 'Opened',
-                    current: thisWeekOpened,
-                    previous: previousWeekOpened,
-                    delta: thisWeekVsPrevious.opened,
-                    currentLabel: (value: number | null) => (value === null ? 'N/A' : `${value}`),
-                    previousLabel: (value: number | null) => (value === null ? 'N/A last week' : `${value} last week`),
-                    isImproving: (value: number) => value < 0,
-                    currentColor: '#0F172A',
+                  previousLabel: (value: number | null) => {
+                    if (value === null) {
+                      return 'N/A last week';
+                    }
+                    return `${value > 0 ? '+' : ''}${value} last week`;
                   },
-                  {
-                    label: 'Net',
-                    current: thisWeekNet,
-                    previous: previousWeekNet,
-                    delta: thisWeekVsPrevious.net,
-                    currentLabel: (value: number | null) => {
-                      if (value === null) {
-                        return 'N/A';
-                      }
-                      return value > 0 ? `+${value}` : `${value}`;
-                    },
-                    previousLabel: (value: number | null) => {
-                      if (value === null) {
-                        return 'N/A last week';
-                      }
-                      return `${value > 0 ? '+' : ''}${value} last week`;
-                    },
-                    isImproving: (value: number) => value > 0,
-                    currentColor: thisWeekNet !== null && thisWeekNet < 0 ? '#DC2626' : '#059669',
-                  },
-                  {
-                    label: 'Avg cycle',
-                    current: thisWeekAvgCycleDays,
-                    previous: previousWeekAvgCycleDays,
-                    delta: thisWeekVsPrevious.avgCycle,
-                    currentLabel: (value: number | null) => (value === null ? 'N/A' : `${value.toFixed(1)}d`),
-                    previousLabel: (value: number | null) => (value === null ? 'N/A last week' : `${value.toFixed(1)}d last week`),
-                    isImproving: (value: number) => value < 0,
-                    currentColor: '#0F172A',
-                  },
-                ].map((metric) => {
-                  const delta = metric.delta;
-                  const hasDelta = delta !== null;
-                  const isImproving = hasDelta && metric.isImproving(delta);
-                  const isWorsening = hasDelta && delta !== 0 && !isImproving;
-                  const arrow = !hasDelta || delta === 0 ? '→' : delta > 0 ? '↑' : '↓';
-                  const deltaLabel = !hasDelta
-                    ? 'No prior week'
-                    : delta === 0
-                      ? `${arrow} 0`
-                      : `${arrow} ${delta > 0 ? '+' : ''}${metric.label === 'Avg cycle' ? `${delta.toFixed(1)}d` : Math.round(delta)}`;
-                  return (
-                    <div
-                      key={metric.label}
-                      className="grid min-h-[112px] grid-rows-[auto_auto_auto_auto] content-start rounded-md px-3 py-3 text-center transition-all hover:-translate-y-0.5 hover:shadow-sm"
+                  isImproving: (value: number) => value > 0,
+                  currentColor: thisWeekNet !== null && thisWeekNet < 0 ? '#DC2626' : '#059669',
+                },
+                {
+                  label: 'Avg cycle',
+                  current: thisWeekAvgCycleDays,
+                  previous: previousWeekAvgCycleDays,
+                  delta: thisWeekVsPrevious.avgCycle,
+                  currentLabel: (value: number | null) =>
+                    value === null ? 'N/A' : `${value.toFixed(1)}d`,
+                  previousLabel: (value: number | null) =>
+                    value === null ? 'N/A last week' : `${value.toFixed(1)}d last week`,
+                  isImproving: (value: number) => value < 0,
+                  currentColor: '#0F172A',
+                },
+              ].map((metric) => {
+                const delta = metric.delta;
+                const hasDelta = delta !== null;
+                const isImproving = hasDelta && metric.isImproving(delta);
+                const isWorsening = hasDelta && delta !== 0 && !isImproving;
+                const arrow = !hasDelta || delta === 0 ? '→' : delta > 0 ? '↑' : '↓';
+                const deltaLabel = !hasDelta
+                  ? 'No prior week'
+                  : delta === 0
+                    ? `${arrow} 0`
+                    : `${arrow} ${delta > 0 ? '+' : ''}${metric.label === 'Avg cycle' ? `${delta.toFixed(1)}d` : Math.round(delta)}`;
+                return (
+                  <div
+                    key={metric.label}
+                    className="grid min-h-[112px] grid-rows-[auto_auto_auto_auto] content-start rounded-md px-3 py-3 text-center transition-all hover:-translate-y-0.5 hover:shadow-sm"
+                    style={{
+                      background: 'var(--color-background-secondary)',
+                      border: '0.5px solid var(--color-border-tertiary)',
+                      borderRadius: 'var(--border-radius-md)',
+                    }}
+                  >
+                    <span
+                      className="leading-none"
+                      style={{ fontSize: 11, color: 'var(--color-text-secondary)' }}
+                    >
+                      {metric.label}
+                    </span>
+                    <span
+                      className="mt-1 font-semibold leading-none"
+                      style={{ fontSize: 20, color: metric.currentColor }}
+                    >
+                      {metric.currentLabel(metric.current)}
+                    </span>
+                    <span className="mt-1 text-[11px] leading-none text-slate-500">
+                      {metric.previousLabel(metric.previous)}
+                    </span>
+                    <span
+                      className="mt-1 text-[10px] font-semibold leading-none"
                       style={{
-                        background: 'var(--color-background-secondary)',
-                        border: '0.5px solid var(--color-border-tertiary)',
-                        borderRadius: 'var(--border-radius-md)',
+                        color: !hasDelta
+                          ? '#64748B'
+                          : isWorsening
+                            ? '#DC2626'
+                            : isImproving
+                              ? '#059669'
+                              : '#475569',
                       }}
                     >
-                      <span className="leading-none" style={{ fontSize: 11, color: 'var(--color-text-secondary)' }}>
-                        {metric.label}
-                      </span>
-                      <span className="mt-1 font-semibold leading-none" style={{ fontSize: 20, color: metric.currentColor }}>
-                        {metric.currentLabel(metric.current)}
-                      </span>
-                      <span className="mt-1 text-[11px] leading-none text-slate-500">{metric.previousLabel(metric.previous)}</span>
-                      <span
-                        className="mt-1 text-[10px] font-semibold leading-none"
-                        style={{
-                          color: !hasDelta
-                            ? '#64748B'
-                            : isWorsening
-                              ? '#DC2626'
-                              : isImproving
-                                ? '#059669'
-                                : '#475569',
-                        }}
-                      >
-                        {deltaLabel}
-                      </span>
-                    </div>
-                  );
-                })}
+                      {deltaLabel}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
 
             {latestVelocityWeek ? (
@@ -582,10 +598,12 @@ export function JiraSprintProgressSection({ fetcher, projectId }: JiraSprintProg
                 </div>
                 <div className="mt-2 flex items-center justify-between text-[11px] text-slate-600">
                   <span>
-                    <span className="font-semibold text-emerald-700">{thisWeekClosedCount}</span> closed
+                    <span className="font-semibold text-emerald-700">{thisWeekClosedCount}</span>{' '}
+                    closed
                   </span>
                   <span>
-                    <span className="font-semibold text-rose-700">{thisWeekNotYetCount}</span> not yet
+                    <span className="font-semibold text-rose-700">{thisWeekNotYetCount}</span> not
+                    yet
                   </span>
                 </div>
               </div>
@@ -600,106 +618,105 @@ export function JiraSprintProgressSection({ fetcher, projectId }: JiraSprintProg
         </div>
 
         <section className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 transition-all hover:border-slate-300 hover:shadow-md">
-            <div className="flex items-center justify-between gap-2">
-              <h3 className="text-sm font-semibold text-slate-900">Sprint velocity</h3>
-              <p className="text-xs font-semibold text-slate-700">
-                Avg completed: {Math.round(sprintCompletedAverage)} SP/sprint
-              </p>
-            </div>
-            <p className="mt-1 text-xs text-slate-600">Use this trend as the next sprint planning baseline.</p>
+          <div className="flex items-center justify-between gap-2">
+            <h3 className="text-sm font-semibold text-slate-900">Sprint velocity</h3>
+            <p className="text-xs font-semibold text-slate-700">
+              Avg completed: {Math.round(sprintCompletedAverage)} SP/sprint
+            </p>
+          </div>
+          <p className="mt-1 text-xs text-slate-600">
+            Use this trend as the next sprint planning baseline.
+          </p>
 
-            {sprintVelocitySeries.length > 0 ? (
-              <div className="mt-3">
-                <div className="h-36 rounded-lg border border-slate-200 bg-white px-2 py-2">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      data={sprintVelocitySeries}
-                      margin={{ top: 12, right: 12, left: 4, bottom: 4 }}
-                      barCategoryGap="30%"
-                      barGap={4}
+          {sprintVelocitySeries.length > 0 ? (
+            <div className="mt-3">
+              <div className="h-36 rounded-lg border border-slate-200 bg-white px-2 py-2">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={sprintVelocitySeries}
+                    margin={{ top: 12, right: 12, left: 4, bottom: 4 }}
+                    barCategoryGap="30%"
+                    barGap={4}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#D3D1C7" vertical={false} />
+                    <XAxis
+                      dataKey="sprint"
+                      tick={{ fill: '#5F5E5A', fontSize: 12 }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <YAxis
+                      tick={{ fill: '#5F5E5A', fontSize: 12 }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <Tooltip
+                      formatter={(value, name) => [
+                        `${Number(value ?? 0).toFixed(1)} SP`,
+                        name === 'committed' ? 'Committed' : 'Completed',
+                      ]}
+                      contentStyle={{
+                        fontSize: 12,
+                        borderRadius: 8,
+                        border: '0.5px solid #D3D1C7',
+                      }}
+                    />
+                    <Legend
+                      verticalAlign="bottom"
+                      align="center"
+                      iconType="square"
+                      iconSize={10}
+                      wrapperStyle={{ fontSize: 12, paddingTop: 8 }}
+                    />
+                    <ReferenceLine
+                      y={Number(sprintCompletedAverage.toFixed(1))}
+                      stroke="#EF9F27"
+                      strokeDasharray="4 3"
+                      label={{
+                        value: `Avg completed: ${Math.round(sprintCompletedAverage)} SP/sprint`,
+                        position: 'right',
+                        fill: '#5F5E5A',
+                        fontSize: 12,
+                      }}
+                    />
+                    <Bar
+                      dataKey="committed"
+                      name="Committed"
+                      fill="#85B7EB"
+                      stroke="#85B7EB"
+                      radius={[4, 4, 0, 0]}
                     >
-                      <CartesianGrid strokeDasharray="3 3" stroke="#D3D1C7" vertical={false} />
-                      <XAxis
-                        dataKey="sprint"
-                        tick={{ fill: '#5F5E5A', fontSize: 12 }}
-                        axisLine={false}
-                        tickLine={false}
-                      />
-                      <YAxis
-                        tick={{ fill: '#5F5E5A', fontSize: 12 }}
-                        axisLine={false}
-                        tickLine={false}
-                      />
-                      <Tooltip
-                        formatter={(value, name) => [
-                          `${Number(value ?? 0).toFixed(1)} SP`,
-                          name === 'committed' ? 'Committed' : 'Completed',
-                        ]}
-                        contentStyle={{
-                          fontSize: 12,
-                          borderRadius: 8,
-                          border: '0.5px solid #D3D1C7',
-                        }}
-                      />
-                      <Legend
-                        verticalAlign="bottom"
-                        align="center"
-                        iconType="square"
-                        iconSize={10}
-                        wrapperStyle={{ fontSize: 12, paddingTop: 8 }}
-                      />
-                      <ReferenceLine
-                        y={Number(sprintCompletedAverage.toFixed(1))}
-                        stroke="#EF9F27"
-                        strokeDasharray="4 3"
-                        label={{
-                          value: `Avg completed: ${Math.round(sprintCompletedAverage)} SP/sprint`,
-                          position: 'right',
-                          fill: '#5F5E5A',
-                          fontSize: 12,
-                        }}
-                      />
-                      <Bar
+                      <LabelList
                         dataKey="committed"
-                        name="Committed"
-                        fill="#85B7EB"
-                        stroke="#85B7EB"
-                        radius={[4, 4, 0, 0]}
-                      >
-                        <LabelList
-                          dataKey="committed"
-                          position="top"
-                          style={{ fontWeight: 500, fontSize: 12, fill: '#5F5E5A' }}
-                        />
-                      </Bar>
-                      <Bar
+                        position="top"
+                        style={{ fontWeight: 500, fontSize: 12, fill: '#5F5E5A' }}
+                      />
+                    </Bar>
+                    <Bar
+                      dataKey="completed"
+                      name="Completed"
+                      fill="#185FA5"
+                      stroke="#185FA5"
+                      radius={[4, 4, 0, 0]}
+                    >
+                      <LabelList
                         dataKey="completed"
-                        name="Completed"
-                        fill="#185FA5"
-                        stroke="#185FA5"
-                        radius={[4, 4, 0, 0]}
-                      >
-                        <LabelList
-                          dataKey="completed"
-                          position="top"
-                          style={{ fontWeight: 500, fontSize: 12, fill: '#0C447C' }}
-                        />
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-
-                <p className="mt-2 text-xs text-slate-600">
-                  {velocityDivergenceInsight}
-                </p>
+                        position="top"
+                        style={{ fontWeight: 500, fontSize: 12, fill: '#0C447C' }}
+                      />
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
-            ) : (
-              <div className="mt-3 rounded-lg border border-dashed border-slate-200 bg-white px-3 py-4 text-sm text-slate-600">
-                Sprint velocity is not available yet.
-              </div>
-            )}
-          </section>
 
+              <p className="mt-2 text-xs text-slate-600">{velocityDivergenceInsight}</p>
+            </div>
+          ) : (
+            <div className="mt-3 rounded-lg border border-dashed border-slate-200 bg-white px-3 py-4 text-sm text-slate-600">
+              Sprint velocity is not available yet.
+            </div>
+          )}
+        </section>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-1">
@@ -724,17 +741,24 @@ export function JiraSprintProgressSection({ fetcher, projectId }: JiraSprintProg
                 </thead>
                 <tbody>
                   {progress.recentSprints.slice(0, 3).map((sprint) => {
-                    const completion = Math.max(0, Math.min(100, Math.round(sprint.completionPercent)));
+                    const completion = Math.max(
+                      0,
+                      Math.min(100, Math.round(sprint.completionPercent)),
+                    );
                     return (
                       <tr
                         key={`${sprint.sprintId ?? 'unknown'}-${sprint.sprintName ?? 'sprint'}`}
                         className="border-t border-slate-100 transition-colors hover:bg-slate-50"
                       >
                         <td className="px-3 py-2 font-semibold text-slate-900">
-                          <span className="block truncate">{sprint.sprintName?.trim() || 'Unnamed sprint'}</span>
+                          <span className="block truncate">
+                            {sprint.sprintName?.trim() || 'Unnamed sprint'}
+                          </span>
                         </td>
                         <td className="px-3 py-2 text-slate-600">
-                          <span className="block truncate">{formatSprintRange(sprint.startDate, sprint.endDate)}</span>
+                          <span className="block truncate">
+                            {formatSprintRange(sprint.startDate, sprint.endDate)}
+                          </span>
                         </td>
                         <td className="px-3 py-2 text-slate-700">
                           <span className="inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold capitalize text-slate-700">
@@ -750,7 +774,9 @@ export function JiraSprintProgressSection({ fetcher, projectId }: JiraSprintProg
                                 aria-hidden
                               />
                             </div>
-                            <span className="shrink-0 font-semibold tabular-nums text-slate-700">{completion}%</span>
+                            <span className="shrink-0 font-semibold tabular-nums text-slate-700">
+                              {completion}%
+                            </span>
                           </div>
                         </td>
                       </tr>

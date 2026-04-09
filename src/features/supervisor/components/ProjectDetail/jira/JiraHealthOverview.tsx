@@ -296,7 +296,9 @@ export function JiraHealthOverview({
                 <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
                   <Activity className="h-4 w-4" />
                 </span>
-                <h2 className="text-base font-semibold tracking-wide text-slate-900">Project health</h2>
+                <h2 className="text-base font-semibold tracking-wide text-slate-900">
+                  Project health
+                </h2>
               </div>
               <p className="text-sm text-slate-600">Snapshot from synced Jira issues</p>
             </div>
@@ -308,7 +310,9 @@ export function JiraHealthOverview({
             className="space-y-3 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:shadow-md"
           >
             <div className="flex items-center justify-between gap-3 border-t border-slate-200 pt-4">
-              <h2 className="text-base font-semibold tracking-wide text-slate-900">Quality signals</h2>
+              <h2 className="text-base font-semibold tracking-wide text-slate-900">
+                Quality signals
+              </h2>
               <p className="text-sm text-slate-600">Open bug pressure over active issues</p>
             </div>
             <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm transition-all hover:shadow-md">

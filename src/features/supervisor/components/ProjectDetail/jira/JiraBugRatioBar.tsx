@@ -88,7 +88,9 @@ export function JiraBugRatioBar({ bugRatio }: JiraBugRatioBarProps) {
 
       {isZero ? <p className="mt-1.5 text-xs font-medium text-emerald-700">No open bugs</p> : null}
 
-      <p className="mt-1.5 text-xs text-slate-600">Risk bands reflect the current quality policy.</p>
+      <p className="mt-1.5 text-xs text-slate-600">
+        Risk bands reflect the current quality policy.
+      </p>
     </div>
   );
 }

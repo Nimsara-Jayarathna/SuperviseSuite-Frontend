@@ -182,7 +182,9 @@ describe('JiraHealthOverview', () => {
     mockJiraHealthHook();
     const syncer = vi
       .fn()
-      .mockRejectedValue(makeApiException({ status: 401, code: 'UNAUTHORIZED', error: 'Unauthorized' }));
+      .mockRejectedValue(
+        makeApiException({ status: 401, code: 'UNAUTHORIZED', error: 'Unauthorized' }),
+      );
 
     render(
       <JiraHealthOverview
