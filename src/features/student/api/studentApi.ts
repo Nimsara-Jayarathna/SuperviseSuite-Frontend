@@ -12,7 +12,7 @@ import type {
   ProjectGitHubRecentCommit,
 } from '@/features/projects/types';
 import type { ProjectGitHubActivity, StudentProjectDetail, StudentProjectSummary } from '../types';
-import type { JiraHealth, JiraSprintProgress } from '@/features/supervisor/types';
+import type { JiraHealth, JiraSprintProgress, JiraWorkload } from '@/features/supervisor/types';
 
 const cachedProjectsById: Partial<Record<string, StudentProjectDetail>> = {};
 const inFlightProjectRequests: Partial<Record<string, Promise<StudentProjectDetail>>> = {};
@@ -171,6 +171,12 @@ export const studentApi = {
   getJiraSprintProgress(projectId: string): Promise<JiraSprintProgress> {
     return apiClient.get<JiraSprintProgress>(
       `/api/student/projects/${projectId}/jira/sprint-progress`,
+    );
+  },
+
+  getJiraWorkload(projectId: string): Promise<JiraWorkload> {
+    return apiClient.get<JiraWorkload>(
+      `/api/student/projects/${projectId}/jira/workload`,
     );
   },
 };

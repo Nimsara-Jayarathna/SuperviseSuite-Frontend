@@ -34,6 +34,7 @@ import type {
   JiraAuthUrl,
   JiraHealth,
   JiraSprintProgress,
+  JiraWorkload,
   JiraOAuthCompletePayload,
   JiraOAuthCompleteResult,
   SupervisorDashboard,
@@ -125,6 +126,12 @@ export const supervisorApi = {
   getJiraSprintProgress(projectId: string): Promise<JiraSprintProgress> {
     return apiClient.get<JiraSprintProgress>(
       `/api/supervisor/projects/${projectId}/jira/sprint-progress`,
+    );
+  },
+
+  getJiraWorkload(projectId: string): Promise<JiraWorkload> {
+    return apiClient.get<JiraWorkload>(
+      `/api/supervisor/projects/${projectId}/jira/workload`,
     );
   },
 
