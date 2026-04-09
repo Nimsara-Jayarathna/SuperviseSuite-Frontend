@@ -122,6 +122,7 @@ export type JiraSprintSummary = {
   sprintState: string | null;
   startDate: string | null;
   endDate: string | null;
+  sprintStartIssueCount: number | null;
   completionPercent: number;
   issuesDone: number;
   issuesTotal: number;
@@ -134,6 +135,7 @@ export type JiraVelocityWeek = {
   weekStart: string;
   created: number;
   resolved: number;
+  averageCycleDays: number | null;
 };
 
 export type JiraSprintProgress = {

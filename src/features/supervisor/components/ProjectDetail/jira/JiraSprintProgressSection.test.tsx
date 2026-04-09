@@ -17,6 +17,7 @@ const BASE_PROGRESS: JiraSprintProgress = {
     sprintState: 'active',
     startDate: '2026-04-01T00:00:00Z',
     endDate: '2026-04-14T00:00:00Z',
+    sprintStartIssueCount: 15,
     completionPercent: 62,
     issuesDone: 13,
     issuesTotal: 21,
@@ -31,6 +32,7 @@ const BASE_PROGRESS: JiraSprintProgress = {
       sprintState: 'closed',
       startDate: '2026-03-18T00:00:00Z',
       endDate: '2026-03-31T00:00:00Z',
+      sprintStartIssueCount: 18,
       completionPercent: 100,
       issuesDone: 18,
       issuesTotal: 18,
@@ -44,6 +46,7 @@ const BASE_PROGRESS: JiraSprintProgress = {
       weekStart: '2026-03-30T00:00:00Z',
       created: 8,
       resolved: 6,
+      averageCycleDays: 2.3,
     },
   ],
   backlogGrowing: true,
@@ -100,12 +103,20 @@ describe('JiraSprintProgressSection', () => {
     expect(screen.getByText('Sprint progress')).toBeInTheDocument();
     expect(screen.getByText('Active sprint')).toBeInTheDocument();
     expect(screen.getByText('Issue completion')).toBeInTheDocument();
-    expect(screen.getByText('Story points completion')).toBeInTheDocument();
+    expect(screen.getByText('SP completion')).toBeInTheDocument();
     expect(screen.getByText(/Est\./)).toBeInTheDocument();
     expect(screen.getByText('Sprint velocity')).toBeInTheDocument();
-    expect(screen.getByText('Backlog trend')).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        /Backlog net \+35 over 8 weeks - created consistently exceeding resolved\./,
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByText('This week')).toBeInTheDocument();
+    expect(screen.getByText('Closed')).toBeInTheDocument();
+    expect(screen.getByText('Opened')).toBeInTheDocument();
+    expect(screen.getByText('Net')).toBeInTheDocument();
+    expect(screen.getByText('Avg cycle')).toBeInTheDocument();
     expect(screen.getByText('Recent sprints')).toBeInTheDocument();
-    expect(screen.getByText('Backlog is growing')).toBeInTheDocument();
   });
 
   it('renders empty state when sprint data is unavailable', () => {
