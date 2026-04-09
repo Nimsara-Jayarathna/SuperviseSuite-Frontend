@@ -146,6 +146,87 @@ export type JiraSprintProgress = {
   sprintDataAvailable: boolean;
 };
 
+/**
+ * Per-member row in the Team Workload comparison table and bar chart.
+ *
+ * Story-point fields are `null` — not `0` — when story points are not
+ * configured in the connected Jira project. The UI renders `—` for null values.
+ *
+ * `openIssues` is pre-computed by the backend (`assigned − completed`) and
+ * drives both the bar-chart widths and the default sort order of the table.
+ */
+export type JiraWorkloadMemberRow = {
+  /** Stable Jira account identifier. */
+  accountId: string;
+  /** Human-readable name shown in the table and bar chart. */
+  displayName: string;
+  /** Total issues attributed to this member (includes completed). */
+  assigned: number;
+  /** Issues in a "done" status category. */
+  completed: number;
+  /** Issues currently in an "in-progress" status category. */
+  inProgress: number;
+  /**
+   * Open issues past their due date (or past the 7-day activity-recency
+   * threshold when no due dates are set in the project).
+   */
+  overdue: number;
+  /**
+   * Open issue count (assigned − completed). Pre-computed by the backend.
+   * Drives bar-chart proportional widths and row sort order.
+   */
+  openIssues: number;
+  /** Total story points on all attributed issues. `null` when not configured. */
+  storyPointsAssigned: number | null;
+  /** Story points on completed issues only. `null` when not configured. */
+  storyPointsCompleted: number | null;
+  /**
+   * Percentage of assigned issues that are completed (0–100).
+   * `0` when `assigned` is zero.
+   */
+  completionRate: number;
+  /**
+   * ISO 8601 instant of the most recent `jiraUpdatedAt` across attributed
+   * issues. Used to compute "last active N hours/days ago" in the UI.
+   */
+  lastActiveDate: string;
+};
+
+/**
+ * Team workload snapshot for a project's Jira tab.
+ *
+ * - `members` — sorted by `openIssues` descending; empty when no assignees exist.
+ * - `unassignedCount` — independent of `members`; non-zero even when `members` is empty.
+ * - `dueDateAvailable` — when `false`, overdue values are estimated from activity
+ *   recency and the UI renders an "estimate" badge on the Overdue column header.
+ * - `imbalanceDetected` / `imbalanceMessage` — drive the conditional alert banner.
+ */
+export type JiraWorkload = {
+  /** Per-member rows sorted by open issues descending. */
+  members: JiraWorkloadMemberRow[];
+  /**
+   * Issues with no Jira assignee. Shown in the unassigned warning card
+   * independently — visible even when `members` is empty.
+   */
+  unassignedCount: number;
+  /**
+   * `true` when at least one issue in the project has a due date set in Jira.
+   * When `false`, the Overdue column header renders an "estimate" badge.
+   */
+  dueDateAvailable: boolean;
+  /**
+   * `true` when one member has more than 3× the open issues of another
+   * AND the most-burdened member has at least 3 open issues.
+   */
+  imbalanceDetected: boolean;
+  /**
+   * Human-readable imbalance description, e.g.
+   * "Alice has 3x more open issues than Bob".
+   * `null` when `imbalanceDetected` is `false`.
+   */
+  imbalanceMessage: string | null;
+};
+
 export type SupervisorProjectTab =
   | 'overview'
   | 'team'
