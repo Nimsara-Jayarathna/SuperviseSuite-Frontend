@@ -190,6 +190,8 @@ export type JiraWorkloadMemberRow = {
    * issues. Used to compute "last active N hours/days ago" in the UI.
    */
   lastActiveDate: string;
+  /** Lookup dictionary counting issues by their Jira type (e.g., 'Story': 1) */
+  issueTypeCounts: Record<string, number>;
 };
 
 /**

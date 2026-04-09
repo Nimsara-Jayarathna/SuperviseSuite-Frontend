@@ -267,7 +267,9 @@ export function JiraHealthOverview({
                   className={`group inline-flex items-center gap-2 rounded-2xl border px-3 py-2 transition-all ${isActive
                       ? tab.value === 'health'
                         ? 'border-indigo-200 bg-indigo-50 text-indigo-700 shadow-sm'
-                        : 'border-amber-200 bg-amber-50 text-amber-700 shadow-sm'
+                        : tab.value === 'workload'
+                          ? 'border-emerald-200 bg-emerald-50 text-emerald-700 shadow-sm'
+                          : 'border-amber-200 bg-amber-50 text-amber-700 shadow-sm'
                       : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 hover:shadow-sm'
                     }`}
                   aria-pressed={isActive}
@@ -276,7 +278,9 @@ export function JiraHealthOverview({
                     className={`inline-flex h-5 w-5 items-center justify-center rounded-md transition-colors ${isActive
                         ? tab.value === 'health'
                           ? 'bg-indigo-100 text-indigo-600'
-                          : 'bg-amber-100 text-amber-600'
+                          : tab.value === 'workload'
+                            ? 'bg-emerald-100 text-emerald-600'
+                            : 'bg-amber-100 text-amber-600'
                         : 'bg-slate-100 text-slate-500 group-hover:bg-slate-200 group-hover:text-slate-600'
                       }`}
                   >

@@ -30,13 +30,12 @@ export function JiraWorkloadTable({ workload }: JiraWorkloadTableProps) {
         <table className="w-full text-left text-sm whitespace-nowrap">
           <thead className="bg-slate-50 border-b border-slate-200 text-xs font-semibold uppercase tracking-wider text-slate-500">
             <tr>
-              <th className="px-6 py-4">Team Member</th>
-              <th className="px-6 py-4 text-center">Open Issues</th>
+              <th className="px-6 py-4">Student</th>
+              <th className="px-6 py-4 text-center">Assigned</th>
+              <th className="px-6 py-4 text-center">Completed</th>
+              <th className="px-6 py-4 text-center">SP Assigned</th>
+              <th className="px-6 py-4 text-center">SP Done</th>
               <th className="px-6 py-4 text-center">In Progress</th>
-              <th className="px-6 py-4 text-center">To Do</th>
-              {hasStoryPoints && (
-                <th className="px-6 py-4 text-center">Story Points (Done / Total)</th>
-              )}
               <th className="px-6 py-4 text-center">
                 <span className="flex items-center justify-center gap-1.5">
                   Overdue
@@ -45,19 +44,18 @@ export function JiraWorkloadTable({ workload }: JiraWorkloadTableProps) {
                       className="inline-flex items-center rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold text-amber-700" 
                       title="Estimated based on inactivity since Jira due dates are not configured"
                     >
-                      EST
+                      ESTIMATE
                     </span>
                   )}
                 </span>
               </th>
-              <th className="px-6 py-4">Completion</th>
+              <th className="px-6 py-4">Completion Rate</th>
               <th className="px-6 py-4">Last Active</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {workload.members.map((member) => {
-              const toDo = Math.max(0, member.openIssues - member.inProgress);
-              
+
               return (
                 <tr 
                   key={member.accountId} 
@@ -72,31 +70,29 @@ export function JiraWorkloadTable({ workload }: JiraWorkloadTableProps) {
                     </div>
                   </td>
                   
-                  <td className="px-6 py-4 text-center">
-                    <span className="inline-flex h-7 min-w-[28px] items-center justify-center rounded-lg bg-slate-100 px-2 font-bold tabular-nums text-slate-700">
-                      {member.openIssues}
-                    </span>
+                  <td className="px-6 py-4 text-center tabular-nums text-slate-600 font-medium">
+                    <span className="text-indigo-600 font-semibold">{member.assigned}</span>
+                  </td>
+
+                  <td className="px-6 py-4 text-center tabular-nums text-slate-600 font-medium whitespace-nowrap">
+                    {member.completed}
+                  </td>
+                  
+                  <td className="px-6 py-4 text-center tabular-nums text-slate-600 font-medium">
+                    {hasStoryPoints && member.storyPointsAssigned !== null ? member.storyPointsAssigned : '—'}
+                  </td>
+
+                  <td className="px-6 py-4 text-center tabular-nums text-slate-600 font-medium">
+                    {hasStoryPoints && member.storyPointsCompleted !== null ? member.storyPointsCompleted : '—'}
                   </td>
                   
                   <td className="px-6 py-4 text-center tabular-nums text-slate-600 font-medium">
                     {member.inProgress > 0 ? (
-                      <span className="text-indigo-600">{member.inProgress}</span>
+                      <span className="text-indigo-600 font-bold">{member.inProgress}</span>
                     ) : (
                       member.inProgress
                     )}
                   </td>
-                  
-                  <td className="px-6 py-4 text-center tabular-nums text-slate-600 font-medium">
-                    {toDo}
-                  </td>
-                  
-                  {hasStoryPoints && (
-                    <td className="px-6 py-4 text-center tabular-nums text-slate-600">
-                      <span className="text-emerald-600 font-semibold">{member.storyPointsCompleted ?? '—'}</span>
-                      {' / '}
-                      <span className="font-medium">{member.storyPointsAssigned ?? '—'}</span>
-                    </td>
-                  )}
                   
                   <td className="px-6 py-4 text-center">
                     {member.overdue > 0 ? (
