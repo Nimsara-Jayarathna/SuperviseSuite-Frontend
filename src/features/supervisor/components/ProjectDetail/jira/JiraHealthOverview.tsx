@@ -1,6 +1,7 @@
 import {
   Activity,
   BarChart3,
+  GitBranch,
   KanbanSquare,
   ExternalLink,
   Link2,
@@ -15,7 +16,7 @@ import { ErrorState } from '@/components/feedback/ErrorState';
 import { isApiException } from '@/services/apiClient';
 import type { ApiError } from '@/types';
 import { useJiraHealth } from '../../../hooks/useJiraHealth';
-import type { JiraHealth, JiraSprintProgress, JiraWorkload } from '../../../types';
+import type { JiraHealth, JiraHierarchy, JiraSprintProgress, JiraWorkload } from '../../../types';
 import { JiraWorkloadPanel } from './workload/JiraWorkloadPanel';
 import { JiraHealthSkeleton } from './JiraHealthSkeleton';
 import { JiraStatCards } from './JiraStatCards';
@@ -23,6 +24,7 @@ import { JiraBugRatioBar } from './JiraBugRatioBar';
 import { JiraStatusDonut } from './JiraStatusDonut';
 import { JiraTypeDistribution } from './JiraTypeDistribution';
 import { JiraSprintProgressSection } from './JiraSprintProgressSection';
+import { JiraHierarchyView } from './JiraHierarchyView';
 
 type JiraHealthOverviewProps = {
   /** Pass supervisorApi.getJiraHealth or studentApi.getJiraHealth */
@@ -36,9 +38,14 @@ type JiraHealthOverviewProps = {
   projectId: string;
   workspaceName?: string | null;
   workspaceUrl?: string | null;
+  hierarchyState?: {
+    data: JiraHierarchy | null;
+    isLoading: boolean;
+    error: { message: string } | null;
+  };
 };
 
-type JiraInsightsTab = 'health' | 'sprint-progress' | 'workload';
+type JiraInsightsTab = 'health' | 'sprint-progress' | 'workload' | 'hierarchy';
 
 function formatSyncedAt(iso: string): string {
   const d = new Date(iso);
@@ -103,6 +110,7 @@ export function JiraHealthOverview({
   projectId,
   workspaceName,
   workspaceUrl,
+  hierarchyState,
 }: JiraHealthOverviewProps) {
   const { health, isLoading, error, reload, applyHealth } = useJiraHealth(fetcher, projectId);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -231,6 +239,9 @@ export function JiraHealthOverview({
     ...(workloadFetcher
       ? [{ value: 'workload' as const, label: 'Team Workload', icon: Users }]
       : []),
+    ...(hierarchyState
+      ? [{ value: 'hierarchy' as const, label: 'Hierarchy', icon: GitBranch }]
+      : []),
   ];
 
   const contextBar = (
@@ -349,7 +360,9 @@ export function JiraHealthOverview({
                         ? 'border-indigo-200 bg-indigo-50 text-indigo-700 shadow-sm'
                         : tab.value === 'workload'
                           ? 'border-emerald-200 bg-emerald-50 text-emerald-700 shadow-sm'
-                          : 'border-amber-200 bg-amber-50 text-amber-700 shadow-sm'
+                          : tab.value === 'hierarchy'
+                            ? 'border-cyan-200 bg-cyan-50 text-cyan-700 shadow-sm'
+                            : 'border-amber-200 bg-amber-50 text-amber-700 shadow-sm'
                       : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 hover:shadow-sm'
                   }`}
                   aria-pressed={isActive}
@@ -361,7 +374,9 @@ export function JiraHealthOverview({
                           ? 'bg-indigo-100 text-indigo-600'
                           : tab.value === 'workload'
                             ? 'bg-emerald-100 text-emerald-600'
-                            : 'bg-amber-100 text-amber-600'
+                            : tab.value === 'hierarchy'
+                              ? 'bg-cyan-100 text-cyan-600'
+                              : 'bg-amber-100 text-amber-600'
                         : 'bg-slate-100 text-slate-500 group-hover:bg-slate-200 group-hover:text-slate-600'
                     }`}
                   >
@@ -436,6 +451,16 @@ export function JiraHealthOverview({
       {activeInsightsTab === 'workload' && workloadFetcher ? (
         <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-300 hover:border-slate-300 hover:shadow-md">
           <JiraWorkloadPanel fetcher={workloadFetcher} projectId={projectId} />
+        </div>
+      ) : null}
+
+      {activeInsightsTab === 'hierarchy' && hierarchyState ? (
+        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-300 hover:border-slate-300 hover:shadow-md">
+          <JiraHierarchyView
+            isLoading={hierarchyState.isLoading}
+            error={hierarchyState.error}
+            data={hierarchyState.data}
+          />
         </div>
       ) : null}
     </div>

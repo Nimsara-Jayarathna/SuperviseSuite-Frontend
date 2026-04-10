@@ -229,6 +229,22 @@ export type JiraWorkload = {
   imbalanceMessage: string | null;
 };
 
+export type JiraHierarchyNode = {
+  issueKey: string;
+  summary: string;
+  issueType: string;
+  status: string;
+  priority: string | null;
+  assigneeDisplayName: string | null;
+  storyPoints: number | null;
+  children: JiraHierarchyNode[];
+};
+
+export type JiraHierarchy = {
+  roots: JiraHierarchyNode[];
+  orphans: JiraHierarchyNode[];
+};
+
 export type SupervisorProjectTab =
   | 'overview'
   | 'team'

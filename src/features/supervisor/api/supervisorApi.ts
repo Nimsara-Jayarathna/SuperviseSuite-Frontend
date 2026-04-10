@@ -33,6 +33,7 @@ import type {
   ProjectGitHubRepositoryLink,
   JiraAuthUrl,
   JiraHealth,
+  JiraHierarchy,
   JiraSprintProgress,
   JiraWorkload,
   JiraOAuthCompletePayload,
@@ -131,6 +132,10 @@ export const supervisorApi = {
 
   getJiraWorkload(projectId: string): Promise<JiraWorkload> {
     return apiClient.get<JiraWorkload>(`/api/supervisor/projects/${projectId}/jira/workload`);
+  },
+
+  getProjectJiraHierarchy(projectId: string): Promise<JiraHierarchy> {
+    return apiClient.get<JiraHierarchy>(`/api/supervisor/projects/${projectId}/jira/hierarchy`);
   },
 
   refreshProjectJira(projectId: string): Promise<JiraHealth> {

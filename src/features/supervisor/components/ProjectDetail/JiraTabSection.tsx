@@ -1,4 +1,5 @@
 import { supervisorApi } from '../../api/supervisorApi';
+import { useJiraHierarchy } from '../../hooks/useJiraHierarchy';
 import type { SupervisorProjectDetail } from '../../types';
 import { JiraHealthOverview } from './jira/JiraHealthOverview';
 
@@ -8,6 +9,11 @@ type JiraTabSectionProps = {
 
 export function JiraTabSection({ project }: JiraTabSectionProps) {
   const jira = project.jira;
+  const {
+    data: hierarchyData,
+    isLoading: isHierarchyLoading,
+    error: hierarchyError,
+  } = useJiraHierarchy(project.id);
 
   return (
     <section>
@@ -20,6 +26,11 @@ export function JiraTabSection({ project }: JiraTabSectionProps) {
           projectId={project.id}
           workspaceName={jira.workspaceName}
           workspaceUrl={jira.workspaceUrl}
+          hierarchyState={{
+            data: hierarchyData,
+            isLoading: isHierarchyLoading,
+            error: hierarchyError,
+          }}
         />
       ) : (
         <div className="rounded-3xl border border-dashed border-slate-200 bg-white p-10 text-center text-slate-500 shadow-sm">
