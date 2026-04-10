@@ -199,8 +199,12 @@ export function JiraStatusDonut({ health }: JiraStatusDonutProps) {
       <div className="flex flex-1 flex-col gap-4 p-4 sm:flex-row sm:items-center sm:gap-5 sm:p-5">
 
         {/* Donut via Recharts */}
-        <div className="relative mx-auto flex w-full max-w-[188px] shrink-0 flex-col items-center">
-          <ResponsiveContainer width="100%" aspect={1}>
+        <div className="relative mx-auto flex w-full min-w-0 max-w-[188px] shrink-0 flex-col items-center">
+          <ResponsiveContainer
+            width="100%"
+            aspect={1}
+            initialDimension={{ width: 188, height: 188 }}
+          >
             <PieChart>
               <defs>
                 {SEGMENTS.map((seg) => (

@@ -36,7 +36,7 @@ export function JiraWorkloadPanel({ fetcher, projectId }: JiraWorkloadPanelProps
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-3 border-t border-slate-200 pt-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3 border-t border-slate-200 pt-4 w-full">
         <div className="inline-flex items-center gap-2">
           <h2 className="text-base font-semibold tracking-wide text-slate-900">
             Team Workload

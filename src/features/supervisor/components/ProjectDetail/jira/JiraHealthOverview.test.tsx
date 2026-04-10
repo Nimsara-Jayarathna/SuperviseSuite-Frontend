@@ -122,11 +122,11 @@ describe('JiraHealthOverview', () => {
     await user.click(screen.getByRole('button', { name: 'Refresh' }));
 
     await waitFor(() => {
-      expect(screen.queryByRole('alert')).not.toBeNull();
+      expect(screen.queryByText('Jira refresh failed')).not.toBeNull();
     });
 
     expect(screen.queryByText(JIRA_REFRESH_RETRY_MESSAGE)).not.toBeNull();
-    expect(screen.queryByRole('button', { name: 'Try Again' })).not.toBeNull();
+    expect(screen.queryByRole('button', { name: 'Retry' })).not.toBeNull();
     expect(screen.queryByText('Project health')).not.toBeNull();
     expect(applyHealth).not.toHaveBeenCalled();
   });
@@ -160,7 +160,7 @@ describe('JiraHealthOverview', () => {
       expect(screen.queryByText(JIRA_REFRESH_RETRY_MESSAGE)).not.toBeNull();
     });
 
-    await user.click(screen.getByRole('button', { name: 'Try Again' }));
+    await user.click(screen.getByRole('button', { name: 'Retry' }));
 
     await waitFor(() => {
       expect(syncer).toHaveBeenCalledTimes(2);

@@ -313,7 +313,7 @@ export function JiraSprintProgressSection({ fetcher, projectId }: JiraSprintProg
 
   return (
     <section id="jira-sprint-progress" className="space-y-3">
-      <div className="flex items-center justify-between gap-3 border-t border-slate-200 pt-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3 border-t border-slate-200 pt-4">
         <div className="inline-flex items-center gap-2">
           <h2 className="text-base font-semibold tracking-wide text-slate-900">Sprint progress</h2>
         </div>
@@ -351,7 +351,7 @@ export function JiraSprintProgressSection({ fetcher, projectId }: JiraSprintProg
             </div>
             {selectedSprint ? (
               <>
-                <div className="flex items-center justify-between gap-3">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 w-full">
                   <div className="min-w-0">
                     <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">
                       {isViewingCurrentSprint ? 'Active sprint' : 'Selected sprint'}
@@ -616,7 +616,7 @@ export function JiraSprintProgressSection({ fetcher, projectId }: JiraSprintProg
         </div>
 
         <section className="rounded-xl border border-slate-200 bg-white px-4 py-4 shadow-sm transition-all duration-300 hover:border-slate-300 hover:shadow-md">
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 w-full">
             <h3 className="text-sm font-semibold text-slate-900">Sprint velocity</h3>
             <p className="text-xs font-semibold text-slate-700">
               Avg completed: {Math.round(sprintCompletedAverage)} SP/sprint
@@ -627,9 +627,10 @@ export function JiraSprintProgressSection({ fetcher, projectId }: JiraSprintProg
           </p>
 
           {sprintVelocitySeries.length > 0 ? (
-            <div className="mt-3">
-              <div className="h-36 rounded-lg border border-slate-200 bg-white px-2 py-2">
-                <ResponsiveContainer width="100%" height="100%">
+            <div className="mt-3 min-w-0">
+              <div className="h-36 w-full min-w-0 rounded-lg border border-slate-200 bg-white px-2 py-2">
+                {/* Numeric height avoids Recharts measuring 100% before layout (-1 x -1 warning). */}
+                <ResponsiveContainer width="100%" height={144}>
                   <BarChart
                     data={sprintVelocitySeries}
                     margin={{ top: 12, right: 12, left: 4, bottom: 4 }}
@@ -651,7 +652,7 @@ export function JiraSprintProgressSection({ fetcher, projectId }: JiraSprintProg
                     <Tooltip
                       formatter={(value, name) => [
                         `${Number(value ?? 0).toFixed(1)} SP`,
-                        name === 'committed' ? 'Committed' : 'Completed',
+                        String(name).toLowerCase() === 'committed' ? 'Committed' : 'Completed',
                       ]}
                       contentStyle={{
                         fontSize: 12,
@@ -721,8 +722,8 @@ export function JiraSprintProgressSection({ fetcher, projectId }: JiraSprintProg
         <article className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm transition-all hover:border-slate-300 hover:shadow-md">
           <h3 className="text-sm font-semibold text-slate-900">Recent sprints</h3>
           {progress.recentSprints.length > 0 ? (
-            <div className="mt-3 overflow-hidden rounded-lg border border-slate-200">
-              <table className="w-full table-fixed text-xs">
+            <div className="mt-3 flex flex-col rounded-lg border border-slate-200 sm:block sm:overflow-hidden">
+              <table className="hidden w-full table-fixed text-xs sm:table">
                 <colgroup>
                   <col className="w-[32%]" />
                   <col className="w-[30%]" />
@@ -782,6 +783,45 @@ export function JiraSprintProgressSection({ fetcher, projectId }: JiraSprintProg
                   })}
                 </tbody>
               </table>
+
+              <div className="flex flex-col divide-y divide-slate-100 sm:hidden">
+                {progress.recentSprints.slice(0, 4).map((sprint) => {
+                  const completion = Math.max(
+                    0,
+                    Math.min(100, Math.round(sprint.completionPercent)),
+                  );
+                  return (
+                    <div
+                      key={`mob-${sprint.sprintId ?? 'unknown'}-${sprint.sprintName ?? 'sprint'}`}
+                      className="p-3 transition-colors hover:bg-slate-50"
+                    >
+                      <div className="mb-1 flex items-start justify-between gap-2">
+                        <span className="truncate font-semibold leading-tight text-slate-900">
+                          {sprint.sprintName?.trim() || 'Unnamed sprint'}
+                        </span>
+                        <span className="inline-flex shrink-0 leading-none rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold capitalize text-slate-700">
+                          {sprint.sprintState ?? 'unknown'}
+                        </span>
+                      </div>
+                      <div className="mb-2 truncate text-[11px] text-slate-500">
+                        {formatSprintRange(sprint.startDate, sprint.endDate)}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200">
+                          <div
+                            className="h-1.5 rounded-full bg-emerald-500"
+                            style={{ width: `${completion}%` }}
+                            aria-hidden
+                          />
+                        </div>
+                        <span className="shrink-0 text-xs font-semibold tabular-nums text-slate-700">
+                          {completion}% progress
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           ) : (
             <div className="mt-3 rounded-xl border border-dashed border-slate-200 bg-slate-50 px-3 py-4 text-sm text-slate-600">

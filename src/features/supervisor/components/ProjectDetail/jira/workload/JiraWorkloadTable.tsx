@@ -30,13 +30,13 @@ export function JiraWorkloadTable({ workload }: JiraWorkloadTableProps) {
         <table className="w-full text-left text-sm whitespace-nowrap">
           <thead className="bg-slate-50 border-b border-slate-200 text-xs font-semibold uppercase tracking-wider text-slate-500">
             <tr>
-              <th className="px-6 py-4">Student</th>
-              <th className="px-6 py-4 text-center">Assigned</th>
-              <th className="px-6 py-4 text-center">Completed</th>
-              <th className="px-6 py-4 text-center">SP Assigned</th>
-              <th className="px-6 py-4 text-center">SP Done</th>
-              <th className="px-6 py-4 text-center">In Progress</th>
-              <th className="px-6 py-4 text-center">
+              <th className="px-4 py-3 sm:px-6 sm:py-4 sticky left-0 z-10 bg-slate-50 border-r border-slate-200 shadow-[2px_0_8px_-4px_rgba(0,0,0,0.05)]">Student</th>
+              <th className="px-4 py-3 sm:px-6 sm:py-4 text-center">Assigned</th>
+              <th className="px-4 py-3 sm:px-6 sm:py-4 text-center">Completed</th>
+              <th className="px-4 py-3 sm:px-6 sm:py-4 text-center">SP Assigned</th>
+              <th className="px-4 py-3 sm:px-6 sm:py-4 text-center">SP Done</th>
+              <th className="px-4 py-3 sm:px-6 sm:py-4 text-center">In Progress</th>
+              <th className="px-4 py-3 sm:px-6 sm:py-4 text-center">
                 <span className="flex items-center justify-center gap-1.5">
                   Overdue
                   {!workload.dueDateAvailable && (
@@ -49,8 +49,8 @@ export function JiraWorkloadTable({ workload }: JiraWorkloadTableProps) {
                   )}
                 </span>
               </th>
-              <th className="px-6 py-4">Completion Rate</th>
-              <th className="px-6 py-4">Last Active</th>
+              <th className="px-4 py-3 sm:px-6 sm:py-4">Completion Rate</th>
+              <th className="px-4 py-3 sm:px-6 sm:py-4">Last Active</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -61,7 +61,7 @@ export function JiraWorkloadTable({ workload }: JiraWorkloadTableProps) {
                   key={member.accountId} 
                   className="group transition-colors hover:bg-slate-50/70"
                 >
-                  <td className="px-6 py-4">
+                  <td className="px-4 py-3 sm:px-6 sm:py-4 sticky left-0 z-10 bg-white transition-colors group-hover:bg-slate-50 border-r border-slate-100 shadow-[2px_0_8px_-4px_rgba(0,0,0,0.02)]">
                     <div className="flex items-center gap-3">
                       <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-100 text-xs font-bold text-slate-600 shadow-inner group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors">
                         {member.displayName.charAt(0).toUpperCase()}
@@ -70,23 +70,23 @@ export function JiraWorkloadTable({ workload }: JiraWorkloadTableProps) {
                     </div>
                   </td>
                   
-                  <td className="px-6 py-4 text-center tabular-nums text-slate-600 font-medium">
+                  <td className="px-4 py-3 sm:px-6 sm:py-4 text-center tabular-nums text-slate-600 font-medium">
                     <span className="text-indigo-600 font-semibold">{member.assigned}</span>
                   </td>
 
-                  <td className="px-6 py-4 text-center tabular-nums text-slate-600 font-medium whitespace-nowrap">
+                  <td className="px-4 py-3 sm:px-6 sm:py-4 text-center tabular-nums text-slate-600 font-medium whitespace-nowrap">
                     {member.completed}
                   </td>
                   
-                  <td className="px-6 py-4 text-center tabular-nums text-slate-600 font-medium">
+                  <td className="px-4 py-3 sm:px-6 sm:py-4 text-center tabular-nums text-slate-600 font-medium">
                     {hasStoryPoints && member.storyPointsAssigned !== null ? member.storyPointsAssigned : '—'}
                   </td>
 
-                  <td className="px-6 py-4 text-center tabular-nums text-slate-600 font-medium">
+                  <td className="px-4 py-3 sm:px-6 sm:py-4 text-center tabular-nums text-slate-600 font-medium">
                     {hasStoryPoints && member.storyPointsCompleted !== null ? member.storyPointsCompleted : '—'}
                   </td>
                   
-                  <td className="px-6 py-4 text-center tabular-nums text-slate-600 font-medium">
+                  <td className="px-4 py-3 sm:px-6 sm:py-4 text-center tabular-nums text-slate-600 font-medium">
                     {member.inProgress > 0 ? (
                       <span className="text-indigo-600 font-bold">{member.inProgress}</span>
                     ) : (
@@ -94,7 +94,7 @@ export function JiraWorkloadTable({ workload }: JiraWorkloadTableProps) {
                     )}
                   </td>
                   
-                  <td className="px-6 py-4 text-center">
+                  <td className="px-4 py-3 sm:px-6 sm:py-4 text-center">
                     {member.overdue > 0 ? (
                       <div className="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-bold text-rose-600 shadow-sm">
                         <AlertCircle className="h-3.5 w-3.5" />
@@ -105,7 +105,7 @@ export function JiraWorkloadTable({ workload }: JiraWorkloadTableProps) {
                     )}
                   </td>
                   
-                  <td className="px-6 py-4">
+                  <td className="px-4 py-3 sm:px-6 sm:py-4">
                     <div className="flex items-center gap-2">
                       <div className="h-1.5 w-24 overflow-hidden rounded-full bg-slate-100 shadow-inner">
                         <div 
@@ -119,7 +119,7 @@ export function JiraWorkloadTable({ workload }: JiraWorkloadTableProps) {
                     </div>
                   </td>
                   
-                  <td className="px-6 py-4">
+                  <td className="px-4 py-3 sm:px-6 sm:py-4">
                     <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
                       <Clock className="h-3 w-3" />
                       {formatLastActive(member.lastActiveDate)}

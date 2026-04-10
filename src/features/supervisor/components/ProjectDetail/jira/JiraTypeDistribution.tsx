@@ -72,8 +72,8 @@ export function JiraTypeDistribution({ health }: JiraTypeDistributionProps) {
       >
         {items.map((item, index) => {
           const palette = PALETTE[index % PALETTE.length];
-          const widthPct = (item.count / maxCount) * 100;
           const sharePct = total > 0 ? (item.count / total) * 100 : 0;
+          const widthPct = sharePct;
           const isHovered = hoveredIndex === index;
 
           return (
@@ -124,7 +124,7 @@ export function JiraTypeDistribution({ health }: JiraTypeDistributionProps) {
                 <div
                   className="h-full rounded-full transition-all duration-700 ease-out"
                   style={{
-                    width: `${widthPct}%`,
+                    width: `${sharePct}%`,
                     backgroundColor: palette.bar,
                     opacity: hoveredIndex === null || isHovered ? 1 : 0.5,
                   }}
