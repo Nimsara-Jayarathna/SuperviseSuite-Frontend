@@ -201,7 +201,9 @@ export const studentApi = {
   async getJiraWorkload(projectId: string): Promise<JiraWorkload> {
     const hit = cachedJiraByProjectId[projectId]?.workload;
     if (hit) return hit;
-    const data = await apiClient.get<JiraWorkload>(`/api/student/projects/${projectId}/jira/workload`);
+    const data = await apiClient.get<JiraWorkload>(
+      `/api/student/projects/${projectId}/jira/workload`,
+    );
     cachedJiraByProjectId[projectId] = { ...cachedJiraByProjectId[projectId], workload: data };
     return data;
   },
@@ -209,7 +211,9 @@ export const studentApi = {
   async getProjectJiraHierarchy(projectId: string): Promise<JiraHierarchy> {
     const hit = cachedJiraByProjectId[projectId]?.hierarchy;
     if (hit) return hit;
-    const data = await apiClient.get<JiraHierarchy>(`/api/student/projects/${projectId}/jira/hierarchy`);
+    const data = await apiClient.get<JiraHierarchy>(
+      `/api/student/projects/${projectId}/jira/hierarchy`,
+    );
     cachedJiraByProjectId[projectId] = { ...cachedJiraByProjectId[projectId], hierarchy: data };
     return data;
   },

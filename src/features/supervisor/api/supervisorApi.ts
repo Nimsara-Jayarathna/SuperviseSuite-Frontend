@@ -135,7 +135,9 @@ export const supervisorApi = {
   async getJiraHealth(projectId: string): Promise<JiraHealth> {
     const hit = cachedJiraByProjectId[projectId]?.health;
     if (hit) return hit;
-    const data = await apiClient.get<JiraHealth>(`/api/supervisor/projects/${projectId}/jira/health`);
+    const data = await apiClient.get<JiraHealth>(
+      `/api/supervisor/projects/${projectId}/jira/health`,
+    );
     cachedJiraByProjectId[projectId] = { ...cachedJiraByProjectId[projectId], health: data };
     return data;
   },
@@ -156,7 +158,9 @@ export const supervisorApi = {
   async getJiraWorkload(projectId: string): Promise<JiraWorkload> {
     const hit = cachedJiraByProjectId[projectId]?.workload;
     if (hit) return hit;
-    const data = await apiClient.get<JiraWorkload>(`/api/supervisor/projects/${projectId}/jira/workload`);
+    const data = await apiClient.get<JiraWorkload>(
+      `/api/supervisor/projects/${projectId}/jira/workload`,
+    );
     cachedJiraByProjectId[projectId] = { ...cachedJiraByProjectId[projectId], workload: data };
     return data;
   },
