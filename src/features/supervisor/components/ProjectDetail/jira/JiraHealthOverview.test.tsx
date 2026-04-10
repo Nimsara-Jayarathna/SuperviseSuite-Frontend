@@ -119,7 +119,7 @@ describe('JiraHealthOverview', () => {
       />,
     );
 
-    await user.click(screen.getByRole('button', { name: 'Refresh' }));
+    await user.click(screen.getByRole('button', { name: 'Refresh Jira data' }));
 
     await waitFor(() => {
       expect(screen.queryByText('Jira refresh failed')).not.toBeNull();
@@ -154,7 +154,7 @@ describe('JiraHealthOverview', () => {
       />,
     );
 
-    await user.click(screen.getByRole('button', { name: 'Refresh' }));
+    await user.click(screen.getByRole('button', { name: 'Refresh Jira data' }));
 
     await waitFor(() => {
       expect(screen.queryByText(JIRA_REFRESH_RETRY_MESSAGE)).not.toBeNull();
@@ -195,7 +195,7 @@ describe('JiraHealthOverview', () => {
       />,
     );
 
-    await user.click(screen.getByRole('button', { name: 'Refresh' }));
+    await user.click(screen.getByRole('button', { name: 'Refresh Jira data' }));
 
     await waitFor(() => {
       expect(screen.queryByText(JIRA_REAUTH_MESSAGE)).not.toBeNull();
@@ -216,7 +216,7 @@ describe('JiraHealthOverview', () => {
       />,
     );
 
-    await user.click(screen.getByRole('button', { name: 'Refresh' }));
+    await user.click(screen.getByRole('button', { name: 'Refresh Jira data' }));
 
     await waitFor(() => {
       expect(screen.queryByText(JIRA_RATE_LIMIT_MESSAGE)).not.toBeNull();

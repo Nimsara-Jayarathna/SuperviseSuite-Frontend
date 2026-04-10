@@ -50,6 +50,7 @@ Supervisor feature currently uses these APIs:
 - `POST /api/supervisor/projects/{projectId}/jira/disconnect`
 - `GET /api/supervisor/projects/{projectId}/jira/health`
 - `GET /api/supervisor/projects/{projectId}/jira/workload`
+- `GET /api/supervisor/projects/{projectId}/jira/hierarchy`
 - `POST /api/supervisor/projects/{projectId}/jira/refresh`
 - `GET /api/github/access-requests/validate?token=...`
 - `POST /api/github/access-requests/continue?token=...`
@@ -301,6 +302,10 @@ The Jira tab contains multiple insights sub-tabs for comprehensive project monit
     - **Comparison Table**: Sortable list showing open issues, completion rate, overdue items, and last activity date.
     - **Unassigned Issues**: Highlights issues without assignees to prevent slippage.
     - **Issue Type Distribution**: Member-level bar charts showing the breakdown of Story, Task, Bug, and Sub-task assignments.
+4.  **Hierarchy**: Expandable issue tree:
+    - Epic -> Story/Task/Bug -> Subtask structure from cached Jira issues.
+    - Collapsed by default beyond depth 2.
+    - Unlinked issues section for nodes whose parent is outside the project cache.
 
 Jira data rules are backend-configurable:
 
@@ -314,6 +319,17 @@ Scope note:
 
 - Jira tab remains data/monitoring focused.
 - OAuth connect/disconnect controls remain in Integrations tab.
+
+### Jira - Hierarchy tab
+
+Displays all cached Jira issues in an expandable tree grouped by Epic -> Story/Task/Bug -> Subtask.
+
+- Collapsed by default beyond depth 2.
+- Each node shows: issue type badge, issue key, summary, status pill, assignee, and story points.
+- "Unlinked Issues" section shows issues whose parent is outside the project's cache.
+- Source: `GET /api/supervisor/projects/{projectId}/jira/hierarchy`
+- Hook: `useJiraHierarchy`
+- Components: `JiraHierarchyView`, `JiraHierarchyNode`, `JiraHierarchySkeleton`
 
 ### Team tab: add-student management (add-only)
 

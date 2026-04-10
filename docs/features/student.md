@@ -30,6 +30,7 @@ Student pages currently use:
 - `GET /api/student/projects/{projectId}/jira/health`
 - `GET /api/student/projects/{projectId}/jira/sprint-progress`
 - `GET /api/student/projects/{projectId}/jira/workload`
+- `GET /api/student/projects/{projectId}/jira/hierarchy`
 
 ---
 
@@ -112,10 +113,21 @@ Student pages currently use:
   - when no repository is linked, shows a read-only CTA to navigate to Overview tab guidance
 - Jira (read-only shared analytics view):
   - Renders the same `JiraHealthOverview` orchestrator used by supervisors.
-  - Sub-tabs: Health, Sprint Progress (4 most recent), and Team Workload.
+  - Sub-tabs: Health, Sprint Progress (4 most recent), Team Workload, and Hierarchy.
   - Fetches data via `GET /api/student/projects/{projectId}/jira/*` endpoints.
   - No manual refresh or connect/disconnect actions are exposed for students.
   - When Jira is not connected, displays a read-only empty state.
+
+### Jira - Hierarchy tab
+
+Displays all cached Jira issues in an expandable tree grouped by Epic -> Story/Task/Bug -> Subtask.
+
+- Collapsed by default beyond depth 2.
+- Each node shows: issue type badge, issue key, summary, status pill, assignee, and story points.
+- "Unlinked Issues" section shows issues whose parent is outside the project's cache.
+- Source: `GET /api/student/projects/{projectId}/jira/hierarchy`
+- Hook: `useStudentJiraHierarchy`
+- Components: `JiraHierarchyView`, `JiraHierarchyNode`, `JiraHierarchySkeleton`
 
 Jira tab data rules come from backend analytics configuration (no student-side overrides).
 

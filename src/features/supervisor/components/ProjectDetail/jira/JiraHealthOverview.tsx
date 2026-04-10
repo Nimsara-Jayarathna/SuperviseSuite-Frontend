@@ -1,6 +1,7 @@
 import {
   Activity,
   BarChart3,
+  GitBranch,
   KanbanSquare,
   ExternalLink,
   Link2,
@@ -14,8 +15,10 @@ import { EmptyState } from '@/components/feedback/EmptyState';
 import { ErrorState } from '@/components/feedback/ErrorState';
 import { isApiException } from '@/services/apiClient';
 import type { ApiError } from '@/types';
+import { supervisorApi } from '../../../api/supervisorApi';
 import { useJiraHealth } from '../../../hooks/useJiraHealth';
-import type { JiraHealth, JiraSprintProgress, JiraWorkload } from '../../../types';
+import { useJiraHierarchy } from '../../../hooks/useJiraHierarchy';
+import type { JiraHealth, JiraHierarchy, JiraSprintProgress, JiraWorkload } from '../../../types';
 import { JiraWorkloadPanel } from './workload/JiraWorkloadPanel';
 import { JiraHealthSkeleton } from './JiraHealthSkeleton';
 import { JiraStatCards } from './JiraStatCards';
@@ -23,6 +26,7 @@ import { JiraBugRatioBar } from './JiraBugRatioBar';
 import { JiraStatusDonut } from './JiraStatusDonut';
 import { JiraTypeDistribution } from './JiraTypeDistribution';
 import { JiraSprintProgressSection } from './JiraSprintProgressSection';
+import { JiraHierarchyView } from './JiraHierarchyView';
 
 type JiraHealthOverviewProps = {
   /** Pass supervisorApi.getJiraHealth or studentApi.getJiraHealth */
@@ -31,6 +35,8 @@ type JiraHealthOverviewProps = {
   sprintFetcher?: (projectId: string) => Promise<JiraSprintProgress>;
   /** Optional workload fetcher shared by supervisor and student views. */
   workloadFetcher?: (projectId: string) => Promise<JiraWorkload>;
+  /** Optional hierarchy fetcher shared by supervisor and student views. */
+  hierarchyFetcher?: (projectId: string) => Promise<JiraHierarchy>;
   /** Optional sync action (supervisor-only) to pull fresh issues from Jira before reload. */
   syncer?: (projectId: string) => Promise<JiraHealth>;
   projectId: string;
@@ -38,7 +44,7 @@ type JiraHealthOverviewProps = {
   workspaceUrl?: string | null;
 };
 
-type JiraInsightsTab = 'health' | 'sprint-progress' | 'workload';
+type JiraInsightsTab = 'health' | 'sprint-progress' | 'workload' | 'hierarchy';
 
 function formatSyncedAt(iso: string): string {
   const d = new Date(iso);
@@ -99,12 +105,20 @@ export function JiraHealthOverview({
   fetcher,
   sprintFetcher,
   workloadFetcher,
+  hierarchyFetcher,
   syncer,
   projectId,
   workspaceName,
   workspaceUrl,
 }: JiraHealthOverviewProps) {
   const { health, isLoading, error, reload, applyHealth } = useJiraHealth(fetcher, projectId);
+  const {
+    data: hierarchyData,
+    isLoading: isHierarchyLoading,
+    error: hierarchyError,
+    hasLoaded: hierarchyHasLoaded,
+    load: loadHierarchy,
+  } = useJiraHierarchy(hierarchyFetcher ?? supervisorApi.getProjectJiraHierarchy, projectId);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastRefreshAt, setLastRefreshAt] = useState<string | null>(null);
   const [refreshError, setRefreshError] = useState<ApiError | null>(null);
@@ -231,58 +245,118 @@ export function JiraHealthOverview({
     ...(workloadFetcher
       ? [{ value: 'workload' as const, label: 'Team Workload', icon: Users }]
       : []),
+    { value: 'hierarchy', label: 'Hierarchy', icon: GitBranch },
   ];
 
-  const contextBar = (
-    <section className="rounded-3xl border border-slate-200 bg-white px-5 py-5 shadow-sm transition-all duration-300 hover:border-slate-300 hover:shadow-md">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 w-full">
+  function handleInsightsTabChange(tab: JiraInsightsTab) {
+    setActiveInsightsTab(tab);
+    if (tab === 'hierarchy' && !hierarchyHasLoaded && !isHierarchyLoading) {
+      void loadHierarchy();
+    }
+  }
+
+  const contextHeader = (
+    <section className="rounded-3xl border border-slate-200 bg-white px-5 pt-4 pb-3 shadow-sm transition-all duration-300 hover:border-slate-300 hover:shadow-md">
+      <div className="flex items-center justify-between gap-4">
         <div className="flex min-w-0 items-center gap-2.5">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500">
             <Link2 className="h-4 w-4" />
           </div>
-
           <div className="min-w-0">
             {workspaceUrl ? (
               <a
                 href={workspaceUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex min-w-0 items-center gap-1 truncate text-base font-semibold text-slate-900 hover:underline"
+                className="inline-flex min-w-0 items-center gap-1 truncate text-sm font-semibold text-slate-900 hover:underline"
                 title={workspaceUrl}
               >
                 <span className="truncate">{workspaceLabel}</span>
-                <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+                <ExternalLink className="h-3 w-3 shrink-0" />
               </a>
             ) : (
-              <p className="truncate text-base font-semibold text-slate-900">{workspaceLabel}</p>
+              <p className="truncate text-sm font-semibold text-slate-900">{workspaceLabel}</p>
             )}
-            <p className="text-sm text-slate-600">Jira workspace</p>
+            <div className="mt-0.5 flex items-center gap-2">
+              <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+                Connected
+              </span>
+              <span className="flex items-center gap-1 text-[11px] text-slate-400">
+                <RefreshCw className="h-3 w-3 shrink-0 text-emerald-500" />
+                {syncedAtLabel}
+                {isJustRefreshed ? ' (just now)' : ''}
+              </span>
+            </div>
           </div>
-
-          <span className="shrink-0 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
-            Connected
-          </span>
         </div>
 
         {canRefresh ? (
           <button
             type="button"
-            className={buttonStyles({ variant: 'secondary', size: 'sm' })}
+            aria-label={isRefreshing ? 'Refreshing' : 'Refresh Jira data'}
+            className={buttonStyles({
+              variant: 'secondary',
+              size: 'sm',
+              className: 'w-9 px-0',
+            })}
             onClick={() => void performRefresh({ requestModal: true })}
             disabled={isRefreshing}
           >
-            {isRefreshing ? 'Refreshing...' : 'Refresh'}
+            <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
           </button>
         ) : null}
       </div>
 
-      <div className="mt-3 flex items-center gap-1.5 text-sm text-slate-600">
-        <RefreshCw className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
-        <span>
-          Last synced {syncedAtLabel}
-          {isJustRefreshed ? ' (just now)' : ''}
-        </span>
-      </div>
+      <div className="mt-3 border-t border-slate-100" />
+
+      <ul
+        className="mt-2 flex flex-wrap items-center justify-center gap-1.5"
+        role="tablist"
+        aria-label="Jira insights"
+      >
+        {insightsTabs.map((tab) => {
+          const isActive = activeInsightsTab === tab.value;
+          const TabIcon = tab.icon;
+          return (
+            <li key={tab.value} role="presentation">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                onClick={() => handleInsightsTabChange(tab.value)}
+                className={`group inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-[13px] font-medium transition-all ${
+                  isActive
+                    ? tab.value === 'health'
+                      ? 'border-indigo-200 bg-indigo-50 text-indigo-700 shadow-sm'
+                      : tab.value === 'workload'
+                        ? 'border-emerald-200 bg-emerald-50 text-emerald-700 shadow-sm'
+                        : tab.value === 'hierarchy'
+                          ? 'border-cyan-200 bg-cyan-50 text-cyan-700 shadow-sm'
+                          : 'border-amber-200 bg-amber-50 text-amber-700 shadow-sm'
+                    : 'border-transparent bg-transparent text-slate-500 hover:border-slate-200 hover:bg-slate-50 hover:text-slate-700'
+                }`}
+              >
+                <span
+                  className={`inline-flex h-4 w-4 items-center justify-center rounded transition-colors ${
+                    isActive
+                      ? tab.value === 'health'
+                        ? 'text-indigo-500'
+                        : tab.value === 'workload'
+                          ? 'text-emerald-500'
+                          : tab.value === 'hierarchy'
+                            ? 'text-cyan-500'
+                            : 'text-amber-500'
+                      : 'text-slate-400 group-hover:text-slate-500'
+                  }`}
+                >
+                  <TabIcon className="h-3.5 w-3.5" />
+                </span>
+                {tab.label}
+              </button>
+            </li>
+          );
+        })}
+      </ul>
     </section>
   );
 
@@ -297,7 +371,7 @@ export function JiraHealthOverview({
           onClose={jiraRefreshModal.status === 'loading' ? undefined : closeJiraRefreshModal}
           onRetry={jiraRefreshModal.status === 'error' ? jiraRefreshModal.retryAction : undefined}
         />
-        {contextBar}
+        {contextHeader}
         {refreshError ? (
           <ErrorState
             error={refreshError}
@@ -322,58 +396,13 @@ export function JiraHealthOverview({
         onClose={jiraRefreshModal.status === 'loading' ? undefined : closeJiraRefreshModal}
         onRetry={jiraRefreshModal.status === 'error' ? jiraRefreshModal.retryAction : undefined}
       />
-      {contextBar}
+      {contextHeader}
       {refreshError ? (
         <ErrorState
           error={refreshError}
           onRetry={canRefresh ? () => void performRefresh({ requestModal: false }) : undefined}
         />
       ) : null}
-
-      <nav
-        className="rounded-3xl border border-slate-200 bg-white p-2 shadow-sm transition-all hover:shadow-md overflow-x-auto"
-        aria-label="Jira insights tabs"
-      >
-        <ul className="flex items-center gap-2 text-sm font-medium text-slate-700 min-w-max sm:min-w-0 sm:flex-wrap">
-          {insightsTabs.map((tab) => {
-            const isActive = activeInsightsTab === tab.value;
-            const TabIcon = tab.icon;
-            return (
-              <li key={tab.value}>
-                <button
-                  type="button"
-                  onClick={() => setActiveInsightsTab(tab.value)}
-                  className={`group inline-flex items-center gap-2 rounded-2xl border px-3 py-2 transition-all ${
-                    isActive
-                      ? tab.value === 'health'
-                        ? 'border-indigo-200 bg-indigo-50 text-indigo-700 shadow-sm'
-                        : tab.value === 'workload'
-                          ? 'border-emerald-200 bg-emerald-50 text-emerald-700 shadow-sm'
-                          : 'border-amber-200 bg-amber-50 text-amber-700 shadow-sm'
-                      : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 hover:shadow-sm'
-                  }`}
-                  aria-pressed={isActive}
-                >
-                  <span
-                    className={`inline-flex h-5 w-5 items-center justify-center rounded-md transition-colors ${
-                      isActive
-                        ? tab.value === 'health'
-                          ? 'bg-indigo-100 text-indigo-600'
-                          : tab.value === 'workload'
-                            ? 'bg-emerald-100 text-emerald-600'
-                            : 'bg-amber-100 text-amber-600'
-                        : 'bg-slate-100 text-slate-500 group-hover:bg-slate-200 group-hover:text-slate-600'
-                    }`}
-                  >
-                    <TabIcon className="h-3.5 w-3.5" />
-                  </span>
-                  {tab.label}
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      </nav>
 
       {activeInsightsTab === 'health' ? (
         <div className="space-y-4">
@@ -436,6 +465,16 @@ export function JiraHealthOverview({
       {activeInsightsTab === 'workload' && workloadFetcher ? (
         <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-300 hover:border-slate-300 hover:shadow-md">
           <JiraWorkloadPanel fetcher={workloadFetcher} projectId={projectId} />
+        </div>
+      ) : null}
+
+      {activeInsightsTab === 'hierarchy' ? (
+        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-300 hover:border-slate-300 hover:shadow-md">
+          <JiraHierarchyView
+            isLoading={isHierarchyLoading}
+            error={hierarchyError}
+            data={hierarchyData}
+          />
         </div>
       ) : null}
     </div>

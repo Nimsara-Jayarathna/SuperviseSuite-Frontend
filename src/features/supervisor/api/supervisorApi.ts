@@ -33,6 +33,7 @@ import type {
   ProjectGitHubRepositoryLink,
   JiraAuthUrl,
   JiraHealth,
+  JiraHierarchy,
   JiraSprintProgress,
   JiraWorkload,
   JiraOAuthCompletePayload,
@@ -53,6 +54,13 @@ const inFlightProjectRequests: Partial<Record<string, Promise<SupervisorProjectD
 const cachedProjectGitHubByKey: Partial<Record<string, ProjectGitHubActivity>> = {};
 const inFlightProjectGitHubRequestsByKey: Partial<Record<string, Promise<ProjectGitHubActivity>>> =
   {};
+type JiraCache = {
+  health?: JiraHealth;
+  sprintProgress?: JiraSprintProgress;
+  workload?: JiraWorkload;
+  hierarchy?: JiraHierarchy;
+};
+const cachedJiraByProjectId: Partial<Record<string, JiraCache>> = {};
 
 function clearRecord(record: Partial<Record<string, unknown>>) {
   for (const key of Object.keys(record)) {
@@ -65,6 +73,11 @@ function clearSupervisorApiCache() {
   clearRecord(inFlightProjectRequests);
   clearRecord(cachedProjectGitHubByKey);
   clearRecord(inFlightProjectGitHubRequestsByKey);
+  clearRecord(cachedJiraByProjectId);
+}
+
+function invalidateJiraCache(projectId: string) {
+  delete cachedJiraByProjectId[projectId];
 }
 
 function invalidateProjectCaches(projectId: string | null | undefined) {
@@ -119,22 +132,57 @@ export const supervisorApi = {
     );
   },
 
-  getJiraHealth(projectId: string): Promise<JiraHealth> {
-    return apiClient.get<JiraHealth>(`/api/supervisor/projects/${projectId}/jira/health`);
+  async getJiraHealth(projectId: string): Promise<JiraHealth> {
+    const hit = cachedJiraByProjectId[projectId]?.health;
+    if (hit) return hit;
+    const data = await apiClient.get<JiraHealth>(
+      `/api/supervisor/projects/${projectId}/jira/health`,
+    );
+    cachedJiraByProjectId[projectId] = { ...cachedJiraByProjectId[projectId], health: data };
+    return data;
   },
 
-  getJiraSprintProgress(projectId: string): Promise<JiraSprintProgress> {
-    return apiClient.get<JiraSprintProgress>(
+  async getJiraSprintProgress(projectId: string): Promise<JiraSprintProgress> {
+    const hit = cachedJiraByProjectId[projectId]?.sprintProgress;
+    if (hit) return hit;
+    const data = await apiClient.get<JiraSprintProgress>(
       `/api/supervisor/projects/${projectId}/jira/sprint-progress`,
     );
+    cachedJiraByProjectId[projectId] = {
+      ...cachedJiraByProjectId[projectId],
+      sprintProgress: data,
+    };
+    return data;
   },
 
-  getJiraWorkload(projectId: string): Promise<JiraWorkload> {
-    return apiClient.get<JiraWorkload>(`/api/supervisor/projects/${projectId}/jira/workload`);
+  async getJiraWorkload(projectId: string): Promise<JiraWorkload> {
+    const hit = cachedJiraByProjectId[projectId]?.workload;
+    if (hit) return hit;
+    const data = await apiClient.get<JiraWorkload>(
+      `/api/supervisor/projects/${projectId}/jira/workload`,
+    );
+    cachedJiraByProjectId[projectId] = { ...cachedJiraByProjectId[projectId], workload: data };
+    return data;
   },
 
-  refreshProjectJira(projectId: string): Promise<JiraHealth> {
-    return apiClient.post<JiraHealth>(`/api/supervisor/projects/${projectId}/jira/refresh`, {});
+  async getProjectJiraHierarchy(projectId: string): Promise<JiraHierarchy> {
+    const hit = cachedJiraByProjectId[projectId]?.hierarchy;
+    if (hit) return hit;
+    const data = await apiClient.get<JiraHierarchy>(
+      `/api/supervisor/projects/${projectId}/jira/hierarchy`,
+    );
+    cachedJiraByProjectId[projectId] = { ...cachedJiraByProjectId[projectId], hierarchy: data };
+    return data;
+  },
+
+  async refreshProjectJira(projectId: string): Promise<JiraHealth> {
+    const fresh = await apiClient.post<JiraHealth>(
+      `/api/supervisor/projects/${projectId}/jira/refresh`,
+      {},
+    );
+    invalidateJiraCache(projectId);
+    cachedJiraByProjectId[projectId] = { health: fresh };
+    return fresh;
   },
 
   async getProjectGitHubDashboard(
