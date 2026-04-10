@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { AlertCircle } from 'lucide-react';
 import type { JiraHierarchy } from '@/features/supervisor/types';
 import { JiraHierarchyNode } from './JiraHierarchyNode';
 import { JiraHierarchySkeleton } from './JiraHierarchySkeleton';
+import { sortNodes } from './jiraHierarchySort';
 
 type Props = {
   isLoading: boolean;
@@ -9,7 +11,20 @@ type Props = {
   data: JiraHierarchy | null;
 };
 
+function sortRootNodes(nodes: JiraHierarchy['roots']): JiraHierarchy['roots'] {
+  return [...nodes].sort((a, b) => {
+    const aEpic = a.issueType === 'Epic';
+    const bEpic = b.issueType === 'Epic';
+    if (aEpic !== bEpic) {
+      return aEpic ? -1 : 1;
+    }
+    return a.issueKey.localeCompare(b.issueKey);
+  });
+}
+
 export function JiraHierarchyView({ isLoading, error, data }: Props) {
+  const [expandAll, setExpandAll] = useState<boolean | undefined>(undefined);
+
   if (isLoading) {
     return <JiraHierarchySkeleton />;
   }
@@ -35,12 +50,34 @@ export function JiraHierarchyView({ isLoading, error, data }: Props) {
     <div className="space-y-4">
       {data.roots.length > 0 && (
         <section>
-          <h3 className="mb-2 text-xs font-bold uppercase tracking-widest text-slate-400">
-            Issues ({data.roots.length})
+          <h3 className="mb-2 flex items-center justify-between text-xs font-bold uppercase tracking-widest text-slate-400">
+            <span>Issues ({data.roots.length})</span>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setExpandAll(true)}
+                className="rounded-md px-2 py-0.5 text-[10px] font-semibold text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+              >
+                Expand all
+              </button>
+              <span className="text-slate-200">|</span>
+              <button
+                type="button"
+                onClick={() => setExpandAll(false)}
+                className="rounded-md px-2 py-0.5 text-[10px] font-semibold text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+              >
+                Collapse all
+              </button>
+            </div>
           </h3>
           <div className="space-y-1">
-            {data.roots.map((node) => (
-              <JiraHierarchyNode key={node.issueKey} node={node} depth={0} />
+            {sortRootNodes(sortNodes(data.roots)).map((node) => (
+              <JiraHierarchyNode
+                key={node.issueKey}
+                node={node}
+                depth={0}
+                forceExpanded={expandAll}
+              />
             ))}
           </div>
         </section>
@@ -52,8 +89,13 @@ export function JiraHierarchyView({ isLoading, error, data }: Props) {
             Unlinked Issues ({data.orphans.length})
           </h3>
           <div className="space-y-1">
-            {data.orphans.map((node) => (
-              <JiraHierarchyNode key={node.issueKey} node={node} depth={0} />
+            {sortNodes(data.orphans).map((node) => (
+              <JiraHierarchyNode
+                key={node.issueKey}
+                node={node}
+                depth={0}
+                forceExpanded={expandAll}
+              />
             ))}
           </div>
         </section>

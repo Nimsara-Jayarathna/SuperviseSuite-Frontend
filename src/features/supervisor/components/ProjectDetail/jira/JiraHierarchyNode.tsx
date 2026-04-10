@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ChevronRight } from 'lucide-react';
 import type { JiraHierarchyNode as NodeType } from '@/features/supervisor/types';
+import { sortNodes } from './jiraHierarchySort';
 
 const ISSUE_TYPE_COLORS: Record<string, string> = {
   Epic: 'bg-purple-100 text-purple-700 border-purple-200',
@@ -19,10 +20,12 @@ const STATUS_COLORS: Record<string, string> = {
 type Props = {
   node: NodeType;
   depth?: number;
+  forceExpanded?: boolean;
 };
 
-export function JiraHierarchyNode({ node, depth = 0 }: Props) {
-  const [expanded, setExpanded] = useState(depth < 2);
+export function JiraHierarchyNode({ node, depth = 0, forceExpanded }: Props) {
+  const [expanded, setExpanded] = useState(depth === 0);
+  const isExpanded = forceExpanded !== undefined ? forceExpanded : expanded;
   const hasChildren = node.children.length > 0;
   const typeColor =
     ISSUE_TYPE_COLORS[node.issueType] ?? 'bg-slate-100 text-slate-600 border-slate-200';
@@ -31,19 +34,28 @@ export function JiraHierarchyNode({ node, depth = 0 }: Props) {
   return (
     <div className={depth > 0 ? 'ml-5 border-l border-slate-200 pl-3' : ''}>
       <div
-        className={`group flex items-start gap-2 rounded-xl border border-slate-100 bg-white px-3 py-2.5 shadow-sm transition-all hover:border-slate-200 hover:shadow-md ${depth === 0 ? 'mb-1' : 'my-0.5'}`}
+        className={`group flex items-start gap-2 rounded-xl border transition-all ${
+          depth === 0
+            ? 'mb-1 border-slate-200 bg-white px-3 py-3 shadow-sm hover:border-slate-300 hover:shadow-md'
+            : depth === 1
+              ? 'my-0.5 border-slate-100 bg-slate-50/60 px-3 py-2 hover:border-slate-200'
+              : 'my-0 border-transparent bg-transparent px-3 py-1.5 hover:bg-slate-50'
+        }`}
       >
-        <button
-          type="button"
-          onClick={() => setExpanded((e) => !e)}
-          disabled={!hasChildren}
-          className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md transition-all ${hasChildren ? 'cursor-pointer hover:bg-slate-100' : 'cursor-default opacity-0'}`}
-          aria-label={expanded ? 'Collapse' : 'Expand'}
-        >
-          <ChevronRight
-            className={`h-3.5 w-3.5 text-slate-400 transition-transform duration-200 ${expanded ? 'rotate-90' : ''}`}
-          />
-        </button>
+        {hasChildren ? (
+          <button
+            type="button"
+            onClick={() => setExpanded((e) => !e)}
+            className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500 transition-all hover:bg-slate-200 hover:text-slate-700 active:scale-95"
+            aria-label={isExpanded ? 'Collapse' : 'Expand'}
+          >
+            <ChevronRight
+              className={`h-4 w-4 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`}
+            />
+          </button>
+        ) : (
+          <div className="mt-0.5 h-6 w-6 shrink-0" />
+        )}
 
         <span
           className={`mt-0.5 shrink-0 rounded-md border px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${typeColor}`}
@@ -78,10 +90,15 @@ export function JiraHierarchyNode({ node, depth = 0 }: Props) {
         )}
       </div>
 
-      {expanded && hasChildren && (
+      {isExpanded && hasChildren && (
         <div className="mt-0.5">
-          {node.children.map((child) => (
-            <JiraHierarchyNode key={child.issueKey} node={child} depth={depth + 1} />
+          {sortNodes(node.children).map((child) => (
+            <JiraHierarchyNode
+              key={child.issueKey}
+              node={child}
+              depth={depth + 1}
+              forceExpanded={forceExpanded}
+            />
           ))}
         </div>
       )}
