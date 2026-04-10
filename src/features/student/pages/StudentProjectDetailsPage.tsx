@@ -800,6 +800,7 @@ export function StudentProjectDetailsPage() {
             <JiraHealthOverview
               fetcher={studentApi.getJiraHealth}
               sprintFetcher={studentApi.getJiraSprintProgress}
+              workloadFetcher={studentApi.getJiraWorkload}
               projectId={projectId}
             />
           )}

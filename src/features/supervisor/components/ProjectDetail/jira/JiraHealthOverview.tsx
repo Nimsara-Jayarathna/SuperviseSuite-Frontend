@@ -1,12 +1,22 @@
-import { Activity, BarChart3, ExternalLink, Link2, RefreshCw } from 'lucide-react';
+import {
+  Activity,
+  BarChart3,
+  KanbanSquare,
+  ExternalLink,
+  Link2,
+  RefreshCw,
+  Users,
+} from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { buttonStyles } from '@/components/ui/Button';
+import { RequestStateModal } from '@/components/ui/RequestStateModal';
 import { EmptyState } from '@/components/feedback/EmptyState';
 import { ErrorState } from '@/components/feedback/ErrorState';
 import { isApiException } from '@/services/apiClient';
 import type { ApiError } from '@/types';
 import { useJiraHealth } from '../../../hooks/useJiraHealth';
-import type { JiraHealth, JiraSprintProgress } from '../../../types';
+import type { JiraHealth, JiraSprintProgress, JiraWorkload } from '../../../types';
+import { JiraWorkloadPanel } from './workload/JiraWorkloadPanel';
 import { JiraHealthSkeleton } from './JiraHealthSkeleton';
 import { JiraStatCards } from './JiraStatCards';
 import { JiraBugRatioBar } from './JiraBugRatioBar';
@@ -19,6 +29,8 @@ type JiraHealthOverviewProps = {
   fetcher: (projectId: string) => Promise<JiraHealth>;
   /** Optional sprint progress fetcher shared by supervisor and student views. */
   sprintFetcher?: (projectId: string) => Promise<JiraSprintProgress>;
+  /** Optional workload fetcher shared by supervisor and student views. */
+  workloadFetcher?: (projectId: string) => Promise<JiraWorkload>;
   /** Optional sync action (supervisor-only) to pull fresh issues from Jira before reload. */
   syncer?: (projectId: string) => Promise<JiraHealth>;
   projectId: string;
@@ -26,7 +38,7 @@ type JiraHealthOverviewProps = {
   workspaceUrl?: string | null;
 };
 
-type JiraInsightsTab = 'health' | 'sprint-progress';
+type JiraInsightsTab = 'health' | 'sprint-progress' | 'workload';
 
 function formatSyncedAt(iso: string): string {
   const d = new Date(iso);
@@ -86,6 +98,7 @@ function toRefreshApiError(error: unknown): ApiError {
 export function JiraHealthOverview({
   fetcher,
   sprintFetcher,
+  workloadFetcher,
   syncer,
   projectId,
   workspaceName,
@@ -95,36 +108,91 @@ export function JiraHealthOverview({
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastRefreshAt, setLastRefreshAt] = useState<string | null>(null);
   const [refreshError, setRefreshError] = useState<ApiError | null>(null);
+  const [jiraRefreshModal, setJiraRefreshModal] = useState<{
+    isOpen: boolean;
+    status: 'loading' | 'success' | 'error';
+    title: string;
+    message: string;
+    retryAction?: () => void;
+  }>({
+    isOpen: false,
+    status: 'loading',
+    title: '',
+    message: '',
+  });
   const [activeInsightsTab, setActiveInsightsTab] = useState<JiraInsightsTab>('health');
   const autoRefreshAttemptedProjectId = useRef<string | null>(null);
+  const refreshInFlightRef = useRef(false);
+  const performRefreshRef = useRef<(options: { requestModal: boolean }) => Promise<void>>(
+    async () => {},
+  );
   const canRefresh = Boolean(syncer);
 
-  const handleRefresh = useCallback(async () => {
-    if (isRefreshing) {
-      return;
-    }
+  const closeJiraRefreshModal = useCallback(() => {
+    setJiraRefreshModal((current) => ({ ...current, isOpen: false }));
+  }, []);
 
-    setIsRefreshing(true);
-    setRefreshError(null);
-    try {
-      if (syncer) {
-        const refreshedHealth = await syncer(projectId);
-        const refreshedAt = new Date().toISOString();
-        setLastRefreshAt(refreshedAt);
-        applyHealth({
-          ...refreshedHealth,
-          // Keep the UI responsive even if backend minute value appears unchanged.
-          lastSyncedAt: refreshedHealth.lastSyncedAt ?? refreshedAt,
-        });
-      } else {
-        await reload();
+  const performRefresh = useCallback(
+    async (options: { requestModal: boolean }) => {
+      if (refreshInFlightRef.current) {
+        return;
       }
-    } catch (caughtError) {
-      setRefreshError(toRefreshApiError(caughtError));
-    } finally {
-      setIsRefreshing(false);
-    }
-  }, [applyHealth, isRefreshing, projectId, reload, syncer]);
+      refreshInFlightRef.current = true;
+
+      setIsRefreshing(true);
+      setRefreshError(null);
+      if (options.requestModal && syncer) {
+        setJiraRefreshModal({
+          isOpen: true,
+          status: 'loading',
+          title: 'Refreshing Jira data',
+          message: 'Syncing the latest Jira issues, sprints, and workload for this project.',
+        });
+      }
+
+      try {
+        if (syncer) {
+          const refreshedHealth = await syncer(projectId);
+          const refreshedAt = new Date().toISOString();
+          setLastRefreshAt(refreshedAt);
+          applyHealth({
+            ...refreshedHealth,
+            // Keep the UI responsive even if backend minute value appears unchanged.
+            lastSyncedAt: refreshedHealth.lastSyncedAt ?? refreshedAt,
+          });
+          if (options.requestModal) {
+            setJiraRefreshModal({
+              isOpen: true,
+              status: 'success',
+              title: 'Jira data refreshed',
+              message: 'Latest Jira data was synced and loaded successfully.',
+            });
+          }
+        } else {
+          await reload();
+        }
+      } catch (caughtError) {
+        const apiError = toRefreshApiError(caughtError);
+        if (options.requestModal && syncer) {
+          setJiraRefreshModal({
+            isOpen: true,
+            status: 'error',
+            title: 'Jira refresh failed',
+            message: apiError.message,
+            retryAction: () => void performRefreshRef.current({ requestModal: true }),
+          });
+        } else {
+          setRefreshError(apiError);
+        }
+      } finally {
+        refreshInFlightRef.current = false;
+        setIsRefreshing(false);
+      }
+    },
+    [applyHealth, projectId, reload, syncer],
+  );
+
+  performRefreshRef.current = performRefresh;
 
   useEffect(() => {
     const shouldAutoRefresh =
@@ -139,8 +207,8 @@ export function JiraHealthOverview({
     }
 
     autoRefreshAttemptedProjectId.current = projectId;
-    void handleRefresh();
-  }, [canRefresh, handleRefresh, health?.lastSyncedAt, isLoading, isRefreshing, projectId]);
+    void performRefresh({ requestModal: false });
+  }, [canRefresh, health?.lastSyncedAt, isLoading, isRefreshing, performRefresh, projectId]);
 
   if (isLoading) {
     return <JiraHealthSkeleton />;
@@ -160,11 +228,14 @@ export function JiraHealthOverview({
     ...(sprintFetcher
       ? [{ value: 'sprint-progress' as const, label: 'Sprint Progress', icon: BarChart3 }]
       : []),
+    ...(workloadFetcher
+      ? [{ value: 'workload' as const, label: 'Team Workload', icon: Users }]
+      : []),
   ];
 
   const contextBar = (
-    <section className="rounded-3xl border border-slate-200 bg-white px-5 py-5 shadow-sm transition-all hover:shadow-md">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <section className="rounded-3xl border border-slate-200 bg-white px-5 py-5 shadow-sm transition-all duration-300 hover:border-slate-300 hover:shadow-md">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 w-full">
         <div className="flex min-w-0 items-center gap-2.5">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500">
             <Link2 className="h-4 w-4" />
@@ -196,11 +267,10 @@ export function JiraHealthOverview({
         {canRefresh ? (
           <button
             type="button"
-            className={buttonStyles({ variant: 'secondary', size: 'sm', className: 'gap-1.5' })}
-            onClick={() => void handleRefresh()}
+            className={buttonStyles({ variant: 'secondary', size: 'sm' })}
+            onClick={() => void performRefresh({ requestModal: true })}
             disabled={isRefreshing}
           >
-            <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
             {isRefreshing ? 'Refreshing...' : 'Refresh'}
           </button>
         ) : null}
@@ -219,11 +289,19 @@ export function JiraHealthOverview({
   if (!health || health.lastSyncedAt === null) {
     return (
       <div className="space-y-4">
+        <RequestStateModal
+          isOpen={jiraRefreshModal.isOpen}
+          status={jiraRefreshModal.status}
+          title={jiraRefreshModal.title}
+          message={jiraRefreshModal.message}
+          onClose={jiraRefreshModal.status === 'loading' ? undefined : closeJiraRefreshModal}
+          onRetry={jiraRefreshModal.status === 'error' ? jiraRefreshModal.retryAction : undefined}
+        />
         {contextBar}
         {refreshError ? (
           <ErrorState
             error={refreshError}
-            onRetry={canRefresh ? () => void handleRefresh() : undefined}
+            onRetry={canRefresh ? () => void performRefresh({ requestModal: false }) : undefined}
           />
         ) : null}
         <EmptyState
@@ -236,19 +314,27 @@ export function JiraHealthOverview({
 
   return (
     <div className="space-y-5">
+      <RequestStateModal
+        isOpen={jiraRefreshModal.isOpen}
+        status={jiraRefreshModal.status}
+        title={jiraRefreshModal.title}
+        message={jiraRefreshModal.message}
+        onClose={jiraRefreshModal.status === 'loading' ? undefined : closeJiraRefreshModal}
+        onRetry={jiraRefreshModal.status === 'error' ? jiraRefreshModal.retryAction : undefined}
+      />
       {contextBar}
       {refreshError ? (
         <ErrorState
           error={refreshError}
-          onRetry={canRefresh ? () => void handleRefresh() : undefined}
+          onRetry={canRefresh ? () => void performRefresh({ requestModal: false }) : undefined}
         />
       ) : null}
 
       <nav
-        className="rounded-3xl border border-slate-200 bg-white p-2 shadow-sm transition-all hover:shadow-md"
+        className="rounded-3xl border border-slate-200 bg-white p-2 shadow-sm transition-all hover:shadow-md overflow-x-auto"
         aria-label="Jira insights tabs"
       >
-        <ul className="flex flex-wrap gap-2 text-sm font-medium text-slate-700">
+        <ul className="flex items-center gap-2 text-sm font-medium text-slate-700 min-w-max sm:min-w-0 sm:flex-wrap">
           {insightsTabs.map((tab) => {
             const isActive = activeInsightsTab === tab.value;
             const TabIcon = tab.icon;
@@ -261,7 +347,9 @@ export function JiraHealthOverview({
                     isActive
                       ? tab.value === 'health'
                         ? 'border-indigo-200 bg-indigo-50 text-indigo-700 shadow-sm'
-                        : 'border-amber-200 bg-amber-50 text-amber-700 shadow-sm'
+                        : tab.value === 'workload'
+                          ? 'border-emerald-200 bg-emerald-50 text-emerald-700 shadow-sm'
+                          : 'border-amber-200 bg-amber-50 text-amber-700 shadow-sm'
                       : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 hover:shadow-sm'
                   }`}
                   aria-pressed={isActive}
@@ -271,7 +359,9 @@ export function JiraHealthOverview({
                       isActive
                         ? tab.value === 'health'
                           ? 'bg-indigo-100 text-indigo-600'
-                          : 'bg-amber-100 text-amber-600'
+                          : tab.value === 'workload'
+                            ? 'bg-emerald-100 text-emerald-600'
+                            : 'bg-amber-100 text-amber-600'
                         : 'bg-slate-100 text-slate-500 group-hover:bg-slate-200 group-hover:text-slate-600'
                     }`}
                   >
@@ -289,12 +379,12 @@ export function JiraHealthOverview({
         <div className="space-y-4">
           <section
             id="jira-project-health"
-            className="space-y-3 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:shadow-md"
+            className="space-y-3 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-300 hover:border-slate-300 hover:shadow-md"
           >
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3">
               <div className="inline-flex items-center gap-2">
                 <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
-                  <Activity className="h-4 w-4" />
+                  <KanbanSquare className="h-4 w-4" />
                 </span>
                 <h2 className="text-base font-semibold tracking-wide text-slate-900">
                   Project health
@@ -307,24 +397,22 @@ export function JiraHealthOverview({
 
           <section
             id="jira-quality-signals"
-            className="space-y-3 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:shadow-md"
+            className="space-y-3 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-300 hover:border-slate-300 hover:shadow-md"
           >
-            <div className="flex items-center justify-between gap-3 border-t border-slate-200 pt-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3">
               <h2 className="text-base font-semibold tracking-wide text-slate-900">
                 Quality signals
               </h2>
-              <p className="text-sm text-slate-600">Open bug pressure over active issues</p>
+              <p className="text-sm text-slate-400">Open bug pressure over active issues</p>
             </div>
-            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm transition-all hover:shadow-md">
-              <JiraBugRatioBar bugRatio={health.bugRatio} />
-            </div>
+            <JiraBugRatioBar bugRatio={health.bugRatio} />
           </section>
 
           <section
             id="jira-distribution"
-            className="space-y-3 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:shadow-md"
+            className="space-y-3 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-300 hover:border-slate-300 hover:shadow-md"
           >
-            <div className="flex items-center justify-between gap-3 border-t border-slate-200 pt-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3">
               <h2 className="text-base font-semibold tracking-wide text-slate-900">
                 Issue distribution
               </h2>
@@ -340,8 +428,14 @@ export function JiraHealthOverview({
       ) : null}
 
       {activeInsightsTab === 'sprint-progress' && sprintFetcher ? (
-        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:shadow-md">
+        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-300 hover:border-slate-300 hover:shadow-md">
           <JiraSprintProgressSection fetcher={sprintFetcher} projectId={projectId} />
+        </div>
+      ) : null}
+
+      {activeInsightsTab === 'workload' && workloadFetcher ? (
+        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-300 hover:border-slate-300 hover:shadow-md">
+          <JiraWorkloadPanel fetcher={workloadFetcher} projectId={projectId} />
         </div>
       ) : null}
     </div>

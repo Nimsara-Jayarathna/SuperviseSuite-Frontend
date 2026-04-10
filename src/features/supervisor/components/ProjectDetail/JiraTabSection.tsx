@@ -15,6 +15,7 @@ export function JiraTabSection({ project }: JiraTabSectionProps) {
         <JiraHealthOverview
           fetcher={supervisorApi.getJiraHealth}
           sprintFetcher={supervisorApi.getJiraSprintProgress}
+          workloadFetcher={supervisorApi.getJiraWorkload}
           syncer={supervisorApi.refreshProjectJira}
           projectId={project.id}
           workspaceName={jira.workspaceName}

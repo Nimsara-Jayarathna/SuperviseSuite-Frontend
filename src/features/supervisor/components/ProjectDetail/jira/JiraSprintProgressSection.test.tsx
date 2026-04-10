@@ -103,8 +103,8 @@ describe('JiraSprintProgressSection', () => {
     expect(screen.getByText('Sprint progress')).toBeInTheDocument();
     expect(screen.getByText('Active sprint')).toBeInTheDocument();
     expect(screen.getByText('Issue completion')).toBeInTheDocument();
-    expect(screen.getByText('SP completion')).toBeInTheDocument();
-    expect(screen.getByText(/Est\./)).toBeInTheDocument();
+    expect(screen.getByText('Story points')).toBeInTheDocument();
+    expect(screen.getByText(/Projected:/)).toBeInTheDocument();
     expect(screen.getByText('Sprint velocity')).toBeInTheDocument();
     expect(screen.getByText('This week')).toBeInTheDocument();
     expect(screen.getByText('Closed')).toBeInTheDocument();
@@ -120,12 +120,13 @@ describe('JiraSprintProgressSection', () => {
 
     render(<JiraSprintProgressSection fetcher={vi.fn()} projectId="project-1" />);
 
-    const selector = screen.getByLabelText('Sprint selector');
+    const selector = screen.getByLabelText('Sprint');
     fireEvent.change(selector, { target: { value: 'id:11' } });
 
     expect(selector).toHaveValue('id:11');
     expect(screen.getByText('Selected sprint')).toBeInTheDocument();
-    expect(screen.getByText('18 done of 18 issues')).toBeInTheDocument();
+    const issueText = screen.getByText(/of 18 issues done/);
+    expect(issueText).toHaveTextContent(/18\s+of\s+18/);
   });
 
   it('renders empty state when sprint data is unavailable', () => {

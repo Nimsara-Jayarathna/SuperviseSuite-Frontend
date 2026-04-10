@@ -179,7 +179,7 @@ export function JiraSprintProgressSection({ fetcher, projectId }: JiraSprintProg
       : (selectedSprint?.issuesDone ?? 0);
 
   const sprintVelocitySeries = progress.recentSprints
-    .slice(0, 3)
+    .slice(0, 4)
     .reverse()
     .map((sprint, index) => ({
       id: sprint.sprintId ?? index,
@@ -313,7 +313,7 @@ export function JiraSprintProgressSection({ fetcher, projectId }: JiraSprintProg
 
   return (
     <section id="jira-sprint-progress" className="space-y-3">
-      <div className="flex items-center justify-between gap-3 border-t border-slate-200 pt-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3 border-t border-slate-200 pt-4">
         <div className="inline-flex items-center gap-2">
           <h2 className="text-base font-semibold tracking-wide text-slate-900">Sprint progress</h2>
         </div>
@@ -322,17 +322,17 @@ export function JiraSprintProgressSection({ fetcher, projectId }: JiraSprintProg
 
       <div className="space-y-4">
         <div className="grid gap-3 xl:grid-cols-2">
-          <article className="rounded-lg border-[0.5px] border-slate-200 bg-white px-4 py-4 shadow-sm transition-all hover:border-slate-300 hover:shadow-md">
+          <article className="group rounded-xl border border-slate-200 bg-white px-4 py-4 shadow-sm transition-all duration-300 hover:border-slate-300 hover:shadow-md">
             <div className="mb-3">
               <label
                 htmlFor="jira-sprint-selector"
-                className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-600"
+                className="mb-1.5 block text-sm font-bold text-slate-700"
               >
-                Sprint selector
+                Sprint
               </label>
               <select
                 id="jira-sprint-selector"
-                className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm transition-colors hover:border-slate-400 focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500"
+                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-800 shadow-sm transition-colors hover:border-slate-300 focus:border-indigo-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100"
                 value={selectedSprintKey}
                 onChange={(event) => setSelectedSprintKey(event.target.value)}
               >
@@ -351,120 +351,157 @@ export function JiraSprintProgressSection({ fetcher, projectId }: JiraSprintProg
             </div>
             {selectedSprint ? (
               <>
-                <div className="flex items-start justify-between gap-3">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 w-full">
                   <div className="min-w-0">
-                    <h3 className="text-sm font-semibold text-slate-900">
+                    <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">
                       {isViewingCurrentSprint ? 'Active sprint' : 'Selected sprint'}
-                    </h3>
-                    <div className="mt-2 flex flex-wrap items-center gap-2">
-                      <p className="truncate text-sm font-semibold text-slate-800">
+                    </p>
+                    <div className="mt-1 flex flex-wrap items-center gap-2">
+                      <p className="truncate text-base font-bold text-slate-900">
                         {selectedSprint.sprintName?.trim() || 'Unnamed sprint'}
                       </p>
                       {isViewingCurrentSprint && daysLeft !== null ? (
-                        <span className="rounded-full border border-amber-300 bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
+                        <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700">
                           {daysLeft} day{daysLeft === 1 ? '' : 's'} left
                         </span>
                       ) : selectedSprint.sprintState ? (
-                        <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-semibold capitalize text-slate-700">
+                        <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-semibold capitalize text-slate-600">
                           {selectedSprint.sprintState}
                         </span>
                       ) : null}
                     </div>
-                    <p className="mt-1 text-xs text-slate-500">
+                    <p className="mt-0.5 text-xs text-slate-400">
                       {formatSprintRange(selectedSprint.startDate, selectedSprint.endDate)}
                     </p>
                   </div>
 
-                  <svg
-                    viewBox="0 0 48 48"
-                    className="h-12 w-12 shrink-0"
-                    role="img"
-                    aria-label={`Sprint health score ${sprintHealthScore}%`}
-                  >
-                    <circle
-                      cx="24"
-                      cy="24"
-                      r={compactRingRadius}
-                      fill="none"
-                      stroke="#e2e8f0"
-                      strokeWidth="5"
-                    />
-                    <circle
-                      cx="24"
-                      cy="24"
-                      r={compactRingRadius}
-                      fill="none"
-                      stroke="#10b981"
-                      strokeWidth="5"
-                      strokeLinecap="round"
-                      strokeDasharray={compactRingCircumference}
-                      strokeDashoffset={compactRingStrokeOffset}
-                      transform="rotate(-90 24 24)"
-                    />
-                    <text
-                      x="24"
-                      y="27"
-                      textAnchor="middle"
-                      className="fill-slate-700 text-[9px] font-semibold"
+                  {/* Health ring */}
+                  <div className="flex shrink-0 flex-col items-center gap-0.5">
+                    <svg
+                      viewBox="0 0 48 48"
+                      className="h-12 w-12"
+                      role="img"
+                      aria-label={`Sprint health score ${sprintHealthScore}%`}
                     >
-                      {sprintHealthScore}
-                    </text>
-                  </svg>
+                      <circle
+                        cx="24"
+                        cy="24"
+                        r={compactRingRadius}
+                        fill="none"
+                        stroke="#F1F5F9"
+                        strokeWidth="5"
+                      />
+                      <circle
+                        cx="24"
+                        cy="24"
+                        r={compactRingRadius}
+                        fill="none"
+                        stroke={
+                          sprintHealthScore >= 70
+                            ? '#10B981'
+                            : sprintHealthScore >= 40
+                              ? '#F59E0B'
+                              : '#EF4444'
+                        }
+                        strokeWidth="5"
+                        strokeLinecap="round"
+                        strokeDasharray={compactRingCircumference}
+                        strokeDashoffset={compactRingStrokeOffset}
+                        transform="rotate(-90 24 24)"
+                      />
+                      <text
+                        x="24"
+                        y="28"
+                        textAnchor="middle"
+                        fontSize="11"
+                        fontWeight="700"
+                        fill="#1E293B"
+                        fontFamily="inherit"
+                      >
+                        {sprintHealthScore}
+                      </text>
+                    </svg>
+                    <span className="text-[9px] font-medium uppercase tracking-wider text-slate-400 transition-colors duration-300 group-hover:text-slate-600">
+                      health
+                    </span>
+                  </div>
                 </div>
 
-                <div className="mt-4">
-                  <div className="flex items-center justify-between text-xs text-slate-600">
-                    <span>Issue completion</span>
-                    <span className="font-semibold text-slate-800">{issueCompletionPercent}%</span>
-                  </div>
-                  <div className="mt-1 h-2 rounded-full bg-slate-100">
-                    <div
-                      className="h-2 rounded-full bg-emerald-500"
-                      style={{ width: `${issueCompletionPercent}%` }}
-                      aria-hidden
-                    />
-                  </div>
-                  <p className="mt-1 text-xs text-slate-600">
-                    {selectedSprint.issuesDone} done of {selectedSprint.issuesTotal} issues
-                  </p>
-
-                  <div className="mt-3 flex items-center justify-between text-xs text-slate-600">
-                    <span>SP completion</span>
-                    <span className="font-semibold text-slate-800">{pointsCompletionPercent}%</span>
-                  </div>
-                  <div className="mt-1 h-2 rounded-full bg-slate-100">
-                    <div
-                      className="h-2 rounded-full bg-sky-500"
-                      style={{ width: `${pointsCompletionPercent}%` }}
-                      aria-hidden
-                    />
-                  </div>
-                  {selectedSprint.sprintPointsAvailable ? (
-                    <p className="mt-1 text-xs text-slate-600">
-                      {selectedSprint.sprintPointsDone.toFixed(1)} /{' '}
-                      {selectedSprint.sprintPointsTotal.toFixed(1)} SP done
+                <div className="mt-4 space-y-3">
+                  {/* Issue completion */}
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-slate-500">Issue completion</span>
+                      <span className="text-xs font-bold tabular-nums text-slate-800">
+                        {issueCompletionPercent}%
+                      </span>
+                    </div>
+                    <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-slate-100">
+                      <div
+                        className="h-full rounded-full bg-emerald-500 transition-all duration-500"
+                        style={{ width: `${issueCompletionPercent}%` }}
+                        aria-hidden
+                      />
+                    </div>
+                    <p className="mt-1 text-[11px] text-slate-400">
+                      <span className="font-semibold text-emerald-600">
+                        {selectedSprint.issuesDone}
+                      </span>{' '}
+                      of {selectedSprint.issuesTotal} issues done
                     </p>
-                  ) : (
-                    <p className="mt-1 inline-flex items-center gap-1 text-xs text-amber-700">
-                      <AlertTriangle className="h-3.5 w-3.5" />
-                      SP data unavailable
-                    </p>
-                  )}
+                  </div>
 
-                  <p className="mt-3 text-xs text-slate-500">
-                    Est. {projectedIssueDoneCount}/{selectedSprint.issuesTotal} issues by sprint end
+                  {/* SP completion */}
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-slate-500">Story points</span>
+                      <span className="text-xs font-bold tabular-nums text-slate-800">
+                        {pointsCompletionPercent}%
+                      </span>
+                    </div>
+                    <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-slate-100">
+                      <div
+                        className="h-full rounded-full bg-indigo-500 transition-all duration-500"
+                        style={{ width: `${pointsCompletionPercent}%` }}
+                        aria-hidden
+                      />
+                    </div>
+                    {selectedSprint.sprintPointsAvailable ? (
+                      <p className="mt-1 text-[11px] text-slate-400">
+                        <span className="font-semibold text-indigo-600">
+                          {selectedSprint.sprintPointsDone.toFixed(1)}
+                        </span>{' '}
+                        / {selectedSprint.sprintPointsTotal.toFixed(1)} SP done
+                      </p>
+                    ) : (
+                      <p className="mt-1 inline-flex items-center gap-1 text-[11px] text-amber-600">
+                        <AlertTriangle className="h-3 w-3" />
+                        SP data unavailable
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Projection */}
+                  <p className="rounded-lg border border-slate-100 bg-slate-50 px-2.5 py-1.5 text-[11px] text-slate-500">
+                    Projected:{' '}
+                    <span className="font-semibold text-slate-700">
+                      {projectedIssueDoneCount}/{selectedSprint.issuesTotal}
+                    </span>{' '}
+                    issues by sprint end
                   </p>
                 </div>
               </>
             ) : (
-              <div className="mt-3 rounded-xl border border-dashed border-slate-200 bg-slate-50 px-3 py-4 text-sm text-slate-600">
+              <div className="mt-3 rounded-xl border border-dashed border-slate-200 bg-slate-50 px-3 py-4 text-sm text-slate-500">
                 No active sprint detected. Recent sprint history is still shown below.
               </div>
             )}
           </article>
 
-          <section className="rounded-lg border-[0.5px] border-slate-200 bg-white px-4 py-3 shadow-sm transition-all hover:border-slate-300 hover:shadow-md">
-            <h3 className="text-sm font-semibold text-slate-900">This week</h3>
+          <section className="rounded-xl border border-slate-200 bg-white px-4 py-4 shadow-sm transition-all duration-300 hover:border-slate-300 hover:shadow-md">
+            <div className="mb-3 flex items-center gap-2">
+              <p className="text-sm font-bold text-slate-700">This week</p>
+            </div>
             <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
               {[
                 {
@@ -472,22 +509,22 @@ export function JiraSprintProgressSection({ fetcher, projectId }: JiraSprintProg
                   current: thisWeekClosed,
                   previous: previousWeekClosed,
                   delta: thisWeekVsPrevious.closed,
-                  currentLabel: (value: number | null) => (value === null ? 'N/A' : `${value}`),
+                  currentLabel: (value: number | null) => (value === null ? '—' : `${value}`),
                   previousLabel: (value: number | null) =>
-                    value === null ? 'N/A last week' : `${value} last week`,
+                    value === null ? '— last wk' : `${value} last wk`,
                   isImproving: (value: number) => value > 0,
-                  currentColor: '#059669',
+                  valueColor: 'text-emerald-600',
                 },
                 {
                   label: 'Opened',
                   current: thisWeekOpened,
                   previous: previousWeekOpened,
                   delta: thisWeekVsPrevious.opened,
-                  currentLabel: (value: number | null) => (value === null ? 'N/A' : `${value}`),
+                  currentLabel: (value: number | null) => (value === null ? '—' : `${value}`),
                   previousLabel: (value: number | null) =>
-                    value === null ? 'N/A last week' : `${value} last week`,
+                    value === null ? '— last wk' : `${value} last wk`,
                   isImproving: (value: number) => value < 0,
-                  currentColor: '#0F172A',
+                  valueColor: 'text-slate-800',
                 },
                 {
                   label: 'Net',
@@ -495,19 +532,16 @@ export function JiraSprintProgressSection({ fetcher, projectId }: JiraSprintProg
                   previous: previousWeekNet,
                   delta: thisWeekVsPrevious.net,
                   currentLabel: (value: number | null) => {
-                    if (value === null) {
-                      return 'N/A';
-                    }
+                    if (value === null) return '—';
                     return value > 0 ? `+${value}` : `${value}`;
                   },
                   previousLabel: (value: number | null) => {
-                    if (value === null) {
-                      return 'N/A last week';
-                    }
-                    return `${value > 0 ? '+' : ''}${value} last week`;
+                    if (value === null) return '— last wk';
+                    return `${value > 0 ? '+' : ''}${value} last wk`;
                   },
                   isImproving: (value: number) => value > 0,
-                  currentColor: thisWeekNet !== null && thisWeekNet < 0 ? '#DC2626' : '#059669',
+                  valueColor:
+                    thisWeekNet !== null && thisWeekNet < 0 ? 'text-red-600' : 'text-emerald-600',
                 },
                 {
                   label: 'Avg cycle',
@@ -515,61 +549,65 @@ export function JiraSprintProgressSection({ fetcher, projectId }: JiraSprintProg
                   previous: previousWeekAvgCycleDays,
                   delta: thisWeekVsPrevious.avgCycle,
                   currentLabel: (value: number | null) =>
-                    value === null ? 'N/A' : `${value.toFixed(1)}d`,
+                    value === null ? '—' : `${value.toFixed(1)}d`,
                   previousLabel: (value: number | null) =>
-                    value === null ? 'N/A last week' : `${value.toFixed(1)}d last week`,
+                    value === null ? '— last wk' : `${value.toFixed(1)}d last wk`,
                   isImproving: (value: number) => value < 0,
-                  currentColor: '#0F172A',
+                  valueColor: 'text-slate-800',
                 },
               ].map((metric) => {
                 const delta = metric.delta;
                 const hasDelta = delta !== null;
                 const isImproving = hasDelta && metric.isImproving(delta);
                 const isWorsening = hasDelta && delta !== 0 && !isImproving;
-                const arrow = !hasDelta || delta === 0 ? '→' : delta > 0 ? '↑' : '↓';
-                const deltaLabel = !hasDelta
-                  ? 'No prior week'
-                  : delta === 0
-                    ? `${arrow} 0`
-                    : `${arrow} ${delta > 0 ? '+' : ''}${metric.label === 'Avg cycle' ? `${delta.toFixed(1)}d` : Math.round(delta)}`;
+
+                const deltaSign = !hasDelta || delta === 0 ? '' : delta > 0 ? '+' : '';
+                const deltaValue = !hasDelta
+                  ? null
+                  : metric.label === 'Avg cycle'
+                    ? `${deltaSign}${delta.toFixed(1)}d`
+                    : `${deltaSign}${Math.round(delta)}`;
+
+                const deltaBadgeClass =
+                  !hasDelta || delta === 0
+                    ? 'bg-slate-100 text-slate-500'
+                    : isImproving
+                      ? 'bg-emerald-50 border border-emerald-200 text-emerald-700'
+                      : isWorsening
+                        ? 'bg-red-50 border border-red-200 text-red-700'
+                        : 'bg-slate-100 text-slate-500';
+
                 return (
                   <div
                     key={metric.label}
-                    className="grid min-h-[112px] grid-rows-[auto_auto_auto_auto] content-start rounded-md px-3 py-3 text-center transition-all hover:-translate-y-0.5 hover:shadow-sm"
-                    style={{
-                      background: 'var(--color-background-secondary)',
-                      border: '0.5px solid var(--color-border-tertiary)',
-                      borderRadius: 'var(--border-radius-md)',
-                    }}
+                    className="flex flex-col gap-1.5 rounded-xl border border-slate-100 bg-slate-50/60 px-3 py-3 transition-all duration-200 hover:border-slate-200 hover:bg-slate-50 hover:shadow-sm"
                   >
-                    <span
-                      className="leading-none"
-                      style={{ fontSize: 11, color: 'var(--color-text-secondary)' }}
-                    >
+                    {/* Label */}
+                    <span className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">
                       {metric.label}
                     </span>
+
+                    {/* Value */}
                     <span
-                      className="mt-1 font-semibold leading-none"
-                      style={{ fontSize: 20, color: metric.currentColor }}
+                      className={`text-xl font-bold tabular-nums leading-none ${metric.valueColor}`}
                     >
                       {metric.currentLabel(metric.current)}
                     </span>
-                    <span className="mt-1 text-[11px] leading-none text-slate-500">
+
+                    {/* Previous */}
+                    <span className="text-[10px] text-slate-400">
                       {metric.previousLabel(metric.previous)}
                     </span>
+
+                    {/* Delta badge */}
                     <span
-                      className="mt-1 text-[10px] font-semibold leading-none"
-                      style={{
-                        color: !hasDelta
-                          ? '#64748B'
-                          : isWorsening
-                            ? '#DC2626'
-                            : isImproving
-                              ? '#059669'
-                              : '#475569',
-                      }}
+                      className={`mt-auto self-start rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums ${deltaBadgeClass}`}
                     >
-                      {deltaLabel}
+                      {deltaValue === null
+                        ? 'No prior wk'
+                        : deltaValue === '+0' || deltaValue === '0' || deltaValue === '-0'
+                          ? '→ No change'
+                          : deltaValue}
                     </span>
                   </div>
                 );
@@ -577,48 +615,58 @@ export function JiraSprintProgressSection({ fetcher, projectId }: JiraSprintProg
             </div>
 
             {latestVelocityWeek ? (
-              <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3">
-                <div className="flex items-center justify-between text-xs text-slate-600">
-                  <span>Opened issues</span>
-                  <span className="font-semibold text-slate-800">{thisWeekOpenedCount}</span>
+              <div className="mt-3 rounded-xl border border-slate-100 bg-slate-50 px-3 py-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-medium text-slate-500">Opened this week</span>
+                  <span className="text-xs font-bold tabular-nums text-slate-700">
+                    {thisWeekOpenedCount}
+                  </span>
                 </div>
-                <div className="mt-1 h-2 overflow-hidden rounded-full bg-slate-200">
+                <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-200">
                   <div className="flex h-full w-full">
                     <div
-                      className="h-full bg-emerald-500"
+                      className="h-full bg-emerald-500 transition-all duration-500"
                       style={{ width: `${thisWeekClosedPercent}%` }}
                       aria-hidden
                     />
                     <div
-                      className="h-full bg-rose-500"
+                      className="h-full bg-rose-400 transition-all duration-500"
                       style={{ width: `${100 - thisWeekClosedPercent}%` }}
                       aria-hidden
                     />
                   </div>
                 </div>
-                <div className="mt-2 flex items-center justify-between text-[11px] text-slate-600">
-                  <span>
-                    <span className="font-semibold text-emerald-700">{thisWeekClosedCount}</span>{' '}
+                <div className="mt-1.5 flex items-center justify-between">
+                  <span className="flex items-center gap-1 text-[10px] text-slate-500">
+                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                    <span className="font-semibold text-emerald-600">
+                      {thisWeekClosedCount}
+                    </span>{' '}
                     closed
                   </span>
-                  <span>
-                    <span className="font-semibold text-rose-700">{thisWeekNotYetCount}</span> not
+                  <span className="flex items-center gap-1 text-[10px] text-slate-500">
+                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-rose-400" />
+                    <span className="font-semibold text-rose-600">{thisWeekNotYetCount}</span> not
                     yet
                   </span>
                 </div>
               </div>
             ) : (
-              <div className="mt-3 rounded-md border border-dashed border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-500">
+              <div className="mt-3 rounded-xl border border-dashed border-slate-200 bg-slate-50 px-3 py-2 text-[11px] text-slate-400">
                 Weekly opened/closed bar appears once weekly data is available.
               </div>
             )}
 
-            <p className="mt-3 text-xs font-medium text-slate-700">{weeklyInsight}</p>
+            {/* Weekly insight callout */}
+            <div className="mt-3 flex items-start gap-2 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2.5">
+              <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-indigo-400" />
+              <p className="text-[11px] font-medium text-slate-600">{weeklyInsight}</p>
+            </div>
           </section>
         </div>
 
-        <section className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 transition-all hover:border-slate-300 hover:shadow-md">
-          <div className="flex items-center justify-between gap-2">
+        <section className="rounded-xl border border-slate-200 bg-white px-4 py-4 shadow-sm transition-all duration-300 hover:border-slate-300 hover:shadow-md">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 w-full">
             <h3 className="text-sm font-semibold text-slate-900">Sprint velocity</h3>
             <p className="text-xs font-semibold text-slate-700">
               Avg completed: {Math.round(sprintCompletedAverage)} SP/sprint
@@ -629,9 +677,10 @@ export function JiraSprintProgressSection({ fetcher, projectId }: JiraSprintProg
           </p>
 
           {sprintVelocitySeries.length > 0 ? (
-            <div className="mt-3">
-              <div className="h-36 rounded-lg border border-slate-200 bg-white px-2 py-2">
-                <ResponsiveContainer width="100%" height="100%">
+            <div className="mt-3 min-w-0">
+              <div className="h-36 w-full min-w-0 rounded-lg border border-slate-200 bg-white px-2 py-2">
+                {/* Numeric height avoids Recharts measuring 100% before layout (-1 x -1 warning). */}
+                <ResponsiveContainer width="100%" height={144}>
                   <BarChart
                     data={sprintVelocitySeries}
                     margin={{ top: 12, right: 12, left: 4, bottom: 4 }}
@@ -653,7 +702,7 @@ export function JiraSprintProgressSection({ fetcher, projectId }: JiraSprintProg
                     <Tooltip
                       formatter={(value, name) => [
                         `${Number(value ?? 0).toFixed(1)} SP`,
-                        name === 'committed' ? 'Committed' : 'Completed',
+                        String(name).toLowerCase() === 'committed' ? 'Committed' : 'Completed',
                       ]}
                       contentStyle={{
                         fontSize: 12,
@@ -723,8 +772,8 @@ export function JiraSprintProgressSection({ fetcher, projectId }: JiraSprintProg
         <article className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm transition-all hover:border-slate-300 hover:shadow-md">
           <h3 className="text-sm font-semibold text-slate-900">Recent sprints</h3>
           {progress.recentSprints.length > 0 ? (
-            <div className="mt-3 overflow-hidden rounded-lg border border-slate-200">
-              <table className="w-full table-fixed text-xs">
+            <div className="mt-3 flex flex-col rounded-lg border border-slate-200 sm:block sm:overflow-hidden">
+              <table className="hidden w-full table-fixed text-xs sm:table">
                 <colgroup>
                   <col className="w-[32%]" />
                   <col className="w-[30%]" />
@@ -740,7 +789,7 @@ export function JiraSprintProgressSection({ fetcher, projectId }: JiraSprintProg
                   </tr>
                 </thead>
                 <tbody>
-                  {progress.recentSprints.slice(0, 3).map((sprint) => {
+                  {progress.recentSprints.slice(0, 4).map((sprint) => {
                     const completion = Math.max(
                       0,
                       Math.min(100, Math.round(sprint.completionPercent)),
@@ -784,6 +833,45 @@ export function JiraSprintProgressSection({ fetcher, projectId }: JiraSprintProg
                   })}
                 </tbody>
               </table>
+
+              <div className="flex flex-col divide-y divide-slate-100 sm:hidden">
+                {progress.recentSprints.slice(0, 4).map((sprint) => {
+                  const completion = Math.max(
+                    0,
+                    Math.min(100, Math.round(sprint.completionPercent)),
+                  );
+                  return (
+                    <div
+                      key={`mob-${sprint.sprintId ?? 'unknown'}-${sprint.sprintName ?? 'sprint'}`}
+                      className="p-3 transition-colors hover:bg-slate-50"
+                    >
+                      <div className="mb-1 flex items-start justify-between gap-2">
+                        <span className="truncate font-semibold leading-tight text-slate-900">
+                          {sprint.sprintName?.trim() || 'Unnamed sprint'}
+                        </span>
+                        <span className="inline-flex shrink-0 leading-none rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold capitalize text-slate-700">
+                          {sprint.sprintState ?? 'unknown'}
+                        </span>
+                      </div>
+                      <div className="mb-2 truncate text-[11px] text-slate-500">
+                        {formatSprintRange(sprint.startDate, sprint.endDate)}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200">
+                          <div
+                            className="h-1.5 rounded-full bg-emerald-500"
+                            style={{ width: `${completion}%` }}
+                            aria-hidden
+                          />
+                        </div>
+                        <span className="shrink-0 text-xs font-semibold tabular-nums text-slate-700">
+                          {completion}% progress
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           ) : (
             <div className="mt-3 rounded-xl border border-dashed border-slate-200 bg-slate-50 px-3 py-4 text-sm text-slate-600">
