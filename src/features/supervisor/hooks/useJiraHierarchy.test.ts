@@ -1,13 +1,6 @@
-import { renderHook, waitFor } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { useJiraHierarchy } from './useJiraHierarchy';
-import { supervisorApi } from '../api/supervisorApi';
 import type { JiraHierarchy } from '../types';
-
-vi.mock('../api/supervisorApi', () => ({
-  supervisorApi: {
-    getProjectJiraHierarchy: vi.fn(),
-  },
-}));
 
 const hierarchy: JiraHierarchy = {
   roots: [
@@ -26,30 +19,40 @@ const hierarchy: JiraHierarchy = {
 };
 
 describe('useJiraHierarchy', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
+  it('loads lazily when load is called', async () => {
+    const fetcher = vi.fn().mockResolvedValue(hierarchy);
+
+    const { result } = renderHook(() => useJiraHierarchy(fetcher, 'project-1'));
+
+    expect(result.current.isLoading).toBe(false);
+    expect(fetcher).not.toHaveBeenCalled();
+
+    await act(async () => {
+      await result.current.load();
+    });
+
+    expect(fetcher).toHaveBeenCalledWith('project-1');
+    expect(result.current.data).toEqual(hierarchy);
+    expect(result.current.hasLoaded).toBe(true);
   });
 
-  it('starts loading when projectId is provided and resolves to data', async () => {
-    vi.mocked(supervisorApi.getProjectJiraHierarchy).mockResolvedValue(hierarchy);
+  it('loads immediately when lazy is false', async () => {
+    const fetcher = vi.fn().mockResolvedValue(hierarchy);
 
-    const { result } = renderHook(() => useJiraHierarchy('project-1'));
-
-    expect(result.current.isLoading).toBe(true);
+    const { result } = renderHook(() => useJiraHierarchy(fetcher, 'project-1', false));
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false);
     });
 
-    expect(supervisorApi.getProjectJiraHierarchy).toHaveBeenCalledWith('project-1');
+    expect(fetcher).toHaveBeenCalledWith('project-1');
     expect(result.current.data).toEqual(hierarchy);
-    expect(result.current.error).toBeNull();
   });
 
-  it('sets error state when request fails', async () => {
-    vi.mocked(supervisorApi.getProjectJiraHierarchy).mockRejectedValue(new Error('failed'));
+  it('maps unexpected errors to INTERNAL_ERROR', async () => {
+    const fetcher = vi.fn().mockRejectedValue(new Error('failed'));
 
-    const { result } = renderHook(() => useJiraHierarchy('project-1'));
+    const { result } = renderHook(() => useJiraHierarchy(fetcher, 'project-1', false));
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false);
@@ -58,17 +61,5 @@ describe('useJiraHierarchy', () => {
     expect(result.current.data).toBeNull();
     expect(result.current.error?.code).toBe('INTERNAL_ERROR');
     expect(result.current.error?.message).toBe('Unable to load Jira hierarchy.');
-  });
-
-  it('resets state when projectId is undefined', async () => {
-    const { result } = renderHook(() => useJiraHierarchy(undefined));
-
-    await waitFor(() => {
-      expect(result.current.isLoading).toBe(false);
-    });
-
-    expect(supervisorApi.getProjectJiraHierarchy).not.toHaveBeenCalled();
-    expect(result.current.data).toBeNull();
-    expect(result.current.error).toBeNull();
   });
 });

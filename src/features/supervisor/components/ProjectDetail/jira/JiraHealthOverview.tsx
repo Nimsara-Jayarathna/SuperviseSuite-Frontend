@@ -15,7 +15,9 @@ import { EmptyState } from '@/components/feedback/EmptyState';
 import { ErrorState } from '@/components/feedback/ErrorState';
 import { isApiException } from '@/services/apiClient';
 import type { ApiError } from '@/types';
+import { supervisorApi } from '../../../api/supervisorApi';
 import { useJiraHealth } from '../../../hooks/useJiraHealth';
+import { useJiraHierarchy } from '../../../hooks/useJiraHierarchy';
 import type { JiraHealth, JiraHierarchy, JiraSprintProgress, JiraWorkload } from '../../../types';
 import { JiraWorkloadPanel } from './workload/JiraWorkloadPanel';
 import { JiraHealthSkeleton } from './JiraHealthSkeleton';
@@ -33,16 +35,13 @@ type JiraHealthOverviewProps = {
   sprintFetcher?: (projectId: string) => Promise<JiraSprintProgress>;
   /** Optional workload fetcher shared by supervisor and student views. */
   workloadFetcher?: (projectId: string) => Promise<JiraWorkload>;
+  /** Optional hierarchy fetcher shared by supervisor and student views. */
+  hierarchyFetcher?: (projectId: string) => Promise<JiraHierarchy>;
   /** Optional sync action (supervisor-only) to pull fresh issues from Jira before reload. */
   syncer?: (projectId: string) => Promise<JiraHealth>;
   projectId: string;
   workspaceName?: string | null;
   workspaceUrl?: string | null;
-  hierarchyState?: {
-    data: JiraHierarchy | null;
-    isLoading: boolean;
-    error: { message: string } | null;
-  };
 };
 
 type JiraInsightsTab = 'health' | 'sprint-progress' | 'workload' | 'hierarchy';
@@ -106,13 +105,20 @@ export function JiraHealthOverview({
   fetcher,
   sprintFetcher,
   workloadFetcher,
+  hierarchyFetcher,
   syncer,
   projectId,
   workspaceName,
   workspaceUrl,
-  hierarchyState,
 }: JiraHealthOverviewProps) {
   const { health, isLoading, error, reload, applyHealth } = useJiraHealth(fetcher, projectId);
+  const {
+    data: hierarchyData,
+    isLoading: isHierarchyLoading,
+    error: hierarchyError,
+    hasLoaded: hierarchyHasLoaded,
+    load: loadHierarchy,
+  } = useJiraHierarchy(hierarchyFetcher ?? supervisorApi.getProjectJiraHierarchy, projectId);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastRefreshAt, setLastRefreshAt] = useState<string | null>(null);
   const [refreshError, setRefreshError] = useState<ApiError | null>(null);
@@ -239,10 +245,15 @@ export function JiraHealthOverview({
     ...(workloadFetcher
       ? [{ value: 'workload' as const, label: 'Team Workload', icon: Users }]
       : []),
-    ...(hierarchyState
-      ? [{ value: 'hierarchy' as const, label: 'Hierarchy', icon: GitBranch }]
-      : []),
+    { value: 'hierarchy', label: 'Hierarchy', icon: GitBranch },
   ];
+
+  function handleInsightsTabChange(tab: JiraInsightsTab) {
+    setActiveInsightsTab(tab);
+    if (tab === 'hierarchy' && !hierarchyHasLoaded && !isHierarchyLoading) {
+      void loadHierarchy();
+    }
+  }
 
   const contextBar = (
     <section className="rounded-3xl border border-slate-200 bg-white px-5 py-5 shadow-sm transition-all duration-300 hover:border-slate-300 hover:shadow-md">
@@ -353,7 +364,7 @@ export function JiraHealthOverview({
               <li key={tab.value}>
                 <button
                   type="button"
-                  onClick={() => setActiveInsightsTab(tab.value)}
+                  onClick={() => handleInsightsTabChange(tab.value)}
                   className={`group inline-flex items-center gap-2 rounded-2xl border px-3 py-2 transition-all ${
                     isActive
                       ? tab.value === 'health'
@@ -454,13 +465,9 @@ export function JiraHealthOverview({
         </div>
       ) : null}
 
-      {activeInsightsTab === 'hierarchy' && hierarchyState ? (
+      {activeInsightsTab === 'hierarchy' ? (
         <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-300 hover:border-slate-300 hover:shadow-md">
-          <JiraHierarchyView
-            isLoading={hierarchyState.isLoading}
-            error={hierarchyState.error}
-            data={hierarchyState.data}
-          />
+          <JiraHierarchyView isLoading={isHierarchyLoading} error={hierarchyError} data={hierarchyData} />
         </div>
       ) : null}
     </div>

@@ -28,7 +28,6 @@ import { RoleBadge } from '@/components/ui/RoleBadge';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { StudentProjectDetailsSkeleton } from '../components/StudentProjectDetailsSkeleton';
 import { useStudentProject } from '../hooks/useStudentProject';
-import { useStudentJiraHierarchy } from '../hooks/useStudentJiraHierarchy';
 import { studentApi } from '../api/studentApi';
 // NOTE: intentional cross-feature import. JiraHealthOverview is a shared
 // presentational component used by both supervisor and student roles.
@@ -138,11 +137,6 @@ export function StudentProjectDetailsPage() {
     project?.github ?? null,
   );
   const [isGitHubViewLoading, setIsGitHubViewLoading] = useState(false);
-  const {
-    data: hierarchyData,
-    isLoading: isHierarchyLoading,
-    error: hierarchyError,
-  } = useStudentJiraHierarchy(projectId);
 
   const enabledRepositories = useMemo(
     () =>
@@ -807,12 +801,8 @@ export function StudentProjectDetailsPage() {
               fetcher={studentApi.getJiraHealth}
               sprintFetcher={studentApi.getJiraSprintProgress}
               workloadFetcher={studentApi.getJiraWorkload}
+              hierarchyFetcher={studentApi.getProjectJiraHierarchy}
               projectId={projectId}
-              hierarchyState={{
-                data: hierarchyData,
-                isLoading: isHierarchyLoading,
-                error: hierarchyError,
-              }}
             />
           )}
         </section>
