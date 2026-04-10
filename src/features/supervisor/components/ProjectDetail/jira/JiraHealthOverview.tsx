@@ -293,11 +293,16 @@ export function JiraHealthOverview({
         {canRefresh ? (
           <button
             type="button"
-            className={buttonStyles({ variant: 'secondary', size: 'sm' })}
+            aria-label={isRefreshing ? 'Refreshing' : 'Refresh Jira data'}
+            className={buttonStyles({
+              variant: 'secondary',
+              size: 'sm',
+              className: 'w-9 px-0',
+            })}
             onClick={() => void performRefresh({ requestModal: true })}
             disabled={isRefreshing}
           >
-            {isRefreshing ? 'Refreshing...' : 'Refresh'}
+            <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
           </button>
         ) : null}
       </div>

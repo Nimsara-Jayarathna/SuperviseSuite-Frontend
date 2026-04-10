@@ -934,11 +934,18 @@ export function ProjectDetailsPage() {
                 <div className="flex shrink-0 items-center gap-2 pt-0.5">
                   <button
                     type="button"
-                    className={buttonStyles({ variant: 'secondary', size: 'sm' })}
+                    aria-label={isRefreshingGitHub ? 'Refreshing' : 'Refresh GitHub data'}
+                    className={buttonStyles({
+                      variant: 'secondary',
+                      size: 'sm',
+                      className: 'w-9 px-0',
+                    })}
                     onClick={() => void handleGitHubRefresh()}
                     disabled={isRefreshingGitHub}
                   >
-                    {isRefreshingGitHub ? 'Refreshing...' : 'Refresh'}
+                    <RefreshCw
+                      className={`h-3.5 w-3.5 ${isRefreshingGitHub ? 'animate-spin' : ''}`}
+                    />
                   </button>
 
                   {projectRepositories.repositories.filter((r) => r.enabled).length > 1 && (
