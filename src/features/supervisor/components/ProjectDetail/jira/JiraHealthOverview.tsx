@@ -33,6 +33,8 @@ type JiraHealthOverviewProps = {
   workloadFetcher?: (projectId: string) => Promise<JiraWorkload>;
   /** Optional sync action (supervisor-only) to pull fresh issues from Jira before reload. */
   syncer?: (projectId: string) => Promise<JiraHealth>;
+  issuesFetcher?: (projectId: string) => Promise<JiraIssueSummary[]>;
+  onIssueClick?: (issueKey: string) => void;
   projectId: string;
   workspaceName?: string | null;
   workspaceUrl?: string | null;
@@ -100,6 +102,8 @@ export function JiraHealthOverview({
   sprintFetcher,
   workloadFetcher,
   syncer,
+  issuesFetcher,
+  onIssueClick,
   projectId,
   workspaceName,
   workspaceUrl,
