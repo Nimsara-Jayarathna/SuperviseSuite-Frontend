@@ -1,4 +1,3 @@
-import { Users } from 'lucide-react';
 import { ErrorState } from '@/components/feedback/ErrorState';
 import { EmptyState } from '@/components/feedback/EmptyState';
 import { useJiraWorkload } from '../../../../hooks/useJiraWorkload';
@@ -38,9 +37,7 @@ export function JiraWorkloadPanel({ fetcher, projectId }: JiraWorkloadPanelProps
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3 border-t border-slate-200 pt-4 w-full">
         <div className="inline-flex items-center gap-2">
-          <h2 className="text-base font-semibold tracking-wide text-slate-900">
-            Team Workload
-          </h2>
+          <h2 className="text-base font-semibold tracking-wide text-slate-900">Team Workload</h2>
         </div>
         <p className="text-sm text-slate-600">Distribution of work across all members</p>
       </div>

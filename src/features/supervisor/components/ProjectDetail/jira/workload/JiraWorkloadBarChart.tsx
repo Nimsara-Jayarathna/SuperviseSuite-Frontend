@@ -11,7 +11,7 @@ const TYPE_PRIORITY: Record<string, number> = {
   defect: 3,
   task: 4,
   'sub-task': 5,
-  subtask: 5
+  subtask: 5,
 };
 
 function getSortWeight(type: string): number {
@@ -110,23 +110,27 @@ export function JiraWorkloadBarChart({ workload }: JiraWorkloadBarChartProps) {
                     NO WORK ASSIGNED
                   </span>
                 </div>
-              ) : member.issueTypeCounts && Object.keys(member.issueTypeCounts).length > 0 && (
-                <div className="flex pl-[9rem] pt-0.5">
-                  <div className="flex overflow-hidden rounded-md border border-slate-200/50 shadow-sm divide-x divide-slate-200/50">
-                    {Object.entries(member.issueTypeCounts)
-                      .sort((a, b) => getSortWeight(a[0]) - getSortWeight(b[0]))
-                      .map(([type, count]) => (
-                        <span 
-                          key={type} 
-                          className={`inline-flex items-center px-2 py-[2px] text-[10px] font-semibold tracking-wide ${getBadgeColors(type)}`}
-                        >
-                          {type} <span className="ml-1 opacity-70 px-1 border-l border-current">
-                            {count}
+              ) : (
+                member.issueTypeCounts &&
+                Object.keys(member.issueTypeCounts).length > 0 && (
+                  <div className="flex pl-[9rem] pt-0.5">
+                    <div className="flex overflow-hidden rounded-md border border-slate-200/50 shadow-sm divide-x divide-slate-200/50">
+                      {Object.entries(member.issueTypeCounts)
+                        .sort((a, b) => getSortWeight(a[0]) - getSortWeight(b[0]))
+                        .map(([type, count]) => (
+                          <span
+                            key={type}
+                            className={`inline-flex items-center px-2 py-[2px] text-[10px] font-semibold tracking-wide ${getBadgeColors(type)}`}
+                          >
+                            {type}{' '}
+                            <span className="ml-1 opacity-70 px-1 border-l border-current">
+                              {count}
+                            </span>
                           </span>
-                        </span>
-                    ))}
+                        ))}
+                    </div>
                   </div>
-                </div>
+                )
               )}
             </div>
           );

@@ -130,9 +130,7 @@ export const supervisorApi = {
   },
 
   getJiraWorkload(projectId: string): Promise<JiraWorkload> {
-    return apiClient.get<JiraWorkload>(
-      `/api/supervisor/projects/${projectId}/jira/workload`,
-    );
+    return apiClient.get<JiraWorkload>(`/api/supervisor/projects/${projectId}/jira/workload`);
   },
 
   refreshProjectJira(projectId: string): Promise<JiraHealth> {

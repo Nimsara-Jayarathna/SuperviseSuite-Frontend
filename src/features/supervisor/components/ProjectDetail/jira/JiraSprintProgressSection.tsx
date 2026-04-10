@@ -383,20 +383,47 @@ export function JiraSprintProgressSection({ fetcher, projectId }: JiraSprintProg
                       role="img"
                       aria-label={`Sprint health score ${sprintHealthScore}%`}
                     >
-                      <circle cx="24" cy="24" r={compactRingRadius} fill="none" stroke="#F1F5F9" strokeWidth="5" />
                       <circle
-                        cx="24" cy="24" r={compactRingRadius} fill="none"
-                        stroke={sprintHealthScore >= 70 ? '#10B981' : sprintHealthScore >= 40 ? '#F59E0B' : '#EF4444'}
-                        strokeWidth="5" strokeLinecap="round"
+                        cx="24"
+                        cy="24"
+                        r={compactRingRadius}
+                        fill="none"
+                        stroke="#F1F5F9"
+                        strokeWidth="5"
+                      />
+                      <circle
+                        cx="24"
+                        cy="24"
+                        r={compactRingRadius}
+                        fill="none"
+                        stroke={
+                          sprintHealthScore >= 70
+                            ? '#10B981'
+                            : sprintHealthScore >= 40
+                              ? '#F59E0B'
+                              : '#EF4444'
+                        }
+                        strokeWidth="5"
+                        strokeLinecap="round"
                         strokeDasharray={compactRingCircumference}
                         strokeDashoffset={compactRingStrokeOffset}
                         transform="rotate(-90 24 24)"
                       />
-                      <text x="24" y="28" textAnchor="middle" fontSize="11" fontWeight="700" fill="#1E293B" fontFamily="inherit">
+                      <text
+                        x="24"
+                        y="28"
+                        textAnchor="middle"
+                        fontSize="11"
+                        fontWeight="700"
+                        fill="#1E293B"
+                        fontFamily="inherit"
+                      >
                         {sprintHealthScore}
                       </text>
                     </svg>
-                    <span className="text-[9px] font-medium uppercase tracking-wider text-slate-400 transition-colors duration-300 group-hover:text-slate-600">health</span>
+                    <span className="text-[9px] font-medium uppercase tracking-wider text-slate-400 transition-colors duration-300 group-hover:text-slate-600">
+                      health
+                    </span>
                   </div>
                 </div>
 
@@ -405,7 +432,9 @@ export function JiraSprintProgressSection({ fetcher, projectId }: JiraSprintProg
                   <div>
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-medium text-slate-500">Issue completion</span>
-                      <span className="text-xs font-bold tabular-nums text-slate-800">{issueCompletionPercent}%</span>
+                      <span className="text-xs font-bold tabular-nums text-slate-800">
+                        {issueCompletionPercent}%
+                      </span>
                     </div>
                     <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-slate-100">
                       <div
@@ -415,8 +444,10 @@ export function JiraSprintProgressSection({ fetcher, projectId }: JiraSprintProg
                       />
                     </div>
                     <p className="mt-1 text-[11px] text-slate-400">
-                      <span className="font-semibold text-emerald-600">{selectedSprint.issuesDone}</span>
-                      {' '}of {selectedSprint.issuesTotal} issues done
+                      <span className="font-semibold text-emerald-600">
+                        {selectedSprint.issuesDone}
+                      </span>{' '}
+                      of {selectedSprint.issuesTotal} issues done
                     </p>
                   </div>
 
@@ -424,7 +455,9 @@ export function JiraSprintProgressSection({ fetcher, projectId }: JiraSprintProg
                   <div>
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-medium text-slate-500">Story points</span>
-                      <span className="text-xs font-bold tabular-nums text-slate-800">{pointsCompletionPercent}%</span>
+                      <span className="text-xs font-bold tabular-nums text-slate-800">
+                        {pointsCompletionPercent}%
+                      </span>
                     </div>
                     <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-slate-100">
                       <div
@@ -435,8 +468,10 @@ export function JiraSprintProgressSection({ fetcher, projectId }: JiraSprintProg
                     </div>
                     {selectedSprint.sprintPointsAvailable ? (
                       <p className="mt-1 text-[11px] text-slate-400">
-                        <span className="font-semibold text-indigo-600">{selectedSprint.sprintPointsDone.toFixed(1)}</span>
-                        {' '}/ {selectedSprint.sprintPointsTotal.toFixed(1)} SP done
+                        <span className="font-semibold text-indigo-600">
+                          {selectedSprint.sprintPointsDone.toFixed(1)}
+                        </span>{' '}
+                        / {selectedSprint.sprintPointsTotal.toFixed(1)} SP done
                       </p>
                     ) : (
                       <p className="mt-1 inline-flex items-center gap-1 text-[11px] text-amber-600">
@@ -448,7 +483,11 @@ export function JiraSprintProgressSection({ fetcher, projectId }: JiraSprintProg
 
                   {/* Projection */}
                   <p className="rounded-lg border border-slate-100 bg-slate-50 px-2.5 py-1.5 text-[11px] text-slate-500">
-                    Projected: <span className="font-semibold text-slate-700">{projectedIssueDoneCount}/{selectedSprint.issuesTotal}</span> issues by sprint end
+                    Projected:{' '}
+                    <span className="font-semibold text-slate-700">
+                      {projectedIssueDoneCount}/{selectedSprint.issuesTotal}
+                    </span>{' '}
+                    issues by sprint end
                   </p>
                 </div>
               </>
@@ -501,7 +540,8 @@ export function JiraSprintProgressSection({ fetcher, projectId }: JiraSprintProg
                     return `${value > 0 ? '+' : ''}${value} last wk`;
                   },
                   isImproving: (value: number) => value > 0,
-                  valueColor: thisWeekNet !== null && thisWeekNet < 0 ? 'text-red-600' : 'text-emerald-600',
+                  valueColor:
+                    thisWeekNet !== null && thisWeekNet < 0 ? 'text-red-600' : 'text-emerald-600',
                 },
                 {
                   label: 'Avg cycle',
@@ -548,7 +588,9 @@ export function JiraSprintProgressSection({ fetcher, projectId }: JiraSprintProg
                     </span>
 
                     {/* Value */}
-                    <span className={`text-xl font-bold tabular-nums leading-none ${metric.valueColor}`}>
+                    <span
+                      className={`text-xl font-bold tabular-nums leading-none ${metric.valueColor}`}
+                    >
                       {metric.currentLabel(metric.current)}
                     </span>
 
@@ -558,7 +600,9 @@ export function JiraSprintProgressSection({ fetcher, projectId }: JiraSprintProg
                     </span>
 
                     {/* Delta badge */}
-                    <span className={`mt-auto self-start rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums ${deltaBadgeClass}`}>
+                    <span
+                      className={`mt-auto self-start rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums ${deltaBadgeClass}`}
+                    >
                       {deltaValue === null
                         ? 'No prior wk'
                         : deltaValue === '+0' || deltaValue === '0' || deltaValue === '-0'
@@ -574,7 +618,9 @@ export function JiraSprintProgressSection({ fetcher, projectId }: JiraSprintProg
               <div className="mt-3 rounded-xl border border-slate-100 bg-slate-50 px-3 py-3">
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] font-medium text-slate-500">Opened this week</span>
-                  <span className="text-xs font-bold tabular-nums text-slate-700">{thisWeekOpenedCount}</span>
+                  <span className="text-xs font-bold tabular-nums text-slate-700">
+                    {thisWeekOpenedCount}
+                  </span>
                 </div>
                 <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-200">
                   <div className="flex h-full w-full">
@@ -593,11 +639,15 @@ export function JiraSprintProgressSection({ fetcher, projectId }: JiraSprintProg
                 <div className="mt-1.5 flex items-center justify-between">
                   <span className="flex items-center gap-1 text-[10px] text-slate-500">
                     <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                    <span className="font-semibold text-emerald-600">{thisWeekClosedCount}</span> closed
+                    <span className="font-semibold text-emerald-600">
+                      {thisWeekClosedCount}
+                    </span>{' '}
+                    closed
                   </span>
                   <span className="flex items-center gap-1 text-[10px] text-slate-500">
                     <span className="inline-block h-1.5 w-1.5 rounded-full bg-rose-400" />
-                    <span className="font-semibold text-rose-600">{thisWeekNotYetCount}</span> not yet
+                    <span className="font-semibold text-rose-600">{thisWeekNotYetCount}</span> not
+                    yet
                   </span>
                 </div>
               </div>

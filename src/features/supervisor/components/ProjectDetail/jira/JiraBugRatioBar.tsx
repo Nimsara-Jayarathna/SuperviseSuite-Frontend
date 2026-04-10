@@ -60,7 +60,6 @@ export function JiraBugRatioBar({ bugRatio }: JiraBugRatioBarProps) {
 
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:border-slate-300 hover:shadow-lg">
-
       {/* ── Header ─────────────────────────────────────────────────────── */}
       <div
         className={`flex items-center gap-3 border-b border-slate-100 bg-gradient-to-r ${cfg.headerBg} via-transparent to-transparent px-5 py-3.5`}
@@ -90,7 +89,6 @@ export function JiraBugRatioBar({ bugRatio }: JiraBugRatioBarProps) {
 
       {/* ── Risk gauge ──────────────────────────────────────────────────── */}
       <div className="px-5 py-4">
-
         {/* Zone labels */}
         <div className="mb-1.5 flex justify-between text-[10px] font-semibold uppercase tracking-widest text-slate-400">
           <span>Low risk</span>
@@ -102,9 +100,24 @@ export function JiraBugRatioBar({ bugRatio }: JiraBugRatioBarProps) {
         <div className="relative h-4 w-full overflow-visible rounded-full">
           {/* Gradient risk zones */}
           <div className="absolute inset-0 flex overflow-hidden rounded-full">
-            <div className="h-full" style={{ width: `${WATCH_THRESHOLD}%`, background: 'linear-gradient(90deg, #D1FAE5, #A7F3D0)' }} />
-            <div className="h-full" style={{ width: `${CRITICAL_THRESHOLD - WATCH_THRESHOLD}%`, background: 'linear-gradient(90deg, #FEF3C7, #FDE68A)' }} />
-            <div className="h-full flex-1" style={{ background: 'linear-gradient(90deg, #FEE2E2, #FECACA)' }} />
+            <div
+              className="h-full"
+              style={{
+                width: `${WATCH_THRESHOLD}%`,
+                background: 'linear-gradient(90deg, #D1FAE5, #A7F3D0)',
+              }}
+            />
+            <div
+              className="h-full"
+              style={{
+                width: `${CRITICAL_THRESHOLD - WATCH_THRESHOLD}%`,
+                background: 'linear-gradient(90deg, #FEF3C7, #FDE68A)',
+              }}
+            />
+            <div
+              className="h-full flex-1"
+              style={{ background: 'linear-gradient(90deg, #FEE2E2, #FECACA)' }}
+            />
           </div>
 
           {/* Zone dividers */}

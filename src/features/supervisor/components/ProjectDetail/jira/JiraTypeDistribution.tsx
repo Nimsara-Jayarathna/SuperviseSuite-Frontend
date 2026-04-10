@@ -20,8 +20,6 @@ function truncate(s: string, max = 18): string {
   return s.length > max ? `${s.slice(0, max)}\u2026` : s;
 }
 
-
-
 export function JiraTypeDistribution({ health }: JiraTypeDistributionProps) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
@@ -48,12 +46,9 @@ export function JiraTypeDistribution({ health }: JiraTypeDistributionProps) {
     );
   }
 
-  const maxCount = Math.max(...items.map((i) => i.count), 1);
-
   // ── Main card ────────────────────────────────────────────────────────────────
   return (
     <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:border-slate-300 hover:shadow-lg">
-
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <div className="flex items-center gap-3 border-b border-slate-100 bg-gradient-to-r from-indigo-50/70 via-transparent to-transparent px-5 py-3.5">
         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-indigo-500 text-white shadow-sm">
@@ -73,7 +68,6 @@ export function JiraTypeDistribution({ health }: JiraTypeDistributionProps) {
         {items.map((item, index) => {
           const palette = PALETTE[index % PALETTE.length];
           const sharePct = total > 0 ? (item.count / total) * 100 : 0;
-          const widthPct = sharePct;
           const isHovered = hoveredIndex === index;
 
           return (

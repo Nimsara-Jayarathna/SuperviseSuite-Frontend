@@ -175,8 +175,6 @@ export const studentApi = {
   },
 
   getJiraWorkload(projectId: string): Promise<JiraWorkload> {
-    return apiClient.get<JiraWorkload>(
-      `/api/student/projects/${projectId}/jira/workload`,
-    );
+    return apiClient.get<JiraWorkload>(`/api/student/projects/${projectId}/jira/workload`);
   },
 };

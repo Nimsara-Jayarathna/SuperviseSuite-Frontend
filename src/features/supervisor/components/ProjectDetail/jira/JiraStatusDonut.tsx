@@ -49,15 +49,7 @@ const SEGMENTS = [
 
 // ─── Active (hovered) slice shape ─────────────────────────────────────────────
 function ActiveShape(props: ActiveShapeProps) {
-  const {
-    cx = 0,
-    cy = 0,
-    innerRadius = 0,
-    outerRadius = 0,
-    startAngle,
-    endAngle,
-    color,
-  } = props;
+  const { cx = 0, cy = 0, innerRadius = 0, outerRadius = 0, startAngle, endAngle, color } = props;
 
   // Draw a slightly expanded arc via SVG path using recharts internals.
   // We leverage the sector geometry that recharts already computed for us.
@@ -164,9 +156,7 @@ export function JiraStatusDonut({ health }: JiraStatusDonutProps) {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
   const total =
-    health.statusBreakdown.done +
-    health.statusBreakdown.inProgress +
-    health.statusBreakdown.toDo;
+    health.statusBreakdown.done + health.statusBreakdown.inProgress + health.statusBreakdown.toDo;
 
   const completionPct = Math.round(health.completionPercent);
 
@@ -183,7 +173,6 @@ export function JiraStatusDonut({ health }: JiraStatusDonutProps) {
 
   return (
     <div className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:border-slate-300 hover:shadow-lg">
-
       {/* ── Tinted header ──────────────────────────────────────────────────── */}
       <div className="flex items-center gap-3 border-b border-slate-100 bg-gradient-to-r from-emerald-50/80 via-transparent to-transparent px-5 py-3.5">
         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-500 text-white shadow-sm">
@@ -197,7 +186,6 @@ export function JiraStatusDonut({ health }: JiraStatusDonutProps) {
 
       {/* ── Body ───────────────────────────────────────────────────────────── */}
       <div className="flex flex-1 flex-col gap-4 p-4 sm:flex-row sm:items-center sm:gap-5 sm:p-5">
-
         {/* Donut via Recharts */}
         <div className="relative mx-auto flex w-full min-w-0 max-w-[188px] shrink-0 flex-col items-center">
           <ResponsiveContainer
@@ -234,7 +222,9 @@ export function JiraStatusDonut({ health }: JiraStatusDonutProps) {
                     <ActiveShape
                       {...props}
                       color={
-                        activeIndex !== null ? SEGMENTS[activeIndex]?.color ?? '#10B981' : '#10B981'
+                        activeIndex !== null
+                          ? (SEGMENTS[activeIndex]?.color ?? '#10B981')
+                          : '#10B981'
                       }
                     />
                   ) as React.ReactElement
@@ -250,10 +240,7 @@ export function JiraStatusDonut({ health }: JiraStatusDonutProps) {
                 ))}
               </Pie>
 
-              <Tooltip
-                content={<CustomTooltip />}
-                wrapperStyle={{ outline: 'none' }}
-              />
+              <Tooltip content={<CustomTooltip />} wrapperStyle={{ outline: 'none' }} />
             </PieChart>
           </ResponsiveContainer>
 
@@ -338,8 +325,6 @@ export function JiraStatusDonut({ health }: JiraStatusDonutProps) {
           })}
         </ul>
       </div>
-
-
     </div>
   );
 }
