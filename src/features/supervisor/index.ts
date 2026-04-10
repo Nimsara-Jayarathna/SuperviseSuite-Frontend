@@ -18,3 +18,4 @@ export * from './pages/CreateProjectPage';
 export * from './pages/ProjectDetailsPage';
 export * from './pages/RequestGitHubRepositoryAccessPage';
 export * from './pages/GitHubAccessUpdatedPage';
+export * from './pages/JiraOAuthCallbackPage';

@@ -57,9 +57,192 @@ export type SupervisorProjectDetail = {
   repositoryUrl?: string | null;
   github: ProjectGitHubPreview;
   githubRepositories?: ProjectGitHubRepositories | null;
+  jira?: {
+    connected: boolean;
+    workspaceName: string | null;
+    workspaceUrl?: string | null;
+  } | null;
   leader: SupervisorProjectLeader | null;
   members: SupervisorProjectDetailMember[];
   milestones: SupervisorProjectDetailMilestone[];
+};
+
+export type JiraAuthUrl = {
+  url: string;
+};
+
+export type JiraOAuthCompletePayload = {
+  code?: string | null;
+  state?: string | null;
+  error?: string | null;
+  errorDescription?: string | null;
+  selectionToken?: string | null;
+  selectedCloudId?: string | null;
+};
+
+export type JiraWorkspaceOption = {
+  cloudId: string;
+  workspaceName: string;
+  workspaceUrl: string | null;
+};
+
+export type JiraOAuthCompleteResult = {
+  projectId: string;
+  workspaceName: string | null;
+  requiresWorkspaceSelection: boolean;
+  selectionToken: string | null;
+  workspaceOptions: JiraWorkspaceOption[];
+};
+
+export type JiraStatusBreakdown = {
+  toDo: number;
+  inProgress: number;
+  done: number;
+};
+
+export type JiraTypeDistributionItem = {
+  type: string;
+  count: number;
+};
+
+export type JiraHealth = {
+  completionPercent: number;
+  openIssues: number;
+  overdueIssues: number;
+  highPriorityOpen: number;
+  statusBreakdown: JiraStatusBreakdown;
+  typeDistribution: JiraTypeDistributionItem[];
+  bugRatio: number;
+  lastSyncedAt: string | null;
+};
+
+export type JiraSprintSummary = {
+  sprintId: number | null;
+  sprintName: string | null;
+  sprintState: string | null;
+  startDate: string | null;
+  endDate: string | null;
+  sprintStartIssueCount: number | null;
+  completionPercent: number;
+  issuesDone: number;
+  issuesTotal: number;
+  sprintPointsDone: number;
+  sprintPointsTotal: number;
+  sprintPointsAvailable: boolean;
+};
+
+export type JiraVelocityWeek = {
+  weekStart: string;
+  created: number;
+  resolved: number;
+  averageCycleDays: number | null;
+};
+
+export type JiraSprintProgress = {
+  activeSprint: JiraSprintSummary | null;
+  recentSprints: JiraSprintSummary[];
+  velocityWeeks: JiraVelocityWeek[];
+  backlogGrowing: boolean;
+  sprintDataAvailable: boolean;
+};
+
+/**
+ * Per-member row in the Team Workload comparison table and bar chart.
+ *
+ * Story-point fields are `null` — not `0` — when story points are not
+ * configured in the connected Jira project. The UI renders `—` for null values.
+ *
+ * `openIssues` is pre-computed by the backend (`assigned − completed`) and
+ * drives both the bar-chart widths and the default sort order of the table.
+ */
+export type JiraWorkloadMemberRow = {
+  /** Stable Jira account identifier. */
+  accountId: string;
+  /** Human-readable name shown in the table and bar chart. */
+  displayName: string;
+  /** Total issues attributed to this member (includes completed). */
+  assigned: number;
+  /** Issues in a "done" status category. */
+  completed: number;
+  /** Issues currently in an "in-progress" status category. */
+  inProgress: number;
+  /**
+   * Open issues past their due date (or past the 7-day activity-recency
+   * threshold when no due dates are set in the project).
+   */
+  overdue: number;
+  /**
+   * Open issue count (assigned − completed). Pre-computed by the backend.
+   * Drives bar-chart proportional widths and row sort order.
+   */
+  openIssues: number;
+  /** Total story points on all attributed issues. `null` when not configured. */
+  storyPointsAssigned: number | null;
+  /** Story points on completed issues only. `null` when not configured. */
+  storyPointsCompleted: number | null;
+  /**
+   * Percentage of assigned issues that are completed (0–100).
+   * `0` when `assigned` is zero.
+   */
+  completionRate: number;
+  /**
+   * ISO 8601 instant of the most recent `jiraUpdatedAt` across attributed
+   * issues. Used to compute "last active N hours/days ago" in the UI.
+   */
+  lastActiveDate: string;
+  /** Lookup dictionary counting issues by their Jira type (e.g., 'Story': 1) */
+  issueTypeCounts: Record<string, number>;
+};
+
+/**
+ * Team workload snapshot for a project's Jira tab.
+ *
+ * - `members` — sorted by `openIssues` descending; empty when no assignees exist.
+ * - `unassignedCount` — independent of `members`; non-zero even when `members` is empty.
+ * - `dueDateAvailable` — when `false`, overdue values are estimated from activity
+ *   recency and the UI renders an "estimate" badge on the Overdue column header.
+ * - `imbalanceDetected` / `imbalanceMessage` — drive the conditional alert banner.
+ */
+export type JiraWorkload = {
+  /** Per-member rows sorted by open issues descending. */
+  members: JiraWorkloadMemberRow[];
+  /**
+   * Issues with no Jira assignee. Shown in the unassigned warning card
+   * independently — visible even when `members` is empty.
+   */
+  unassignedCount: number;
+  /**
+   * `true` when at least one issue in the project has a due date set in Jira.
+   * When `false`, the Overdue column header renders an "estimate" badge.
+   */
+  dueDateAvailable: boolean;
+  /**
+   * `true` when one member has more than 3× the open issues of another
+   * AND the most-burdened member has at least 3 open issues.
+   */
+  imbalanceDetected: boolean;
+  /**
+   * Human-readable imbalance description, e.g.
+   * "Alice has 3x more open issues than Bob".
+   * `null` when `imbalanceDetected` is `false`.
+   */
+  imbalanceMessage: string | null;
+};
+
+export type JiraHierarchyNode = {
+  issueKey: string;
+  summary: string;
+  issueType: string;
+  status: string;
+  priority: string | null;
+  assigneeDisplayName: string | null;
+  storyPoints: number | null;
+  children: JiraHierarchyNode[];
+};
+
+export type JiraHierarchy = {
+  roots: JiraHierarchyNode[];
+  orphans: JiraHierarchyNode[];
 };
 
 export type SupervisorProjectTab =
@@ -70,7 +253,13 @@ export type SupervisorProjectTab =
   | 'action-items'
   | 'files';
 
-export type SupervisorProjectDetailTab = 'overview' | 'team' | 'milestones' | 'github';
+export type SupervisorProjectDetailTab =
+  | 'overview'
+  | 'team'
+  | 'milestones'
+  | 'github'
+  | 'integrations'
+  | 'jira';
 
 export type SupervisorProjectMember = {
   id: string;
@@ -172,6 +361,7 @@ export type SupervisorDashboardProjectItem = {
   lastActivityAt: string | null;
   progressPercent: number | null;
   healthNote: string | null;
+  jiraHealthIndicator: 'AT_RISK' | 'BEHIND' | 'HEALTHY' | 'NOT_CONNECTED' | null;
 };
 
 export type SupervisorDashboard = {
@@ -182,6 +372,8 @@ export type SupervisorDashboard = {
   behindProjects: number;
   completedProjects: number;
   upcomingMilestonesCount: number;
+  jiraAtRiskCount: number;
+  jiraBehindCount: number;
   projects: SupervisorDashboardProjectItem[];
   recentProjects: SupervisorDashboardProjectItem[];
 };

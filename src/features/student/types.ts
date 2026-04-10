@@ -58,9 +58,14 @@ export type StudentProjectDetail = {
   repositoryUrl?: string | null;
   github: ProjectGitHubPreview;
   githubRepositories?: ProjectGitHubRepositories | null;
+  jira?: {
+    connected: boolean;
+    workspaceName: string | null;
+    workspaceUrl?: string | null;
+  } | null;
   leader: StudentProjectDetailLeader | null;
   members: StudentProjectDetailMember[];
   milestones: StudentProjectDetailMilestone[];
 };
 
-export type StudentProjectDetailTab = 'overview' | 'team' | 'milestones' | 'github';
+export type StudentProjectDetailTab = 'overview' | 'team' | 'milestones' | 'github' | 'jira';

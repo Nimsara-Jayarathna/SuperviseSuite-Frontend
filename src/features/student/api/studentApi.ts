@@ -12,12 +12,25 @@ import type {
   ProjectGitHubRecentCommit,
 } from '@/features/projects/types';
 import type { ProjectGitHubActivity, StudentProjectDetail, StudentProjectSummary } from '../types';
+import type {
+  JiraHealth,
+  JiraHierarchy,
+  JiraSprintProgress,
+  JiraWorkload,
+} from '@/features/supervisor/types';
 
 const cachedProjectsById: Partial<Record<string, StudentProjectDetail>> = {};
 const inFlightProjectRequests: Partial<Record<string, Promise<StudentProjectDetail>>> = {};
 const cachedProjectGitHubByKey: Partial<Record<string, ProjectGitHubActivity>> = {};
 const inFlightProjectGitHubRequestsByKey: Partial<Record<string, Promise<ProjectGitHubActivity>>> =
   {};
+type JiraCache = {
+  health?: JiraHealth;
+  sprintProgress?: JiraSprintProgress;
+  workload?: JiraWorkload;
+  hierarchy?: JiraHierarchy;
+};
+const cachedJiraByProjectId: Partial<Record<string, JiraCache>> = {};
 
 function clearRecord(record: Partial<Record<string, unknown>>) {
   for (const key of Object.keys(record)) {
@@ -30,6 +43,7 @@ function clearStudentApiCache() {
   clearRecord(inFlightProjectRequests);
   clearRecord(cachedProjectGitHubByKey);
   clearRecord(inFlightProjectGitHubRequestsByKey);
+  clearRecord(cachedJiraByProjectId);
 }
 
 function appendQuery(url: string, params: URLSearchParams): string {
@@ -161,5 +175,46 @@ export const studentApi = {
     } finally {
       delete inFlightProjectRequests[projectId];
     }
+  },
+
+  async getJiraHealth(projectId: string): Promise<JiraHealth> {
+    const hit = cachedJiraByProjectId[projectId]?.health;
+    if (hit) return hit;
+    const data = await apiClient.get<JiraHealth>(`/api/student/projects/${projectId}/jira/health`);
+    cachedJiraByProjectId[projectId] = { ...cachedJiraByProjectId[projectId], health: data };
+    return data;
+  },
+
+  async getJiraSprintProgress(projectId: string): Promise<JiraSprintProgress> {
+    const hit = cachedJiraByProjectId[projectId]?.sprintProgress;
+    if (hit) return hit;
+    const data = await apiClient.get<JiraSprintProgress>(
+      `/api/student/projects/${projectId}/jira/sprint-progress`,
+    );
+    cachedJiraByProjectId[projectId] = {
+      ...cachedJiraByProjectId[projectId],
+      sprintProgress: data,
+    };
+    return data;
+  },
+
+  async getJiraWorkload(projectId: string): Promise<JiraWorkload> {
+    const hit = cachedJiraByProjectId[projectId]?.workload;
+    if (hit) return hit;
+    const data = await apiClient.get<JiraWorkload>(
+      `/api/student/projects/${projectId}/jira/workload`,
+    );
+    cachedJiraByProjectId[projectId] = { ...cachedJiraByProjectId[projectId], workload: data };
+    return data;
+  },
+
+  async getProjectJiraHierarchy(projectId: string): Promise<JiraHierarchy> {
+    const hit = cachedJiraByProjectId[projectId]?.hierarchy;
+    if (hit) return hit;
+    const data = await apiClient.get<JiraHierarchy>(
+      `/api/student/projects/${projectId}/jira/hierarchy`,
+    );
+    cachedJiraByProjectId[projectId] = { ...cachedJiraByProjectId[projectId], hierarchy: data };
+    return data;
   },
 };

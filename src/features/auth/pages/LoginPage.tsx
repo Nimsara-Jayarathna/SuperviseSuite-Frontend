@@ -1,8 +1,9 @@
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { LogoMark } from '@/components/brand/Logo';
 import { RequestStateModal } from '@/components/ui/RequestStateModal';
 import { useAuth } from '../hooks/useAuth';
 import { LoginForm } from '../components/LoginForm';
+import type { LoginRequest } from '../types';
 
 /**
  * Composition root for the login flow.
@@ -15,6 +16,21 @@ import { LoginForm } from '../components/LoginForm';
  * not a concrete hook — the hook lives here, at the boundary layer.
  */
 export function LoginPage() {
+  const [searchParams] = useSearchParams();
+  const returnToKey = searchParams.get('returnToKey');
+  const returnToFromQuery = searchParams.get('returnTo');
+  const RETURN_TO_KEY_PREFIX = 'login-return:';
+  let returnTo: string | undefined;
+  if (returnToKey?.startsWith(RETURN_TO_KEY_PREFIX)) {
+    try {
+      returnTo = sessionStorage.getItem(returnToKey) ?? undefined;
+      sessionStorage.removeItem(returnToKey);
+    } catch {
+      returnTo = undefined;
+    }
+  } else {
+    returnTo = returnToFromQuery ?? undefined;
+  }
   const { login, isLoading, error, clearError } = useAuth();
   const requestModalStatus = isLoading ? 'loading' : 'error';
   const requestModalOpen = isLoading || Boolean(error);
@@ -49,14 +65,20 @@ export function LoginPage() {
           <p className="text-sm text-muted-foreground">
             Don&apos;t have an account?{' '}
             <Link to="/register" className="font-medium text-primary hover:underline">
-              Sign up
+              Student sign up
+            </Link>
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Are you a supervisor?{' '}
+            <Link to="/register/supervisor" className="font-medium text-primary hover:underline">
+              Register here
             </Link>
           </p>
         </div>
 
         {/* Form — receives hook state via props (Dependency Inversion) */}
         <LoginForm
-          onSubmit={login}
+          onSubmit={(values: LoginRequest) => login(values, returnTo)}
           isLoading={isLoading}
           error={error}
           onClearError={clearError}

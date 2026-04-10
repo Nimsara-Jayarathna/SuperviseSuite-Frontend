@@ -1,5 +1,6 @@
 export * from './pages/LoginPage';
 export * from './pages/RegisterPage';
+export * from './pages/SupervisorRegisterPage';
 export * from './components/LoginForm';
 export * from './components/RegisterForm';
 export * from './components/AuthModal';

@@ -46,14 +46,21 @@ export function useAuth() {
       } satisfies ApiError,
     }));
 
-  async function login(body: LoginRequest): Promise<void> {
+  function resolvePostLoginTarget(role: string, returnTo?: string): string {
+    if (returnTo && returnTo.startsWith('/') && !returnTo.startsWith('//')) {
+      return returnTo;
+    }
+    return ROLE_HOME[role] ?? '/';
+  }
+
+  async function login(body: LoginRequest, returnTo?: string): Promise<void> {
     setLoading();
     try {
       const res: LoginResponse = await authApi.login(body);
       clearSessionCaches();
       tokenStorage.setUser(res.user);
       setUser(res.user);
-      navigate(ROLE_HOME[res.user.role] ?? '/');
+      navigate(resolvePostLoginTarget(res.user.role, returnTo), { replace: true });
     } catch (err) {
       if (isApiException(err)) {
         setError(err.apiError);

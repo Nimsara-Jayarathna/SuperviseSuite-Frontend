@@ -1,4 +1,4 @@
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { tokenStorage } from '@/services/tokenStorage';
 import { ROLE_HOME } from './roleHome';
 
@@ -7,13 +7,32 @@ import { ROLE_HOME } from './roleHome';
 // Backend authorization must still enforce the real role restrictions.
 const ALLOW_CROSS_ROLE_PREVIEW = import.meta.env.DEV;
 
+function buildLoginRedirectPath(pathname: string, search: string, hash: string): string {
+  const returnTo = `${pathname}${search}${hash}`;
+  try {
+    const key = `login-return:${Date.now()}:${Math.random().toString(36).slice(2)}`;
+    sessionStorage.setItem(key, returnTo);
+    return `/login?returnToKey=${encodeURIComponent(key)}`;
+  } catch {
+    return '/login';
+  }
+}
+
 /**
  * Blocks unauthenticated users — redirects to /login.
  * Use for any route that requires a valid session.
  */
 export function RequireAuth() {
+  const location = useLocation();
   const user = tokenStorage.getUser();
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user) {
+    return (
+      <Navigate
+        to={buildLoginRedirectPath(location.pathname, location.search, location.hash)}
+        replace
+      />
+    );
+  }
   return <Outlet />;
 }
 
@@ -23,8 +42,16 @@ export function RequireAuth() {
  * role-based access on every protected API endpoint.
  */
 export function RequireRole({ role }: { role: string }) {
+  const location = useLocation();
   const user = tokenStorage.getUser();
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user) {
+    return (
+      <Navigate
+        to={buildLoginRedirectPath(location.pathname, location.search, location.hash)}
+        replace
+      />
+    );
+  }
   if (ALLOW_CROSS_ROLE_PREVIEW) return <Outlet />;
   if (user.role !== role) return <Navigate to={ROLE_HOME[user.role] ?? '/'} replace />;
   return <Outlet />;

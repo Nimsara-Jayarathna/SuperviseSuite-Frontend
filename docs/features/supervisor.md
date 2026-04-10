@@ -45,6 +45,13 @@ Supervisor feature currently uses these APIs:
 - `GET /api/supervisor/projects/{projectId}/github/access-requests/validate?token=...`
 - `POST /api/supervisor/projects/{projectId}/github/access-requests/continue?token=...`
 - `POST /api/supervisor/projects/{projectId}/github/refresh`
+- `GET /api/supervisor/projects/{projectId}/jira/auth-url`
+- `POST /api/supervisor/jira/oauth/complete`
+- `POST /api/supervisor/projects/{projectId}/jira/disconnect`
+- `GET /api/supervisor/projects/{projectId}/jira/health`
+- `GET /api/supervisor/projects/{projectId}/jira/workload`
+- `GET /api/supervisor/projects/{projectId}/jira/hierarchy`
+- `POST /api/supervisor/projects/{projectId}/jira/refresh`
 - `GET /api/github/access-requests/validate?token=...`
 - `POST /api/github/access-requests/continue?token=...`
 - `GET /api/github/access-updated/summary?token=...`
@@ -72,10 +79,18 @@ Supervisor feature currently uses these APIs:
 | `src/features/supervisor/pages/GitHubAccessUpdatedPage.tsx` | Public callback result page that shows updated accessible repositories and acknowledges completion |
 | `src/features/supervisor/components/ProjectDetail/RepositorySection.tsx` | Supervisor Overview repository management card (single-link action, remove action, GitHub App/manual link entrypoint) |
 | `src/features/supervisor/components/ProjectDetail/RepositoryLinkModalContent.tsx` | Guided modal with method-first UX, installation repository selection, loading skeletons, and GitHub App/request-access actions |
+| `src/features/supervisor/components/ProjectDetail/IntegrationsTabSection.tsx` | Integrations tab containing GitHub repository controls and Jira connect/disconnect actions |
+| `src/features/supervisor/components/ProjectDetail/JiraTabSection.tsx` | Jira tab shell for Jira workspace context and Jira health overview rendering |
+| `src/features/supervisor/components/ProjectDetail/jira/JiraHealthOverview.tsx` | Shared Jira analytics orchestrator (tab switcher, context bar, refresh action) |
+| `src/features/supervisor/components/ProjectDetail/jira/workload/JiraWorkloadPanel.tsx` | Member workload comparison dashboard with imbalance alerts and unassigned warnings |
+| `src/features/supervisor/components/ProjectDetail/jira/workload/JiraWorkloadTable.tsx` | Metric-rich team member workload list (open, overdue, story points, recency) |
+| `src/features/supervisor/components/ProjectDetail/jira/workload/JiraWorkloadBarChart.tsx` | Blended bar chart showing hierarchical issue-type distribution per member |
 | `src/features/supervisor/components/SupervisorProjectCard.tsx` | Clickable summary card (full-card navigation) with compact status/progress layout |
 | `src/features/supervisor/components/SupervisorProjectCardSkeleton.tsx` | List loading placeholder |
 | `src/features/supervisor/components/ProjectDetailsSkeleton.tsx` | Detail loading placeholder |
 | `src/features/supervisor/api/supervisorApi.ts` | Supervisor API client for read + mutation endpoints |
+| `src/features/supervisor/hooks/useJiraHealth.ts` | Shared Jira health hook used by supervisor/student Jira views |
+| `src/features/supervisor/hooks/useJiraWorkload.ts` | Scalable workload analytics hook with support for imbalances and estimates |
 | `src/features/supervisor/hooks/useSupervisorDashboard.ts` | Dashboard hook with loading/error/retry |
 | `src/features/supervisor/hooks/useSupervisorProjects.ts` | Project list hook |
 | `src/features/supervisor/hooks/useSupervisorProject.ts` | Project detail hook |
@@ -178,9 +193,11 @@ Supervisor feature currently uses these APIs:
 ### Tabs
 
 - `Overview`
-- `GitHub`
 - `Team`
 - `Milestones`
+- `Integrations`
+- `GitHub`
+- `Jira`
 
 ### Header status control
 
@@ -258,6 +275,62 @@ Supervisor feature currently uses these APIs:
   - calls `POST /api/supervisor/projects/{projectId}/github/refresh`
   - then re-fetches project detail payload
 
+### Integrations tab: GitHub + Jira connection controls
+
+- Shows GitHub integration controls via repository management card.
+- Shows Jira integration card with current workspace state.
+- Jira actions in this tab:
+  - connect Jira (OAuth start)
+  - disconnect Jira workspace
+- Jira connect/disconnect is intentionally isolated to Integrations tab.
+
+### Jira tab: health and productivity monitoring
+
+The Jira tab contains multiple insights sub-tabs for comprehensive project monitoring. Data is updated via the **Refresh** action in the header.
+
+**Sub-tabs:**
+
+1.  **Health**: Status breakdown donut, issue type distribution bar chart (hierarchical), and project quality signals (bug ratio with risk zones).
+2.  **Sprint Progress**: Multi-sprint analysis window:
+    - Supports selecting from the **4 most recent sprints**.
+    - Shows completion rings (Issues vs. Story Points).
+    - Story point distribution bars (Done / In Progress / Open).
+    - Weekly pulse metrics (Created vs. Resolved issues).
+    - Sprint velocity historical chart.
+3.  **Team Workload**: Member-wise productivity tracking:
+    - **Workload Imbalance Alert**: Auto-detects and warns if one member has >3× the open issues compared to another.
+    - **Comparison Table**: Sortable list showing open issues, completion rate, overdue items, and last activity date.
+    - **Unassigned Issues**: Highlights issues without assignees to prevent slippage.
+    - **Issue Type Distribution**: Member-level bar charts showing the breakdown of Story, Task, Bug, and Sub-task assignments.
+4.  **Hierarchy**: Expandable issue tree:
+    - Epic -> Story/Task/Bug -> Subtask structure from cached Jira issues.
+    - Collapsed by default beyond depth 2.
+    - Unlinked issues section for nodes whose parent is outside the project cache.
+
+Jira data rules are backend-configurable:
+
+- recent sprint window size
+- backlog-growing consecutive week threshold
+- priority names treated as high priority
+- issue types treated as bugs (Bug, Critical, etc.)
+- overdue estimation (7-day activity threshold when due dates are missing)
+
+Scope note:
+
+- Jira tab remains data/monitoring focused.
+- OAuth connect/disconnect controls remain in Integrations tab.
+
+### Jira - Hierarchy tab
+
+Displays all cached Jira issues in an expandable tree grouped by Epic -> Story/Task/Bug -> Subtask.
+
+- Collapsed by default beyond depth 2.
+- Each node shows: issue type badge, issue key, summary, status pill, assignee, and story points.
+- "Unlinked Issues" section shows issues whose parent is outside the project's cache.
+- Source: `GET /api/supervisor/projects/{projectId}/jira/hierarchy`
+- Hook: `useJiraHierarchy`
+- Components: `JiraHierarchyView`, `JiraHierarchyNode`, `JiraHierarchySkeleton`
+
 ### Team tab: add-student management (add-only)
 
 - `Manage students` mode supports:
@@ -314,4 +387,5 @@ Summary and milestone description show visible counters where applicable in crea
 
 - Supervisor dashboard, projects list, create flow, and detail management are all backend-connected.
 - GitHub tab is intentionally read-only; repository management remains in Overview card.
+- Jira tab is intentionally health/read-only oriented; connect/disconnect remains in Integrations tab.
 - Route guards are still UI-level and not a backend security boundary.

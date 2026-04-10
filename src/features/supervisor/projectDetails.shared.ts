@@ -21,7 +21,14 @@ export const dateTimeFormatter = new Intl.DateTimeFormat('en', {
   minute: '2-digit',
 });
 
-export const TABS: SupervisorProjectDetailTab[] = ['overview', 'team', 'milestones', 'github'];
+export const TABS: SupervisorProjectDetailTab[] = [
+  'overview',
+  'team',
+  'milestones',
+  'integrations',
+  'github',
+  'jira',
+];
 
 export const FIELD_LIMITS = {
   title: 40,

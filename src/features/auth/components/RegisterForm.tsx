@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import type { ApiError } from '@/types';
-import type { RegisterRequest } from '../types';
+import type { RegisterRequest, SupervisorRegisterRequest } from '../types';
 import {
   getGeneralError,
   mapBackendFieldErrors,
@@ -16,9 +16,7 @@ import {
  * hook implementation. This makes the component independently testable and
  * reusable in any context that can provide these props.
  */
-export type RegisterFormProps = {
-  /** Called with the validated payload — caller decides what to do with it. */
-  onSubmit: (data: RegisterRequest) => Promise<void>;
+type RegisterFormCommonProps = {
   isLoading: boolean;
   error: ApiError | null;
   onClearError: () => void;
@@ -26,14 +24,21 @@ export type RegisterFormProps = {
   feedbackMode?: 'inline' | 'modal';
 };
 
-export function RegisterForm({
-  onSubmit,
-  isLoading,
-  error,
-  onClearError,
-  onSuccess,
-  feedbackMode = 'inline',
-}: RegisterFormProps) {
+type StudentRegisterFormProps = RegisterFormCommonProps & {
+  role?: 'student';
+  onSubmit: (data: RegisterRequest) => Promise<void>;
+};
+
+type SupervisorRegisterFormProps = RegisterFormCommonProps & {
+  role: 'supervisor';
+  onSubmit: (data: SupervisorRegisterRequest) => Promise<void>;
+};
+
+export type RegisterFormProps = StudentRegisterFormProps | SupervisorRegisterFormProps;
+
+export function RegisterForm(props: RegisterFormProps) {
+  const { isLoading, error, onClearError, onSuccess, feedbackMode = 'inline' } = props;
+  const role = props.role ?? 'student';
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -58,6 +63,8 @@ export function RegisterForm({
       password,
       confirmPassword,
       registrationNumber,
+      requireRegistrationNumber: role === 'student',
+      requireSliitEmail: role === 'supervisor',
     });
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
@@ -67,7 +74,17 @@ export function RegisterForm({
 
     // Role is assigned server-side — the backend always sets STUDENT for public registration.
     try {
-      await onSubmit({ firstName, lastName, email, password, registrationNumber });
+      if (props.role === 'supervisor') {
+        await props.onSubmit({ firstName, lastName, email, password });
+      } else {
+        await props.onSubmit({
+          firstName,
+          lastName,
+          email,
+          password,
+          registrationNumber,
+        });
+      }
       onSuccess?.();
     } catch {
       // errors are handled by the caller (useRegister) — do not re-throw
@@ -127,26 +144,27 @@ export function RegisterForm({
         </div>
       </div>
 
-      {/* Registration Number */}
-      <div className="flex flex-col gap-1">
-        <label htmlFor="reg-number" className="text-sm font-medium text-foreground">
-          Registration Number
-        </label>
-        <Input
-          id="reg-number"
-          type="text"
-          autoComplete="off"
-          placeholder="e.g. IT24100487"
-          value={registrationNumber}
-          onChange={(e) => setRegistrationNumber(e.target.value)}
-          className={inputClass}
-        />
-        {(fieldErrors.registrationNumber ?? backendFieldErrors.registrationNumber) && (
-          <p className="text-xs text-red-500">
-            {fieldErrors.registrationNumber ?? backendFieldErrors.registrationNumber}
-          </p>
-        )}
-      </div>
+      {role === 'student' && (
+        <div className="flex flex-col gap-1">
+          <label htmlFor="reg-number" className="text-sm font-medium text-foreground">
+            Registration Number
+          </label>
+          <Input
+            id="reg-number"
+            type="text"
+            autoComplete="off"
+            placeholder="e.g. IT24100487"
+            value={registrationNumber}
+            onChange={(e) => setRegistrationNumber(e.target.value)}
+            className={inputClass}
+          />
+          {(fieldErrors.registrationNumber ?? backendFieldErrors.registrationNumber) && (
+            <p className="text-xs text-red-500">
+              {fieldErrors.registrationNumber ?? backendFieldErrors.registrationNumber}
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Email */}
       <div className="flex flex-col gap-1">
@@ -157,7 +175,7 @@ export function RegisterForm({
           id="reg-email"
           type="email"
           autoComplete="email"
-          placeholder="you@example.com"
+          placeholder={role === 'supervisor' ? 'name@sliit.lk' : 'you@example.com'}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           className={inputClass}

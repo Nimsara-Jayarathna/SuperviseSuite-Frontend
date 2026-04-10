@@ -29,8 +29,19 @@ export function validateRegisterForm(fields: {
   password: string;
   confirmPassword: string;
   registrationNumber: string;
+  requireRegistrationNumber?: boolean;
+  requireSliitEmail?: boolean;
 }): RegisterFieldErrors {
-  const { firstName, lastName, email, password, confirmPassword, registrationNumber } = fields;
+  const {
+    firstName,
+    lastName,
+    email,
+    password,
+    confirmPassword,
+    registrationNumber,
+    requireRegistrationNumber = true,
+    requireSliitEmail = false,
+  } = fields;
   const errors: RegisterFieldErrors = {};
 
   if (!firstName.trim()) errors.firstName = 'First name is required.';
@@ -38,6 +49,15 @@ export function validateRegisterForm(fields: {
 
   if (!email) errors.email = 'Email is required.';
   else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.email = 'Enter a valid email.';
+  else if (requireSliitEmail) {
+    const normalizedEmail = email.trim().toLowerCase();
+    const isSliitDomain = normalizedEmail.endsWith('@sliit.lk');
+    const isStudentPortalDomain = normalizedEmail.endsWith('@my.sliit.lk');
+
+    if (!isSliitDomain || isStudentPortalDomain) {
+      errors.email = 'Email must be a valid SLIIT institutional email (@sliit.lk).';
+    }
+  }
 
   if (!password) errors.password = 'Password is required.';
   else if (password.length < 8) errors.password = 'Password must be at least 8 characters.';
@@ -50,7 +70,9 @@ export function validateRegisterForm(fields: {
   if (!confirmPassword) errors.confirmPassword = 'Please confirm your password.';
   else if (password !== confirmPassword) errors.confirmPassword = 'Passwords do not match.';
 
-  if (!registrationNumber.trim()) errors.registrationNumber = 'Registration number is required.';
+  if (requireRegistrationNumber && !registrationNumber.trim()) {
+    errors.registrationNumber = 'Registration number is required.';
+  }
 
   return errors;
 }

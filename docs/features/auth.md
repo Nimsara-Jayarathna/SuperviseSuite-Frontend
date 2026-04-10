@@ -8,6 +8,7 @@ Handles user authentication — login, registration, session persistence, and ro
 |------|-----------|-------|------|
 | `/login` | `LoginPage` | `RequireGuest` | Public (redirects authenticated users) |
 | `/register` | `RegisterPage` | `RequireGuest` | Public (redirects authenticated users) |
+| `/register/supervisor` | `SupervisorRegisterPage` | `RequireGuest` | Public (redirects authenticated users) |
 | `/student/*` | `StudentLayout` + pages | `RequireRole("STUDENT")` | STUDENT |
 | `/supervisor/*` | `SupervisorLayout` + pages | `RequireRole("SUPERVISOR")` | SUPERVISOR |
 | `*` (catch-all) | `LegacyDashboardRedirect` | None | Redirects to role home or `/login` |
@@ -22,6 +23,9 @@ LoginPage
 
 RegisterPage
 └── RegisterForm       — first/last name, registration number, email, password, confirm password fields
+
+SupervisorRegisterPage
+└── RegisterForm       — first/last name, SLIIT email, password, confirm password fields
 ```
 
 ---
@@ -43,7 +47,17 @@ Identical layout to `LoginPage`.
 - Logo links back to `/`
 - Renders `RegisterForm`
 - Link to `/login`
+- Link to `/register/supervisor`
 - Footer: terms & privacy policy notice
+
+### `SupervisorRegisterPage` (`src/features/auth/pages/SupervisorRegisterPage.tsx`)
+
+Same layout shell as `RegisterPage`.
+
+- Renders `RegisterForm` with `role="supervisor"`
+- Hides registration number input
+- Enforces SLIIT institutional email rules (`@sliit.lk`, excludes `@my.sliit.lk`)
+- Link to `/login`
 
 ---
 
@@ -72,11 +86,12 @@ Identical layout to `LoginPage`.
 
 | Prop | Type | Required | Description |
 |------|------|----------|-------------|
-| `onSubmit` | `(data: RegisterRequest) => Promise<void>` | Yes | Called with the validated payload; caller (page or modal) handles the API call |
+| `onSubmit` | Student: `(data: RegisterRequest) => Promise<void>` / Supervisor: `(data: SupervisorRegisterRequest) => Promise<void>` | Yes | Called with the validated payload; caller (page or modal) handles the API call |
 | `isLoading` | `boolean` | Yes | Disables the form and shows a spinner while the request is in flight |
 | `error` | `ApiError \| null` | Yes | Backend error; field-level errors shown inline, general errors in a banner |
 | `onClearError` | `() => void` | Yes | Called at the start of each submission to clear the previous error |
 | `onSuccess` | `() => void` | No | Called after `onSubmit` resolves successfully |
+| `role` | `'student' \| 'supervisor'` | No (`'student'` default) | Selects field shape and validation mode |
 
 **Validation (client-side):**
 
@@ -84,12 +99,21 @@ Identical layout to `LoginPage`.
 |-------|-------|
 | `firstName` | Required, non-empty |
 | `lastName` | Required, non-empty |
-| `registrationNumber` | Required, non-empty |
+| `registrationNumber` | Required for student mode only |
 | `email` | Required, valid email format |
 | `password` | Required, min 8 characters |
 | `confirmPassword` | Required, must match `password` |
 
-**Note:** Registration currently creates student accounts only. Supervisor accounts are still assumed to come from an admin-managed flow.
+**Supervisor email rule (`role="supervisor"`):**
+- Must end with `@sliit.lk`
+- Must not end with `@my.sliit.lk`
+- Validation uses normalized `trim().toLowerCase()`
+
+**Submit feedback behavior:**
+- Loading + success use `RequestStateModal`
+- Backend field errors (`VALIDATION_ERROR`) render under inputs
+- Backend conflict/global errors (`CONFLICT`, `INTERNAL_ERROR`, etc.) render in form banner
+- On success, form transitions to success state then redirects to `/login`
 
 ---
 
@@ -131,17 +155,42 @@ Narrow hook that owns only the student registration concern (Interface Segregati
 Consumers of this hook are not burdened with login, logout, or user-session state.
 
 ```typescript
-const { register, isLoading, error, clearError } = useRegister();
+const { register, isLoading, isSuccess, error, clearError } = useRegister();
 ```
 
 ### Return values
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `register(body)` | `Promise<void>` | Posts `RegisterRequest` to the backend; navigates to `/login` on success |
+| `register(body)` | `Promise<void>` | Posts `RegisterRequest` to the backend |
 | `isLoading` | `boolean` | True while the request is in flight |
+| `isSuccess` | `boolean` | True after successful registration until redirect |
 | `error` | `ApiError \| null` | Last error from the registration request; cleared by `clearError()` or the next submission |
 | `clearError()` | `void` | Resets `error` to `null` |
+
+On success, `useRegister` delays redirect to `/login` briefly so the success modal is visible.
+
+---
+
+## Hook — `useSupervisorRegister` (`src/features/auth/hooks/useSupervisorRegister.ts`)
+
+Supervisor-specific registration hook with the same state contract as `useRegister`.
+
+```typescript
+const { register, isLoading, isSuccess, error, clearError } = useSupervisorRegister();
+```
+
+### Return values
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `register(body)` | `Promise<void>` | Posts `SupervisorRegisterRequest` to `/api/auth/register/supervisor` |
+| `isLoading` | `boolean` | True while the request is in flight |
+| `isSuccess` | `boolean` | True after successful registration until redirect |
+| `error` | `ApiError \| null` | Last error from the registration request |
+| `clearError()` | `void` | Resets `error` to `null` |
+
+On success, `useSupervisorRegister` also performs a short delayed redirect to `/login`.
 
 > **Composition pattern:** `RegisterPage` and `AuthModal` both wire `useRegister()` into `<RegisterForm>` props. `RegisterForm` itself has no hook dependency — it only receives callbacks and data (Dependency Inversion).
 
@@ -177,6 +226,9 @@ const res: LoginResponse = await authApi.login({ email, password });
 // Register — role is NOT sent; backend always assigns STUDENT
 const res: RegisterResponse = await authApi.register({ firstName, lastName, registrationNumber, email, password });
 
+// Register Supervisor — registrationNumber is not part of the payload
+const res: RegisterResponse = await authApi.registerSupervisor({ firstName, lastName, email, password });
+
 // Refresh — exchanges ss_refresh_token cookie for a new pair; called by apiClient 401 interceptor
 const res: LoginResponse = await authApi.refresh();
 
@@ -190,6 +242,7 @@ await authApi.logout();
 |--------|------|-------------|
 | POST | `/api/auth/login` | Authenticate; returns user profile; sets `ss_access_token` + `ss_refresh_token` httpOnly cookies |
 | POST | `/api/auth/register` | Create student account; returns user profile; no session created |
+| POST | `/api/auth/register/supervisor` | Create supervisor account; returns user profile with `role=SUPERVISOR`; no session created |
 | POST | `/api/auth/refresh` | Exchange refresh cookie for new token pair; returns updated user profile |
 | POST | `/api/auth/logout` | Revoke refresh token; clear both cookies (`Max-Age=0`) |
 
@@ -276,7 +329,8 @@ This is a **UI-only** boundary. The backend enforces role-based access on every 
 | `AuthUser` | Authenticated user profile — `id`, `email`, `role`, `firstName`, `lastName` |
 | `LoginRequest` | POST `/api/auth/login` body |
 | `RegisterRequest` | POST `/api/auth/register` body — `role` intentionally excluded (server always assigns `STUDENT`) |
-| `RegisterResponse` | POST `/api/auth/register` success — newly created student's public profile (no session created) |
+| `SupervisorRegisterRequest` | POST `/api/auth/register/supervisor` body — no `registrationNumber` |
+| `RegisterResponse` | POST register success for student/supervisor — public profile; `registrationNumber` may be `null` for supervisor |
 | `LoginResponse` | POST `/api/auth/login` and POST `/api/auth/refresh` success — `{ user: AuthUser }`. Tokens are not included; they are delivered as `HttpOnly` cookies. |
 
 ---
@@ -287,6 +341,7 @@ All auth endpoints are live (`USE_MOCK = false`).
 
 - `VITE_API_BASE_URL` in `.env` must point to the running backend (default: `http://localhost:8081`)
 - `POST /api/auth/register` → creates student account, returns user profile; no session created
+- `POST /api/auth/register/supervisor` → creates supervisor account, returns user profile; no session created
 - `POST /api/auth/login` → authenticates user, returns user profile; sets `ss_access_token` and `ss_refresh_token` as `HttpOnly; Secure; SameSite=Strict` cookies
 - `POST /api/auth/refresh` → silently rotates token pair; called automatically by the `apiClient` 401 interceptor
 - `POST /api/auth/logout` → revokes refresh token in the database; clears both cookies via `Max-Age=0`
