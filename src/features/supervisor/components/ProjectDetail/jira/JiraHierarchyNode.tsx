@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ChevronRight } from 'lucide-react';
 import type { JiraHierarchyNode as NodeType } from '@/features/supervisor/types';
 import { sortNodes } from './jiraHierarchySort';
@@ -25,16 +25,48 @@ type Props = {
 
 export function JiraHierarchyNode({ node, depth = 0, forceExpanded }: Props) {
   const [expanded, setExpanded] = useState(depth === 0);
-  const isExpanded = forceExpanded !== undefined ? forceExpanded : expanded;
+  const [manuallyToggled, setManuallyToggled] = useState(false);
+  const isExpanded = manuallyToggled || forceExpanded === undefined ? expanded : forceExpanded;
   const hasChildren = node.children.length > 0;
   const typeColor =
     ISSUE_TYPE_COLORS[node.issueType] ?? 'bg-slate-100 text-slate-600 border-slate-200';
   const statusColor = STATUS_COLORS[node.status] ?? 'bg-slate-100 text-slate-500';
 
+  useEffect(() => {
+    if (forceExpanded !== undefined) {
+      setManuallyToggled(false);
+      setExpanded(forceExpanded);
+    }
+  }, [forceExpanded]);
+
   return (
     <div className={depth > 0 ? 'ml-5 border-l border-slate-200 pl-3' : ''}>
       <div
+        role={hasChildren ? 'button' : undefined}
+        tabIndex={hasChildren ? 0 : undefined}
+        aria-expanded={hasChildren ? isExpanded : undefined}
+        onClick={
+          hasChildren
+            ? () => {
+                setManuallyToggled(true);
+                setExpanded((e) => !e);
+              }
+            : undefined
+        }
+        onKeyDown={
+          hasChildren
+            ? (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  setManuallyToggled(true);
+                  setExpanded((prev) => !prev);
+                }
+              }
+            : undefined
+        }
         className={`group flex items-start gap-2 rounded-xl border transition-all ${
+          hasChildren ? 'cursor-pointer select-none' : ''
+        } ${
           depth === 0
             ? 'mb-1 border-slate-200 bg-white px-3 py-3 shadow-sm hover:border-slate-300 hover:shadow-md'
             : depth === 1
@@ -45,7 +77,11 @@ export function JiraHierarchyNode({ node, depth = 0, forceExpanded }: Props) {
         {hasChildren ? (
           <button
             type="button"
-            onClick={() => setExpanded((e) => !e)}
+            onClick={(e) => {
+              e.stopPropagation();
+              setManuallyToggled(true);
+              setExpanded((e) => !e);
+            }}
             className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500 transition-all hover:bg-slate-200 hover:text-slate-700 active:scale-95"
             aria-label={isExpanded ? 'Collapse' : 'Expand'}
           >
