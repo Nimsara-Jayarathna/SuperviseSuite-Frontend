@@ -2,7 +2,7 @@
 
 React + Vite + Tailwind CSS frontend for SuperviseSuite.
 
-Current scope covers the public landing flow, auth screens, student workspace, and supervisor workspace with backend-connected project, GitHub integration, and Jira health analytics flows (including the Jira OAuth callback route).
+Current scope covers the public landing flow, auth screens, student workspace, and supervisor workspace with backend-connected project, GitHub integration, and Jira analytics flows (Health, Sprint Progress, and Team Workload) including the Jira OAuth callback route.
 
 ## Local Development
 
@@ -130,19 +130,22 @@ The Jira feature is supervisor-only. It consists of two main parts:
 
 - Entry point: `JiraTabSection` → `JiraHealthOverview`.
 - Shown only when `project.jira.connected === true`; otherwise displays a prompt to connect from the Integrations tab.
-- `JiraHealthOverview` fetches health data and sprint progress via `supervisorApi.getJiraHealth` and `supervisorApi.getJiraSprintProgress`, and exposes a manual refresh action via `supervisorApi.refreshProjectJira`.
+- `JiraHealthOverview` fetches analytics data via `supervisorApi.getJiraHealth`, `supervisorApi.getJiraSprintProgress`, and `supervisorApi.getJiraWorkload`, and exposes a manual refresh action via `supervisorApi.refreshProjectJira`.
 
 **Jira health components** (all in `src/features/supervisor/components/ProjectDetail/jira/`):
 
 | Component | Description |
 |---|---|
-| `JiraHealthOverview` | Top-level orchestrator: workspace context bar, tab switcher (Health / Sprint Progress), refresh action |
+| `JiraHealthOverview` | Top-level orchestrator: workspace context bar, tab switcher (Health / Sprint Progress / Team Workload), refresh action |
 | `JiraStatCards` | Four stat tiles: Completion %, Open Issues, Overdue, High Priority Open |
 | `JiraBugRatioBar` | Bug ratio gauge with risk zones (Healthy / At Risk / Critical) |
 | `JiraStatusDonut` | Recharts donut chart for status breakdown (Done / In Progress / To Do) |
-| `JiraTypeDistribution` | Horizontal progress bars for issue type distribution |
-| `JiraSprintProgressSection` | Sprint selector, completion rings, story point bars, weekly velocity metrics, and sprint velocity chart |
-| `JiraHealthSkeleton` | Loading skeleton for the full health tab |
+| `JiraTypeDistribution` | Horizontal progress bars for issue type distribution (hierarchical sorting) |
+| `JiraSprintProgressSection` | Sprint selector (4 most recent), completion rings, story point bars, weekly velocity metrics, and sprint velocity chart |
+| `JiraWorkloadPanel` | Team workload orchestrator: unassigned warnings, imbalance alerts, comparison table, and distribution bar charts |
+| `JiraWorkloadTable` | Member-wise workload metrics (Open, Completed, Overdue, Story Points, Recency) |
+| `JiraWorkloadBarChart` | Proportional bar chart showing issue type distribution per team member |
+| `JiraHealthSkeleton` | Loading skeleton for the full Jira tab |
 
 ## UI Architecture Notes
 
