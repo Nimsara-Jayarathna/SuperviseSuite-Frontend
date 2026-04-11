@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { RequestStateModal } from '@/components/ui/RequestStateModal';
 import { useState } from 'react';
 import { cn } from '@/lib/cn';
 import type { useRegistrationFlow } from '../../hooks/useRegistrationFlow';
@@ -138,8 +139,16 @@ export function Step1EmailInput({ flow, config }: Step1EmailInputProps) {
         className={buttonAccentClass}
         disabled={flow.isLoading || !canContinue}
       >
-        {flow.isLoading ? 'Sending code…' : 'Continue'}
+        Continue
       </Button>
+
+      <RequestStateModal
+        isOpen={flow.isLoading}
+        status="loading"
+        title="Sending verification code"
+        message="Checking your email and sending OTP..."
+        autoCloseOnSuccess={false}
+      />
     </form>
   );
 }

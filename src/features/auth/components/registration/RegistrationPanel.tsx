@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/Button';
+import { RequestStateModal } from '@/components/ui/RequestStateModal';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { RegisterConfig } from '../../types';
@@ -152,26 +153,27 @@ export function RegistrationPanel({ config, inModal = false, onClose }: Registra
           >
             {stepContent}
           </div>
-
-          {showCloseConfirm && (
-            <div className="absolute inset-6 z-20 flex items-center justify-center rounded-xl bg-background/95 p-4 shadow-lg">
-              <div className="w-full rounded-xl border border-border bg-background p-4">
-                <p className="text-sm text-foreground">
-                  If you close this, you&apos;ll need to restart email verification.
-                </p>
-                <div className="mt-3 flex gap-2">
-                  <Button variant="secondary" size="sm" fullWidth onClick={() => setShowCloseConfirm(false)}>
-                    Cancel
-                  </Button>
-                  <Button variant="danger" size="sm" fullWidth onClick={closeHard}>
-                    Close anyway
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
+
+      <RequestStateModal
+        isOpen={showCloseConfirm}
+        status="warning"
+        title="Close registration?"
+        message="If you close this, you'll need to restart email verification."
+        onClose={() => setShowCloseConfirm(false)}
+        autoCloseOnSuccess={false}
+        footer={
+          <div className="flex flex-wrap justify-center gap-3">
+            <Button type="button" variant="secondary" size="md" onClick={() => setShowCloseConfirm(false)}>
+              Cancel
+            </Button>
+            <Button type="button" variant="danger" size="md" onClick={closeHard}>
+              Close anyway
+            </Button>
+          </div>
+        }
+      />
 
       <style>{`
         @keyframes slideInFromRight {

@@ -71,6 +71,7 @@ export function Step4ProfileDetails({ flow }: Step4ProfileDetailsProps) {
             id="reg-first-name"
             value={firstName}
             onChange={(e) => setFirstName(e.target.value)}
+            autoComplete="given-name"
             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
           />
           {fieldErrors.firstName && <p className="text-xs text-red-600">{fieldErrors.firstName}</p>}
@@ -83,6 +84,7 @@ export function Step4ProfileDetails({ flow }: Step4ProfileDetailsProps) {
             id="reg-last-name"
             value={lastName}
             onChange={(e) => setLastName(e.target.value)}
+            autoComplete="family-name"
             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
           />
           {fieldErrors.lastName && <p className="text-xs text-red-600">{fieldErrors.lastName}</p>}
@@ -98,6 +100,7 @@ export function Step4ProfileDetails({ flow }: Step4ProfileDetailsProps) {
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          autoComplete="new-password"
           className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
         />
         <div className="flex items-center gap-2">
@@ -121,6 +124,7 @@ export function Step4ProfileDetails({ flow }: Step4ProfileDetailsProps) {
           type="password"
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
+          autoComplete="new-password"
           className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
         />
         {fieldErrors.confirmPassword && (
@@ -156,9 +160,6 @@ export function Step4ProfileDetails({ flow }: Step4ProfileDetailsProps) {
       <div className="space-y-2">
         <Button type="submit" variant="primary" size="lg" fullWidth disabled={flow.isLoading}>
           {flow.isLoading ? 'Creating account…' : 'Create account'}
-        </Button>
-        <Button variant="ghost" size="sm" onClick={flow.goBack} className="w-full">
-          ← Back
         </Button>
       </div>
     </form>
