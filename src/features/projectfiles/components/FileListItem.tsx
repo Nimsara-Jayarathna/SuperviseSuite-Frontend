@@ -1,5 +1,7 @@
 import { Download, Trash2 } from 'lucide-react';
+import { RoleBadge } from '@/components/ui/RoleBadge';
 import type { ProjectFile } from '../types';
+import { getFileTypeDisplay } from '../fileTypeDisplay';
 
 type FileListItemProps = {
   file: ProjectFile;
@@ -38,34 +40,53 @@ export function FileListItem({
   onDownload,
   onDelete,
 }: FileListItemProps) {
+  const typeDisplay = getFileTypeDisplay(file.fileType, file.fileName);
+
   return (
     <tr className="border-b border-slate-100 last:border-b-0">
-      <td className="px-4 py-3 text-sm font-semibold text-slate-800">{file.fileName}</td>
-      <td className="px-4 py-3 text-xs text-slate-500">{file.fileType || 'Unknown'}</td>
-      <td className="px-4 py-3 text-xs text-slate-500">{formatFileSize(file.fileSize)}</td>
-      <td className="px-4 py-3 text-xs text-slate-500">{file.uploadedByName}</td>
+      <td className="px-4 py-3 text-sm font-semibold text-slate-800">
+        <span className="block truncate" title={file.fileName}>
+          {file.fileName}
+        </span>
+      </td>
       <td className="px-4 py-3 text-xs text-slate-500">
-        {dateTimeFormatter.format(new Date(file.updatedAt ?? file.createdAt))}
+        <span
+          className={`inline-flex items-center rounded-full px-2 py-1 text-[10px] font-bold uppercase tracking-[0.08em] ${typeDisplay.toneClassName}`}
+        >
+          {typeDisplay.label}
+        </span>
+      </td>
+      <td className="px-4 py-3 text-xs font-semibold text-slate-600">{formatFileSize(file.fileSize)}</td>
+      <td className="px-4 py-3 text-xs text-slate-500">
+        <div className="inline-flex items-center gap-2 whitespace-nowrap">
+          <span className="font-semibold text-slate-700">{file.uploadedByName}</span>
+          <RoleBadge role={file.uploadedByRole} className="px-2 py-0.5 text-[10px]" />
+        </div>
+      </td>
+      <td className="px-4 py-3 text-xs text-slate-500">
+        {dateTimeFormatter.format(new Date(file.createdAt))}
       </td>
       <td className="px-4 py-3">
         <div className="flex items-center justify-end gap-2">
           <button
             type="button"
             onClick={() => onDownload(file.id)}
-            className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+            title="Download file"
+            aria-label="Download file"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 transition-colors hover:bg-slate-50"
           >
             <Download className="h-3.5 w-3.5" />
-            Download
           </button>
           {canDelete ? (
             <button
               type="button"
               onClick={() => onDelete(file)}
               disabled={isDeleting}
-              className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-xs font-semibold text-rose-700 transition-colors hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50"
+              title={isDeleting ? 'Deleting file' : 'Delete file'}
+              aria-label={isDeleting ? 'Deleting file' : 'Delete file'}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-rose-200 bg-rose-50 text-rose-700 transition-colors hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Trash2 className="h-3.5 w-3.5" />
-              {isDeleting ? 'Deleting...' : 'Delete'}
             </button>
           ) : null}
         </div>
