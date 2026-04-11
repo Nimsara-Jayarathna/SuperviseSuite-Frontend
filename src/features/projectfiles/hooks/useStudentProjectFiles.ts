@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { isApiException } from '@/services/apiClient';
 import type { ApiError } from '@/types';
 import type { ProjectFile, ProjectFileConfig } from '../types';
@@ -22,33 +22,43 @@ const UNKNOWN_ERROR: ApiError = {
   traceId: null,
 };
 
-export function useStudentProjectFiles(projectId: string | undefined) {
+export function useStudentProjectFiles(projectId: string | undefined, lazy = true) {
   const [state, setState] = useState<StudentProjectFilesState>({
     files: [],
     config: null,
-    isLoading: Boolean(projectId),
+    isLoading: false,
     error: null,
   });
+  const [hasLoaded, setHasLoaded] = useState(false);
 
-  async function reload() {
+  const load = useCallback(async () => {
     if (!projectId) {
       setState({ files: [], config: null, isLoading: false, error: null });
-      return;
+      setHasLoaded(false);
+      return { ok: false as const };
+    }
+
+    if (state.isLoading) {
+      return { ok: false as const };
     }
 
     setState((current) => ({ ...current, isLoading: true, error: null }));
     try {
       const response = await studentFilesApi.list(projectId);
       setState({ files: response.files, config: response.config, isLoading: false, error: null });
+      setHasLoaded(true);
+      return { ok: true as const };
     } catch (error) {
+      const apiError = isApiException(error) ? error.apiError : UNKNOWN_ERROR;
       setState({
         files: [],
         config: null,
         isLoading: false,
-        error: isApiException(error) ? error.apiError : UNKNOWN_ERROR,
+        error: apiError,
       });
+      return { ok: false as const, error: apiError };
     }
-  }
+  }, [projectId, state.isLoading]);
 
   async function downloadFile(fileId: string) {
     if (!projectId) {
@@ -59,15 +69,26 @@ export function useStudentProjectFiles(projectId: string | undefined) {
   }
 
   useEffect(() => {
-    void reload();
+    setState({ files: [], config: null, isLoading: false, error: null });
+    setHasLoaded(false);
   }, [projectId]);
+
+  useEffect(() => {
+    if (!lazy && projectId) {
+      void load();
+    }
+  }, [lazy, load, projectId]);
 
   return {
     files: state.files,
     config: state.config,
     isLoading: state.isLoading,
     error: state.error,
-    reload,
+    hasLoaded,
+    load,
+    reload: async () => {
+      await load();
+    },
     downloadFile,
   };
 }

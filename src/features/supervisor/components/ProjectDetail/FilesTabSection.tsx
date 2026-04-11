@@ -1,12 +1,14 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ErrorState } from '@/components/feedback/ErrorState';
+import { RequestStateModal } from '@/components/ui/RequestStateModal';
 import { buttonStyles } from '@/components/ui/Button';
-import { Upload } from 'lucide-react';
+import { RefreshCw, Upload } from 'lucide-react';
 import { supervisorFilesApi } from '@/features/projectfiles/api/supervisorFilesApi';
 import { FileList } from '@/features/projectfiles/components/FileList';
 import { UploadFileModal } from '@/features/projectfiles/components/UploadFileModal';
 import { DeleteConfirmModal } from '@/features/projectfiles/components/DeleteConfirmModal';
 import { useSupervisorProjectFiles } from '@/features/projectfiles/hooks/useSupervisorProjectFiles';
+import type { ApiError } from '@/types';
 import type { ProjectFile } from '@/features/projectfiles/types';
 
 type FilesTabSectionProps = {
@@ -14,10 +16,65 @@ type FilesTabSectionProps = {
 };
 
 export function FilesTabSection({ projectId }: FilesTabSectionProps) {
-  const { files, config, isLoading, error, reload, downloadFile, deleteFile, isDeletingFileId } =
+  const { files, config, isLoading, error, hasLoaded, load, reload, downloadFile, deleteFile, isDeletingFileId } =
     useSupervisorProjectFiles(projectId);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [filePendingDelete, setFilePendingDelete] = useState<ProjectFile | null>(null);
+  const [requestModal, setRequestModal] = useState<{
+    isOpen: boolean;
+    status: 'loading' | 'success' | 'error';
+    title: string;
+    message: string;
+    retryAction: (() => void) | null;
+  }>({
+    isOpen: false,
+    status: 'loading',
+    title: '',
+    message: '',
+    retryAction: null,
+  });
+
+  useEffect(() => {
+    if (!hasLoaded && !isLoading) {
+      void load();
+    }
+  }, [hasLoaded, isLoading, load]);
+
+  async function refreshFiles() {
+    if (isLoading) {
+      return;
+    }
+    setRequestModal({
+      isOpen: true,
+      status: 'loading',
+      title: 'Refreshing project files',
+      message: 'Fetching the latest files for this project.',
+      retryAction: null,
+    });
+
+    const result = await load();
+    if (result.ok) {
+      setRequestModal({
+        isOpen: true,
+        status: 'success',
+        title: 'Project files refreshed',
+        message: 'You are viewing the latest files.',
+        retryAction: null,
+      });
+      return;
+    }
+
+    const refreshError: ApiError | undefined = result.error;
+    setRequestModal({
+      isOpen: true,
+      status: 'error',
+      title: 'Unable to refresh files',
+      message: refreshError?.message ?? 'Unable to refresh files right now.',
+      retryAction: () => {
+        void refreshFiles();
+      },
+    });
+  }
 
   return (
     <section className="rounded-3xl border border-border bg-white p-6 shadow-sm transition-all hover:shadow-md">
@@ -26,14 +83,26 @@ export function FilesTabSection({ projectId }: FilesTabSectionProps) {
           <h2 className="text-lg font-bold tracking-tight text-slate-800">Project Files</h2>
           <p className="text-xs font-medium text-slate-400">Upload, download, and manage project documents.</p>
         </div>
-        <button
-          type="button"
-          className={buttonStyles({ variant: 'primary', size: 'sm' })}
-          onClick={() => setIsUploadOpen(true)}
-        >
-          <Upload className="h-4 w-4" />
-          Upload file
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            className={buttonStyles({ variant: 'secondary', size: 'sm' })}
+            onClick={() => void refreshFiles()}
+            disabled={isLoading}
+            title="Refresh files"
+            aria-label="Refresh files"
+          >
+            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+          </button>
+          <button
+            type="button"
+            className={buttonStyles({ variant: 'primary', size: 'sm' })}
+            onClick={() => setIsUploadOpen(true)}
+          >
+            <Upload className="h-4 w-4" />
+            Upload file
+          </button>
+        </div>
       </div>
 
       <div className="mt-6">
@@ -43,7 +112,7 @@ export function FilesTabSection({ projectId }: FilesTabSectionProps) {
           </div>
         ) : null}
 
-        {error ? <ErrorState error={error} onRetry={() => void reload()} /> : null}
+        {error ? <ErrorState error={error} onRetry={() => void load()} /> : null}
 
         {!isLoading && !error ? (
           <FileList
@@ -78,6 +147,15 @@ export function FilesTabSection({ projectId }: FilesTabSectionProps) {
           }
           void deleteFile(filePendingDelete.id).finally(() => setFilePendingDelete(null));
         }}
+      />
+
+      <RequestStateModal
+        isOpen={requestModal.isOpen}
+        status={requestModal.status}
+        title={requestModal.title}
+        message={requestModal.message}
+        onClose={() => setRequestModal((current) => ({ ...current, isOpen: false }))}
+        onRetry={requestModal.retryAction ?? undefined}
       />
     </section>
   );

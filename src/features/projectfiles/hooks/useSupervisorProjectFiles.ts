@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { isApiException } from '@/services/apiClient';
 import type { ApiError } from '@/types';
 import type { ProjectFile, ProjectFileConfig } from '../types';
@@ -22,34 +22,44 @@ const UNKNOWN_ERROR: ApiError = {
   traceId: null,
 };
 
-export function useSupervisorProjectFiles(projectId: string | undefined) {
+export function useSupervisorProjectFiles(projectId: string | undefined, lazy = true) {
   const [state, setState] = useState<SupervisorProjectFilesState>({
     files: [],
     config: null,
-    isLoading: Boolean(projectId),
+    isLoading: false,
     error: null,
   });
+  const [hasLoaded, setHasLoaded] = useState(false);
   const [isDeletingFileId, setIsDeletingFileId] = useState<string | null>(null);
 
-  async function reload() {
+  const load = useCallback(async () => {
     if (!projectId) {
       setState({ files: [], config: null, isLoading: false, error: null });
-      return;
+      setHasLoaded(false);
+      return { ok: false as const };
+    }
+
+    if (state.isLoading) {
+      return { ok: false as const };
     }
 
     setState((current) => ({ ...current, isLoading: true, error: null }));
     try {
       const response = await supervisorFilesApi.list(projectId);
       setState({ files: response.files, config: response.config, isLoading: false, error: null });
+      setHasLoaded(true);
+      return { ok: true as const };
     } catch (error) {
+      const apiError = isApiException(error) ? error.apiError : UNKNOWN_ERROR;
       setState({
         files: [],
         config: null,
         isLoading: false,
-        error: isApiException(error) ? error.apiError : UNKNOWN_ERROR,
+        error: apiError,
       });
+      return { ok: false as const, error: apiError };
     }
-  }
+  }, [projectId, state.isLoading]);
 
   async function deleteFile(fileId: string) {
     if (!projectId) {
@@ -58,7 +68,7 @@ export function useSupervisorProjectFiles(projectId: string | undefined) {
     setIsDeletingFileId(fileId);
     try {
       await supervisorFilesApi.delete(projectId, fileId);
-      await reload();
+      await load();
     } finally {
       setIsDeletingFileId(null);
     }
@@ -73,16 +83,27 @@ export function useSupervisorProjectFiles(projectId: string | undefined) {
   }
 
   useEffect(() => {
-    void reload();
+    setState({ files: [], config: null, isLoading: false, error: null });
+    setHasLoaded(false);
   }, [projectId]);
+
+  useEffect(() => {
+    if (!lazy && projectId) {
+      void load();
+    }
+  }, [lazy, load, projectId]);
 
   return {
     files: state.files,
     config: state.config,
     isLoading: state.isLoading,
     error: state.error,
+    hasLoaded,
     isDeletingFileId,
-    reload,
+    load,
+    reload: async () => {
+      await load();
+    },
     deleteFile,
     downloadFile,
   };

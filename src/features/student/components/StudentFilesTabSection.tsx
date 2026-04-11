@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Upload } from 'lucide-react';
 import { ErrorState } from '@/components/feedback/ErrorState';
 import { buttonStyles } from '@/components/ui/Button';
@@ -12,8 +12,14 @@ type StudentFilesTabSectionProps = {
 };
 
 export function StudentFilesTabSection({ projectId }: StudentFilesTabSectionProps) {
-  const { files, config, isLoading, error, reload, downloadFile } = useStudentProjectFiles(projectId);
+  const { files, config, isLoading, error, hasLoaded, load, reload, downloadFile } = useStudentProjectFiles(projectId);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
+
+  useEffect(() => {
+    if (!hasLoaded && !isLoading) {
+      void load();
+    }
+  }, [hasLoaded, isLoading, load]);
 
   return (
     <section className="rounded-3xl border border-border bg-white p-6 shadow-sm transition-all hover:shadow-md">
@@ -39,7 +45,7 @@ export function StudentFilesTabSection({ projectId }: StudentFilesTabSectionProp
           </div>
         ) : null}
 
-        {error ? <ErrorState error={error} onRetry={() => void reload()} /> : null}
+        {error ? <ErrorState error={error} onRetry={() => void load()} /> : null}
 
         {!isLoading && !error ? (
           <FileList
