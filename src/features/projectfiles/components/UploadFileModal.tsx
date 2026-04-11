@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { RequestStateModal } from '@/components/ui/RequestStateModal';
 import { Button } from '@/components/ui/Button';
 import type { ConfirmUploadRequest, UploadUrlRequest, UploadUrlResponse } from '../types';
 
@@ -11,11 +12,13 @@ type UploadFileModalProps = {
   getUploadUrl: (payload: UploadUrlRequest) => Promise<UploadUrlResponse>;
   confirmUpload: (payload: ConfirmUploadRequest) => Promise<unknown>;
   maxFileSizeBytes?: number;
+  maxFileNameLength?: number;
   allowedTypes?: string[];
 };
 
 const DEFAULT_MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
 const DEFAULT_ALLOWED_TYPES = ['pdf', 'docx', 'pptx', 'zip'];
+const DEFAULT_MAX_FILE_NAME_LENGTH = 50;
 const EXTENSION_TO_MIME: Record<string, string> = {
   pdf: 'application/pdf',
   docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -92,41 +95,22 @@ function resolveUploadContentType(file: File): string {
   return mimeType;
 }
 
-function uploadFileWithProgress(
-  presignedUrl: string,
-  file: File,
-  contentType: string,
-  onProgress: (percent: number) => void,
-): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open('PUT', presignedUrl);
-    xhr.setRequestHeader('Content-Type', contentType);
-
-    xhr.upload.onprogress = (event) => {
-      if (!event.lengthComputable) {
-        return;
-      }
-      const raw = Math.round((event.loaded / event.total) * 100);
-      const clamped = Math.max(0, Math.min(100, raw));
-      onProgress(clamped);
-    };
-
-    xhr.onload = () => {
-      if (xhr.status >= 200 && xhr.status < 300) {
-        onProgress(100);
-        resolve();
-        return;
-      }
-      reject(new Error('Upload to storage failed.'));
-    };
-
-    xhr.onerror = () => {
-      reject(new Error('Upload to storage failed.'));
-    };
-
-    xhr.send(file);
+async function uploadFile(presignedUrl: string, file: File, contentType: string): Promise<void> {
+  const response = await fetch(presignedUrl, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': contentType,
+    },
+    body: file,
   });
+
+  if (!response.ok) {
+    throw new Error('Upload to storage failed.');
+  }
+}
+
+function normalizeFileNameDraft(value: string, maxFileNameLength: number): string {
+  return value.slice(0, maxFileNameLength);
 }
 
 export function UploadFileModal({
@@ -137,9 +121,11 @@ export function UploadFileModal({
   getUploadUrl,
   confirmUpload,
   maxFileSizeBytes,
+  maxFileNameLength,
   allowedTypes,
 }: UploadFileModalProps) {
   const resolvedMaxFileSizeBytes = Math.max(1, maxFileSizeBytes ?? DEFAULT_MAX_FILE_SIZE_BYTES);
+  const resolvedMaxFileNameLength = Math.max(1, maxFileNameLength ?? DEFAULT_MAX_FILE_NAME_LENGTH);
   const resolvedAllowedTypes = normalizeAllowedTypes(allowedTypes);
   const allowedTypesSet = new Set(resolvedAllowedTypes);
   const acceptedInputValue = resolvedAllowedTypes.map((type) => `.${type}`).join(',');
@@ -150,9 +136,20 @@ export function UploadFileModal({
   const [fileNameDraft, setFileNameDraft] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
   const [isDragActive, setIsDragActive] = useState(false);
   const [hasSubmitAttempted, setHasSubmitAttempted] = useState(false);
+  const [requestModal, setRequestModal] = useState<{
+    isOpen: boolean;
+    status: 'loading' | 'success' | 'error';
+    title: string;
+    message: string;
+  }>({
+    isOpen: false,
+    status: 'loading',
+    title: '',
+    message: '',
+  });
+  const isUploadDisabled = isSubmitting || !selectedFile || fileNameDraft.trim().length === 0;
 
   if (!isOpen) {
     return null;
@@ -163,7 +160,6 @@ export function UploadFileModal({
     setFileNameDraft('');
     setError(null);
     setIsSubmitting(false);
-    setUploadProgress(0);
     setIsDragActive(false);
     setHasSubmitAttempted(false);
   }
@@ -190,7 +186,7 @@ export function UploadFileModal({
     }
 
     setSelectedFile(file);
-    setFileNameDraft(file.name);
+    setFileNameDraft(normalizeFileNameDraft(file.name, resolvedMaxFileNameLength));
     setError(null);
   }
 
@@ -217,10 +213,19 @@ export function UploadFileModal({
       setError('File name is required.');
       return;
     }
+    if (finalFileName.length > resolvedMaxFileNameLength) {
+      setError(`File name cannot exceed ${resolvedMaxFileNameLength} characters.`);
+      return;
+    }
 
     setError(null);
     setIsSubmitting(true);
-    setUploadProgress(5);
+    setRequestModal({
+      isOpen: true,
+      status: 'loading',
+      title: 'Uploading file',
+      message: 'Uploading to storage and saving file metadata.',
+    });
 
     try {
       const contentType = resolveUploadContentType(selectedFile);
@@ -229,8 +234,7 @@ export function UploadFileModal({
         contentType,
       });
 
-      setUploadProgress(10);
-      await uploadFileWithProgress(uploadMeta.presignedUrl, selectedFile, contentType, setUploadProgress);
+      await uploadFile(uploadMeta.presignedUrl, selectedFile, contentType);
 
       await confirmUpload({
         s3Key: uploadMeta.s3Key,
@@ -240,127 +244,163 @@ export function UploadFileModal({
       });
 
       await onUploaded();
-      resetModalState();
-      onClose();
+      setRequestModal({
+        isOpen: true,
+        status: 'success',
+        title: 'Upload complete',
+        message: 'File uploaded successfully.',
+      });
     } catch (uploadError) {
-      setError(uploadError instanceof Error ? uploadError.message : 'Unable to upload file.');
+      const message = uploadError instanceof Error ? uploadError.message : 'Unable to upload file.';
+      setError(message);
+      setRequestModal({
+        isOpen: true,
+        status: 'error',
+        title: 'Upload failed',
+        message,
+      });
     } finally {
       setIsSubmitting(false);
     }
   }
 
   return createPortal(
-    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4" role="dialog" aria-modal>
-      <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-md" onClick={handleClose} />
-      <div className="relative z-10 w-full max-w-lg rounded-3xl border border-white/25 bg-white p-6 shadow-[0_28px_72px_rgba(15,23,42,0.24)]">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h3 className="text-lg font-bold text-slate-900">{title}</h3>
-            <p className="mt-1 text-xs font-medium text-slate-500">{acceptedFileTypesText}</p>
-          </div>
-          <Button type="button" variant="ghost" size="sm" onClick={handleClose} disabled={isSubmitting}>
-            Close
-          </Button>
-        </div>
-
-        <div className="mt-5 space-y-4">
-          <div
-            onDragOver={(event) => {
-              event.preventDefault();
-              if (isSubmitting) {
-                return;
-              }
-              setIsDragActive(true);
-            }}
-            onDragLeave={(event) => {
-              event.preventDefault();
-              setIsDragActive(false);
-            }}
-            onDrop={(event) => {
-              event.preventDefault();
-              setIsDragActive(false);
-              if (isSubmitting) {
-                return;
-              }
-              const droppedFile = event.dataTransfer.files?.[0] ?? null;
-              applySelectedFile(droppedFile);
-            }}
-            className={`rounded-2xl border-2 border-dashed p-6 text-center transition-colors ${
-              isDragActive ? 'border-slate-500 bg-slate-50' : 'border-slate-300 bg-slate-50/40'
-            }`}
-          >
-            <p className="text-sm font-semibold text-slate-700">Drag and drop a file here</p>
-            <p className="mt-1 text-xs text-slate-500">or browse from your device</p>
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              className="mt-4"
-              onClick={() => hiddenInputRef.current?.click()}
-              disabled={isSubmitting}
-            >
-              Choose file
-            </Button>
-            <input
-              ref={hiddenInputRef}
-              type="file"
-              accept={acceptedInputValue}
-              onChange={(event) => {
-                const file = event.target.files?.[0] ?? null;
-                applySelectedFile(file);
-              }}
-              className="hidden"
-            />
-          </div>
-
-          <div>
-            <label className="mb-1.5 block text-xs font-bold uppercase tracking-[0.12em] text-slate-500">
-              File name
-            </label>
-            <input
-              type="text"
-              value={fileNameDraft}
-              onChange={(event) => setFileNameDraft(event.target.value)}
-              disabled={!selectedFile || isSubmitting}
-              placeholder="Select a file first"
-              className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition-colors focus:border-slate-400"
-            />
-          </div>
-
-          {selectedFile ? (
-            <p className="text-xs text-slate-500">
-              Selected: {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
-            </p>
-          ) : null}
-
-          {isSubmitting ? (
-            <div className="space-y-1.5">
-              <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200">
-                <div
-                  className="h-full rounded-full bg-slate-900 transition-[width] duration-200"
-                  style={{ width: `${uploadProgress}%` }}
-                />
-              </div>
-              <p className="text-xs text-slate-500">Uploading to storage... {uploadProgress}%</p>
+    <>
+      <div className="fixed inset-0 z-[70] flex items-center justify-center p-4" role="dialog" aria-modal>
+        <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-md" onClick={handleClose} />
+        <div className="relative z-10 w-full max-w-lg rounded-3xl border border-white/25 bg-white p-6 shadow-[0_28px_72px_rgba(15,23,42,0.24)]">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h3 className="text-lg font-bold text-slate-900">{title}</h3>
+              <p className="mt-1 text-xs font-medium text-slate-500">{acceptedFileTypesText}</p>
             </div>
-          ) : null}
+            <Button type="button" variant="ghost" size="sm" onClick={handleClose} disabled={isSubmitting}>
+              Close
+            </Button>
+          </div>
 
-          {error ? <p className="text-xs text-rose-700">{error}</p> : null}
-          {!error && hasSubmitAttempted && !selectedFile ? (
-            <p className="text-xs text-rose-700">Select a file to continue.</p>
-          ) : null}
-        </div>
+          <div className="mt-5 space-y-4">
+            <div
+              onDragOver={(event) => {
+                event.preventDefault();
+                if (isSubmitting) {
+                  return;
+                }
+                setIsDragActive(true);
+              }}
+              onDragLeave={(event) => {
+                event.preventDefault();
+                setIsDragActive(false);
+              }}
+              onDrop={(event) => {
+                event.preventDefault();
+                setIsDragActive(false);
+                if (isSubmitting) {
+                  return;
+                }
+                const droppedFile = event.dataTransfer.files?.[0] ?? null;
+                applySelectedFile(droppedFile);
+              }}
+              className={`rounded-2xl border-2 border-dashed p-6 text-center transition-colors ${
+                isDragActive ? 'border-slate-500 bg-slate-50' : 'border-slate-300 bg-slate-50/40'
+              }`}
+            >
+              <p className="text-sm font-semibold text-slate-700">
+                {selectedFile ? 'File selected' : 'Drag and drop a file here'}
+              </p>
+              <p className="mt-1 text-xs text-slate-500">
+                {selectedFile ? 'You can choose a different file anytime' : 'or browse from your device'}
+              </p>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                className="mt-4"
+                onClick={() => hiddenInputRef.current?.click()}
+                disabled={isSubmitting}
+              >
+                {selectedFile ? 'Select different file' : 'Choose file'}
+              </Button>
+              <input
+                ref={hiddenInputRef}
+                type="file"
+                accept={acceptedInputValue}
+                onChange={(event) => {
+                  const file = event.target.files?.[0] ?? null;
+                  applySelectedFile(file);
+                }}
+                className="hidden"
+              />
+            </div>
 
-        <div className="mt-6 flex justify-end gap-2">
-          <Button type="button" variant="secondary" onClick={handleClose} disabled={isSubmitting}>
-            Cancel
-          </Button>
-          <Button type="button" variant="primary" onClick={() => void handleUpload()} disabled={isSubmitting}>
-            {isSubmitting ? 'Uploading...' : 'Upload'}
-          </Button>
+            <div>
+              <div className="mb-1.5 flex items-center justify-between">
+                <label className="text-xs font-bold uppercase tracking-[0.12em] text-slate-500">
+                  File name
+                </label>
+                <span className="text-[11px] text-slate-500">
+                  {fileNameDraft.length}/{resolvedMaxFileNameLength}
+                </span>
+              </div>
+              <input
+                type="text"
+                value={fileNameDraft}
+                onChange={(event) =>
+                  setFileNameDraft(normalizeFileNameDraft(event.target.value, resolvedMaxFileNameLength))
+                }
+                maxLength={resolvedMaxFileNameLength}
+                disabled={!selectedFile || isSubmitting}
+                placeholder="Select a file first"
+                className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition-colors focus:border-slate-400"
+              />
+            </div>
+
+            {selectedFile ? (
+              <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+                <p className="flex items-center gap-2 text-xs text-slate-600">
+                  <span className="shrink-0 font-medium">Selected:</span>
+                  <span className="min-w-0 flex-1 truncate" title={selectedFile.name}>
+                    {selectedFile.name}
+                  </span>
+                  <span className="shrink-0">({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)</span>
+                </p>
+              </div>
+            ) : null}
+
+            {error ? <p className="text-xs text-rose-700">{error}</p> : null}
+            {!error && hasSubmitAttempted && !selectedFile ? (
+              <p className="text-xs text-rose-700">Select a file to continue.</p>
+            ) : null}
+          </div>
+
+          <div className="mt-6 flex justify-end gap-2">
+            <Button type="button" variant="secondary" onClick={handleClose} disabled={isSubmitting}>
+              Cancel
+            </Button>
+            <Button type="button" variant="primary" onClick={() => void handleUpload()} disabled={isUploadDisabled}>
+              Upload
+            </Button>
+          </div>
         </div>
       </div>
-    </div>,
+
+      <RequestStateModal
+        isOpen={requestModal.isOpen}
+        status={requestModal.status}
+        title={requestModal.title}
+        message={requestModal.message}
+        autoCloseOnSuccess
+        onClose={
+          requestModal.status === 'success'
+            ? () => {
+                setRequestModal((current) => ({ ...current, isOpen: false }));
+                resetModalState();
+                onClose();
+              }
+            : () => setRequestModal((current) => ({ ...current, isOpen: false }))
+        }
+      />
+    </>,
     document.body,
   );
 }

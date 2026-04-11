@@ -12,6 +12,7 @@ export type ProjectFile = {
 
 export type ProjectFileConfig = {
   maxFileSizeBytes: number;
+  maxFileNameLength: number;
   allowedTypes: string[];
   presignedUrlExpirySeconds: number;
 };

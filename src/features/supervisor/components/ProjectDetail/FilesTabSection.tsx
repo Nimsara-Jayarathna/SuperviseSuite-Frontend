@@ -63,6 +63,7 @@ export function FilesTabSection({ projectId }: FilesTabSectionProps) {
         getUploadUrl={(payload) => supervisorFilesApi.getUploadUrl(projectId, payload)}
         confirmUpload={(payload) => supervisorFilesApi.confirmUpload(projectId, payload)}
         maxFileSizeBytes={config?.maxFileSizeBytes}
+        maxFileNameLength={config?.maxFileNameLength}
         allowedTypes={config?.allowedTypes}
       />
 

@@ -60,6 +60,7 @@ export function StudentFilesTabSection({ projectId }: StudentFilesTabSectionProp
         getUploadUrl={(payload) => studentFilesApi.getUploadUrl(projectId, payload)}
         confirmUpload={(payload) => studentFilesApi.confirmUpload(projectId, payload)}
         maxFileSizeBytes={config?.maxFileSizeBytes}
+        maxFileNameLength={config?.maxFileNameLength}
         allowedTypes={config?.allowedTypes}
       />
     </section>
