@@ -68,4 +68,10 @@ export type StudentProjectDetail = {
   milestones: StudentProjectDetailMilestone[];
 };
 
-export type StudentProjectDetailTab = 'overview' | 'team' | 'milestones' | 'github' | 'jira';
+export type StudentProjectDetailTab =
+  | 'overview'
+  | 'team'
+  | 'milestones'
+  | 'files'
+  | 'github'
+  | 'jira';

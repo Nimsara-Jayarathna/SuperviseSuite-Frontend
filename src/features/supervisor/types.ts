@@ -257,6 +257,7 @@ export type SupervisorProjectDetailTab =
   | 'overview'
   | 'team'
   | 'milestones'
+  | 'files'
   | 'github'
   | 'integrations'
   | 'jira';
