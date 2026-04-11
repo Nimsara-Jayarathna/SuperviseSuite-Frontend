@@ -14,7 +14,7 @@ type FilesTabSectionProps = {
 };
 
 export function FilesTabSection({ projectId }: FilesTabSectionProps) {
-  const { files, isLoading, error, reload, downloadFile, deleteFile, isDeletingFileId } =
+  const { files, config, isLoading, error, reload, downloadFile, deleteFile, isDeletingFileId } =
     useSupervisorProjectFiles(projectId);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [filePendingDelete, setFilePendingDelete] = useState<ProjectFile | null>(null);
@@ -62,6 +62,8 @@ export function FilesTabSection({ projectId }: FilesTabSectionProps) {
         onUploaded={reload}
         getUploadUrl={(payload) => supervisorFilesApi.getUploadUrl(projectId, payload)}
         confirmUpload={(payload) => supervisorFilesApi.confirmUpload(projectId, payload)}
+        maxFileSizeBytes={config?.maxFileSizeBytes}
+        allowedTypes={config?.allowedTypes}
       />
 
       <DeleteConfirmModal

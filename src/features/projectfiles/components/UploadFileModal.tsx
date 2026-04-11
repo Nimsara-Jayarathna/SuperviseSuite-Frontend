@@ -10,19 +10,12 @@ type UploadFileModalProps = {
   onUploaded: () => Promise<void> | void;
   getUploadUrl: (payload: UploadUrlRequest) => Promise<UploadUrlResponse>;
   confirmUpload: (payload: ConfirmUploadRequest) => Promise<unknown>;
+  maxFileSizeBytes?: number;
+  allowedTypes?: string[];
 };
 
-const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
-const ACCEPTED_FILE_TYPES_TEXT = 'PDF, DOCX, PPTX, ZIP • Max 10MB';
-const ACCEPTED_INPUT_VALUE = '.pdf,.docx,.pptx,.zip';
-const ALLOWED_MIME_TYPES = new Set([
-  'application/pdf',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-  'application/zip',
-  'application/x-zip-compressed',
-]);
-const ALLOWED_EXTENSIONS = new Set(['pdf', 'docx', 'pptx', 'zip']);
+const DEFAULT_MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
+const DEFAULT_ALLOWED_TYPES = ['pdf', 'docx', 'pptx', 'zip'];
 const EXTENSION_TO_MIME: Record<string, string> = {
   pdf: 'application/pdf',
   docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -38,21 +31,48 @@ function extensionFromFileName(fileName: string): string | null {
   return fileName.slice(dotIndex + 1).toLowerCase();
 }
 
-function validateSelectedFile(file: File): string | null {
+function bytesToHumanSize(bytes: number): string {
+  if (bytes <= 0) {
+    return '0 B';
+  }
+  if (bytes < 1024) {
+    return `${bytes} B`;
+  }
+  const kb = bytes / 1024;
+  if (kb < 1024) {
+    return `${Math.round(kb)} KB`;
+  }
+  const mb = kb / 1024;
+  if (mb < 1024) {
+    return `${Number.isInteger(mb) ? mb.toFixed(0) : mb.toFixed(1)}MB`;
+  }
+  const gb = mb / 1024;
+  return `${gb.toFixed(1)}GB`;
+}
+
+function normalizeAllowedTypes(allowedTypes?: string[]): string[] {
+  const source = allowedTypes && allowedTypes.length > 0 ? allowedTypes : DEFAULT_ALLOWED_TYPES;
+  return source
+    .map((type) => type.trim().toLowerCase())
+    .filter((type) => type.length > 0);
+}
+
+function validateSelectedFile(file: File, maxFileSizeBytes: number, allowedTypes: Set<string>): string | null {
   if (file.size <= 0) {
     return 'Selected file is empty.';
   }
-  if (file.size > MAX_FILE_SIZE_BYTES) {
-    return 'File size must be 10 MB or less.';
+  if (file.size > maxFileSizeBytes) {
+    return `File size must be ${bytesToHumanSize(maxFileSizeBytes)} or less.`;
   }
 
   const extension = extensionFromFileName(file.name);
   const type = file.type.trim().toLowerCase();
-  const mimeValid = type.length > 0 && ALLOWED_MIME_TYPES.has(type);
-  const extensionValid = extension !== null && ALLOWED_EXTENSIONS.has(extension);
+  const mimeExtension = Object.entries(EXTENSION_TO_MIME).find(([, mime]) => mime === type)?.[0] ?? null;
+  const mimeValid = mimeExtension !== null && allowedTypes.has(mimeExtension);
+  const extensionValid = extension !== null && allowedTypes.has(extension);
 
   if (!mimeValid && !extensionValid) {
-    return 'Only PDF, DOCX, PPTX, and ZIP files are allowed.';
+    return `Only ${Array.from(allowedTypes).map((fileType) => fileType.toUpperCase()).join(', ')} files are allowed.`;
   }
 
   return null;
@@ -60,7 +80,7 @@ function validateSelectedFile(file: File): string | null {
 
 function resolveUploadContentType(file: File): string {
   const mimeType = file.type.trim().toLowerCase();
-  if (mimeType.length > 0 && ALLOWED_MIME_TYPES.has(mimeType)) {
+  if (mimeType.length > 0) {
     return mimeType;
   }
 
@@ -116,7 +136,15 @@ export function UploadFileModal({
   onUploaded,
   getUploadUrl,
   confirmUpload,
+  maxFileSizeBytes,
+  allowedTypes,
 }: UploadFileModalProps) {
+  const resolvedMaxFileSizeBytes = Math.max(1, maxFileSizeBytes ?? DEFAULT_MAX_FILE_SIZE_BYTES);
+  const resolvedAllowedTypes = normalizeAllowedTypes(allowedTypes);
+  const allowedTypesSet = new Set(resolvedAllowedTypes);
+  const acceptedInputValue = resolvedAllowedTypes.map((type) => `.${type}`).join(',');
+  const acceptedFileTypesText = `${resolvedAllowedTypes.map((type) => type.toUpperCase()).join(', ')} • Max ${bytesToHumanSize(resolvedMaxFileSizeBytes)}`;
+
   const hiddenInputRef = useRef<HTMLInputElement | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [fileNameDraft, setFileNameDraft] = useState('');
@@ -153,7 +181,7 @@ export function UploadFileModal({
       return;
     }
 
-    const validationError = validateSelectedFile(file);
+    const validationError = validateSelectedFile(file, resolvedMaxFileSizeBytes, allowedTypesSet);
     if (validationError) {
       setSelectedFile(null);
       setFileNameDraft('');
@@ -174,7 +202,11 @@ export function UploadFileModal({
       return;
     }
 
-    const validationError = validateSelectedFile(selectedFile);
+    const validationError = validateSelectedFile(
+      selectedFile,
+      resolvedMaxFileSizeBytes,
+      allowedTypesSet,
+    );
     if (validationError) {
       setError(validationError);
       return;
@@ -224,7 +256,7 @@ export function UploadFileModal({
         <div className="flex items-start justify-between gap-3">
           <div>
             <h3 className="text-lg font-bold text-slate-900">{title}</h3>
-            <p className="mt-1 text-xs font-medium text-slate-500">{ACCEPTED_FILE_TYPES_TEXT}</p>
+            <p className="mt-1 text-xs font-medium text-slate-500">{acceptedFileTypesText}</p>
           </div>
           <Button type="button" variant="ghost" size="sm" onClick={handleClose} disabled={isSubmitting}>
             Close
@@ -272,7 +304,7 @@ export function UploadFileModal({
             <input
               ref={hiddenInputRef}
               type="file"
-              accept={ACCEPTED_INPUT_VALUE}
+              accept={acceptedInputValue}
               onChange={(event) => {
                 const file = event.target.files?.[0] ?? null;
                 applySelectedFile(file);

@@ -12,7 +12,7 @@ type StudentFilesTabSectionProps = {
 };
 
 export function StudentFilesTabSection({ projectId }: StudentFilesTabSectionProps) {
-  const { files, isLoading, error, reload, downloadFile } = useStudentProjectFiles(projectId);
+  const { files, config, isLoading, error, reload, downloadFile } = useStudentProjectFiles(projectId);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
 
   return (
@@ -59,6 +59,8 @@ export function StudentFilesTabSection({ projectId }: StudentFilesTabSectionProp
         onUploaded={reload}
         getUploadUrl={(payload) => studentFilesApi.getUploadUrl(projectId, payload)}
         confirmUpload={(payload) => studentFilesApi.confirmUpload(projectId, payload)}
+        maxFileSizeBytes={config?.maxFileSizeBytes}
+        allowedTypes={config?.allowedTypes}
       />
     </section>
   );

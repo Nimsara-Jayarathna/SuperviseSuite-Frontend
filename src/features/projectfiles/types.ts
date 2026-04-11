@@ -10,6 +10,16 @@ export type ProjectFile = {
   updatedAt: string | null;
 };
 
+export type ProjectFileConfig = {
+  maxFileSizeBytes: number;
+  allowedTypes: string[];
+};
+
+export type ProjectFileListResponse = {
+  files: ProjectFile[];
+  config: ProjectFileConfig;
+};
+
 export type UploadUrlRequest = {
   fileName: string;
   contentType: string;

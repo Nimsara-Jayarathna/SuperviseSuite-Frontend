@@ -2,13 +2,14 @@ import { apiClient } from '@/services/apiClient';
 import type {
   ConfirmUploadRequest,
   ProjectFile,
+  ProjectFileListResponse,
   UploadUrlRequest,
   UploadUrlResponse,
 } from '../types';
 
 export const studentFilesApi = {
-  list(projectId: string): Promise<ProjectFile[]> {
-    return apiClient.get<ProjectFile[]>(`/api/student/projects/${projectId}/files`);
+  list(projectId: string): Promise<ProjectFileListResponse> {
+    return apiClient.get<ProjectFileListResponse>(`/api/student/projects/${projectId}/files`);
   },
 
   getUploadUrl(projectId: string, payload: UploadUrlRequest): Promise<UploadUrlResponse> {
