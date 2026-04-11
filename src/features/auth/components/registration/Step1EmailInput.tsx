@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { useState } from 'react';
+import { cn } from '@/lib/cn';
 import type { useRegistrationFlow } from '../../hooks/useRegistrationFlow';
 import type { RegisterConfig } from '../../types';
 
@@ -29,7 +30,7 @@ export function Step1EmailInput({ flow, config }: Step1EmailInputProps) {
   const hasAt = email.includes('@');
   const matchedRole = matchDomain(email, config);
   const hasInvalidFormat = hasAt && !isValidEmailFormat(email);
-  const showDomainWarning =
+  const hasDomainRestrictionViolation =
     hasAt && !hasInvalidFormat && matchedRole === null && config.domainRestrictionEnabled;
   const canContinue =
     isValidEmailFormat(email) && (!config.domainRestrictionEnabled || matchedRole !== null);
@@ -40,6 +41,22 @@ export function Step1EmailInput({ flow, config }: Step1EmailInputProps) {
   const domainWarning = `Only ${config.studentDomain ?? 'student domain'} (students) and ${
     config.supervisorDomain ?? 'supervisor domain'
   } (supervisors) may register.`;
+  const placeholder = config.domainRestrictionEnabled
+    ? `your${config.studentDomain ?? '@my.sliit.lk'} or your${config.supervisorDomain ?? '@sliit.lk'}`
+    : 'you@example.com';
+  const inputStateClass = hasDomainRestrictionViolation
+    ? 'border-red-500 focus:ring-red-200'
+    : matchedRole === 'STUDENT'
+      ? 'border-emerald-500 focus:ring-emerald-200'
+      : matchedRole === 'SUPERVISOR'
+        ? 'border-sky-500 focus:ring-sky-200'
+        : 'border-border focus:ring-primary/40';
+  const buttonAccentClass =
+    matchedRole === 'STUDENT'
+      ? 'bg-emerald-700 hover:bg-emerald-600 active:bg-emerald-800'
+      : matchedRole === 'SUPERVISOR'
+        ? 'bg-sky-700 hover:bg-sky-600 active:bg-sky-800'
+        : undefined;
 
   return (
     <form
@@ -54,41 +71,46 @@ export function Step1EmailInput({ flow, config }: Step1EmailInputProps) {
         <label htmlFor="registration-email" className="text-sm font-medium text-foreground">
           Email
         </label>
-        <Input
-          id="registration-email"
-          type="email"
-          autoComplete="email"
-          value={email}
-          onChange={(e) => {
-            setEmail(e.target.value);
-            flow.clearError();
-          }}
-          onFocus={flow.clearError}
-          placeholder="you@example.com"
-          className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
-        />
+        <div className="relative">
+          <Input
+            id="registration-email"
+            type="email"
+            autoComplete="email"
+            value={email}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              flow.clearError();
+            }}
+            onFocus={flow.clearError}
+            placeholder={placeholder}
+            className={cn(
+              'w-full rounded-md border bg-background px-3 py-2 pr-28 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2',
+              inputStateClass,
+            )}
+          />
+          <span
+            className={cn(
+              'pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 rounded-full px-2 py-0.5 text-[11px] font-semibold transition-all duration-200',
+              matchedRole === 'STUDENT'
+                ? 'bg-emerald-100 text-emerald-700 opacity-100'
+                : matchedRole === 'SUPERVISOR'
+                  ? 'bg-sky-100 text-sky-700 opacity-100'
+                  : 'opacity-0',
+            )}
+          >
+            {matchedRole === 'STUDENT' ? 'Student' : matchedRole === 'SUPERVISOR' ? 'Supervisor' : ''}
+          </span>
+        </div>
       </div>
 
       {hasAt && hasInvalidFormat && (
-        <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
+        <p className="text-xs text-red-600">
           Enter a valid email address.
         </p>
       )}
 
-      {!hasInvalidFormat && matchedRole === 'STUDENT' && (
-        <div className="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
-          Student account
-        </div>
-      )}
-
-      {!hasInvalidFormat && matchedRole === 'SUPERVISOR' && (
-        <div className="inline-flex rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold text-sky-700">
-          Supervisor account
-        </div>
-      )}
-
-      {showDomainWarning && (
-        <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
+      {hasDomainRestrictionViolation && (
+        <p className="text-xs text-red-600">
           {domainWarning}
         </p>
       )}
@@ -113,6 +135,7 @@ export function Step1EmailInput({ flow, config }: Step1EmailInputProps) {
         variant="primary"
         size="lg"
         fullWidth
+        className={buttonAccentClass}
         disabled={flow.isLoading || !canContinue}
       >
         {flow.isLoading ? 'Sending code…' : 'Continue'}

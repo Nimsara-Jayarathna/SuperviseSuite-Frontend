@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/Button';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import type { RegisterConfig } from '../../types';
 import { Step1EmailInput } from './Step1EmailInput';
 import { Step2OTPVerify } from './Step2OTPVerify';
@@ -114,7 +115,7 @@ export function RegistrationPanel({ config, inModal = false, onClose }: Registra
     }
   }, [flow, onClose, effectiveConfig]);
 
-  return (
+  const panelContent = (
     <>
       {!inModal && (
         <div
@@ -184,4 +185,10 @@ export function RegistrationPanel({ config, inModal = false, onClose }: Registra
       `}</style>
     </>
   );
+
+  if (!inModal && typeof document !== 'undefined') {
+    return createPortal(panelContent, document.body);
+  }
+
+  return panelContent;
 }

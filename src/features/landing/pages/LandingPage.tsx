@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PublicLayout } from '@/app/layout/PublicLayout';
+import { RequestStateModal } from '@/components/ui/RequestStateModal';
 import { authApi } from '@/features/auth/api/authApi';
 import { RegistrationPanel } from '@/features/auth/components/registration/RegistrationPanel';
 import type { RegisterConfig } from '@/features/auth/types';
@@ -38,9 +39,12 @@ export function LandingPage() {
 
   return (
     <PublicLayout onLogin={handleSupervisorAccess} onRegister={handleRegister}>
-      {registrationLoading && (
-        <div className="mb-2 text-center text-sm text-muted-foreground">Preparing registration…</div>
-      )}
+      <RequestStateModal
+        isOpen={registrationLoading}
+        status="loading"
+        title="Preparing registration"
+        message="Checking registration configuration..."
+      />
       {registrationOpen && registerConfig && (
         <RegistrationPanel config={registerConfig} onClose={() => setRegistrationOpen(false)} />
       )}
