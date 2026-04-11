@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/Button';
 type DeleteConfirmModalProps = {
   isOpen: boolean;
   fileName: string | null;
-  isDeleting: boolean;
   onCancel: () => void;
   onConfirm: () => void;
 };
@@ -12,7 +11,6 @@ type DeleteConfirmModalProps = {
 export function DeleteConfirmModal({
   isOpen,
   fileName,
-  isDeleting,
   onCancel,
   onConfirm,
 }: DeleteConfirmModalProps) {
@@ -30,11 +28,11 @@ export function DeleteConfirmModal({
           from project storage.
         </p>
         <div className="mt-6 flex justify-end gap-2">
-          <Button type="button" variant="secondary" onClick={onCancel} disabled={isDeleting}>
+          <Button type="button" variant="secondary" onClick={onCancel}>
             Cancel
           </Button>
-          <Button type="button" variant="danger" onClick={onConfirm} disabled={isDeleting}>
-            {isDeleting ? 'Deleting...' : 'Delete'}
+          <Button type="button" variant="danger" onClick={onConfirm}>
+            Delete
           </Button>
         </div>
       </div>

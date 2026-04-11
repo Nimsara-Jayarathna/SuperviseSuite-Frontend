@@ -30,7 +30,6 @@ export function useSupervisorProjectFiles(projectId: string | undefined, lazy = 
     error: null,
   });
   const [hasLoaded, setHasLoaded] = useState(false);
-  const [isDeletingFileId, setIsDeletingFileId] = useState<string | null>(null);
 
   const seed = useCallback((files: ProjectFile[], config: ProjectFileConfig) => {
     setState({
@@ -46,6 +45,15 @@ export function useSupervisorProjectFiles(projectId: string | undefined, lazy = 
     setState((current) => ({
       ...current,
       files: [uploadedFile, ...current.files.filter((file) => file.id !== uploadedFile.id)],
+      error: null,
+    }));
+    setHasLoaded(true);
+  }, []);
+
+  const removeDeletedFile = useCallback((fileId: string) => {
+    setState((current) => ({
+      ...current,
+      files: current.files.filter((file) => file.id !== fileId),
       error: null,
     }));
     setHasLoaded(true);
@@ -82,14 +90,14 @@ export function useSupervisorProjectFiles(projectId: string | undefined, lazy = 
 
   async function deleteFile(fileId: string) {
     if (!projectId) {
-      return;
+      return { ok: false as const };
     }
-    setIsDeletingFileId(fileId);
     try {
       await supervisorFilesApi.delete(projectId, fileId);
-      await load();
-    } finally {
-      setIsDeletingFileId(null);
+      return { ok: true as const };
+    } catch (error) {
+      const apiError = isApiException(error) ? error.apiError : UNKNOWN_ERROR;
+      return { ok: false as const, error: apiError };
     }
   }
 
@@ -118,9 +126,9 @@ export function useSupervisorProjectFiles(projectId: string | undefined, lazy = 
     isLoading: state.isLoading,
     error: state.error,
     hasLoaded,
-    isDeletingFileId,
     seed,
     addUploadedFile,
+    removeDeletedFile,
     load,
     reload: async () => {
       await load();

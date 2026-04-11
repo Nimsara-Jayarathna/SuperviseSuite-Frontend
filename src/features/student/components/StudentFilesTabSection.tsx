@@ -17,18 +17,16 @@ type StudentFilesTabSectionProps = {
 };
 
 export function StudentFilesTabSection({ projectId, initialFiles = null }: StudentFilesTabSectionProps) {
-  const { files, config, isLoading, error, hasLoaded, seed, load, reload, downloadFile } = useStudentProjectFiles(projectId);
+  const { files, config, isLoading, error, hasLoaded, seed, addUploadedFile, load, downloadFile } = useStudentProjectFiles(projectId);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
 
   useEffect(() => {
     if (!hasLoaded && !isLoading) {
       if (initialFiles?.config) {
         seed(initialFiles.items, initialFiles.config);
-        return;
       }
-      void load();
     }
-  }, [hasLoaded, initialFiles, isLoading, load, seed]);
+  }, [hasLoaded, initialFiles, isLoading, seed]);
 
   return (
     <section className="rounded-3xl border border-border bg-white p-6 shadow-sm transition-all hover:shadow-md">
@@ -71,7 +69,7 @@ export function StudentFilesTabSection({ projectId, initialFiles = null }: Stude
       <UploadFileModal
         isOpen={isUploadOpen}
         onClose={() => setIsUploadOpen(false)}
-        onUploaded={reload}
+        onUploaded={addUploadedFile}
         getUploadUrl={(payload) => studentFilesApi.getUploadUrl(projectId, payload)}
         confirmUpload={(payload) => studentFilesApi.confirmUpload(projectId, payload)}
         maxFileSizeBytes={config?.maxFileSizeBytes}

@@ -28,11 +28,10 @@ export function FilesTabSection({ projectId, initialFiles = null }: FilesTabSect
     hasLoaded,
     seed,
     addUploadedFile,
+    removeDeletedFile,
     load,
-    reload,
     downloadFile,
     deleteFile,
-    isDeletingFileId,
   } =
     useSupervisorProjectFiles(projectId);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
@@ -97,6 +96,45 @@ export function FilesTabSection({ projectId, initialFiles = null }: FilesTabSect
     });
   }
 
+  async function confirmDeleteFile() {
+    if (!filePendingDelete) {
+      return;
+    }
+
+    const targetFileId = filePendingDelete.id;
+    setRequestModal({
+      isOpen: true,
+      status: 'loading',
+      title: 'Deleting file',
+      message: 'Removing file from project storage.',
+      retryAction: null,
+    });
+
+    const result = await deleteFile(targetFileId);
+    if (result.ok) {
+      removeDeletedFile(targetFileId);
+      setFilePendingDelete(null);
+      setRequestModal({
+        isOpen: true,
+        status: 'success',
+        title: 'File deleted',
+        message: 'File was removed successfully.',
+        retryAction: null,
+      });
+      return;
+    }
+
+    setRequestModal({
+      isOpen: true,
+      status: 'error',
+      title: 'Unable to delete file',
+      message: result.error?.message ?? 'Unable to delete file right now.',
+      retryAction: () => {
+        void confirmDeleteFile();
+      },
+    });
+  }
+
   return (
     <section className="rounded-3xl border border-border bg-white p-6 shadow-sm transition-all hover:shadow-md">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -139,7 +177,6 @@ export function FilesTabSection({ projectId, initialFiles = null }: FilesTabSect
           <FileList
             files={files}
             canDelete
-            isDeletingFileId={isDeletingFileId}
             onDownload={(fileId) => void downloadFile(fileId)}
             onDelete={(file) => setFilePendingDelete(file)}
           />
@@ -160,14 +197,8 @@ export function FilesTabSection({ projectId, initialFiles = null }: FilesTabSect
       <DeleteConfirmModal
         isOpen={Boolean(filePendingDelete)}
         fileName={filePendingDelete?.fileName ?? null}
-        isDeleting={Boolean(filePendingDelete && isDeletingFileId === filePendingDelete.id)}
         onCancel={() => setFilePendingDelete(null)}
-        onConfirm={() => {
-          if (!filePendingDelete) {
-            return;
-          }
-          void deleteFile(filePendingDelete.id).finally(() => setFilePendingDelete(null));
-        }}
+        onConfirm={() => void confirmDeleteFile()}
       />
 
       <RequestStateModal

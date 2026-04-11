@@ -6,7 +6,6 @@ import { getFileTypeDisplay } from '../fileTypeDisplay';
 type FileListItemProps = {
   file: ProjectFile;
   canDelete: boolean;
-  isDeleting: boolean;
   onDownload: (fileId: string) => void;
   onDelete: (file: ProjectFile) => void;
 };
@@ -36,7 +35,6 @@ function formatFileSize(bytes: number) {
 export function FileListItem({
   file,
   canDelete,
-  isDeleting,
   onDownload,
   onDelete,
 }: FileListItemProps) {
@@ -83,10 +81,9 @@ export function FileListItem({
             <button
               type="button"
               onClick={() => onDelete(file)}
-              disabled={isDeleting}
-              title={isDeleting ? 'Deleting file' : 'Delete file'}
-              aria-label={isDeleting ? 'Deleting file' : 'Delete file'}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-rose-200 bg-rose-50 text-rose-700 transition-colors hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50"
+              title="Delete file"
+              aria-label="Delete file"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-rose-200 bg-rose-50 text-rose-700 transition-colors hover:bg-rose-100"
             >
               <Trash2 className="h-3.5 w-3.5" />
             </button>

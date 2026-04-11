@@ -4,7 +4,6 @@ import { FileListItem } from './FileListItem';
 type FileListProps = {
   files: ProjectFile[];
   canDelete: boolean;
-  isDeletingFileId?: string | null;
   onDownload: (fileId: string) => void;
   onDelete: (file: ProjectFile) => void;
 };
@@ -12,7 +11,6 @@ type FileListProps = {
 export function FileList({
   files,
   canDelete,
-  isDeletingFileId,
   onDownload,
   onDelete,
 }: FileListProps) {
@@ -64,7 +62,6 @@ export function FileList({
                 key={file.id}
                 file={file}
                 canDelete={canDelete}
-                isDeleting={isDeletingFileId === file.id}
                 onDownload={onDownload}
                 onDelete={onDelete}
               />
