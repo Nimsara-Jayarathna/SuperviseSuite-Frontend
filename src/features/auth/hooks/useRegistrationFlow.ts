@@ -1,5 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import { isApiException } from '@/services/apiClient';
 import type { ApiError } from '@/types';
 import { authApi } from '../api/authApi';
@@ -45,7 +44,11 @@ function makeValidationError(message: string): ApiError {
   };
 }
 
-export function useRegistrationFlow() {
+type UseRegistrationFlowOptions = {
+  onSuccess?: () => void;
+};
+
+export function useRegistrationFlow(options: UseRegistrationFlowOptions = {}) {
   const isSliitStudent = (email: string) => email.toLowerCase().endsWith('@my.sliit.lk');
   const isSliitSupervisor = (email: string) =>
     email.toLowerCase().endsWith('@sliit.lk') && !email.toLowerCase().endsWith('@my.sliit.lk');
@@ -61,18 +64,6 @@ export function useRegistrationFlow() {
     error: null,
     isSuccess: false,
   });
-
-  const navigate = useNavigate();
-  const redirectTimerRef = useRef<number | null>(null);
-
-  useEffect(
-    () => () => {
-      if (redirectTimerRef.current) {
-        window.clearTimeout(redirectTimerRef.current);
-      }
-    },
-    [],
-  );
 
   const setLoading = () => setState((s) => ({ ...s, isLoading: true, error: null }));
   const setError = (error: ApiError) => setState((s) => ({ ...s, isLoading: false, error }));
@@ -136,7 +127,7 @@ export function useRegistrationFlow() {
       });
       sessionStorage.removeItem(SESSION_EMAIL_KEY);
       setState((s) => ({ ...s, isLoading: false, isSuccess: true }));
-      redirectTimerRef.current = window.setTimeout(() => navigate('/login'), 2000);
+      window.setTimeout(() => options.onSuccess?.(), 2000);
     } catch (e) {
       if (isApiException(e)) setError(e.apiError);
       else setUnexpectedError();

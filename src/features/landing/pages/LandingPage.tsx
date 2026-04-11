@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { PublicLayout } from '@/app/layout/PublicLayout';
 import { RequestStateModal } from '@/components/ui/RequestStateModal';
 import { authApi } from '@/features/auth/api/authApi';
+import { LoginPanel } from '@/features/auth/components/LoginPanel';
 import { RegistrationPanel } from '@/features/auth/components/registration/RegistrationPanel';
 import type { RegisterConfig } from '@/features/auth/types';
 import { FinalCTASection } from '../components/FinalCTASection';
@@ -12,9 +12,9 @@ import { HowItWorksSection } from '../components/HowItWorksSection';
 import { WhoItsForSection } from '../components/WhoItsForSection';
 
 export function LandingPage() {
-  const navigate = useNavigate();
   const [registrationLoading, setRegistrationLoading] = useState(false);
   const [registrationOpen, setRegistrationOpen] = useState(false);
+  const [loginOpen, setLoginOpen] = useState(false);
   const [registerConfig, setRegisterConfig] = useState<RegisterConfig | null>(null);
   const handleRegister = async () => {
     if (registrationLoading) return;
@@ -35,18 +35,26 @@ export function LandingPage() {
     }
   };
   const handleStudentPortal = () => handleRegister();
-  const handleSupervisorAccess = () => navigate('/login');
+  const handleSupervisorAccess = () => setLoginOpen(true);
 
   return (
-    <PublicLayout onLogin={handleSupervisorAccess} onRegister={handleRegister}>
+    <PublicLayout onLogin={() => setLoginOpen(true)} onRegister={handleRegister}>
       <RequestStateModal
         isOpen={registrationLoading}
         status="loading"
         title="Preparing registration"
         message="Checking registration configuration..."
       />
+      {loginOpen && <LoginPanel onClose={() => setLoginOpen(false)} />}
       {registrationOpen && registerConfig && (
-        <RegistrationPanel config={registerConfig} onClose={() => setRegistrationOpen(false)} />
+        <RegistrationPanel
+          config={registerConfig}
+          onClose={() => setRegistrationOpen(false)}
+          onSwitchToLogin={() => {
+            setRegistrationOpen(false);
+            setLoginOpen(true);
+          }}
+        />
       )}
       <div className="space-y-4 sm:space-y-5">
         <HeroSection

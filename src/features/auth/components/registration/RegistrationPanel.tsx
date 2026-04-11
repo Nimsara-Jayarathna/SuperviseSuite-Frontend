@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/Button';
 import { RequestStateModal } from '@/components/ui/RequestStateModal';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useNavigate } from 'react-router-dom';
 import type { RegisterConfig } from '../../types';
 import { Step1EmailInput } from './Step1EmailInput';
 import { Step2OTPVerify } from './Step2OTPVerify';
@@ -13,6 +14,7 @@ type RegistrationPanelProps = {
   config?: RegisterConfig;
   inModal?: boolean;
   onClose: () => void;
+  onSwitchToLogin?: () => void;
 };
 
 const STEP_NUMBER: Record<'email' | 'otp' | 'role' | 'profile', number> = {
@@ -22,7 +24,7 @@ const STEP_NUMBER: Record<'email' | 'otp' | 'role' | 'profile', number> = {
   profile: 4,
 };
 
-function SuccessCard({ onClose }: { onClose: () => void }) {
+function SuccessCard({ onDone }: { onDone: () => void }) {
   const [countdown, setCountdown] = useState(2);
 
   useEffect(() => {
@@ -34,9 +36,9 @@ function SuccessCard({ onClose }: { onClose: () => void }) {
 
   useEffect(() => {
     if (countdown === 0) {
-      onClose();
+      onDone();
     }
-  }, [countdown, onClose]);
+  }, [countdown, onDone]);
 
   return (
     <div className="space-y-3 py-6 text-center">
@@ -46,13 +48,24 @@ function SuccessCard({ onClose }: { onClose: () => void }) {
         </svg>
       </div>
       <h3 className="text-xl font-semibold text-foreground">Account created!</h3>
-      <p className="text-sm text-muted-foreground">Redirecting to sign in in {countdown}s…</p>
+      <p className="text-sm text-muted-foreground">Taking you to sign in in {countdown}s…</p>
     </div>
   );
 }
 
-export function RegistrationPanel({ config, inModal = false, onClose }: RegistrationPanelProps) {
-  const flow = useRegistrationFlow();
+export function RegistrationPanel({ config, inModal = false, onClose, onSwitchToLogin }: RegistrationPanelProps) {
+  const navigate = useNavigate();
+  const hasSwitchedToLoginRef = useRef(false);
+  const switchToLogin = () => {
+    if (hasSwitchedToLoginRef.current) return;
+    hasSwitchedToLoginRef.current = true;
+    if (onSwitchToLogin) {
+      onSwitchToLogin();
+      return;
+    }
+    navigate('/login');
+  };
+  const flow = useRegistrationFlow({ onSuccess: onSwitchToLogin ? switchToLogin : undefined });
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const currentStep = STEP_NUMBER[flow.step];
   const lastStepRef = useRef(currentStep);
@@ -64,6 +77,7 @@ export function RegistrationPanel({ config, inModal = false, onClose }: Registra
     studentDomain: null,
     supervisorDomain: null,
   };
+  const handleSuccessDone = () => switchToLogin();
 
   useEffect(() => {
     if (currentStep > lastStepRef.current) {
@@ -100,7 +114,7 @@ export function RegistrationPanel({ config, inModal = false, onClose }: Registra
 
   const stepContent = useMemo(() => {
     if (flow.isSuccess) {
-      return <SuccessCard onClose={onClose} />;
+      return <SuccessCard onDone={handleSuccessDone} />;
     }
     switch (flow.step) {
       case 'email':
@@ -114,7 +128,7 @@ export function RegistrationPanel({ config, inModal = false, onClose }: Registra
       default:
         return null;
     }
-  }, [flow, onClose, effectiveConfig]);
+  }, [flow, effectiveConfig, handleSuccessDone]);
 
   const panelContent = (
     <>

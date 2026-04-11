@@ -5,6 +5,7 @@ import { cn } from '@/lib/cn';
 import { useAuth } from '../hooks/useAuth';
 import { LoginForm } from './LoginForm';
 import { RegistrationPanel } from './registration/RegistrationPanel';
+import { RequestStateModal } from '@/components/ui/RequestStateModal';
 
 type AuthTab = 'login' | 'register';
 
@@ -56,70 +57,84 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
   if (!isOpen) return null;
 
   return createPortal(
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      aria-modal="true"
-      role="dialog"
-      aria-label={activeTab === 'login' ? 'Sign in' : 'Create account'}
-    >
-      {/* Backdrop */}
+    <>
       <div
-        className="absolute inset-0 bg-foreground/40 backdrop-blur-sm"
-        onClick={onClose}
-        aria-hidden="true"
-      />
-
-      {/* Panel */}
-      <div
-        ref={dialogRef}
-        tabIndex={-1}
-        className="relative z-10 w-full max-w-md rounded-2xl border border-border bg-background p-6 shadow-xl focus:outline-none"
+        className="fixed inset-0 z-50 flex items-center justify-center p-4"
+        aria-modal="true"
+        role="dialog"
+        aria-label={activeTab === 'login' ? 'Sign in' : 'Create account'}
       >
-        {/* Close button */}
-        <Button
-          type="button"
+        {/* Backdrop */}
+        <div
+          className="absolute inset-0 bg-foreground/40 backdrop-blur-sm"
           onClick={onClose}
-          aria-label="Close"
-          variant="ghost"
-          size="sm"
-          className="absolute right-4 top-4 h-7 w-7 rounded-full p-0"
+          aria-hidden="true"
+        />
+
+        {/* Panel */}
+        <div
+          ref={dialogRef}
+          tabIndex={-1}
+          className="relative z-10 w-full max-w-md rounded-2xl border border-border bg-background p-6 shadow-xl focus:outline-none"
         >
-          ✕
-        </Button>
+          {/* Close button */}
+          <Button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            variant="ghost"
+            size="sm"
+            className="absolute right-4 top-4 h-7 w-7 rounded-full p-0"
+          >
+            ✕
+          </Button>
 
-        {/* Tab bar */}
-        <div className="mb-6 flex rounded-lg bg-muted p-1">
-          {(['login', 'register'] as AuthTab[]).map((tab) => (
-            <button
-              key={tab}
-              type="button"
-              onClick={() => setActiveTab(tab)}
-              className={cn(
-                'flex-1 rounded-md py-1.5 text-center text-sm font-medium transition-colors',
-                activeTab === tab
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground',
-              )}
-            >
-              {tab === 'login' ? 'Sign In' : 'Register'}
-            </button>
-          ))}
+          {/* Tab bar */}
+          <div className="mb-6 flex rounded-lg bg-muted p-1">
+            {(['login', 'register'] as AuthTab[]).map((tab) => (
+              <button
+                key={tab}
+                type="button"
+                onClick={() => setActiveTab(tab)}
+                className={cn(
+                  'flex-1 rounded-md py-1.5 text-center text-sm font-medium transition-colors',
+                  activeTab === tab
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground',
+                )}
+              >
+                {tab === 'login' ? 'Sign In' : 'Register'}
+              </button>
+            ))}
+          </div>
+
+          {/* Form */}
+          {activeTab === 'login' ? (
+            <LoginForm
+              onSubmit={login}
+              isLoading={loginLoading}
+              error={loginError}
+              onClearError={clearLoginError}
+              onSuccess={onClose}
+            />
+          ) : (
+            <RegistrationPanel inModal={true} onClose={onClose} />
+          )}
         </div>
-
-        {/* Form */}
-        {activeTab === 'login' ? (
-          <LoginForm
-            onSubmit={login}
-            isLoading={loginLoading}
-            error={loginError}
-            onClearError={clearLoginError}
-            onSuccess={onClose}
-          />
-        ) : (
-          <RegistrationPanel inModal={true} onClose={onClose} />
-        )}
       </div>
-    </div>,
+
+      <RequestStateModal
+        isOpen={loginLoading || !!loginError}
+        status={loginLoading ? 'loading' : loginError ? 'error' : 'success'}
+        title={loginLoading ? 'Signing in...' : 'Sign in failed'}
+        message={
+          loginLoading
+            ? 'We are verifying your credentials.'
+            : loginError?.message || 'Check your internet connection and try again.'
+        }
+        onClose={clearLoginError}
+      />
+    </>,
     document.body,
   );
 }
