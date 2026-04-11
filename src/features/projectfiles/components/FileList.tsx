@@ -8,12 +8,7 @@ type FileListProps = {
   onDelete: (file: ProjectFile) => void;
 };
 
-export function FileList({
-  files,
-  canDelete,
-  onDownload,
-  onDelete,
-}: FileListProps) {
+export function FileList({ files, canDelete, onDownload, onDelete }: FileListProps) {
   if (files.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/60 p-8 text-center">

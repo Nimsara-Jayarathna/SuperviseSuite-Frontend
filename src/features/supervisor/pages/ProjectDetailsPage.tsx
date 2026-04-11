@@ -860,10 +860,7 @@ export function ProjectDetailsPage() {
       ) : null}
 
       {activeTab === 'files' ? (
-        <FilesTabSection
-          projectId={project.id}
-          initialFiles={project.files}
-        />
+        <FilesTabSection projectId={project.id} initialFiles={project.files} />
       ) : null}
 
       {activeTab === 'github' ? (

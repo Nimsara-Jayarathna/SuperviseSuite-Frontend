@@ -20,11 +20,16 @@ export const supervisorFilesApi = {
   },
 
   confirmUpload(projectId: string, payload: ConfirmUploadRequest): Promise<ProjectFile> {
-    return apiClient.post<ProjectFile>(`/api/supervisor/projects/${projectId}/files/confirm`, payload);
+    return apiClient.post<ProjectFile>(
+      `/api/supervisor/projects/${projectId}/files/confirm`,
+      payload,
+    );
   },
 
   getDownloadUrl(projectId: string, fileId: string): Promise<string> {
-    return apiClient.get<string>(`/api/supervisor/projects/${projectId}/files/${fileId}/download-url`);
+    return apiClient.get<string>(
+      `/api/supervisor/projects/${projectId}/files/${fileId}/download-url`,
+    );
   },
 
   delete(projectId: string, fileId: string): Promise<void> {

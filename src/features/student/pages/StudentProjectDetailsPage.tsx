@@ -619,10 +619,7 @@ export function StudentProjectDetailsPage() {
       ) : null}
 
       {activeTab === 'files' ? (
-        <StudentFilesTabSection
-          projectId={project.id}
-          initialFiles={project.files}
-        />
+        <StudentFilesTabSection projectId={project.id} initialFiles={project.files} />
       ) : null}
 
       {activeTab === 'github' ? (

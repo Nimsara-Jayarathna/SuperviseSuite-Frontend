@@ -3,7 +3,12 @@ import { createPortal } from 'react-dom';
 import { RequestStateModal } from '@/components/ui/RequestStateModal';
 import { Button } from '@/components/ui/Button';
 import { AlertCircle, X } from 'lucide-react';
-import type { ConfirmUploadRequest, ProjectFile, UploadUrlRequest, UploadUrlResponse } from '../types';
+import type {
+  ConfirmUploadRequest,
+  ProjectFile,
+  UploadUrlRequest,
+  UploadUrlResponse,
+} from '../types';
 
 type UploadFileModalProps = {
   isOpen: boolean;
@@ -56,12 +61,14 @@ function bytesToHumanSize(bytes: number): string {
 
 function normalizeAllowedTypes(allowedTypes?: string[]): string[] {
   const source = allowedTypes && allowedTypes.length > 0 ? allowedTypes : DEFAULT_ALLOWED_TYPES;
-  return source
-    .map((type) => type.trim().toLowerCase())
-    .filter((type) => type.length > 0);
+  return source.map((type) => type.trim().toLowerCase()).filter((type) => type.length > 0);
 }
 
-function validateSelectedFile(file: File, maxFileSizeBytes: number, allowedTypes: Set<string>): string | null {
+function validateSelectedFile(
+  file: File,
+  maxFileSizeBytes: number,
+  allowedTypes: Set<string>,
+): string | null {
   if (file.size <= 0) {
     return 'Selected file is empty.';
   }
@@ -71,12 +78,15 @@ function validateSelectedFile(file: File, maxFileSizeBytes: number, allowedTypes
 
   const extension = extensionFromFileName(file.name);
   const type = file.type.trim().toLowerCase();
-  const mimeExtension = Object.entries(EXTENSION_TO_MIME).find(([, mime]) => mime === type)?.[0] ?? null;
+  const mimeExtension =
+    Object.entries(EXTENSION_TO_MIME).find(([, mime]) => mime === type)?.[0] ?? null;
   const mimeValid = mimeExtension !== null && allowedTypes.has(mimeExtension);
   const extensionValid = extension !== null && allowedTypes.has(extension);
 
   if (!mimeValid && !extensionValid) {
-    return `Only ${Array.from(allowedTypes).map((fileType) => fileType.toUpperCase()).join(', ')} files are allowed.`;
+    return `Only ${Array.from(allowedTypes)
+      .map((fileType) => fileType.toUpperCase())
+      .join(', ')} files are allowed.`;
   }
 
   return null;
@@ -151,7 +161,8 @@ export function UploadFileModal({
     message: '',
   });
   const isUploadDisabled = isSubmitting || !selectedFile || fileNameDraft.trim().length === 0;
-  const inlineMessage = error ?? (hasSubmitAttempted && !selectedFile ? 'Select a file to continue.' : null);
+  const inlineMessage =
+    error ?? (hasSubmitAttempted && !selectedFile ? 'Select a file to continue.' : null);
 
   if (!isOpen) {
     return null;
@@ -268,7 +279,11 @@ export function UploadFileModal({
 
   return createPortal(
     <>
-      <div className="fixed inset-0 z-[70] flex items-center justify-center p-4" role="dialog" aria-modal>
+      <div
+        className="fixed inset-0 z-[70] flex items-center justify-center p-4"
+        role="dialog"
+        aria-modal
+      >
         <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-md" onClick={handleClose} />
         <div className="relative z-10 w-full max-w-lg rounded-3xl border border-white/25 bg-white p-6 shadow-[0_28px_72px_rgba(15,23,42,0.24)]">
           <div className="flex items-start justify-between gap-3">
@@ -276,7 +291,13 @@ export function UploadFileModal({
               <h3 className="text-lg font-bold text-slate-900">{title}</h3>
               <p className="mt-1 text-xs font-medium text-slate-500">{acceptedFileTypesText}</p>
             </div>
-            <Button type="button" variant="ghost" size="sm" onClick={handleClose} disabled={isSubmitting}>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={handleClose}
+              disabled={isSubmitting}
+            >
               <X className="h-4 w-4" />
             </Button>
           </div>
@@ -311,7 +332,9 @@ export function UploadFileModal({
                 {selectedFile ? 'File selected' : 'Drag and drop a file here'}
               </p>
               <p className="mt-1 text-xs text-slate-500">
-                {selectedFile ? 'You can choose a different file anytime' : 'or browse from your device'}
+                {selectedFile
+                  ? 'You can choose a different file anytime'
+                  : 'or browse from your device'}
               </p>
               <Button
                 type="button"
@@ -348,7 +371,9 @@ export function UploadFileModal({
                 type="text"
                 value={fileNameDraft}
                 onChange={(event) =>
-                  setFileNameDraft(normalizeFileNameDraft(event.target.value, resolvedMaxFileNameLength))
+                  setFileNameDraft(
+                    normalizeFileNameDraft(event.target.value, resolvedMaxFileNameLength),
+                  )
                 }
                 maxLength={resolvedMaxFileNameLength}
                 disabled={!selectedFile || isSubmitting}
@@ -364,7 +389,9 @@ export function UploadFileModal({
                   <span className="min-w-0 flex-1 truncate" title={selectedFile.name}>
                     {selectedFile.name}
                   </span>
-                  <span className="shrink-0">({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)</span>
+                  <span className="shrink-0">
+                    ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
+                  </span>
                 </p>
               </div>
             ) : null}
@@ -380,7 +407,12 @@ export function UploadFileModal({
           </div>
 
           <div className="mt-6 flex justify-end gap-2">
-            <Button type="button" variant="primary" onClick={() => void handleUpload()} disabled={isUploadDisabled}>
+            <Button
+              type="button"
+              variant="primary"
+              onClick={() => void handleUpload()}
+              disabled={isUploadDisabled}
+            >
               Upload
             </Button>
           </div>

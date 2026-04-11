@@ -18,8 +18,12 @@ type StudentFilesTabSectionProps = {
   } | null;
 };
 
-export function StudentFilesTabSection({ projectId, initialFiles = null }: StudentFilesTabSectionProps) {
-  const { files, config, isLoading, error, hasLoaded, seed, addUploadedFile, load, downloadFile } = useStudentProjectFiles(projectId);
+export function StudentFilesTabSection({
+  projectId,
+  initialFiles = null,
+}: StudentFilesTabSectionProps) {
+  const { files, config, isLoading, error, hasLoaded, seed, addUploadedFile, load, downloadFile } =
+    useStudentProjectFiles(projectId);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [requestModal, setRequestModal] = useState<{
     isOpen: boolean;
@@ -84,7 +88,9 @@ export function StudentFilesTabSection({ projectId, initialFiles = null }: Stude
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-lg font-bold tracking-tight text-slate-800">Project Files</h2>
-          <p className="text-xs font-medium text-slate-400">Upload and download project documents.</p>
+          <p className="text-xs font-medium text-slate-400">
+            Upload and download project documents.
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <button

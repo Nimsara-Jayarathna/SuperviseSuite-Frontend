@@ -19,13 +19,17 @@ export function DeleteConfirmModal({
   }
 
   return createPortal(
-    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4" role="dialog" aria-modal>
+    <div
+      className="fixed inset-0 z-[80] flex items-center justify-center p-4"
+      role="dialog"
+      aria-modal
+    >
       <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-md" onClick={onCancel} />
       <div className="relative z-10 w-full max-w-sm rounded-3xl border border-white/25 bg-white p-6 shadow-[0_28px_72px_rgba(15,23,42,0.24)]">
         <h3 className="text-lg font-bold text-slate-900">Delete file?</h3>
         <p className="mt-2 text-sm text-slate-600">
-          This will permanently remove <span className="font-semibold">{fileName ?? 'this file'}</span>{' '}
-          from project storage.
+          This will permanently remove{' '}
+          <span className="font-semibold">{fileName ?? 'this file'}</span> from project storage.
         </p>
         <div className="mt-6 flex justify-end gap-2">
           <Button type="button" variant="secondary" onClick={onCancel}>

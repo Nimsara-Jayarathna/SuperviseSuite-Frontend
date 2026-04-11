@@ -32,8 +32,7 @@ export function FilesTabSection({ projectId, initialFiles = null }: FilesTabSect
     load,
     downloadFile,
     deleteFile,
-  } =
-    useSupervisorProjectFiles(projectId);
+  } = useSupervisorProjectFiles(projectId);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [filePendingDelete, setFilePendingDelete] = useState<ProjectFile | null>(null);
   const [requestModal, setRequestModal] = useState<{
@@ -140,7 +139,9 @@ export function FilesTabSection({ projectId, initialFiles = null }: FilesTabSect
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-lg font-bold tracking-tight text-slate-800">Project Files</h2>
-          <p className="text-xs font-medium text-slate-400">Upload, download, and manage project documents.</p>
+          <p className="text-xs font-medium text-slate-400">
+            Upload, download, and manage project documents.
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <button

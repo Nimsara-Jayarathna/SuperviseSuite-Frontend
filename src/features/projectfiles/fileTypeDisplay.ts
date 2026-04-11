@@ -10,7 +10,10 @@ const FILE_TYPE_CONFIG: Record<string, FileTypeDisplay> = {
   ppt: { label: 'PPT', toneClassName: 'bg-orange-100 text-orange-700 border border-orange-200' },
   pptx: { label: 'PPTX', toneClassName: 'bg-orange-100 text-orange-700 border border-orange-200' },
   xls: { label: 'XLS', toneClassName: 'bg-emerald-100 text-emerald-700 border border-emerald-200' },
-  xlsx: { label: 'XLSX', toneClassName: 'bg-emerald-100 text-emerald-700 border border-emerald-200' },
+  xlsx: {
+    label: 'XLSX',
+    toneClassName: 'bg-emerald-100 text-emerald-700 border border-emerald-200',
+  },
   csv: { label: 'CSV', toneClassName: 'bg-emerald-100 text-emerald-700 border border-emerald-200' },
   zip: { label: 'ZIP', toneClassName: 'bg-violet-100 text-violet-700 border border-violet-200' },
   txt: { label: 'TXT', toneClassName: 'bg-slate-100 text-slate-700 border border-slate-200' },
@@ -49,7 +52,10 @@ function extensionFromFileName(fileName: string): string | null {
   return fileName.slice(dotIndex + 1).toLowerCase();
 }
 
-export function getFileTypeDisplay(fileType: string | null | undefined, fileName: string): FileTypeDisplay {
+export function getFileTypeDisplay(
+  fileType: string | null | undefined,
+  fileName: string,
+): FileTypeDisplay {
   const normalizedMime = (fileType ?? '').trim().toLowerCase();
   const byMime = MIME_TO_EXTENSION[normalizedMime];
   const byFileName = extensionFromFileName(fileName);

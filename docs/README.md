@@ -10,8 +10,8 @@ Technical notes, architecture summaries, and feature guides for the SuperviseSui
 |------|-------------|
 | [features/landing.md](features/landing.md) | Landing page route, shell, hero composition, and CTA behaviour |
 | [features/auth.md](features/auth.md) | Auth pages, forms, `useAuth`, `tokenStorage`, and guard behaviour |
-| [features/student.md](features/student.md) | Student routes, API-backed project list/detail flows, read-only GitHub and Jira tabs, and empty state behaviour |
-| [features/supervisor.md](features/supervisor.md) | Supervisor routes, dashboard, projects, detail views, tabbed Jira analytics (Health/Sprint/Workload), guided GitHub linking, and project-scoped request-access callbacks |
+| [features/student.md](features/student.md) | Student routes, API-backed project list/detail flows, read-only GitHub/Jira, and student file upload/download tab behavior |
+| [features/supervisor.md](features/supervisor.md) | Supervisor routes, dashboard, projects, detail views, Jira analytics, guided GitHub linking, and full project file management (upload/list/download/delete) |
 | [features/brand.md](features/brand.md) | Logo component and SVG asset usage |
 
 ### Major Fixes
