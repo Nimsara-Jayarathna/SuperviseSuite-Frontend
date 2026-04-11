@@ -142,19 +142,19 @@ describe('useSupervisorProjectFiles', () => {
     const { result } = renderHook(() => useSupervisorProjectFiles('project-1'));
     (supervisorFilesApi.delete as Mock).mockRejectedValue(new ApiException(dummyError));
 
-    let res: any;
+    let res: { ok: boolean; error?: ApiError } | undefined;
     await act(async () => {
       res = await result.current.deleteFile('1');
     });
 
-    expect(res.ok).toBe(false);
-    expect(res.error).toEqual(dummyError);
+    expect(res?.ok).toBe(false);
+    expect(res?.error).toEqual(dummyError);
   });
 
   it('can open download target', async () => {
     const { result } = renderHook(() => useSupervisorProjectFiles('project-1'));
     (supervisorFilesApi.getDownloadUrl as Mock).mockResolvedValue('https://download.com/123');
-    
+
     // mock window.open
     const originalOpen = window.open;
     const openMock = vi.fn();
@@ -165,7 +165,11 @@ describe('useSupervisorProjectFiles', () => {
     });
 
     expect(supervisorFilesApi.getDownloadUrl).toHaveBeenCalledWith('project-1', '1');
-    expect(openMock).toHaveBeenCalledWith('https://download.com/123', '_blank', 'noopener,noreferrer');
+    expect(openMock).toHaveBeenCalledWith(
+      'https://download.com/123',
+      '_blank',
+      'noopener,noreferrer',
+    );
 
     // restore
     window.open = originalOpen;

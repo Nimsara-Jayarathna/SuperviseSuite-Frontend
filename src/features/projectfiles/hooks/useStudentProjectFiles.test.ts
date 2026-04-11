@@ -118,7 +118,7 @@ describe('useStudentProjectFiles', () => {
   it('can open download target', async () => {
     const { result } = renderHook(() => useStudentProjectFiles('project-1'));
     (studentFilesApi.getDownloadUrl as Mock).mockResolvedValue('https://download.com/123');
-    
+
     // mock window.open
     const originalOpen = window.open;
     const openMock = vi.fn();
@@ -129,7 +129,11 @@ describe('useStudentProjectFiles', () => {
     });
 
     expect(studentFilesApi.getDownloadUrl).toHaveBeenCalledWith('project-1', '1');
-    expect(openMock).toHaveBeenCalledWith('https://download.com/123', '_blank', 'noopener,noreferrer');
+    expect(openMock).toHaveBeenCalledWith(
+      'https://download.com/123',
+      '_blank',
+      'noopener,noreferrer',
+    );
 
     // restore
     window.open = originalOpen;
