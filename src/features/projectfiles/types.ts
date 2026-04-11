@@ -13,6 +13,7 @@ export type ProjectFile = {
 export type ProjectFileConfig = {
   maxFileSizeBytes: number;
   allowedTypes: string[];
+  presignedUrlExpirySeconds: number;
 };
 
 export type ProjectFileListResponse = {
