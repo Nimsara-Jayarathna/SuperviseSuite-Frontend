@@ -39,12 +39,19 @@ export function Step1EmailInput({ flow, config }: Step1EmailInputProps) {
     flow.error?.code === 'CONFLICT' ||
     (errorMessage?.toLowerCase().includes('already registered') ?? false) ||
     (errorMessage?.toLowerCase().includes('already exists') ?? false);
-  const domainWarning = `Only ${config.studentDomain ?? 'student domain'} (students) and ${
-    config.supervisorDomain ?? 'supervisor domain'
-  } (supervisors) may register.`;
-  const placeholder = config.domainRestrictionEnabled
-    ? `your${config.studentDomain ?? '@my.sliit.lk'} or your${config.supervisorDomain ?? '@sliit.lk'}`
-    : 'you@example.com';
+  const parts: string[] = [];
+  if (config.studentDomain) parts.push(`${config.studentDomain} (students)`);
+  if (config.supervisorDomain) parts.push(`${config.supervisorDomain} (supervisors)`);
+  const domainWarning =
+    parts.length > 0
+      ? `Only ${parts.join(' and ')} may register.`
+      : 'Your email domain is not permitted to register.';
+  const placeholder =
+    config.domainRestrictionEnabled && config.studentDomain && config.supervisorDomain
+      ? `your${config.studentDomain} or your${config.supervisorDomain}`
+      : config.domainRestrictionEnabled && (config.studentDomain ?? config.supervisorDomain)
+        ? `your${config.studentDomain ?? config.supervisorDomain}`
+        : 'you@example.com';
   const inputStateClass = hasDomainRestrictionViolation
     ? 'border-red-500 focus:ring-red-200'
     : matchedRole === 'STUDENT'

@@ -141,6 +141,12 @@ export function RegistrationPanel({ config, inModal = false, onClose, onSwitchTo
       )}
 
       <div className={`${inModal ? '' : 'fixed inset-0 z-50 flex items-center justify-center p-4'}`}>
+        {!inModal && (
+          <>
+            <div className="pointer-events-none absolute -left-32 -top-32 h-96 w-96 rounded-full bg-pink-200/50 blur-3xl" />
+            <div className="pointer-events-none absolute -right-32 -top-32 h-96 w-96 rounded-full bg-primary/20 blur-3xl" />
+          </>
+        )}
         <div className="relative mx-auto w-full max-w-md rounded-2xl border border-border bg-background p-6 shadow-xl">
           {!flow.isSuccess && (
             <Button
