@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/Button';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import type { RegisterConfig } from '../../types';
 import { Step1EmailInput } from './Step1EmailInput';
 import { Step2OTPVerify } from './Step2OTPVerify';
 import { Step3RoleSelect } from './Step3RoleSelect';
@@ -7,6 +8,7 @@ import { Step4ProfileDetails } from './Step4ProfileDetails';
 import { useRegistrationFlow } from '../../hooks/useRegistrationFlow';
 
 type RegistrationPanelProps = {
+  config?: RegisterConfig;
   inModal?: boolean;
   onClose: () => void;
 };
@@ -17,27 +19,6 @@ const STEP_NUMBER: Record<'email' | 'otp' | 'role' | 'profile', number> = {
   role: 3,
   profile: 4,
 };
-
-function StepIndicator({ current, skipped }: { current: number; skipped: boolean }) {
-  return (
-    <div className="mb-6 flex items-center justify-center gap-2" aria-hidden="true">
-      {[1, 2, 3, 4].map((step) => {
-        const active = step <= current;
-        const isSkippedThird = skipped && step === 3;
-        return (
-          <span
-            key={step}
-            className={[
-              'h-2.5 w-2.5 rounded-full transition-all',
-              active ? 'bg-slate-900' : 'bg-slate-300',
-              isSkippedThird ? 'scale-90 opacity-40' : '',
-            ].join(' ')}
-          />
-        );
-      })}
-    </div>
-  );
-}
 
 function SuccessCard({ onClose }: { onClose: () => void }) {
   const [countdown, setCountdown] = useState(2);
@@ -68,7 +49,7 @@ function SuccessCard({ onClose }: { onClose: () => void }) {
   );
 }
 
-export function RegistrationPanel({ inModal = false, onClose }: RegistrationPanelProps) {
+export function RegistrationPanel({ config, inModal = false, onClose }: RegistrationPanelProps) {
   const flow = useRegistrationFlow();
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const currentStep = STEP_NUMBER[flow.step];
@@ -76,6 +57,11 @@ export function RegistrationPanel({ inModal = false, onClose }: RegistrationPane
   const [direction, setDirection] = useState<'right' | 'left'>('right');
   const progressed =
     flow.step !== 'email' || Boolean(flow.registrationToken) || Boolean(flow.inferredRole) || Boolean(flow.selectedRole);
+  const effectiveConfig: RegisterConfig = config ?? {
+    domainRestrictionEnabled: false,
+    studentDomain: null,
+    supervisorDomain: null,
+  };
 
   useEffect(() => {
     if (currentStep > lastStepRef.current) {
@@ -116,7 +102,7 @@ export function RegistrationPanel({ inModal = false, onClose }: RegistrationPane
     }
     switch (flow.step) {
       case 'email':
-        return <Step1EmailInput flow={flow} />;
+        return <Step1EmailInput flow={flow} config={effectiveConfig} />;
       case 'otp':
         return <Step2OTPVerify flow={flow} />;
       case 'role':
@@ -126,7 +112,7 @@ export function RegistrationPanel({ inModal = false, onClose }: RegistrationPane
       default:
         return null;
     }
-  }, [flow, onClose]);
+  }, [flow, onClose, effectiveConfig]);
 
   return (
     <>
@@ -151,10 +137,6 @@ export function RegistrationPanel({ inModal = false, onClose }: RegistrationPane
             >
               ✕
             </Button>
-          )}
-
-          {!flow.isSuccess && (
-            <StepIndicator current={currentStep} skipped={flow.shouldSkipRoleStep} />
           )}
 
           <div

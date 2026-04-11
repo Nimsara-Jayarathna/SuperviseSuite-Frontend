@@ -99,18 +99,14 @@ export function useRegistrationFlow() {
   async function submitOtp(otp: string) {
     setLoading();
     try {
-      const { registrationToken } = await authApi.registerVerify({ email: state.email, otp });
-      const inferred = isSliitStudent(state.email)
-        ? 'STUDENT'
-        : isSliitSupervisor(state.email)
-          ? 'SUPERVISOR'
-          : null;
+      const response = await authApi.registerVerify({ email: state.email, otp });
+      const { registrationToken, requiresRoleSelection, role } = response;
       setState((s) => ({
         ...s,
         registrationToken,
-        inferredRole: inferred,
+        inferredRole: role,
         isLoading: false,
-        step: shouldSkipRoleStep(state.email) ? 'profile' : 'role',
+        step: requiresRoleSelection ? 'role' : 'profile',
       }));
     } catch (e) {
       if (isApiException(e)) setError(e.apiError);

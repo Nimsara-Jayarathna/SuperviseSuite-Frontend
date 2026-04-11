@@ -58,7 +58,11 @@ export type RegistrationStep = 'email' | 'otp' | 'role' | 'profile';
 
 export type RegisterInitRequest = { email: string };
 export type RegisterVerifyRequest = { email: string; otp: string };
-export type RegisterVerifyResponse = { registrationToken: string };
+export type RegisterVerifyResponse = {
+  registrationToken: string;
+  requiresRoleSelection: boolean;
+  role: string | null;
+};
 export type RegisterCompleteRequest = {
   registrationToken: string;
   fname: string;
@@ -68,3 +72,9 @@ export type RegisterCompleteRequest = {
   role?: string;
 };
 export type RegisterCompleteResponse = { user: AuthUser };
+
+export type RegisterConfig = {
+  domainRestrictionEnabled: boolean;
+  studentDomain: string | null;
+  supervisorDomain: string | null;
+};

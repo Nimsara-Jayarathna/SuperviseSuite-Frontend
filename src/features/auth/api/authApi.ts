@@ -1,5 +1,6 @@
 import type {
   AuthUser,
+  RegisterConfig,
   RegisterCompleteResponse,
   LoginResponse,
   LoginRequest,
@@ -17,6 +18,7 @@ const USE_MOCK = false;
 const MOCK_DELAY = 600; // ms — simulates network latency in dev
 
 const mockDelay = () => new Promise((res) => setTimeout(res, MOCK_DELAY));
+let registerConfigCache: Promise<RegisterConfig> | null = null;
 
 // Dev-only fixture — ignored when USE_MOCK is false.
 const MOCK_RESPONSE: LoginResponse = {
@@ -85,6 +87,22 @@ export const authApi = {
     role?: string;
   }): Promise<RegisterCompleteResponse> {
     return apiClient.post<{ user: AuthUser }>('/api/auth/register/complete', body);
+  },
+
+  getRegisterConfig(): Promise<RegisterConfig> {
+    if (!registerConfigCache) {
+      registerConfigCache = apiClient
+        .get<RegisterConfig>('/api/auth/register/config')
+        .catch(() => {
+          registerConfigCache = null;
+          return {
+            domainRestrictionEnabled: false,
+            studentDomain: null,
+            supervisorDomain: null,
+          };
+        });
+    }
+    return registerConfigCache;
   },
 
   /**
