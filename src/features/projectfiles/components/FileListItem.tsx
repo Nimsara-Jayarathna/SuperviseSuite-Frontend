@@ -44,7 +44,7 @@ export function FileListItem({
 
   return (
     <tr className="border-b border-slate-100 last:border-b-0">
-      <td className="px-4 py-3 text-sm font-semibold text-slate-800">
+      <td className="max-w-[280px] px-4 py-3 text-sm font-semibold text-slate-800">
         <span className="block truncate" title={file.fileName}>
           {file.fileName}
         </span>
@@ -57,10 +57,12 @@ export function FileListItem({
         </span>
       </td>
       <td className="px-4 py-3 text-xs font-semibold text-slate-600">{formatFileSize(file.fileSize)}</td>
-      <td className="px-4 py-3 text-xs text-slate-500">
-        <div className="inline-flex items-center gap-2 whitespace-nowrap">
-          <span className="font-semibold text-slate-700">{file.uploadedByName}</span>
-          <RoleBadge role={file.uploadedByRole} className="px-2 py-0.5 text-[10px]" />
+      <td className="max-w-0 px-4 py-3 w-[260px] text-xs text-slate-500">
+        <div className="inline-flex items-center gap-2">
+          <span className="max-w-[140px] truncate font-semibold text-slate-700" title={file.uploadedByName}>
+            {file.uploadedByName}
+          </span>
+          <RoleBadge role={file.uploadedByRole} className="shrink-0 px-2 py-0.5 text-[10px]" />
         </div>
       </td>
       <td className="px-4 py-3 text-xs text-slate-500">

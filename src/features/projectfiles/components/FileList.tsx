@@ -27,9 +27,9 @@ export function FileList({
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
       <div className="overflow-x-auto">
-        <table className="min-w-full">
+        <table className="min-w-full table-fixed">
           <colgroup>
-            <col className="w-auto" />
+            <col className="w-[280px] max-w-[280px]" />
             <col className="w-[120px]" />
             <col className="w-[120px]" />
             <col className="w-[260px]" />
