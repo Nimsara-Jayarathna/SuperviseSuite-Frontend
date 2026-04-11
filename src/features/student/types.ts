@@ -1,5 +1,6 @@
 import type { ProjectGitHubPreview } from '@/features/projects/types';
 import type { ProjectGitHubRepositories } from '@/features/supervisor/types';
+import type { ProjectFile, ProjectFileConfig } from '@/features/projectfiles/types';
 
 export type StudentProjectLifecycle = 'PLANNING' | 'ACTIVE' | 'AT_RISK' | 'BEHIND' | 'COMPLETED';
 
@@ -66,6 +67,10 @@ export type StudentProjectDetail = {
   leader: StudentProjectDetailLeader | null;
   members: StudentProjectDetailMember[];
   milestones: StudentProjectDetailMilestone[];
+  files: {
+    items: ProjectFile[];
+    config: ProjectFileConfig;
+  } | null;
 };
 
 export type StudentProjectDetailTab =

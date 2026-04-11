@@ -32,6 +32,25 @@ export function useSupervisorProjectFiles(projectId: string | undefined, lazy = 
   const [hasLoaded, setHasLoaded] = useState(false);
   const [isDeletingFileId, setIsDeletingFileId] = useState<string | null>(null);
 
+  const seed = useCallback((files: ProjectFile[], config: ProjectFileConfig) => {
+    setState({
+      files,
+      config,
+      isLoading: false,
+      error: null,
+    });
+    setHasLoaded(true);
+  }, []);
+
+  const addUploadedFile = useCallback((uploadedFile: ProjectFile) => {
+    setState((current) => ({
+      ...current,
+      files: [uploadedFile, ...current.files.filter((file) => file.id !== uploadedFile.id)],
+      error: null,
+    }));
+    setHasLoaded(true);
+  }, []);
+
   const load = useCallback(async () => {
     if (!projectId) {
       setState({ files: [], config: null, isLoading: false, error: null });
@@ -100,6 +119,8 @@ export function useSupervisorProjectFiles(projectId: string | undefined, lazy = 
     error: state.error,
     hasLoaded,
     isDeletingFileId,
+    seed,
+    addUploadedFile,
     load,
     reload: async () => {
       await load();

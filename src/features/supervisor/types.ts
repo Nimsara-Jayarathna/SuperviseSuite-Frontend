@@ -1,4 +1,5 @@
 import type { ProjectGitHubPreview } from '@/features/projects/types';
+import type { ProjectFile, ProjectFileConfig } from '@/features/projectfiles/types';
 
 export type SupervisorProjectLifecycle = 'PLANNING' | 'ACTIVE' | 'AT_RISK' | 'BEHIND' | 'COMPLETED';
 
@@ -65,6 +66,10 @@ export type SupervisorProjectDetail = {
   leader: SupervisorProjectLeader | null;
   members: SupervisorProjectDetailMember[];
   milestones: SupervisorProjectDetailMilestone[];
+  files: {
+    items: ProjectFile[];
+    config: ProjectFileConfig;
+  } | null;
 };
 
 export type JiraAuthUrl = {

@@ -618,7 +618,12 @@ export function StudentProjectDetailsPage() {
         </section>
       ) : null}
 
-      {activeTab === 'files' ? <StudentFilesTabSection projectId={project.id} /> : null}
+      {activeTab === 'files' ? (
+        <StudentFilesTabSection
+          projectId={project.id}
+          initialFiles={project.files}
+        />
+      ) : null}
 
       {activeTab === 'github' ? (
         <div className="space-y-4">

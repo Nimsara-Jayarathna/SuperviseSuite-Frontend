@@ -6,20 +6,29 @@ import { studentFilesApi } from '@/features/projectfiles/api/studentFilesApi';
 import { FileList } from '@/features/projectfiles/components/FileList';
 import { UploadFileModal } from '@/features/projectfiles/components/UploadFileModal';
 import { useStudentProjectFiles } from '@/features/projectfiles/hooks/useStudentProjectFiles';
+import type { ProjectFile, ProjectFileConfig } from '@/features/projectfiles/types';
 
 type StudentFilesTabSectionProps = {
   projectId: string;
+  initialFiles?: {
+    items: ProjectFile[];
+    config: ProjectFileConfig;
+  } | null;
 };
 
-export function StudentFilesTabSection({ projectId }: StudentFilesTabSectionProps) {
-  const { files, config, isLoading, error, hasLoaded, load, reload, downloadFile } = useStudentProjectFiles(projectId);
+export function StudentFilesTabSection({ projectId, initialFiles = null }: StudentFilesTabSectionProps) {
+  const { files, config, isLoading, error, hasLoaded, seed, load, reload, downloadFile } = useStudentProjectFiles(projectId);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
 
   useEffect(() => {
     if (!hasLoaded && !isLoading) {
+      if (initialFiles?.config) {
+        seed(initialFiles.items, initialFiles.config);
+        return;
+      }
       void load();
     }
-  }, [hasLoaded, isLoading, load]);
+  }, [hasLoaded, initialFiles, isLoading, load, seed]);
 
   return (
     <section className="rounded-3xl border border-border bg-white p-6 shadow-sm transition-all hover:shadow-md">

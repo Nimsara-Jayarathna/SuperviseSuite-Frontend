@@ -31,6 +31,25 @@ export function useStudentProjectFiles(projectId: string | undefined, lazy = tru
   });
   const [hasLoaded, setHasLoaded] = useState(false);
 
+  const seed = useCallback((files: ProjectFile[], config: ProjectFileConfig) => {
+    setState({
+      files,
+      config,
+      isLoading: false,
+      error: null,
+    });
+    setHasLoaded(true);
+  }, []);
+
+  const addUploadedFile = useCallback((uploadedFile: ProjectFile) => {
+    setState((current) => ({
+      ...current,
+      files: [uploadedFile, ...current.files.filter((file) => file.id !== uploadedFile.id)],
+      error: null,
+    }));
+    setHasLoaded(true);
+  }, []);
+
   const load = useCallback(async () => {
     if (!projectId) {
       setState({ files: [], config: null, isLoading: false, error: null });
@@ -85,6 +104,8 @@ export function useStudentProjectFiles(projectId: string | undefined, lazy = tru
     isLoading: state.isLoading,
     error: state.error,
     hasLoaded,
+    seed,
+    addUploadedFile,
     load,
     reload: async () => {
       await load();

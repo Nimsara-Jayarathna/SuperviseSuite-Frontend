@@ -3,15 +3,15 @@ import { createPortal } from 'react-dom';
 import { RequestStateModal } from '@/components/ui/RequestStateModal';
 import { Button } from '@/components/ui/Button';
 import { AlertCircle, X } from 'lucide-react';
-import type { ConfirmUploadRequest, UploadUrlRequest, UploadUrlResponse } from '../types';
+import type { ConfirmUploadRequest, ProjectFile, UploadUrlRequest, UploadUrlResponse } from '../types';
 
 type UploadFileModalProps = {
   isOpen: boolean;
   title?: string;
   onClose: () => void;
-  onUploaded: () => Promise<void> | void;
+  onUploaded: (uploadedFile: ProjectFile) => Promise<void> | void;
   getUploadUrl: (payload: UploadUrlRequest) => Promise<UploadUrlResponse>;
-  confirmUpload: (payload: ConfirmUploadRequest) => Promise<unknown>;
+  confirmUpload: (payload: ConfirmUploadRequest) => Promise<ProjectFile>;
   maxFileSizeBytes?: number;
   maxFileNameLength?: number;
   allowedTypes?: string[];
@@ -238,14 +238,14 @@ export function UploadFileModal({
 
       await uploadFile(uploadMeta.presignedUrl, selectedFile, contentType);
 
-      await confirmUpload({
+      const uploadedFile = await confirmUpload({
         s3Key: uploadMeta.s3Key,
         fileName: finalFileName,
         fileType: contentType,
         fileSize: selectedFile.size,
       });
 
-      await onUploaded();
+      await onUploaded(uploadedFile);
       setRequestModal({
         isOpen: true,
         status: 'success',

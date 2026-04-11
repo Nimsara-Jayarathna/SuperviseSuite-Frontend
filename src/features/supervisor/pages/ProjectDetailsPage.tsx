@@ -859,7 +859,12 @@ export function ProjectDetailsPage() {
         <MilestonesTabSection project={project} milestones={milestones} />
       ) : null}
 
-      {activeTab === 'files' ? <FilesTabSection projectId={project.id} /> : null}
+      {activeTab === 'files' ? (
+        <FilesTabSection
+          projectId={project.id}
+          initialFiles={project.files}
+        />
+      ) : null}
 
       {activeTab === 'github' ? (
         <div className="space-y-4">

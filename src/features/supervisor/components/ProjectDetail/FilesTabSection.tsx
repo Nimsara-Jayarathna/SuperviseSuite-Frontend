@@ -9,14 +9,31 @@ import { UploadFileModal } from '@/features/projectfiles/components/UploadFileMo
 import { DeleteConfirmModal } from '@/features/projectfiles/components/DeleteConfirmModal';
 import { useSupervisorProjectFiles } from '@/features/projectfiles/hooks/useSupervisorProjectFiles';
 import type { ApiError } from '@/types';
-import type { ProjectFile } from '@/features/projectfiles/types';
+import type { ProjectFile, ProjectFileConfig } from '@/features/projectfiles/types';
 
 type FilesTabSectionProps = {
   projectId: string;
+  initialFiles?: {
+    items: ProjectFile[];
+    config: ProjectFileConfig;
+  } | null;
 };
 
-export function FilesTabSection({ projectId }: FilesTabSectionProps) {
-  const { files, config, isLoading, error, hasLoaded, load, reload, downloadFile, deleteFile, isDeletingFileId } =
+export function FilesTabSection({ projectId, initialFiles = null }: FilesTabSectionProps) {
+  const {
+    files,
+    config,
+    isLoading,
+    error,
+    hasLoaded,
+    seed,
+    addUploadedFile,
+    load,
+    reload,
+    downloadFile,
+    deleteFile,
+    isDeletingFileId,
+  } =
     useSupervisorProjectFiles(projectId);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [filePendingDelete, setFilePendingDelete] = useState<ProjectFile | null>(null);
@@ -36,9 +53,13 @@ export function FilesTabSection({ projectId }: FilesTabSectionProps) {
 
   useEffect(() => {
     if (!hasLoaded && !isLoading) {
+      if (initialFiles?.config) {
+        seed(initialFiles.items, initialFiles.config);
+        return;
+      }
       void load();
     }
-  }, [hasLoaded, isLoading, load]);
+  }, [hasLoaded, initialFiles, isLoading, load, seed]);
 
   async function refreshFiles() {
     if (isLoading) {
@@ -128,7 +149,7 @@ export function FilesTabSection({ projectId }: FilesTabSectionProps) {
       <UploadFileModal
         isOpen={isUploadOpen}
         onClose={() => setIsUploadOpen(false)}
-        onUploaded={reload}
+        onUploaded={addUploadedFile}
         getUploadUrl={(payload) => supervisorFilesApi.getUploadUrl(projectId, payload)}
         confirmUpload={(payload) => supervisorFilesApi.confirmUpload(projectId, payload)}
         maxFileSizeBytes={config?.maxFileSizeBytes}
