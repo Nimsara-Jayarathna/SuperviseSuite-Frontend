@@ -53,3 +53,18 @@ export type RegisterResponse = {
 export type LoginResponse = {
   user: AuthUser;
 };
+
+export type RegistrationStep = 'email' | 'otp' | 'role' | 'profile';
+
+export type RegisterInitRequest = { email: string };
+export type RegisterVerifyRequest = { email: string; otp: string };
+export type RegisterVerifyResponse = { registrationToken: string };
+export type RegisterCompleteRequest = {
+  registrationToken: string;
+  fname: string;
+  lname: string;
+  password: string;
+  name?: string;
+  role?: string;
+};
+export type RegisterCompleteResponse = { user: AuthUser };

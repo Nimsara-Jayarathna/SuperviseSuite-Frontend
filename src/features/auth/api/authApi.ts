@@ -1,7 +1,10 @@
 import type {
+  AuthUser,
+  RegisterCompleteResponse,
   LoginResponse,
   LoginRequest,
   RegisterRequest,
+  RegisterVerifyResponse,
   RegisterResponse,
   SupervisorRegisterRequest,
 } from '../types';
@@ -63,6 +66,25 @@ export const authApi = {
       };
     }
     return apiClient.post<RegisterResponse>('/api/auth/register/supervisor', body);
+  },
+
+  async registerInit(body: { email: string }): Promise<{ message: string }> {
+    return apiClient.post<{ message: string }>('/api/auth/register/init', body);
+  },
+
+  async registerVerify(body: { email: string; otp: string }): Promise<RegisterVerifyResponse> {
+    return apiClient.post<RegisterVerifyResponse>('/api/auth/register/verify', body);
+  },
+
+  async registerComplete(body: {
+    registrationToken: string;
+    fname: string;
+    lname: string;
+    password: string;
+    name?: string;
+    role?: string;
+  }): Promise<RegisterCompleteResponse> {
+    return apiClient.post<{ user: AuthUser }>('/api/auth/register/complete', body);
   },
 
   /**

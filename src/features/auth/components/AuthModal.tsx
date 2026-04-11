@@ -3,9 +3,8 @@ import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/cn';
 import { useAuth } from '../hooks/useAuth';
-import { useRegister } from '../hooks/useRegister';
 import { LoginForm } from './LoginForm';
-import { RegisterForm } from './RegisterForm';
+import { RegistrationPanel } from './registration/RegistrationPanel';
 
 type AuthTab = 'login' | 'register';
 
@@ -24,12 +23,6 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
     error: loginError,
     clearError: clearLoginError,
   } = useAuth();
-  const {
-    register,
-    isLoading: registerLoading,
-    error: registerError,
-    clearError: clearRegisterError,
-  } = useRegister();
 
   // Sync active tab when parent re-opens the modal with a different tab
   useEffect(() => {
@@ -123,13 +116,7 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
             onSuccess={onClose}
           />
         ) : (
-          <RegisterForm
-            onSubmit={register}
-            isLoading={registerLoading}
-            error={registerError}
-            onClearError={clearRegisterError}
-            onSuccess={onClose}
-          />
+          <RegistrationPanel inModal={true} onClose={onClose} />
         )}
       </div>
     </div>,

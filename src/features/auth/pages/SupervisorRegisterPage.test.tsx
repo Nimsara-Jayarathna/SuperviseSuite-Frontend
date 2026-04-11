@@ -1,31 +1,22 @@
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { SupervisorRegisterPage } from './SupervisorRegisterPage';
 
-vi.mock('../hooks/useSupervisorRegister', () => ({
-  useSupervisorRegister: () => ({
-    register: vi.fn().mockResolvedValue(undefined),
-    isLoading: false,
-    isSuccess: false,
-    error: null,
-    clearError: vi.fn(),
-  }),
-}));
-
 describe('SupervisorRegisterPage', () => {
-  it('renders supervisor heading and sign-in link', () => {
+  it('renders the registration panel email step', () => {
     render(
       <MemoryRouter>
         <SupervisorRegisterPage />
       </MemoryRouter>,
     );
 
-    expect(screen.getByRole('heading', { name: 'Create supervisor account' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Sign in' })).toHaveAttribute('href', '/login');
+    expect(screen.getByLabelText('Email')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Continue' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Close' })).toBeInTheDocument();
   });
 
-  it('renders registration form in supervisor mode without registration number field', () => {
+  it('does not render profile-only fields before OTP verification', () => {
     render(
       <MemoryRouter>
         <SupervisorRegisterPage />
@@ -33,8 +24,7 @@ describe('SupervisorRegisterPage', () => {
     );
 
     expect(screen.queryByLabelText('Registration Number')).not.toBeInTheDocument();
-    expect(screen.getByLabelText('Email')).toBeInTheDocument();
-    expect(screen.getByLabelText('Password')).toBeInTheDocument();
-    expect(screen.getByLabelText('Confirm Password')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Password')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Confirm password')).not.toBeInTheDocument();
   });
 });

@@ -4,6 +4,8 @@ export * from './pages/SupervisorRegisterPage';
 export * from './components/LoginForm';
 export * from './components/RegisterForm';
 export * from './components/AuthModal';
+export * from './components/registration/RegistrationPanel';
 export * from './api/authApi';
 export * from './hooks/useAuth';
+export * from './hooks/useRegistrationFlow';
 export * from './types';
