@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { RequestStateModal } from '@/components/ui/RequestStateModal';
 import { Button } from '@/components/ui/Button';
+import { AlertCircle, X } from 'lucide-react';
 import type { ConfirmUploadRequest, UploadUrlRequest, UploadUrlResponse } from '../types';
 
 type UploadFileModalProps = {
@@ -150,6 +151,7 @@ export function UploadFileModal({
     message: '',
   });
   const isUploadDisabled = isSubmitting || !selectedFile || fileNameDraft.trim().length === 0;
+  const inlineMessage = error ?? (hasSubmitAttempted && !selectedFile ? 'Select a file to continue.' : null);
 
   if (!isOpen) {
     return null;
@@ -275,7 +277,7 @@ export function UploadFileModal({
               <p className="mt-1 text-xs font-medium text-slate-500">{acceptedFileTypesText}</p>
             </div>
             <Button type="button" variant="ghost" size="sm" onClick={handleClose} disabled={isSubmitting}>
-              Close
+              <X className="h-4 w-4" />
             </Button>
           </div>
 
@@ -367,16 +369,17 @@ export function UploadFileModal({
               </div>
             ) : null}
 
-            {error ? <p className="text-xs text-rose-700">{error}</p> : null}
-            {!error && hasSubmitAttempted && !selectedFile ? (
-              <p className="text-xs text-rose-700">Select a file to continue.</p>
+            {inlineMessage ? (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2">
+                <p className="flex items-start gap-2 text-xs text-amber-800">
+                  <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                  <span>{inlineMessage}</span>
+                </p>
+              </div>
             ) : null}
           </div>
 
           <div className="mt-6 flex justify-end gap-2">
-            <Button type="button" variant="secondary" onClick={handleClose} disabled={isSubmitting}>
-              Cancel
-            </Button>
             <Button type="button" variant="primary" onClick={() => void handleUpload()} disabled={isUploadDisabled}>
               Upload
             </Button>
