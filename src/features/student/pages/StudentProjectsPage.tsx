@@ -1,4 +1,4 @@
-import { useDeferredValue, useEffect, useState } from 'react';
+import { useCallback, useDeferredValue, useEffect, useState } from 'react';
 import { ErrorState } from '@/components/feedback/ErrorState';
 import { EmptyState } from '@/components/feedback/EmptyState';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -15,6 +15,9 @@ export function StudentProjectsPage() {
   // Defer filtering slightly so the list stays responsive while typing.
   const deferredQuery = useDeferredValue(query);
   const normalizedQuery = deferredQuery.trim().toLowerCase();
+  const retryLoad = useCallback(() => {
+    void reload();
+  }, [reload]);
 
   const visibleProjects = projects.filter((project) =>
     normalizedQuery.length === 0
@@ -29,11 +32,11 @@ export function StudentProjectsPage() {
 
   useEffect(() => {
     if (error && isBlockingError(error)) {
-      showBlockingError(error);
+      showBlockingError(error, retryLoad);
       return;
     }
     clearBlockingError();
-  }, [error, showBlockingError, clearBlockingError]);
+  }, [error, showBlockingError, clearBlockingError, retryLoad]);
 
   return (
     <div className="space-y-6">

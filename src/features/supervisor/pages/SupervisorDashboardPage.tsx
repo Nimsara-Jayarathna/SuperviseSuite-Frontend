@@ -1,4 +1,4 @@
-import { useDeferredValue, useEffect, useState } from 'react';
+import { useCallback, useDeferredValue, useEffect, useState } from 'react';
 import { AlertTriangle, ArrowRight, Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useBlockingError } from '@/app/layout/BlockingErrorContext';
@@ -68,6 +68,9 @@ export function SupervisorDashboardPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const deferredQuery = useDeferredValue(query);
   const normalizedQuery = deferredQuery.trim().toLowerCase();
+  const retryLoad = useCallback(() => {
+    void reload();
+  }, [reload]);
   const pageSize = 5;
 
   const projects = dashboard?.projects ?? [];
@@ -101,11 +104,11 @@ export function SupervisorDashboardPage() {
 
   useEffect(() => {
     if (error && isBlockingError(error)) {
-      showBlockingError(error);
+      showBlockingError(error, retryLoad);
       return;
     }
     clearBlockingError();
-  }, [error, showBlockingError, clearBlockingError]);
+  }, [error, showBlockingError, clearBlockingError, retryLoad]);
 
   if (error) {
     if (isBlockingError(error)) {

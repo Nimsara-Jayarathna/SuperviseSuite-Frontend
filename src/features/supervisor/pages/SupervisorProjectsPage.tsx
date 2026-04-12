@@ -1,4 +1,4 @@
-import { useDeferredValue, useState } from 'react';
+import { useCallback, useDeferredValue, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
 import { useBlockingError } from '@/app/layout/BlockingErrorContext';
@@ -50,14 +50,17 @@ export function SupervisorProjectsPage() {
     setLifecycle('ALL');
   };
   const hasActiveFilters = normalizedQuery.length > 0 || lifecycle !== 'ALL';
+  const retryLoad = useCallback(() => {
+    void reload();
+  }, [reload]);
 
   useEffect(() => {
     if (error && isBlockingError(error)) {
-      showBlockingError(error);
+      showBlockingError(error, retryLoad);
       return;
     }
     clearBlockingError();
-  }, [error, showBlockingError, clearBlockingError]);
+  }, [error, showBlockingError, clearBlockingError, retryLoad]);
 
   return (
     <div className="space-y-5">

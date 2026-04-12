@@ -1,9 +1,14 @@
 import type { ApiError } from '@/types';
 import { createContext, useContext } from 'react';
 
+export type BlockingErrorRequest = {
+  error: ApiError;
+  onRetry?: () => void | Promise<void>;
+};
+
 type BlockingErrorContextValue = {
-  blockingError: ApiError | null;
-  showBlockingError: (error: ApiError) => void;
+  blockingError: BlockingErrorRequest | null;
+  showBlockingError: (error: ApiError, onRetry?: () => void | Promise<void>) => void;
   clearBlockingError: () => void;
 };
 

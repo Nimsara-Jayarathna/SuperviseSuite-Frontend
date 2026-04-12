@@ -141,6 +141,9 @@ export function StudentProjectDetailsPage() {
   );
   const [isGitHubViewLoading, setIsGitHubViewLoading] = useState(false);
   const { showBlockingError, clearBlockingError } = useBlockingError();
+  const retryLoad = useCallback(() => {
+    void reload();
+  }, [reload]);
 
   const enabledRepositories = useMemo(
     () =>
@@ -160,11 +163,11 @@ export function StudentProjectDetailsPage() {
 
   useEffect(() => {
     if (error && isBlockingError(error)) {
-      showBlockingError(error);
+      showBlockingError(error, retryLoad);
       return;
     }
     clearBlockingError();
-  }, [error, showBlockingError, clearBlockingError]);
+  }, [error, showBlockingError, clearBlockingError, retryLoad]);
 
   useEffect(() => {
     const primaryLink =
