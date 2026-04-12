@@ -146,7 +146,9 @@ export function Step2OTPVerify({ flow }: Step2OTPVerifyProps) {
         </button>
       </div>
 
-      <div className={`flex justify-center gap-1.5 transition-opacity ${flow.isLoading ? 'opacity-60' : ''}`}>
+      <div
+        className={`flex justify-center gap-1.5 transition-opacity ${flow.isLoading ? 'opacity-60' : ''}`}
+      >
         {digits.map((digit, index) => (
           <input
             key={index}

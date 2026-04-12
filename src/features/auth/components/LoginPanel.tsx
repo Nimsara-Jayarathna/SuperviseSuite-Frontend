@@ -38,7 +38,9 @@ export function LoginPanel({ onClose, returnTo, inModal = false }: LoginPanelPro
           aria-hidden="true"
         />
       )}
-      <div className={`${inModal ? '' : 'fixed inset-0 z-50 flex items-center justify-center p-4'}`}>
+      <div
+        className={`${inModal ? '' : 'fixed inset-0 z-50 flex items-center justify-center p-4'}`}
+      >
         {!inModal && (
           <>
             <div className="pointer-events-none absolute -left-32 -top-32 h-96 w-96 rounded-full bg-pink-200/50 blur-3xl" />

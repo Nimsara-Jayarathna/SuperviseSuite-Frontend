@@ -37,7 +37,8 @@ export function validateProfile(fields: {
   else if (!/[^A-Za-z0-9]/.test(fields.password))
     errors.password = 'Must contain a special character.';
   if (!fields.confirmPassword) errors.confirmPassword = 'Please confirm your password.';
-  else if (fields.password !== fields.confirmPassword) errors.confirmPassword = 'Passwords do not match.';
+  else if (fields.password !== fields.confirmPassword)
+    errors.confirmPassword = 'Passwords do not match.';
   if (fields.requireRegistrationNumber) {
     if (!fields.registrationNumber?.trim()) {
       errors.registrationNumber = 'Registration number is required.';

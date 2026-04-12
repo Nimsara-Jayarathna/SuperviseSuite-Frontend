@@ -91,18 +91,16 @@ export const authApi = {
 
   getRegisterConfig(): Promise<RegisterConfig> {
     if (!registerConfigCache) {
-      registerConfigCache = apiClient
-        .get<RegisterConfig>('/api/auth/register/config')
-        .catch(() => {
-          registerConfigCache = null;
-          return {
-            domainRestrictionEnabled: false,
-            studentDomain: null,
-            supervisorDomain: null,
-            studentEmailPrefixRestrictionEnabled: false,
-            studentEmailPrefixRegex: null,
-          };
-        });
+      registerConfigCache = apiClient.get<RegisterConfig>('/api/auth/register/config').catch(() => {
+        registerConfigCache = null;
+        return {
+          domainRestrictionEnabled: false,
+          studentDomain: null,
+          supervisorDomain: null,
+          studentEmailPrefixRestrictionEnabled: false,
+          studentEmailPrefixRegex: null,
+        };
+      });
     }
     return registerConfigCache;
   },
