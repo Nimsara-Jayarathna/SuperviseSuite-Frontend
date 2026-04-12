@@ -17,11 +17,15 @@ function makeApiError(overrides: Partial<ApiError> = {}): ApiError {
 
 describe('isBlockingAuthError', () => {
   it('returns true for TOO_MANY_REQUESTS code', () => {
-    expect(isBlockingAuthError(makeApiError({ code: 'TOO_MANY_REQUESTS', status: 429 }))).toBe(true);
+    expect(isBlockingAuthError(makeApiError({ code: 'TOO_MANY_REQUESTS', status: 429 }))).toBe(
+      true,
+    );
   });
 
   it('returns true for SERVICE_UNAVAILABLE code', () => {
-    expect(isBlockingAuthError(makeApiError({ code: 'SERVICE_UNAVAILABLE', status: 503 }))).toBe(true);
+    expect(isBlockingAuthError(makeApiError({ code: 'SERVICE_UNAVAILABLE', status: 503 }))).toBe(
+      true,
+    );
   });
 
   it('returns true for 429 status even if code differs', () => {
@@ -29,21 +33,23 @@ describe('isBlockingAuthError', () => {
   });
 
   it('returns false for validation errors', () => {
-    expect(isBlockingAuthError(makeApiError({ code: 'VALIDATION_ERROR', status: 400 }))).toBe(false);
+    expect(isBlockingAuthError(makeApiError({ code: 'VALIDATION_ERROR', status: 400 }))).toBe(
+      false,
+    );
   });
 });
 
 describe('getBlockingAuthErrorTitle', () => {
   it('returns rate-limit title for 429', () => {
-    expect(getBlockingAuthErrorTitle(makeApiError({ code: 'TOO_MANY_REQUESTS', status: 429 }))).toBe(
-      'Too many requests',
-    );
+    expect(
+      getBlockingAuthErrorTitle(makeApiError({ code: 'TOO_MANY_REQUESTS', status: 429 })),
+    ).toBe('Too many requests');
   });
 
   it('returns service title for 503', () => {
-    expect(getBlockingAuthErrorTitle(makeApiError({ code: 'SERVICE_UNAVAILABLE', status: 503 }))).toBe(
-      'Service temporarily unavailable',
-    );
+    expect(
+      getBlockingAuthErrorTitle(makeApiError({ code: 'SERVICE_UNAVAILABLE', status: 503 })),
+    ).toBe('Service temporarily unavailable');
   });
 
   it('returns fallback title for null error', () => {

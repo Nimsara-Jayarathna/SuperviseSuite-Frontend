@@ -91,10 +91,12 @@ export const authApi = {
 
   getRegisterConfig(): Promise<RegisterConfig> {
     if (!registerConfigCache) {
-      registerConfigCache = apiClient.get<RegisterConfig>('/api/auth/register/config').catch((error) => {
-        registerConfigCache = null;
-        throw error;
-      });
+      registerConfigCache = apiClient
+        .get<RegisterConfig>('/api/auth/register/config')
+        .catch((error) => {
+          registerConfigCache = null;
+          throw error;
+        });
     }
     return registerConfigCache;
   },

@@ -6,10 +6,10 @@ export function isBlockingError(error: ApiError | null | undefined): boolean {
   }
 
   return (
-    error.code === 'TOO_MANY_REQUESTS'
-    || error.code === 'SERVICE_UNAVAILABLE'
-    || error.status === 429
-    || error.status === 503
+    error.code === 'TOO_MANY_REQUESTS' ||
+    error.code === 'SERVICE_UNAVAILABLE' ||
+    error.status === 429 ||
+    error.status === 503
   );
 }
 
