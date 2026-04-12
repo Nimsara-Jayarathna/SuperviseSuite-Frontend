@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { cn } from '@/lib/cn';
 import type { useRegistrationFlow } from '../../hooks/useRegistrationFlow';
 import type { RegisterConfig } from '../../types';
+import { isBlockingAuthError } from '../../utils/authErrorModel';
 
 type RegistrationFlow = ReturnType<typeof useRegistrationFlow>;
 
@@ -44,6 +45,7 @@ function hasStudentPrefixViolation(email: string, config: RegisterConfig): boole
 
 export function Step1EmailInput({ flow, config }: Step1EmailInputProps) {
   const [email, setEmail] = useState(flow.email ?? '');
+  const blockingError = isBlockingAuthError(flow.error);
   const errorMessage = flow.error?.message ?? null;
   const hasAt = email.includes('@');
   const matchedRole = matchDomain(email, config);
@@ -152,7 +154,7 @@ export function Step1EmailInput({ flow, config }: Step1EmailInputProps) {
         </p>
       )}
 
-      {flow.error && (
+      {flow.error && !blockingError && (
         <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
           {isAlreadyRegistered ? (
             <div className="space-y-1">

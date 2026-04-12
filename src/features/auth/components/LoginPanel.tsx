@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { LoginForm } from './LoginForm';
 import { RequestStateModal } from '@/components/ui/RequestStateModal';
+import { getBlockingAuthErrorTitle, isBlockingAuthError } from '../utils/authErrorModel';
 
 type LoginPanelProps = {
   onClose: () => void;
@@ -14,6 +15,8 @@ type LoginPanelProps = {
 export function LoginPanel({ onClose, returnTo, inModal = false }: LoginPanelProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const { login, isLoading, error, clearError } = useAuth();
+  const blockingError = isBlockingAuthError(error) ? error : null;
+  const inlineError = blockingError ? null : error;
 
   useEffect(() => {
     function handleEsc(event: KeyboardEvent) {
@@ -70,7 +73,7 @@ export function LoginPanel({ onClose, returnTo, inModal = false }: LoginPanelPro
           <LoginForm
             onSubmit={(values) => login(values, returnTo)}
             isLoading={isLoading}
-            error={error}
+            error={inlineError}
             onClearError={clearError}
             onSuccess={onClose}
             feedbackMode="inline"
@@ -78,13 +81,13 @@ export function LoginPanel({ onClose, returnTo, inModal = false }: LoginPanelPro
         </div>
       </div>
       <RequestStateModal
-        isOpen={isLoading || !!error}
-        status={isLoading ? 'loading' : error ? 'error' : 'success'}
-        title={isLoading ? 'Signing in...' : 'Sign in failed'}
+        isOpen={isLoading || !!blockingError}
+        status={isLoading ? 'loading' : 'error'}
+        title={isLoading ? 'Signing in...' : getBlockingAuthErrorTitle(blockingError)}
         message={
           isLoading
             ? 'We are verifying your credentials.'
-            : error?.message || 'Check your internet connection and try again.'
+            : blockingError?.message || 'Please try again later.'
         }
         onClose={clearError}
       />

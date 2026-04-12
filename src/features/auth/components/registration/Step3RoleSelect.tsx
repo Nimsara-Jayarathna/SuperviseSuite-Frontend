@@ -3,6 +3,7 @@ import { cn } from '@/lib/cn';
 import { Check, GraduationCap, ShieldCheck } from 'lucide-react';
 import { useState } from 'react';
 import type { useRegistrationFlow } from '../../hooks/useRegistrationFlow';
+import { isBlockingAuthError } from '../../utils/authErrorModel';
 
 type RegistrationFlow = ReturnType<typeof useRegistrationFlow>;
 
@@ -29,6 +30,7 @@ const ROLE_OPTIONS = [
 
 export function Step3RoleSelect({ flow }: Step3RoleSelectProps) {
   const [selectedRole, setSelectedRole] = useState<string | null>(flow.selectedRole);
+  const blockingError = isBlockingAuthError(flow.error);
 
   return (
     <div className="space-y-4">
@@ -76,7 +78,7 @@ export function Step3RoleSelect({ flow }: Step3RoleSelectProps) {
         })}
       </div>
 
-      {flow.error && (
+      {flow.error && !blockingError && (
         <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-700">
           {flow.error.message}
         </p>
