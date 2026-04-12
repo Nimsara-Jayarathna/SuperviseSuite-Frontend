@@ -127,7 +127,6 @@ export function useRegistrationFlow(options: UseRegistrationFlowOptions = {}) {
       });
       sessionStorage.removeItem(SESSION_EMAIL_KEY);
       setState((s) => ({ ...s, isLoading: false, isSuccess: true }));
-      window.setTimeout(() => options.onSuccess?.(), 2000);
     } catch (e) {
       if (isApiException(e)) setError(e.apiError);
       else setUnexpectedError();

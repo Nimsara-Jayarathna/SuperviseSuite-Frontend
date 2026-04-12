@@ -30,6 +30,19 @@ export function Step4ProfileDetails({ flow }: Step4ProfileDetailsProps) {
 
   const requireRegistrationNumber = flow.effectiveRole === 'STUDENT';
   const strength = useMemo(() => getPasswordStrength(password), [password]);
+  const liveErrors = useMemo(
+    () =>
+      validateProfile({
+        firstName,
+        lastName,
+        password,
+        confirmPassword,
+        registrationNumber,
+        requireRegistrationNumber,
+      }),
+    [firstName, lastName, password, confirmPassword, registrationNumber, requireRegistrationNumber],
+  );
+  const canSubmit = Object.keys(liveErrors).length === 0;
 
   function runValidation(currentRegistrationNumber = registrationNumber) {
     return validateProfile({
@@ -140,7 +153,12 @@ export function Step4ProfileDetails({ flow }: Step4ProfileDetailsProps) {
           <Input
             id="reg-number"
             value={registrationNumber}
-            onChange={(e) => setRegistrationNumber(e.target.value)}
+            onChange={(e) => {
+              const next = e.target.value;
+              setRegistrationNumber(next);
+              const errors = runValidation(next);
+              setFieldErrors((prev) => ({ ...prev, registrationNumber: errors.registrationNumber }));
+            }}
             onBlur={onRegistrationBlur}
             placeholder="e.g. IT24100487"
             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
@@ -151,15 +169,9 @@ export function Step4ProfileDetails({ flow }: Step4ProfileDetailsProps) {
         </div>
       )}
 
-      {flow.error && (
-        <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-          {flow.error.message}
-        </p>
-      )}
-
       <div className="space-y-2">
-        <Button type="submit" variant="primary" size="lg" fullWidth disabled={flow.isLoading}>
-          {flow.isLoading ? 'Creating account…' : 'Create account'}
+        <Button type="submit" variant="primary" size="lg" fullWidth disabled={flow.isLoading || !canSubmit}>
+          Create account
         </Button>
       </div>
     </form>

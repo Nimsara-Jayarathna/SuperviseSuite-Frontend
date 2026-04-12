@@ -40,11 +40,11 @@ export function Step1EmailInput({ flow, config }: Step1EmailInputProps) {
     (errorMessage?.toLowerCase().includes('already registered') ?? false) ||
     (errorMessage?.toLowerCase().includes('already exists') ?? false);
   const parts: string[] = [];
-  if (config.studentDomain) parts.push(`${config.studentDomain} (students)`);
-  if (config.supervisorDomain) parts.push(`${config.supervisorDomain} (supervisors)`);
+  if (config.studentDomain) parts.push(`${config.studentDomain} (student)`);
+  if (config.supervisorDomain) parts.push(`${config.supervisorDomain} (supervisor)`);
   const domainWarning =
     parts.length > 0
-      ? `Only ${parts.join(' and ')} may register.`
+      ? `Allowed domains: ${parts.join(' · ')}.`
       : 'Your email domain is not permitted to register.';
   const placeholder =
     config.domainRestrictionEnabled && config.studentDomain && config.supervisorDomain
@@ -118,7 +118,7 @@ export function Step1EmailInput({ flow, config }: Step1EmailInputProps) {
       )}
 
       {hasDomainRestrictionViolation && (
-        <p className="text-xs text-red-600">
+        <p className="rounded-md border border-red-200 bg-red-50/85 px-3 py-2 text-xs leading-5 text-red-700">
           {domainWarning}
         </p>
       )}

@@ -24,34 +24,12 @@ const STEP_NUMBER: Record<'email' | 'otp' | 'role' | 'profile', number> = {
   profile: 4,
 };
 
-function SuccessCard({ onDone }: { onDone: () => void }) {
-  const [countdown, setCountdown] = useState(2);
-
-  useEffect(() => {
-    const timer = window.setInterval(() => {
-      setCountdown((prev) => (prev > 0 ? prev - 1 : 0));
-    }, 1000);
-    return () => window.clearInterval(timer);
-  }, []);
-
-  useEffect(() => {
-    if (countdown === 0) {
-      onDone();
-    }
-  }, [countdown, onDone]);
-
-  return (
-    <div className="space-y-3 py-6 text-center">
-      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
-        <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="2.5">
-          <path d="M20 6 9 17l-5-5" />
-        </svg>
-      </div>
-      <h3 className="text-xl font-semibold text-foreground">Account created!</h3>
-      <p className="text-sm text-muted-foreground">Taking you to sign in in {countdown}s…</p>
-    </div>
-  );
-}
+const STEP_TITLE: Record<'email' | 'otp' | 'role' | 'profile', string> = {
+  email: 'Enter your email',
+  otp: 'Verify your email',
+  role: 'Select your role',
+  profile: 'Enter your details',
+};
 
 export function RegistrationPanel({ config, inModal = false, onClose, onSwitchToLogin }: RegistrationPanelProps) {
   const navigate = useNavigate();
@@ -68,6 +46,7 @@ export function RegistrationPanel({ config, inModal = false, onClose, onSwitchTo
   const flow = useRegistrationFlow({ onSuccess: onSwitchToLogin ? switchToLogin : undefined });
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const currentStep = STEP_NUMBER[flow.step];
+  const stepTitle = STEP_TITLE[flow.step];
   const lastStepRef = useRef(currentStep);
   const [direction, setDirection] = useState<'right' | 'left'>('right');
   const progressed =
@@ -77,7 +56,7 @@ export function RegistrationPanel({ config, inModal = false, onClose, onSwitchTo
     studentDomain: null,
     supervisorDomain: null,
   };
-  const handleSuccessDone = () => switchToLogin();
+  const showProfileStateModal = flow.step === 'profile' && (flow.isLoading || !!flow.error || flow.isSuccess);
 
   useEffect(() => {
     if (currentStep > lastStepRef.current) {
@@ -113,9 +92,6 @@ export function RegistrationPanel({ config, inModal = false, onClose, onSwitchTo
   }
 
   const stepContent = useMemo(() => {
-    if (flow.isSuccess) {
-      return <SuccessCard onDone={handleSuccessDone} />;
-    }
     switch (flow.step) {
       case 'email':
         return <Step1EmailInput flow={flow} config={effectiveConfig} />;
@@ -128,7 +104,7 @@ export function RegistrationPanel({ config, inModal = false, onClose, onSwitchTo
       default:
         return null;
     }
-  }, [flow, effectiveConfig, handleSuccessDone]);
+  }, [flow, effectiveConfig]);
 
   const panelContent = (
     <>
@@ -149,16 +125,19 @@ export function RegistrationPanel({ config, inModal = false, onClose, onSwitchTo
         )}
         <div className="relative mx-auto w-full max-w-md rounded-2xl border border-border bg-background p-6 shadow-xl">
           {!flow.isSuccess && (
-            <Button
-              type="button"
-              onClick={handleDismissRequest}
-              aria-label="Close"
-              variant="ghost"
-              size="sm"
-              className="absolute right-4 top-4 h-7 w-7 rounded-full p-0"
-            >
-              ✕
-            </Button>
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <h2 className="text-base font-semibold text-foreground">{stepTitle}</h2>
+              <Button
+                type="button"
+                onClick={handleDismissRequest}
+                aria-label="Close"
+                variant="ghost"
+                size="sm"
+                className="h-7 w-7 rounded-full p-0"
+              >
+                ✕
+              </Button>
+            </div>
           )}
 
           <div
@@ -193,6 +172,26 @@ export function RegistrationPanel({ config, inModal = false, onClose, onSwitchTo
             </Button>
           </div>
         }
+      />
+
+      <RequestStateModal
+        isOpen={showProfileStateModal}
+        status={flow.isLoading ? 'loading' : flow.isSuccess ? 'success' : 'error'}
+        title={
+          flow.isLoading
+            ? 'Creating your account'
+            : flow.isSuccess
+              ? 'Account created'
+              : 'Registration failed'
+        }
+        message={
+          flow.isLoading
+            ? 'Please wait while we create your account.'
+            : flow.isSuccess
+              ? 'Your account is ready. Redirecting to sign in...'
+              : (flow.error?.message ?? 'Something went wrong. Please try again.')
+        }
+        onClose={flow.isSuccess ? switchToLogin : flow.clearError}
       />
 
       <style>{`
