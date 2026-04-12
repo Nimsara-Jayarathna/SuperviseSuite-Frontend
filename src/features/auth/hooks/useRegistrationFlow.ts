@@ -5,8 +5,6 @@ import { authApi } from '../api/authApi';
 import type { RegistrationStep } from '../types';
 import { validateEmail } from '../utils/registrationFlowValidation';
 
-const SESSION_EMAIL_KEY = 'reg_email';
-
 type RegistrationFlowState = {
   step: RegistrationStep;
   email: string;
@@ -56,7 +54,7 @@ export function useRegistrationFlow(options: UseRegistrationFlowOptions = {}) {
 
   const [state, setState] = useState<RegistrationFlowState>({
     step: 'email',
-    email: sessionStorage.getItem(SESSION_EMAIL_KEY) ?? '',
+    email: '',
     registrationToken: '',
     inferredRole: null,
     selectedRole: null,
@@ -79,7 +77,6 @@ export function useRegistrationFlow(options: UseRegistrationFlowOptions = {}) {
     setLoading();
     try {
       await authApi.registerInit({ email });
-      sessionStorage.setItem(SESSION_EMAIL_KEY, email);
       setState((s) => ({ ...s, email, isLoading: false, step: 'otp' }));
     } catch (e) {
       if (isApiException(e)) setError(e.apiError);
@@ -125,7 +122,6 @@ export function useRegistrationFlow(options: UseRegistrationFlowOptions = {}) {
         name: data.registrationNumber || undefined,
         role: state.inferredRole ? undefined : (state.selectedRole ?? undefined),
       });
-      sessionStorage.removeItem(SESSION_EMAIL_KEY);
       setState((s) => ({ ...s, isLoading: false, isSuccess: true }));
     } catch (e) {
       if (isApiException(e)) setError(e.apiError);

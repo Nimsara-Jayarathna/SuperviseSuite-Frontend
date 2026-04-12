@@ -1,7 +1,8 @@
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { useRegistrationFlow } from '../../hooks/useRegistrationFlow';
+import type { RegisterConfig } from '../../types';
 import {
   getPasswordStrength,
   type ProfileFieldErrors,
@@ -12,15 +13,19 @@ type RegistrationFlow = ReturnType<typeof useRegistrationFlow>;
 
 type Step4ProfileDetailsProps = {
   flow: RegistrationFlow;
+  config: RegisterConfig;
 };
 
-const strengthStyle: Record<'weak' | 'fair' | 'strong', { width: string; color: string; label: string }> = {
+const strengthStyle: Record<
+  'weak' | 'fair' | 'strong',
+  { width: string; color: string; label: string }
+> = {
   weak: { width: '33%', color: 'bg-red-500', label: 'Weak' },
   fair: { width: '66%', color: 'bg-amber-500', label: 'Fair' },
   strong: { width: '100%', color: 'bg-emerald-500', label: 'Strong' },
 };
 
-export function Step4ProfileDetails({ flow }: Step4ProfileDetailsProps) {
+export function Step4ProfileDetails({ flow, config }: Step4ProfileDetailsProps) {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [password, setPassword] = useState('');
@@ -29,6 +34,23 @@ export function Step4ProfileDetails({ flow }: Step4ProfileDetailsProps) {
   const [fieldErrors, setFieldErrors] = useState<ProfileFieldErrors>({});
 
   const requireRegistrationNumber = flow.effectiveRole === 'STUDENT';
+  const shouldLockRegistrationNumber =
+    requireRegistrationNumber &&
+    config.domainRestrictionEnabled &&
+    config.studentEmailPrefixRestrictionEnabled;
+  const autoFilledRegistrationNumber = useMemo(() => {
+    if (!shouldLockRegistrationNumber) return null;
+    const atIndex = flow.email.indexOf('@');
+    if (atIndex <= 0) return null;
+    return flow.email.slice(0, atIndex).trim().toUpperCase();
+  }, [shouldLockRegistrationNumber, flow.email]);
+
+  useEffect(() => {
+    if (autoFilledRegistrationNumber) {
+      setRegistrationNumber(autoFilledRegistrationNumber);
+    }
+  }, [autoFilledRegistrationNumber]);
+
   const strength = useMemo(() => getPasswordStrength(password), [password]);
   const liveErrors = useMemo(
     () =>
@@ -152,12 +174,19 @@ export function Step4ProfileDetails({ flow }: Step4ProfileDetailsProps) {
           </label>
           <Input
             id="reg-number"
+            disabled={shouldLockRegistrationNumber}
             value={registrationNumber}
             onChange={(e) => {
+              if (shouldLockRegistrationNumber) {
+                return;
+              }
               const next = e.target.value;
               setRegistrationNumber(next);
               const errors = runValidation(next);
-              setFieldErrors((prev) => ({ ...prev, registrationNumber: errors.registrationNumber }));
+              setFieldErrors((prev) => ({
+                ...prev,
+                registrationNumber: errors.registrationNumber,
+              }));
             }}
             onBlur={onRegistrationBlur}
             placeholder="e.g. IT24100487"
@@ -170,7 +199,13 @@ export function Step4ProfileDetails({ flow }: Step4ProfileDetailsProps) {
       )}
 
       <div className="space-y-2">
-        <Button type="submit" variant="primary" size="lg" fullWidth disabled={flow.isLoading || !canSubmit}>
+        <Button
+          type="submit"
+          variant="primary"
+          size="lg"
+          fullWidth
+          disabled={flow.isLoading || !canSubmit}
+        >
           Create account
         </Button>
       </div>

@@ -111,7 +111,7 @@ export function RegistrationPanel({
       case 'role':
         return <Step3RoleSelect flow={flow} />;
       case 'profile':
-        return <Step4ProfileDetails flow={flow} />;
+        return <Step4ProfileDetails flow={flow} config={effectiveConfig} />;
       default:
         return null;
     }
