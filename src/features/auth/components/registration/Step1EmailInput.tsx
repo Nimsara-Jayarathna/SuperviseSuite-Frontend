@@ -25,16 +25,37 @@ function isValidEmailFormat(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
+function hasStudentPrefixViolation(email: string, config: RegisterConfig): boolean {
+  if (!config.domainRestrictionEnabled) return false;
+  if (!config.studentEmailPrefixRestrictionEnabled || !config.studentEmailPrefixRegex) return false;
+  if (matchDomain(email, config) !== 'STUDENT') return false;
+
+  const atIndex = email.indexOf('@');
+  if (atIndex <= 0) return true;
+
+  const localPart = email.slice(0, atIndex).trim();
+  try {
+    return !new RegExp(config.studentEmailPrefixRegex, 'i').test(localPart);
+  } catch {
+    // Backend remains the source of truth; do not block the UI on malformed config regex.
+    return false;
+  }
+}
+
 export function Step1EmailInput({ flow, config }: Step1EmailInputProps) {
   const [email, setEmail] = useState(flow.email ?? '');
   const errorMessage = flow.error?.message ?? null;
   const hasAt = email.includes('@');
   const matchedRole = matchDomain(email, config);
   const hasInvalidFormat = hasAt && !isValidEmailFormat(email);
+  const hasPrefixRestrictionViolation =
+    hasAt && !hasInvalidFormat && hasStudentPrefixViolation(email, config);
   const hasDomainRestrictionViolation =
     hasAt && !hasInvalidFormat && matchedRole === null && config.domainRestrictionEnabled;
   const canContinue =
-    isValidEmailFormat(email) && (!config.domainRestrictionEnabled || matchedRole !== null);
+    isValidEmailFormat(email) &&
+    (!config.domainRestrictionEnabled || matchedRole !== null) &&
+    !hasPrefixRestrictionViolation;
   const isAlreadyRegistered =
     flow.error?.code === 'CONFLICT' ||
     (errorMessage?.toLowerCase().includes('already registered') ?? false) ||
@@ -106,20 +127,28 @@ export function Step1EmailInput({ flow, config }: Step1EmailInputProps) {
                   : 'opacity-0',
             )}
           >
-            {matchedRole === 'STUDENT' ? 'Student' : matchedRole === 'SUPERVISOR' ? 'Supervisor' : ''}
+            {matchedRole === 'STUDENT'
+              ? 'Student'
+              : matchedRole === 'SUPERVISOR'
+                ? 'Supervisor'
+                : ''}
           </span>
         </div>
       </div>
 
       {hasAt && hasInvalidFormat && (
-        <p className="text-xs text-red-600">
-          Enter a valid email address.
-        </p>
+        <p className="text-xs text-red-600">Enter a valid email address.</p>
       )}
 
       {hasDomainRestrictionViolation && (
         <p className="rounded-md border border-red-200 bg-red-50/85 px-3 py-2 text-xs leading-5 text-red-700">
           {domainWarning}
+        </p>
+      )}
+
+      {hasPrefixRestrictionViolation && (
+        <p className="rounded-md border border-red-200 bg-red-50/85 px-3 py-2 text-xs leading-5 text-red-700">
+          Invalid IT number format. Use ITXXXXXXXX.
         </p>
       )}
 

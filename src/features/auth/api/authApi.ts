@@ -99,6 +99,8 @@ export const authApi = {
             domainRestrictionEnabled: false,
             studentDomain: null,
             supervisorDomain: null,
+            studentEmailPrefixRestrictionEnabled: false,
+            studentEmailPrefixRegex: null,
           };
         });
     }

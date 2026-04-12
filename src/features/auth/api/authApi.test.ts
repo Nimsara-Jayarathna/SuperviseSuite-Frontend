@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('../../../services/apiClient', () => ({
   apiClient: {
     post: vi.fn(),
+    get: vi.fn(),
   },
 }));
 
@@ -56,5 +57,40 @@ describe('authApi.registerSupervisor', () => {
     });
 
     expect(result).toEqual(response);
+  });
+
+  it('falls back to open registration config when config request fails', async () => {
+    vi.mocked(apiClient.get).mockRejectedValue(new Error('network error'));
+
+    const result = await authApi.getRegisterConfig();
+
+    expect(result).toEqual({
+      domainRestrictionEnabled: false,
+      studentDomain: null,
+      supervisorDomain: null,
+      studentEmailPrefixRestrictionEnabled: false,
+      studentEmailPrefixRegex: null,
+    });
+  });
+
+  it('fetches registration config with prefix metadata', async () => {
+    vi.mocked(apiClient.get).mockResolvedValue({
+      domainRestrictionEnabled: true,
+      studentDomain: '@my.sliit.lk',
+      supervisorDomain: '@gmail.com',
+      studentEmailPrefixRestrictionEnabled: true,
+      studentEmailPrefixRegex: '^IT(1[5-9]|[2-4][0-9]|50)\\d{6}$',
+    });
+
+    const result = await authApi.getRegisterConfig();
+
+    expect(apiClient.get).toHaveBeenCalledWith('/api/auth/register/config');
+    expect(result).toEqual({
+      domainRestrictionEnabled: true,
+      studentDomain: '@my.sliit.lk',
+      supervisorDomain: '@gmail.com',
+      studentEmailPrefixRestrictionEnabled: true,
+      studentEmailPrefixRegex: '^IT(1[5-9]|[2-4][0-9]|50)\\d{6}$',
+    });
   });
 });

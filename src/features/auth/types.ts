@@ -77,4 +77,6 @@ export type RegisterConfig = {
   domainRestrictionEnabled: boolean;
   studentDomain: string | null;
   supervisorDomain: string | null;
+  studentEmailPrefixRestrictionEnabled: boolean;
+  studentEmailPrefixRegex: string | null;
 };

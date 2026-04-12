@@ -41,6 +41,8 @@ export function LandingPage({
         domainRestrictionEnabled: false,
         studentDomain: null,
         supervisorDomain: null,
+        studentEmailPrefixRestrictionEnabled: false,
+        studentEmailPrefixRegex: null,
       });
       setRegistrationOpen(true);
     } finally {

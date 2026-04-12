@@ -31,7 +31,12 @@ const STEP_TITLE: Record<'email' | 'otp' | 'role' | 'profile', string> = {
   profile: 'Enter your details',
 };
 
-export function RegistrationPanel({ config, inModal = false, onClose, onSwitchToLogin }: RegistrationPanelProps) {
+export function RegistrationPanel({
+  config,
+  inModal = false,
+  onClose,
+  onSwitchToLogin,
+}: RegistrationPanelProps) {
   const navigate = useNavigate();
   const hasSwitchedToLoginRef = useRef(false);
   const switchToLogin = () => {
@@ -50,13 +55,19 @@ export function RegistrationPanel({ config, inModal = false, onClose, onSwitchTo
   const lastStepRef = useRef(currentStep);
   const [direction, setDirection] = useState<'right' | 'left'>('right');
   const progressed =
-    flow.step !== 'email' || Boolean(flow.registrationToken) || Boolean(flow.inferredRole) || Boolean(flow.selectedRole);
+    flow.step !== 'email' ||
+    Boolean(flow.registrationToken) ||
+    Boolean(flow.inferredRole) ||
+    Boolean(flow.selectedRole);
   const effectiveConfig: RegisterConfig = config ?? {
     domainRestrictionEnabled: false,
     studentDomain: null,
     supervisorDomain: null,
+    studentEmailPrefixRestrictionEnabled: false,
+    studentEmailPrefixRegex: null,
   };
-  const showProfileStateModal = flow.step === 'profile' && (flow.isLoading || !!flow.error || flow.isSuccess);
+  const showProfileStateModal =
+    flow.step === 'profile' && (flow.isLoading || !!flow.error || flow.isSuccess);
 
   useEffect(() => {
     if (currentStep > lastStepRef.current) {
@@ -116,7 +127,9 @@ export function RegistrationPanel({ config, inModal = false, onClose, onSwitchTo
         />
       )}
 
-      <div className={`${inModal ? '' : 'fixed inset-0 z-50 flex items-center justify-center p-4'}`}>
+      <div
+        className={`${inModal ? '' : 'fixed inset-0 z-50 flex items-center justify-center p-4'}`}
+      >
         {!inModal && (
           <>
             <div className="pointer-events-none absolute -left-32 -top-32 h-96 w-96 rounded-full bg-pink-200/50 blur-3xl" />
@@ -164,7 +177,12 @@ export function RegistrationPanel({ config, inModal = false, onClose, onSwitchTo
         autoCloseOnSuccess={false}
         footer={
           <div className="flex flex-wrap justify-center gap-3">
-            <Button type="button" variant="secondary" size="md" onClick={() => setShowCloseConfirm(false)}>
+            <Button
+              type="button"
+              variant="secondary"
+              size="md"
+              onClick={() => setShowCloseConfirm(false)}
+            >
               Cancel
             </Button>
             <Button type="button" variant="danger" size="md" onClick={closeHard}>
