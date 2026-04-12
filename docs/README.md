@@ -23,6 +23,7 @@ Technical notes, architecture summaries, and feature guides for the SuperviseSui
 | [branches/major-fixes-scrum-97-supervisor-ui-workflow.md](branches/major-fixes-scrum-97-supervisor-ui-workflow.md) | Major frontend fixes for supervisor workflow: guided creation, milestone UX, leader management, and landing card interaction stabilization |
 | [branches/major-fixes-scrum-80-github-dashboard-integration.md](branches/major-fixes-scrum-80-github-dashboard-integration.md) | GitHub dashboard integration plus follow-up updates for explicit repo selection, project-scoped request-access flow, and callback summary UX |
 | [branches/major-fixes-scrum-81-multiple-github-repositories.md](branches/major-fixes-scrum-81-multiple-github-repositories.md) | Dedicated SCRUM-81 record for supervisor GitHub App authorization, explicit installation repository selection, and access-request callback flow alignment |
+| [branches/major-fixes-scrum-106-auth-blocking-rate-limit.md](branches/major-fixes-scrum-106-auth-blocking-rate-limit.md) | SCRUM-106 notes for auth blocking-error UX, registration-config hard guard, and rate-limit handling parity |
 
 ### UI
 

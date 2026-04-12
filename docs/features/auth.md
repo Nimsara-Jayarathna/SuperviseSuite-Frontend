@@ -1,6 +1,30 @@
 # Auth Feature
 
-Handles user authentication — login, registration, session persistence, and route protection.
+Handles login, email-verified registration, session persistence, and route protection.
+
+## Current Architecture Note
+
+Authentication UI has moved from dedicated legacy auth pages to modal/panel-driven flows.
+If you see references to `LoginPage`, `RegisterPage`, or `useRegister`/`useSupervisorRegister`, treat them as historical notes.
+
+Current registration orchestration centers around:
+
+- `src/features/auth/components/AuthModal.tsx`
+- `src/features/auth/components/registration/RegistrationPanel.tsx`
+- `src/features/auth/hooks/useRegistrationFlow.ts`
+- `src/features/auth/components/registration/Step1EmailInput.tsx`
+- `src/features/auth/components/registration/Step2OTPVerify.tsx`
+- `src/features/auth/components/registration/Step3RoleSelect.tsx`
+- `src/features/auth/components/registration/Step4ProfileDetails.tsx`
+
+Current backend contract used by frontend:
+
+- `GET /api/auth/register/config`
+- `POST /api/auth/register/init`
+- `POST /api/auth/register/verify`
+- `POST /api/auth/register/complete`
+
+Registration only opens after config is fetched successfully; config failure uses blocking modal UX.
 
 ## Routes
 

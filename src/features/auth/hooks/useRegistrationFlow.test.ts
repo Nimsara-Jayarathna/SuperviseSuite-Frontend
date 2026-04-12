@@ -1,6 +1,18 @@
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+vi.mock('@/services/apiClient', () => ({
+  isApiException: (value: unknown) => {
+    return (
+      typeof value === 'object' &&
+      value !== null &&
+      'apiError' in value &&
+      'name' in value &&
+      (value as { name?: string }).name === 'ApiException'
+    );
+  },
+}));
+
 vi.mock('../api/authApi', () => ({
   authApi: {
     registerInit: vi.fn(),
@@ -101,5 +113,84 @@ describe('useRegistrationFlow', () => {
 
     expect(result.current.isSuccess).toBe(true);
     expect(removeSpy.mock.calls.some((call) => call[0] === 'reg_email')).toBe(false);
+  });
+
+  it('routes to role step when verify requires role selection', async () => {
+    vi.mocked(authApi.registerInit).mockResolvedValue({ message: 'ok' });
+    vi.mocked(authApi.registerVerify).mockResolvedValue({
+      registrationToken: 'token_role',
+      requiresRoleSelection: true,
+      role: null,
+    });
+
+    const { result } = renderHook(() => useRegistrationFlow());
+
+    await act(async () => {
+      await result.current.submitEmail('person@gmail.com');
+    });
+
+    await act(async () => {
+      await result.current.submitOtp('123456');
+    });
+
+    expect(result.current.step).toBe('role');
+    expect(result.current.registrationToken).toBe('token_role');
+  });
+
+  it('submitOtp sets api error when verification fails', async () => {
+    vi.mocked(authApi.registerVerify).mockRejectedValue({
+      apiError: {
+        code: 'BAD_REQUEST',
+        message: 'Invalid or expired OTP.',
+        details: [],
+        timestamp: '2026-04-12T00:00:00Z',
+        status: 400,
+        error: 'Bad Request',
+        path: '/api/auth/register/verify',
+        traceId: null,
+      },
+      name: 'ApiException',
+      status: 400,
+    });
+
+    const { result } = renderHook(() => useRegistrationFlow());
+
+    await act(async () => {
+      await result.current.submitOtp('123456');
+    });
+
+    expect(result.current.error?.message).toBe('Invalid or expired OTP.');
+    expect(result.current.isLoading).toBe(false);
+  });
+
+  it('goBack from profile returns to role for non-sliit emails', async () => {
+    vi.mocked(authApi.registerInit).mockResolvedValue({ message: 'ok' });
+    vi.mocked(authApi.registerVerify).mockResolvedValue({
+      registrationToken: 'token_role',
+      requiresRoleSelection: true,
+      role: null,
+    });
+
+    const { result } = renderHook(() => useRegistrationFlow());
+
+    await act(async () => {
+      await result.current.submitEmail('person@gmail.com');
+    });
+
+    await act(async () => {
+      await result.current.submitOtp('123456');
+    });
+
+    act(() => {
+      result.current.selectRole('SUPERVISOR');
+    });
+
+    expect(result.current.step).toBe('profile');
+
+    act(() => {
+      result.current.goBack();
+    });
+
+    expect(result.current.step).toBe('role');
   });
 });
