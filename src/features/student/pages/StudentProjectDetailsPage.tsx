@@ -18,6 +18,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState, type ComponentProps } from 'react';
+import { useBlockingError } from '@/app/layout/BlockingErrorContext';
 import { CommitActivitySection } from '@/features/projects/components/CommitActivitySection';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { ErrorState } from '@/components/feedback/ErrorState';
@@ -37,6 +38,7 @@ import { studentApi } from '../api/studentApi';
 // If a stricter module boundary is introduced, move the jira/ subfolder to
 // src/components/jira/ and update all import paths.
 import { JiraHealthOverview } from '@/features/supervisor/components/ProjectDetail/jira/JiraHealthOverview';
+import { isBlockingError } from '@/utils/errorSeverity';
 import type {
   ProjectGitHubActivity,
   StudentProjectDetailLeader,
@@ -138,6 +140,7 @@ export function StudentProjectDetailsPage() {
     project?.github ?? null,
   );
   const [isGitHubViewLoading, setIsGitHubViewLoading] = useState(false);
+  const { showBlockingError, clearBlockingError } = useBlockingError();
 
   const enabledRepositories = useMemo(
     () =>
@@ -154,6 +157,14 @@ export function StudentProjectDetailsPage() {
   useEffect(() => {
     setGithubView(project?.github ?? null);
   }, [project?.github]);
+
+  useEffect(() => {
+    if (error && isBlockingError(error)) {
+      showBlockingError(error);
+      return;
+    }
+    clearBlockingError();
+  }, [error, showBlockingError, clearBlockingError]);
 
   useEffect(() => {
     const primaryLink =
@@ -224,6 +235,10 @@ export function StudentProjectDetailsPage() {
   }
 
   if (error) {
+    if (isBlockingError(error)) {
+      return null;
+    }
+
     if (error.code === 'NOT_FOUND') {
       return (
         <div className="rounded-3xl border border-dashed border-border bg-white p-10 text-center shadow-sm">

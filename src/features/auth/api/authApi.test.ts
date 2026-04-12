@@ -59,18 +59,10 @@ describe('authApi.registerSupervisor', () => {
     expect(result).toEqual(response);
   });
 
-  it('falls back to open registration config when config request fails', async () => {
+  it('rejects when registration config request fails', async () => {
     vi.mocked(apiClient.get).mockRejectedValue(new Error('network error'));
 
-    const result = await authApi.getRegisterConfig();
-
-    expect(result).toEqual({
-      domainRestrictionEnabled: false,
-      studentDomain: null,
-      supervisorDomain: null,
-      studentEmailPrefixRestrictionEnabled: false,
-      studentEmailPrefixRegex: null,
-    });
+    await expect(authApi.getRegisterConfig()).rejects.toThrow('network error');
   });
 
   it('fetches registration config with prefix metadata', async () => {

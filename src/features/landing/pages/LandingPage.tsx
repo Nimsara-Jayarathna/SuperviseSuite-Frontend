@@ -5,6 +5,9 @@ import { authApi } from '@/features/auth/api/authApi';
 import { LoginPanel } from '@/features/auth/components/LoginPanel';
 import { RegistrationPanel } from '@/features/auth/components/registration/RegistrationPanel';
 import type { RegisterConfig } from '@/features/auth/types';
+import type { ApiError } from '@/types';
+import { isApiException } from '@/services/apiClient';
+import { getBlockingErrorTitle } from '@/utils/errorSeverity';
 import { FeaturesSection } from '../components/FeaturesSection';
 import { HeroSection } from '../components/HeroSection';
 import { HowItWorksSection } from '../components/HowItWorksSection';
@@ -29,22 +32,37 @@ export function LandingPage({
   const [registrationOpen, setRegistrationOpen] = useState(initialRegistrationOpen);
   const [loginOpen, setLoginOpen] = useState(initialLoginOpen);
   const [registerConfig, setRegisterConfig] = useState<RegisterConfig | null>(null);
+  const [registerConfigError, setRegisterConfigError] = useState<ApiError | null>(null);
+  const [initialRegistrationAttempted, setInitialRegistrationAttempted] = useState(false);
+
+  function toRegisterConfigError(error: unknown): ApiError {
+    if (isApiException(error)) {
+      return error.apiError;
+    }
+
+    return {
+      code: 'SERVICE_UNAVAILABLE',
+      message: 'Unable to prepare registration right now. Please try again.',
+      details: [],
+      timestamp: new Date().toISOString(),
+      status: 503,
+      error: 'Service Unavailable',
+      path: '/api/auth/register/config',
+      traceId: null,
+    };
+  }
+
   const handleRegister = async () => {
     if (registrationLoading) return;
     setRegistrationLoading(true);
+    setRegisterConfigError(null);
     try {
       const config = await authApi.getRegisterConfig();
       setRegisterConfig(config);
       setRegistrationOpen(true);
-    } catch {
-      setRegisterConfig({
-        domainRestrictionEnabled: false,
-        studentDomain: null,
-        supervisorDomain: null,
-        studentEmailPrefixRestrictionEnabled: false,
-        studentEmailPrefixRegex: null,
-      });
-      setRegistrationOpen(true);
+    } catch (error) {
+      setRegistrationOpen(false);
+      setRegisterConfigError(toRegisterConfigError(error));
     } finally {
       setRegistrationLoading(false);
     }
@@ -67,12 +85,18 @@ export function LandingPage({
   };
 
   useEffect(() => {
-    if (initialRegistrationOpen && registerConfig === null && !registrationLoading) {
+    if (
+      initialRegistrationOpen &&
+      registerConfig === null &&
+      !registrationLoading &&
+      !initialRegistrationAttempted
+    ) {
+      setInitialRegistrationAttempted(true);
       void handleRegister();
     }
     // This should only auto-open for route-driven initial state.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialRegistrationOpen, registerConfig, registrationLoading]);
+  }, [initialRegistrationOpen, registerConfig, registrationLoading, initialRegistrationAttempted]);
 
   return (
     <PublicLayout
@@ -86,6 +110,19 @@ export function LandingPage({
         status="loading"
         title="Preparing registration"
         message="Checking registration configuration..."
+      />
+      <RequestStateModal
+        isOpen={Boolean(registerConfigError)}
+        status="error"
+        title={getBlockingErrorTitle(registerConfigError)}
+        message={registerConfigError?.message ?? 'Unable to prepare registration right now.'}
+        onClose={() => {
+          setRegisterConfigError(null);
+          handleRegistrationClose();
+        }}
+        onRetry={() => {
+          void handleRegister();
+        }}
       />
       {loginOpen && <LoginPanel returnTo={initialLoginReturnTo} onClose={handleLoginClose} />}
       {registrationOpen && registerConfig && (

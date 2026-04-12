@@ -3,9 +3,14 @@ import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/cn';
 import { useAuth } from '../hooks/useAuth';
+import { authApi } from '../api/authApi';
+import type { RegisterConfig } from '../types';
 import { LoginForm } from './LoginForm';
 import { RegistrationPanel } from './registration/RegistrationPanel';
 import { RequestStateModal } from '@/components/ui/RequestStateModal';
+import { isApiException } from '@/services/apiClient';
+import type { ApiError } from '@/types';
+import { getBlockingErrorTitle } from '@/utils/errorSeverity';
 
 type AuthTab = 'login' | 'register';
 
@@ -17,6 +22,9 @@ type AuthModalProps = {
 
 export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalProps) {
   const [activeTab, setActiveTab] = useState<AuthTab>(initialTab);
+  const [registerConfig, setRegisterConfig] = useState<RegisterConfig | null>(null);
+  const [registerConfigLoading, setRegisterConfigLoading] = useState(false);
+  const [registerConfigError, setRegisterConfigError] = useState<ApiError | null>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const {
     login,
@@ -25,9 +33,52 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
     clearError: clearLoginError,
   } = useAuth();
 
+  function toRegisterConfigError(error: unknown): ApiError {
+    if (isApiException(error)) {
+      return error.apiError;
+    }
+
+    return {
+      code: 'SERVICE_UNAVAILABLE',
+      message: 'Unable to prepare registration right now. Please try again.',
+      details: [],
+      timestamp: new Date().toISOString(),
+      status: 503,
+      error: 'Service Unavailable',
+      path: '/api/auth/register/config',
+      traceId: null,
+    };
+  }
+
+  async function openRegisterTab() {
+    if (registerConfigLoading) {
+      return;
+    }
+    setRegisterConfigError(null);
+    setRegisterConfigLoading(true);
+    try {
+      const config = await authApi.getRegisterConfig();
+      setRegisterConfig(config);
+      setActiveTab('register');
+    } catch (error) {
+      setRegisterConfigError(toRegisterConfigError(error));
+    } finally {
+      setRegisterConfigLoading(false);
+    }
+  }
+
   // Sync active tab when parent re-opens the modal with a different tab
   useEffect(() => {
-    if (isOpen) setActiveTab(initialTab);
+    if (!isOpen) {
+      return;
+    }
+
+    if (initialTab === 'register') {
+      void openRegisterTab();
+      return;
+    }
+
+    setActiveTab(initialTab);
   }, [isOpen, initialTab]);
 
   // Close on Escape key
@@ -95,7 +146,13 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
               <button
                 key={tab}
                 type="button"
-                onClick={() => setActiveTab(tab)}
+                onClick={() => {
+                  if (tab === 'register') {
+                    void openRegisterTab();
+                    return;
+                  }
+                  setActiveTab(tab);
+                }}
                 className={cn(
                   'flex-1 rounded-md py-1.5 text-center text-sm font-medium transition-colors',
                   activeTab === tab
@@ -117,8 +174,12 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
               onClearError={clearLoginError}
               onSuccess={onClose}
             />
-          ) : (
-            <RegistrationPanel inModal={true} onClose={onClose} />
+          ) : registerConfig ? (
+            <RegistrationPanel inModal={true} config={registerConfig} onClose={onClose} />
+          ) : null}
+
+          {activeTab === 'register' && registerConfigLoading && (
+            <p className="text-sm text-muted-foreground">Preparing registration...</p>
           )}
         </div>
       </div>
@@ -133,6 +194,29 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
             : loginError?.message || 'Check your internet connection and try again.'
         }
         onClose={clearLoginError}
+      />
+
+      <RequestStateModal
+        isOpen={registerConfigLoading || Boolean(registerConfigError)}
+        status={registerConfigLoading ? 'loading' : 'error'}
+        title={
+          registerConfigLoading
+            ? 'Preparing registration'
+            : getBlockingErrorTitle(registerConfigError)
+        }
+        message={
+          registerConfigLoading
+            ? 'Checking registration configuration...'
+            : (registerConfigError?.message ?? 'Unable to prepare registration right now.')
+        }
+        onClose={registerConfigLoading ? undefined : () => setRegisterConfigError(null)}
+        onRetry={
+          registerConfigLoading
+            ? undefined
+            : () => {
+                void openRegisterTab();
+              }
+        }
       />
     </>,
     document.body,
