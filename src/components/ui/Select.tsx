@@ -12,6 +12,7 @@ import {
   useState,
 } from 'react';
 import { createPortal } from 'react-dom';
+import { calculateDropdownLayout } from '@/lib/dropdownSizing';
 
 type SelectProps = SelectHTMLAttributes<HTMLSelectElement> & { children: ReactNode };
 
@@ -20,6 +21,19 @@ type OptionItem = {
   label: string;
   disabled: boolean;
 };
+
+function extractNodeText(node: ReactNode): string {
+  if (typeof node === 'string' || typeof node === 'number') {
+    return String(node);
+  }
+  if (Array.isArray(node)) {
+    return node.map(extractNodeText).join('');
+  }
+  if (isValidElement(node)) {
+    return extractNodeText(node.props.children);
+  }
+  return '';
+}
 
 export function Select(props: SelectProps) {
   const { children, className, disabled, onMouseDown, onKeyDown, ...rest } = props;
@@ -33,10 +47,8 @@ export function Select(props: SelectProps) {
       .filter((child): child is ReactElement => isValidElement(child) && child.type === 'option')
       .map((child) => {
         const valueProp = child.props.value;
-        const labelText =
-          typeof child.props.children === 'string' || typeof child.props.children === 'number'
-            ? String(child.props.children)
-            : String(valueProp ?? '');
+        const extractedLabel = extractNodeText(child.props.children).trim();
+        const labelText = extractedLabel.length > 0 ? extractedLabel : String(valueProp ?? '');
         return {
           value: valueProp != null ? String(valueProp) : labelText,
           label: labelText,
@@ -50,11 +62,13 @@ export function Select(props: SelectProps) {
   const openMenu = () => {
     if (disabled || !selectRef.current) return;
     const rect = selectRef.current.getBoundingClientRect();
-    setMenuPos({
-      top: rect.bottom + window.scrollY,
-      left: rect.left + window.scrollX,
-      width: rect.width,
-    });
+    setMenuPos(
+      calculateDropdownLayout({
+        triggerRect: rect,
+        labels: options.map((option) => option.label),
+        fontSourceEl: selectRef.current,
+      }),
+    );
     setIsOpen(true);
   };
 
@@ -114,18 +128,30 @@ export function Select(props: SelectProps) {
       if (event.key === 'Escape') closeMenu();
     };
 
-    window.addEventListener('resize', closeMenu);
+    const onResize = () => {
+      if (!selectRef.current) return;
+      const rect = selectRef.current.getBoundingClientRect();
+      setMenuPos(
+        calculateDropdownLayout({
+          triggerRect: rect,
+          labels: options.map((option) => option.label),
+          fontSourceEl: selectRef.current,
+        }),
+      );
+    };
+
+    window.addEventListener('resize', onResize);
     window.addEventListener('scroll', closeMenu, true);
     document.addEventListener('mousedown', onDocMouseDown);
     document.addEventListener('keydown', onDocKeyDown);
 
     return () => {
-      window.removeEventListener('resize', closeMenu);
+      window.removeEventListener('resize', onResize);
       window.removeEventListener('scroll', closeMenu, true);
       document.removeEventListener('mousedown', onDocMouseDown);
       document.removeEventListener('keydown', onDocKeyDown);
     };
-  }, [isOpen]);
+  }, [isOpen, options]);
 
   return (
     <>
@@ -172,8 +198,12 @@ export function Select(props: SelectProps) {
                       if (!option.disabled) handleOptionSelect(option.value);
                     }}
                   >
-                    <span>{option.label}</span>
-                    <span className={isSelected ? 'text-amber-600' : 'text-transparent'}>✓</span>
+                    <span className="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap pr-3">
+                      {option.label}
+                    </span>
+                    <span className="shrink-0">
+                      <span className={isSelected ? 'text-amber-600' : 'text-transparent'}>✓</span>
+                    </span>
                   </button>
                 </li>
               );

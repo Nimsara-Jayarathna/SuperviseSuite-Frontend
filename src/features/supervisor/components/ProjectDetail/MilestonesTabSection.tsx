@@ -13,6 +13,7 @@ import { type ComponentProps, useEffect, useRef, useState } from 'react';
 import { buttonStyles } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
 import { StatusBadge } from '@/components/ui/StatusBadge';
+import { calculateDropdownLayout } from '@/lib/dropdownSizing';
 import { FIELD_LIMITS, MILESTONE_STATUS_OPTIONS, dateFormatter } from '../../projectDetails.shared';
 import type { MilestonesState } from '../../hooks/useProjectDetailsPageState';
 import type { MilestoneStatus } from '../../projectDetails.shared';
@@ -61,6 +62,7 @@ function getStatusIcon(status: MilestoneStatus, className?: string) {
 
 export function MilestonesTabSection({ project, milestones }: MilestonesTabSectionProps) {
   const quickStatusMenuRef = useRef<HTMLUListElement>(null);
+  const quickStatusAnchorRef = useRef<HTMLButtonElement | null>(null);
   const [quickStatusMenu, setQuickStatusMenu] = useState<{
     milestoneId: string;
     top: number;
@@ -82,15 +84,35 @@ export function MilestonesTabSection({ project, milestones }: MilestonesTabSecti
       if (event.key === 'Escape') closeMenu();
     };
 
+    const onResize = () => {
+      if (!quickStatusMenu || !quickStatusAnchorRef.current) return;
+      const rect = quickStatusAnchorRef.current.getBoundingClientRect();
+      const nextLayout = calculateDropdownLayout({
+        triggerRect: rect,
+        labels: MILESTONE_STATUS_OPTIONS.map((status) => status.replace('_', ' ')),
+        fontSourceEl: quickStatusAnchorRef.current,
+      });
+      setQuickStatusMenu((current) =>
+        current
+          ? {
+              ...current,
+              top: nextLayout.top,
+              left: nextLayout.left,
+              width: nextLayout.width,
+            }
+          : current,
+      );
+    };
+
     document.addEventListener('mousedown', onDocMouseDown);
     document.addEventListener('keydown', onDocKeyDown);
-    window.addEventListener('resize', closeMenu);
+    window.addEventListener('resize', onResize);
     window.addEventListener('scroll', closeMenu, true);
 
     return () => {
       document.removeEventListener('mousedown', onDocMouseDown);
       document.removeEventListener('keydown', onDocKeyDown);
-      window.removeEventListener('resize', closeMenu);
+      window.removeEventListener('resize', onResize);
       window.removeEventListener('scroll', closeMenu, true);
     };
   }, [quickStatusMenu]);
@@ -339,15 +361,20 @@ export function MilestonesTabSection({ project, milestones }: MilestonesTabSecti
                             aria-label="Change milestone status"
                             onClick={(event) => {
                               if (milestones.quickStatusUpdatingId === milestone.id) return;
+                              quickStatusAnchorRef.current = event.currentTarget;
                               const rect = event.currentTarget.getBoundingClientRect();
                               setQuickStatusMenu((current) =>
                                 current?.milestoneId === milestone.id
                                   ? null
                                   : {
                                       milestoneId: milestone.id,
-                                      top: rect.bottom + window.scrollY,
-                                      left: rect.left + window.scrollX,
-                                      width: rect.width,
+                                      ...calculateDropdownLayout({
+                                        triggerRect: rect,
+                                        labels: MILESTONE_STATUS_OPTIONS.map((status) =>
+                                          status.replace('_', ' '),
+                                        ),
+                                        fontSourceEl: event.currentTarget,
+                                      }),
                                     },
                               );
                             }}
@@ -444,8 +471,12 @@ export function MilestonesTabSection({ project, milestones }: MilestonesTabSecti
                         void milestones.submitQuickMilestoneStatus(targetMilestone, status);
                       }}
                     >
-                      <span>{status.replace('_', ' ')}</span>
-                      <span className={isSelected ? 'text-amber-600' : 'text-transparent'}>✓</span>
+                      <span className="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap pr-3">
+                        {status.replace('_', ' ')}
+                      </span>
+                      <span className="shrink-0">
+                        <span className={isSelected ? 'text-amber-600' : 'text-transparent'}>✓</span>
+                      </span>
                     </button>
                   </li>
                 );
