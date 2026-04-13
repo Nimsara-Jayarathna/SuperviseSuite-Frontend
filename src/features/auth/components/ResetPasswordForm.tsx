@@ -9,18 +9,12 @@ import {
 } from '../utils/resetPasswordValidation';
 
 export type ResetPasswordFormProps = {
-  onSubmit: (newPassword: string) => Promise<ResetPasswordFieldErrors | void>;
+  onSubmit: (newPassword: string) => Promise<void>;
   isLoading: boolean;
   onClearError: () => void;
-  backendFieldErrors?: ResetPasswordFieldErrors;
 };
 
-export function ResetPasswordForm({
-  onSubmit,
-  isLoading,
-  onClearError,
-  backendFieldErrors,
-}: ResetPasswordFormProps) {
+export function ResetPasswordForm({ onSubmit, isLoading, onClearError }: ResetPasswordFormProps) {
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
   const [isNewPasswordFocused, setIsNewPasswordFocused] = useState(false);
@@ -53,16 +47,8 @@ export function ResetPasswordForm({
     }
 
     setFieldErrors({});
-    const submitResult = await onSubmit(newPassword);
-    if (submitResult && Object.keys(submitResult).length > 0) {
-      setFieldErrors(submitResult);
-    }
+    await onSubmit(newPassword);
   }
-
-  const mergedFieldErrors: ResetPasswordFieldErrors = {
-    ...backendFieldErrors,
-    ...fieldErrors,
-  };
 
   return (
     <form onSubmit={handleSubmit} noValidate className="space-y-3">
@@ -83,8 +69,8 @@ export function ResetPasswordForm({
         password={newPassword}
         isNewPasswordFocused={isNewPasswordFocused}
       />
-      {mergedFieldErrors.newPassword && (
-        <p className="text-xs text-rose-600">{mergedFieldErrors.newPassword}</p>
+      {fieldErrors.newPassword && (
+        <p className="text-xs text-rose-600">{fieldErrors.newPassword}</p>
       )}
 
       <PasswordField
@@ -100,8 +86,8 @@ export function ResetPasswordForm({
         showMismatch={isConfirmPasswordFilled}
         mismatch={isMismatch}
       />
-      {mergedFieldErrors.confirmNewPassword && (
-        <p className="text-xs text-rose-600">{mergedFieldErrors.confirmNewPassword}</p>
+      {fieldErrors.confirmNewPassword && (
+        <p className="text-xs text-rose-600">{fieldErrors.confirmNewPassword}</p>
       )}
 
       <Button type="submit" variant="primary" size="lg" fullWidth disabled={isLoading || !isValid}>

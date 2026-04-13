@@ -110,20 +110,6 @@ export function LoginForm({
         {passwordError && <p className="text-xs text-red-500">{passwordError}</p>}
       </div>
 
-      {onForgotPassword ? (
-        <button
-          type="button"
-          className="self-start text-sm text-primary hover:underline"
-          onClick={onForgotPassword}
-        >
-          Forgot your password?
-        </button>
-      ) : (
-        <Link to="/forgot-password" className="self-start text-sm text-primary hover:underline">
-          Forgot your password?
-        </Link>
-      )}
-
       <Button
         type="submit"
         variant="primary"
@@ -134,6 +120,20 @@ export function LoginForm({
       >
         Sign In
       </Button>
+
+      {onForgotPassword ? (
+        <button
+          type="button"
+          className="mx-auto text-sm text-primary hover:underline"
+          onClick={onForgotPassword}
+        >
+          Forgot your password?
+        </button>
+      ) : (
+        <Link to="/forgot-password" className="mx-auto text-sm text-primary hover:underline">
+          Forgot your password?
+        </Link>
+      )}
     </form>
   );
 }

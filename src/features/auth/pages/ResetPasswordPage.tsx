@@ -10,10 +10,6 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { authApi } from '../api/authApi';
 import { ResetPasswordForm } from '../components/ResetPasswordForm';
 import { getBlockingErrorTitle, isBlockingError } from '@/utils/errorSeverity';
-import {
-  mapBackendResetPasswordFieldErrors,
-  type ResetPasswordFieldErrors,
-} from '../utils/resetPasswordValidation';
 
 type ValidationStatus = 'loading' | 'valid' | 'invalid' | 'error';
 type SubmitStatus = 'idle' | 'loading' | 'success' | 'error';
@@ -27,7 +23,6 @@ export function ResetPasswordPage() {
   const [validationError, setValidationError] = useState<ApiError | null>(null);
   const [submitStatus, setSubmitStatus] = useState<SubmitStatus>('idle');
   const [submitErrorMessage, setSubmitErrorMessage] = useState<string | null>(null);
-  const [submitFieldErrors, setSubmitFieldErrors] = useState<ResetPasswordFieldErrors>({});
 
   useEffect(() => {
     document.title = 'Reset your password - SuperviseSuite';
@@ -73,26 +68,27 @@ export function ResetPasswordPage() {
 
   async function handleSubmit(newPassword: string) {
     setSubmitErrorMessage(null);
-    setSubmitFieldErrors({});
     setSubmitStatus('loading');
     try {
       await authApi.resetPassword({ token, newPassword });
       setSubmitStatus('success');
-      return;
     } catch (error) {
-      setSubmitStatus('error');
       if (isApiException(error)) {
-        const fieldErrors = mapBackendResetPasswordFieldErrors(error.apiError);
-        setSubmitFieldErrors(fieldErrors);
-        if (Object.keys(fieldErrors).length > 0) {
-          setSubmitStatus('idle');
-          return fieldErrors;
-        }
-        setSubmitErrorMessage(error.apiError.message);
-        return;
+        const newPasswordDetail = error.apiError.details.find(
+          (detail) => detail.field === 'newPassword',
+        );
+        const confirmNewPasswordDetail = error.apiError.details.find(
+          (detail) => detail.field === 'confirmNewPassword',
+        );
+        setSubmitErrorMessage(
+          (newPasswordDetail?.message ?? newPasswordDetail?.issue) ||
+            (confirmNewPasswordDetail?.message ?? confirmNewPasswordDetail?.issue) ||
+            error.apiError.message,
+        );
+      } else {
+        setSubmitErrorMessage('Something went wrong. Please try again.');
       }
-
-      setSubmitErrorMessage('Something went wrong. Please try again.');
+      setSubmitStatus('error');
     }
   }
 
@@ -115,10 +111,8 @@ export function ResetPasswordPage() {
             <ResetPasswordForm
               onSubmit={handleSubmit}
               isLoading={submitStatus === 'loading'}
-              backendFieldErrors={submitFieldErrors}
               onClearError={() => {
                 setSubmitErrorMessage(null);
-                setSubmitFieldErrors({});
                 if (submitStatus === 'error') {
                   setSubmitStatus('idle');
                 }
@@ -148,13 +142,23 @@ export function ResetPasswordPage() {
         footer={
           validationStatus === 'invalid' ? (
             <div className="flex justify-center">
-              <Button type="button" variant="primary" size="md" onClick={() => navigate('/forgot-password')}>
+              <Button
+                type="button"
+                variant="primary"
+                size="md"
+                onClick={() => navigate('/forgot-password')}
+              >
                 Request new link
               </Button>
             </div>
           ) : validationStatus === 'error' ? (
             <div className="flex justify-center">
-              <Button type="button" variant="primary" size="md" onClick={() => void validateResetLink()}>
+              <Button
+                type="button"
+                variant="primary"
+                size="md"
+                onClick={() => void validateResetLink()}
+              >
                 Try again
               </Button>
             </div>
@@ -164,7 +168,9 @@ export function ResetPasswordPage() {
 
       <RequestStateModal
         isOpen={submitStatus !== 'idle'}
-        status={submitStatus === 'loading' ? 'loading' : submitStatus === 'success' ? 'success' : 'error'}
+        status={
+          submitStatus === 'loading' ? 'loading' : submitStatus === 'success' ? 'success' : 'error'
+        }
         title={
           submitStatus === 'loading'
             ? 'Updating password'
@@ -181,6 +187,7 @@ export function ResetPasswordPage() {
         }
         autoCloseOnSuccess={false}
         onClose={submitStatus === 'success' ? undefined : () => setSubmitStatus('idle')}
+        onRetry={submitStatus === 'error' ? () => setSubmitStatus('idle') : undefined}
         footer={
           submitStatus === 'success' ? (
             <div className="flex justify-center">
