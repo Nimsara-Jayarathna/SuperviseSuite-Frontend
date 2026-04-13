@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { RequestStateModal } from '@/components/ui/RequestStateModal';
@@ -44,6 +44,7 @@ function hasStudentPrefixViolation(email: string, config: RegisterConfig): boole
 }
 
 export function Step1EmailInput({ flow, config }: Step1EmailInputProps) {
+  const navigate = useNavigate();
   const [email, setEmail] = useState(flow.email ?? '');
   const blockingError = isBlockingAuthError(flow.error);
   const errorMessage = flow.error?.message ?? null;
@@ -154,18 +155,9 @@ export function Step1EmailInput({ flow, config }: Step1EmailInputProps) {
         </p>
       )}
 
-      {flow.error && !blockingError && (
+      {flow.error && !blockingError && !isAlreadyRegistered && (
         <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-          {isAlreadyRegistered ? (
-            <div className="space-y-1">
-              <p>This email is already registered.</p>
-              <Link to="/login" className="font-medium text-red-700 underline underline-offset-2">
-                Sign in →
-              </Link>
-            </div>
-          ) : (
-            <p>{errorMessage}</p>
-          )}
+          <p>{errorMessage}</p>
         </div>
       )}
 
@@ -186,6 +178,30 @@ export function Step1EmailInput({ flow, config }: Step1EmailInputProps) {
         title="Sending verification code"
         message="Checking your email and sending OTP..."
         autoCloseOnSuccess={false}
+      />
+
+      <RequestStateModal
+        isOpen={Boolean(flow.error && !blockingError && isAlreadyRegistered)}
+        status="warning"
+        title="Email already registered"
+        message="This email is already registered."
+        onClose={flow.clearError}
+        autoCloseOnSuccess={false}
+        footer={
+          <div className="flex flex-wrap justify-center gap-3">
+            <Button
+              type="button"
+              variant="primary"
+              size="md"
+              onClick={() => {
+                flow.clearError();
+                navigate('/login');
+              }}
+            >
+              Sign in
+            </Button>
+          </div>
+        }
       />
     </form>
   );
