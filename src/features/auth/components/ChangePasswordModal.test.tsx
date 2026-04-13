@@ -4,24 +4,26 @@ import { vi } from 'vitest';
 import { ChangePasswordModal } from './ChangePasswordModal';
 
 describe('ChangePasswordModal', () => {
-  it('renders password requirements panel before new/confirm fields', () => {
+  it('renders requirement card before new/confirm fields', () => {
     render(<ChangePasswordModal isOpen={true} onClose={vi.fn()} onSubmit={vi.fn()} />);
 
-    const requirements = screen.getByText('Password requirements');
+    const requirements = screen.getByText(/Requirement:\s*At least 12 characters\./i);
     const newPassword = screen.getByLabelText('New password');
 
     expect(requirements.compareDocumentPosition(newPassword) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
-  it('shows mismatch tooltip on confirm new password mismatch', async () => {
+  it('shows mismatch tooltip on confirm new password mismatch', () => {
     render(<ChangePasswordModal isOpen={true} onClose={vi.fn()} onSubmit={vi.fn()} />);
 
-    fireEvent.change(screen.getByLabelText('New password'), { target: { value: 'Secure@123' } });
+    fireEvent.change(screen.getByLabelText('New password'), { target: { value: 'long passphrase one' } });
     fireEvent.change(screen.getByLabelText('Confirm new password'), {
-      target: { value: 'Secure@124' },
+      target: { value: 'long passphrase two' },
     });
 
-    expect(screen.getByRole('tooltip')).toHaveTextContent('Passwords do not match.');
+    expect(screen.getByRole('tooltip', { hidden: true })).toHaveTextContent(
+      'Passwords do not match.',
+    );
   });
 
   it('toggles show/hide for current password field', () => {

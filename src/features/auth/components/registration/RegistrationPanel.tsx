@@ -9,7 +9,7 @@ import { Step2OTPVerify } from './Step2OTPVerify';
 import { Step3RoleSelect } from './Step3RoleSelect';
 import { Step4ProfileDetails } from './Step4ProfileDetails';
 import { useRegistrationFlow } from '../../hooks/useRegistrationFlow';
-import { getBlockingAuthErrorTitle, isBlockingAuthError } from '../../utils/authErrorModel';
+import { getBlockingErrorTitle, isBlockingError } from '@/utils/errorSeverity';
 
 type RegistrationPanelProps = {
   config?: RegisterConfig;
@@ -73,7 +73,7 @@ export function RegistrationPanel({
   );
   const showProfileStateModal =
     flow.step === 'profile' && (flow.isLoading || !!flow.error || flow.isSuccess);
-  const blockingError = isBlockingAuthError(flow.error) ? flow.error : null;
+  const blockingError = isBlockingError(flow.error) ? flow.error : null;
   const showBlockingStateModal = flow.step !== 'profile' && !!blockingError;
 
   useEffect(() => {
@@ -202,7 +202,7 @@ export function RegistrationPanel({
       <RequestStateModal
         isOpen={showBlockingStateModal}
         status="error"
-        title={getBlockingAuthErrorTitle(blockingError)}
+        title={getBlockingErrorTitle(blockingError)}
         message={blockingError?.message ?? 'Please try again later.'}
         onClose={flow.clearError}
       />

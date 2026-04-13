@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { cn } from '@/lib/cn';
 import type { useRegistrationFlow } from '../../hooks/useRegistrationFlow';
 import type { RegisterConfig } from '../../types';
-import { isBlockingAuthError } from '../../utils/authErrorModel';
+import { isBlockingError } from '@/utils/errorSeverity';
 import {
   hasStudentPrefixViolation,
   isValidEmailFormat,
@@ -21,7 +21,7 @@ type Step1EmailInputProps = {
 
 export function Step1EmailInput({ flow, config }: Step1EmailInputProps) {
   const [email, setEmail] = useState(flow.email ?? '');
-  const blockingError = isBlockingAuthError(flow.error);
+  const blockingError = isBlockingError(flow.error);
   const errorMessage = flow.error?.message ?? null;
   const hasAt = email.includes('@');
   const matchedRole = matchDomain(email, config);

@@ -2,12 +2,14 @@ import { Button } from '@/components/ui/Button';
 import { RequestStateModal } from '@/components/ui/RequestStateModal';
 import { LandingPage } from '@/features/landing';
 import { isApiException } from '@/services/apiClient';
-import { useEffect, useState } from 'react';
+import type { ApiError } from '@/types';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { authApi } from '../api/authApi';
 import { ResetPasswordForm } from '../components/ResetPasswordForm';
+import { getBlockingErrorTitle, isBlockingError } from '@/utils/errorSeverity';
 
-type ValidationStatus = 'loading' | 'valid' | 'invalid';
+type ValidationStatus = 'loading' | 'valid' | 'invalid' | 'error';
 type SubmitStatus = 'idle' | 'loading' | 'success' | 'error';
 
 export function ResetPasswordPage() {
@@ -16,6 +18,7 @@ export function ResetPasswordPage() {
   const token = searchParams.get('token') ?? '';
 
   const [validationStatus, setValidationStatus] = useState<ValidationStatus>('loading');
+  const [validationError, setValidationError] = useState<ApiError | null>(null);
   const [submitStatus, setSubmitStatus] = useState<SubmitStatus>('idle');
   const [submitErrorMessage, setSubmitErrorMessage] = useState<string | null>(null);
 
@@ -23,21 +26,35 @@ export function ResetPasswordPage() {
     document.title = 'Reset your password - SuperviseSuite';
   }, []);
 
-  useEffect(() => {
-    async function validate() {
-      if (!token) {
-        setValidationStatus('invalid');
+  const validateResetLink = useCallback(async () => {
+    setValidationError(null);
+    setValidationStatus('loading');
+    if (!token) {
+      setValidationStatus('invalid');
+      return;
+    }
+
+    try {
+      const response = await authApi.validateResetToken(token);
+      if (response.valid) {
+        setValidationStatus('valid');
         return;
       }
-      try {
-        const response = await authApi.validateResetToken(token);
-        setValidationStatus(response.valid ? 'valid' : 'invalid');
-      } catch {
-        setValidationStatus('invalid');
+      setValidationStatus('invalid');
+    } catch (error) {
+      if (isApiException(error)) {
+        setValidationError(error.apiError);
+        setValidationStatus(isBlockingError(error.apiError) ? 'error' : 'invalid');
+        return;
       }
+      setValidationError(null);
+      setValidationStatus('error');
     }
-    void validate();
   }, [token]);
+
+  useEffect(() => {
+    void validateResetLink();
+  }, [validateResetLink]);
 
   async function handleSubmit(newPassword: string) {
     setSubmitErrorMessage(null);
@@ -86,17 +103,31 @@ export function ResetPasswordPage() {
       <RequestStateModal
         isOpen={validationStatus !== 'valid'}
         status={validationStatus === 'loading' ? 'loading' : 'error'}
-        title={validationStatus === 'loading' ? 'Validating link' : 'Link expired or already used'}
+        title={
+          validationStatus === 'loading'
+            ? 'Validating link'
+            : validationStatus === 'invalid'
+              ? 'Link expired or already used'
+              : getBlockingErrorTitle(validationError)
+        }
         message={
           validationStatus === 'loading'
             ? 'Validating reset token...'
-            : 'This reset link is no longer valid. You can request a new one.'
+            : validationStatus === 'invalid'
+              ? 'This reset link is no longer valid. You can request a new one.'
+              : validationError?.message || 'Unable to reach the server. Please try again.'
         }
         footer={
           validationStatus === 'invalid' ? (
             <div className="flex justify-center">
               <Button type="button" variant="primary" size="md" onClick={() => navigate('/forgot-password')}>
                 Request new link
+              </Button>
+            </div>
+          ) : validationStatus === 'error' ? (
+            <div className="flex justify-center">
+              <Button type="button" variant="primary" size="md" onClick={() => void validateResetLink()}>
+                Try again
               </Button>
             </div>
           ) : undefined

@@ -45,10 +45,10 @@ function createConfig(overrides: Partial<RegisterConfig> = {}): RegisterConfig {
 }
 
 describe('Step4ProfileDetails', () => {
-  it('renders password requirements panel before password fields', () => {
+  it('renders requirement card before password fields', () => {
     render(<Step4ProfileDetails flow={createFlow()} config={createConfig()} />);
 
-    const requirements = screen.getByText('Password requirements');
+    const requirements = screen.getByText(/Requirement:\s*At least 12 characters\./i);
     const passwordInput = screen.getByLabelText('Password');
 
     expect(requirements.compareDocumentPosition(passwordInput) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
@@ -101,17 +101,26 @@ describe('Step4ProfileDetails', () => {
 
     render(<Step4ProfileDetails flow={flow} config={createConfig()} />);
 
+    await waitFor(() => {
+      expect(screen.getByLabelText('Registration Number')).toHaveValue('IT24103464');
+    });
+
     fireEvent.change(screen.getByLabelText('First name'), { target: { value: 'Nimal' } });
     fireEvent.change(screen.getByLabelText('Last name'), { target: { value: 'Perera' } });
-    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'Secure@123' } });
-    fireEvent.change(screen.getByLabelText('Confirm password'), { target: { value: 'Secure@123' } });
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'long passphrase one' } });
+    fireEvent.change(screen.getByLabelText('Confirm password'), {
+      target: { value: 'long passphrase one' },
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Create account' })).toBeEnabled();
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Create account' }));
 
     await waitFor(() => {
       expect(submitProfile).toHaveBeenCalledWith({
         firstName: 'Nimal',
         lastName: 'Perera',
-        password: 'Secure@123',
+        password: 'long passphrase one',
         registrationNumber: 'IT24103464',
       });
     });
@@ -120,8 +129,10 @@ describe('Step4ProfileDetails', () => {
   it('shows mismatch tooltip on confirm password mismatch', () => {
     render(<Step4ProfileDetails flow={createFlow()} config={createConfig()} />);
 
-    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'Secure@123' } });
-    fireEvent.change(screen.getByLabelText('Confirm password'), { target: { value: 'Secure@124' } });
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'long passphrase one' } });
+    fireEvent.change(screen.getByLabelText('Confirm password'), {
+      target: { value: 'long passphrase two' },
+    });
 
     expect(screen.getByRole('tooltip')).toHaveTextContent('Passwords do not match.');
   });

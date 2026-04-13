@@ -4,7 +4,7 @@ import { vi } from 'vitest';
 import { ResetPasswordForm } from './ResetPasswordForm';
 
 describe('ResetPasswordForm', () => {
-  it('renders password requirements panel before new/confirm fields', () => {
+  it('renders requirement card before new/confirm fields', () => {
     render(
       <ResetPasswordForm
         onSubmit={vi.fn().mockResolvedValue(undefined)}
@@ -13,7 +13,7 @@ describe('ResetPasswordForm', () => {
       />,
     );
 
-    const requirements = screen.getByText('Password requirements');
+    const requirements = screen.getByText(/Requirement:\s*At least 12 characters\./i);
     const newPassword = screen.getByLabelText('New Password');
 
     expect(requirements.compareDocumentPosition(newPassword) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
@@ -28,9 +28,9 @@ describe('ResetPasswordForm', () => {
       />,
     );
 
-    fireEvent.change(screen.getByLabelText('New Password'), { target: { value: 'Secure@123' } });
+    fireEvent.change(screen.getByLabelText('New Password'), { target: { value: 'long passphrase one' } });
     fireEvent.change(screen.getByLabelText('Confirm New Password'), {
-      target: { value: 'Secure@124' },
+      target: { value: 'long passphrase two' },
     });
 
     expect(screen.getByRole('tooltip')).toHaveTextContent('Passwords do not match.');
