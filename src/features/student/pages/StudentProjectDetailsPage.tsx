@@ -39,6 +39,7 @@ import { studentApi } from '../api/studentApi';
 // src/components/jira/ and update all import paths.
 import { JiraHealthOverview } from '@/features/supervisor/components/ProjectDetail/jira/JiraHealthOverview';
 import { isBlockingError } from '@/utils/errorSeverity';
+import { StudentFilesTabSection } from '../components/StudentFilesTabSection';
 import type {
   ProjectGitHubActivity,
   StudentProjectDetailLeader,
@@ -267,7 +268,7 @@ export function StudentProjectDetailsPage() {
   }
 
   const requestedTab = searchParams.get('tab') as StudentProjectDetailTab | null;
-  const tabs: StudentProjectDetailTab[] = [...BASE_TABS, 'github', 'jira'];
+  const tabs: StudentProjectDetailTab[] = [...BASE_TABS, 'files', 'github', 'jira'];
   const activeTab = requestedTab && tabs.includes(requestedTab) ? requestedTab : 'overview';
 
   return (
@@ -633,6 +634,10 @@ export function StudentProjectDetailsPage() {
             </div>
           )}
         </section>
+      ) : null}
+
+      {activeTab === 'files' ? (
+        <StudentFilesTabSection projectId={project.id} initialFiles={project.files} />
       ) : null}
 
       {activeTab === 'github' ? (

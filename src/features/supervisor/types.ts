@@ -1,5 +1,6 @@
 import type { ProjectGitHubPreview } from '@/features/projects/types';
 import type { UserRole } from '@/types/roles';
+import type { ProjectFile, ProjectFileConfig } from '@/features/projectfiles/types';
 
 export type SupervisorProjectLifecycle = 'PLANNING' | 'ACTIVE' | 'AT_RISK' | 'BEHIND' | 'COMPLETED';
 
@@ -66,6 +67,10 @@ export type SupervisorProjectDetail = {
   leader: SupervisorProjectLeader | null;
   members: SupervisorProjectDetailMember[];
   milestones: SupervisorProjectDetailMilestone[];
+  files: {
+    items: ProjectFile[];
+    config: ProjectFileConfig;
+  } | null;
 };
 
 export type JiraAuthUrl = {
@@ -258,6 +263,7 @@ export type SupervisorProjectDetailTab =
   | 'overview'
   | 'team'
   | 'milestones'
+  | 'files'
   | 'github'
   | 'integrations'
   | 'jira';

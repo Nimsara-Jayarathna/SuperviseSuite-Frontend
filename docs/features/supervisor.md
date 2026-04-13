@@ -52,6 +52,11 @@ Supervisor feature currently uses these APIs:
 - `GET /api/supervisor/projects/{projectId}/jira/workload`
 - `GET /api/supervisor/projects/{projectId}/jira/hierarchy`
 - `POST /api/supervisor/projects/{projectId}/jira/refresh`
+- `GET /api/supervisor/projects/{projectId}/files`
+- `POST /api/supervisor/projects/{projectId}/files/upload-url`
+- `POST /api/supervisor/projects/{projectId}/files/confirm`
+- `GET /api/supervisor/projects/{projectId}/files/{fileId}/download-url`
+- `DELETE /api/supervisor/projects/{projectId}/files/{fileId}`
 - `GET /api/github/access-requests/validate?token=...`
 - `POST /api/github/access-requests/continue?token=...`
 - `GET /api/github/access-updated/summary?token=...`
@@ -81,6 +86,7 @@ Supervisor feature currently uses these APIs:
 | `src/features/supervisor/components/ProjectDetail/RepositoryLinkModalContent.tsx` | Guided modal with method-first UX, installation repository selection, loading skeletons, and GitHub App/request-access actions |
 | `src/features/supervisor/components/ProjectDetail/IntegrationsTabSection.tsx` | Integrations tab containing GitHub repository controls and Jira connect/disconnect actions |
 | `src/features/supervisor/components/ProjectDetail/JiraTabSection.tsx` | Jira tab shell for Jira workspace context and Jira health overview rendering |
+| `src/features/supervisor/components/ProjectDetail/FilesTabSection.tsx` | Files tab for upload, list, download, and soft-delete flows |
 | `src/features/supervisor/components/ProjectDetail/jira/JiraHealthOverview.tsx` | Shared Jira analytics orchestrator (tab switcher, context bar, refresh action) |
 | `src/features/supervisor/components/ProjectDetail/jira/workload/JiraWorkloadPanel.tsx` | Member workload comparison dashboard with imbalance alerts and unassigned warnings |
 | `src/features/supervisor/components/ProjectDetail/jira/workload/JiraWorkloadTable.tsx` | Metric-rich team member workload list (open, overdue, story points, recency) |
@@ -94,6 +100,9 @@ Supervisor feature currently uses these APIs:
 | `src/features/supervisor/hooks/useSupervisorDashboard.ts` | Dashboard hook with loading/error/retry |
 | `src/features/supervisor/hooks/useSupervisorProjects.ts` | Project list hook |
 | `src/features/supervisor/hooks/useSupervisorProject.ts` | Project detail hook |
+| `src/features/projectfiles/hooks/useSupervisorProjectFiles.ts` | Files tab state: lazy load, seed from project detail, upload/delete/download actions |
+| `src/features/projectfiles/components/UploadFileModal.tsx` | Upload modal with file-picker UX, FE validation, and request-state lifecycle modal |
+| `src/features/projectfiles/components/DeleteConfirmModal.tsx` | Supervisor-only delete confirmation modal |
 
 ---
 
@@ -196,8 +205,26 @@ Supervisor feature currently uses these APIs:
 - `Team`
 - `Milestones`
 - `Integrations`
+- `Files`
 - `GitHub`
 - `Jira`
+
+### Files tab: attachment management
+
+- Data source:
+  - Primary seed from `GET /api/supervisor/projects/{projectId}` via embedded `data.files`.
+  - Refresh/list endpoint: `GET /api/supervisor/projects/{projectId}/files`.
+- Upload flow:
+  - `POST /files/upload-url` -> direct S3 PUT -> `POST /files/confirm`.
+  - On success, UI inserts returned file row without forcing an immediate list re-fetch.
+- Delete flow:
+  - Supervisor-only `DELETE /files/{fileId}` with confirmation modal.
+  - On success, removed from local list immediately.
+- Download flow:
+  - `GET /files/{fileId}/download-url`, then browser opens pre-signed URL.
+- Validation/config:
+  - Uses backend-provided `files.config` (`maxFileSizeBytes`, `maxFileNameLength`, `allowedTypes`, `presignedUrlExpirySeconds`).
+  - No FE hardcoded type/size/name limits.
 
 ### Header status control
 
@@ -378,6 +405,7 @@ Displays all cached Jira issues in an expandable tree grouped by Epic -> Story/T
 - Semester: `32`
 - Milestone title: `40`
 - Milestone description: `250`
+- File name: backend-configured via `files.config.maxFileNameLength` (default `50`)
 
 Summary and milestone description show visible counters where applicable in create flow.
 

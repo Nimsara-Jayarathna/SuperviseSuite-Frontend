@@ -25,6 +25,7 @@ import { JiraTabSection } from '../components/ProjectDetail/JiraTabSection';
 import { MilestonesTabSection } from '../components/ProjectDetail/MilestonesTabSection';
 import { OverviewTabSection } from '../components/ProjectDetail/OverviewTabSection';
 import { TeamTabSection } from '../components/ProjectDetail/TeamTabSection';
+import { FilesTabSection } from '../components/ProjectDetail/FilesTabSection';
 import { useProjectRepositories } from '../hooks/useProjectRepositories';
 import { parseGitHubSetupRedirect } from '../hooks/useGitHubSetupFlow';
 import { useProjectDetailsPageState } from '../hooks/useProjectDetailsPageState';
@@ -857,6 +858,10 @@ export function ProjectDetailsPage() {
 
       {activeTab === 'milestones' ? (
         <MilestonesTabSection project={project} milestones={milestones} />
+      ) : null}
+
+      {activeTab === 'files' ? (
+        <FilesTabSection projectId={project.id} initialFiles={project.files} />
       ) : null}
 
       {activeTab === 'github' ? (
