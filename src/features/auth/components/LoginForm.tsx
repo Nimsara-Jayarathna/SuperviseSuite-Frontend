@@ -64,6 +64,7 @@ export function LoginForm({
 
   const emailError = fieldErrors.email ?? backendFieldErrors?.email;
   const passwordError = fieldErrors.password ?? backendFieldErrors?.password;
+  const isValid = Object.keys(validateLoginForm(email, password)).length === 0;
 
   return (
     <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
@@ -110,11 +111,11 @@ export function LoginForm({
         type="submit"
         variant="primary"
         size="lg"
-        disabled={isLoading}
+        disabled={isLoading || !isValid}
         fullWidth
         className="mt-1"
       >
-        {isLoading && feedbackMode === 'inline' ? 'Signing in…' : 'Sign In'}
+        Sign In
       </Button>
     </form>
   );

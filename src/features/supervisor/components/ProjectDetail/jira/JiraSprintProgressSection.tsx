@@ -14,6 +14,7 @@ import {
 } from 'recharts';
 import { EmptyState } from '@/components/feedback/EmptyState';
 import { ErrorState } from '@/components/feedback/ErrorState';
+import { Select } from '@/components/ui/Select';
 import { useJiraSprintProgress } from '../../../hooks/useJiraSprintProgress';
 import type { JiraSprintProgress, JiraSprintSummary } from '../../../types';
 
@@ -330,7 +331,7 @@ export function JiraSprintProgressSection({ fetcher, projectId }: JiraSprintProg
               >
                 Sprint
               </label>
-              <select
+              <Select
                 id="jira-sprint-selector"
                 className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-800 shadow-sm transition-colors hover:border-slate-300 focus:border-indigo-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100"
                 value={selectedSprintKey}
@@ -347,7 +348,7 @@ export function JiraSprintProgressSection({ fetcher, projectId }: JiraSprintProg
                     </option>
                   );
                 })}
-              </select>
+              </Select>
             </div>
             {selectedSprint ? (
               <>

@@ -2,8 +2,11 @@ import { useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { buttonStyles } from '@/components/ui/Button';
 import { isApiException } from '@/services/apiClient';
+import type { ApiError } from '@/types';
+import { getBlockingErrorTitle, isBlockingError } from '@/utils/errorSeverity';
 import { ExternalLink, FolderGit2, Github, ShieldCheck } from 'lucide-react';
 import { supervisorApi } from '../api/supervisorApi';
+import { RequestStateModal } from '@/components/ui/RequestStateModal';
 
 const INVALID_LINK_MESSAGE =
   'This access request link is invalid or has expired. Please create a new access request from the project.';
@@ -26,39 +29,91 @@ export function RequestGitHubRepositoryAccessPage() {
   const token = useMemo(() => searchParams.get('token')?.trim() ?? '', [searchParams]);
 
   const [isContinuing, setIsContinuing] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(
-    token ? null : INVALID_LINK_MESSAGE,
+  const [error, setError] = useState<ApiError | null>(
+    token
+      ? null
+      : {
+          code: 'BAD_REQUEST',
+          message: INVALID_LINK_MESSAGE,
+          details: [],
+          timestamp: new Date().toISOString(),
+          status: 400,
+          error: 'Bad Request',
+          path: '/github/request-access',
+          traceId: null,
+        },
   );
+
+  const errorMessage = error?.message ?? null;
 
   async function handleContinue() {
     if (!token) {
-      setErrorMessage(INVALID_LINK_MESSAGE);
+      setError({
+        code: 'BAD_REQUEST',
+        message: INVALID_LINK_MESSAGE,
+        details: [],
+        timestamp: new Date().toISOString(),
+        status: 400,
+        error: 'Bad Request',
+        path: '/github/request-access',
+        traceId: null,
+      });
       return;
     }
 
     setIsContinuing(true);
-    setErrorMessage(null);
+    setError(null);
 
     try {
       const data = await supervisorApi.startGitHubAccessSourceInstall({ requestToken: token });
       if (!data.githubAuthorizeUrl?.trim()) {
-        setErrorMessage('GitHub authorization URL could not be prepared. Please try again.');
+        setError({
+          code: 'SERVICE_UNAVAILABLE',
+          message: 'GitHub authorization URL could not be prepared. Please try again.',
+          details: [],
+          timestamp: new Date().toISOString(),
+          status: 503,
+          error: 'Service Unavailable',
+          path: '/github/request-access',
+          traceId: null,
+        });
         return;
       }
       if (!isValidGitHubAuthorizeUrl(data.githubAuthorizeUrl)) {
-        setErrorMessage('GitHub authorization URL is invalid. Please try again.');
+        setError({
+          code: 'BAD_REQUEST',
+          message: 'GitHub authorization URL is invalid. Please try again.',
+          details: [],
+          timestamp: new Date().toISOString(),
+          status: 400,
+          error: 'Bad Request',
+          path: '/github/request-access',
+          traceId: null,
+        });
         return;
       }
       window.location.assign(data.githubAuthorizeUrl);
     } catch (error) {
-      const message = isApiException(error)
-        ? error.apiError.message
-        : 'Unable to continue to GitHub right now. Please try again.';
-      setErrorMessage(message);
+      if (isApiException(error)) {
+        setError(error.apiError);
+      } else {
+        setError({
+          code: 'SERVICE_UNAVAILABLE',
+          message: 'Unable to continue to GitHub right now. Please try again.',
+          details: [],
+          timestamp: new Date().toISOString(),
+          status: 503,
+          error: 'Service Unavailable',
+          path: '/github/request-access',
+          traceId: null,
+        });
+      }
     } finally {
       setIsContinuing(false);
     }
   }
+
+  const showBlockingState = error ? isBlockingError(error) : false;
 
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-8">
@@ -106,7 +161,7 @@ export function RequestGitHubRepositoryAccessPage() {
             </div>
           </div>
 
-          {errorMessage ? (
+          {errorMessage && !showBlockingState ? (
             <div className="mt-7 rounded-2xl border border-rose-200 bg-rose-50 p-5">
               <p className="text-sm font-semibold text-rose-700">Unable to continue</p>
               <p className="mt-1 text-sm text-rose-700">{errorMessage}</p>
@@ -132,6 +187,14 @@ export function RequestGitHubRepositoryAccessPage() {
           </div>
         </div>
       </section>
+
+      <RequestStateModal
+        isOpen={showBlockingState}
+        status="error"
+        title={getBlockingErrorTitle(error)}
+        message={error?.message ?? 'Unable to continue right now.'}
+        onClose={() => setError(null)}
+      />
     </div>
   );
 }

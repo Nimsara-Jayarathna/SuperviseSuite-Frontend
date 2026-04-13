@@ -9,6 +9,7 @@ const ERROR_TITLES: Record<ApiError['code'], string> = {
   FORBIDDEN: 'Access Denied',
   NOT_FOUND: 'Not Found',
   CONFLICT: 'Conflict',
+  TOO_MANY_REQUESTS: 'Too Many Attempts',
   SERVICE_UNAVAILABLE: 'Service Unavailable',
   INTERNAL_ERROR: 'Something Went Wrong',
 };

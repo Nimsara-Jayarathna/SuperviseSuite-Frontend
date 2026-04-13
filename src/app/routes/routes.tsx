@@ -1,6 +1,5 @@
 import { SupervisorLayout } from '@/app/layout/SupervisorLayout';
 import { StudentLayout } from '@/app/layout/StudentLayout';
-import { LoginPage, RegisterPage, SupervisorRegisterPage } from '@/features/auth';
 import { LandingPage } from '@/features/landing';
 import { PrivacyPolicyPage, SupportPage, TermsOfServicePage } from '@/features/legal';
 import { StudentProjectDetailsPage, StudentProjectsPage } from '@/features/student';
@@ -14,7 +13,7 @@ import {
   SupervisorProjectsPage,
 } from '@/features/supervisor';
 import { tokenStorage } from '@/services/tokenStorage';
-import { Navigate, Route, Routes, useParams } from 'react-router-dom';
+import { Navigate, Route, Routes, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { RequireGuest, RequireRole } from './route-guards';
 import { ROLE_HOME } from './roleHome';
 
@@ -25,7 +24,41 @@ function RootRoute() {
     return <LandingPage />;
   }
 
-  return <Navigate to={ROLE_HOME[user.role] ?? '/login'} replace />;
+  return <Navigate to={ROLE_HOME[user.role] ?? '/'} replace />;
+}
+
+function LoginRoute() {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const returnToKey = searchParams.get('returnToKey');
+  const returnToFromQuery = searchParams.get('returnTo');
+  const RETURN_TO_KEY_PREFIX = 'login-return:';
+  let returnTo: string | undefined;
+
+  if (returnToKey?.startsWith(RETURN_TO_KEY_PREFIX)) {
+    try {
+      returnTo = sessionStorage.getItem(returnToKey) ?? undefined;
+      sessionStorage.removeItem(returnToKey);
+    } catch {
+      returnTo = undefined;
+    }
+  } else {
+    returnTo = returnToFromQuery ?? undefined;
+  }
+
+  return (
+    <LandingPage
+      initialLoginOpen={true}
+      initialLoginReturnTo={returnTo}
+      onLoginClose={() => navigate('/')}
+    />
+  );
+}
+
+function RegisterRoute() {
+  const navigate = useNavigate();
+
+  return <LandingPage initialRegistrationOpen={true} onRegistrationClose={() => navigate('/')} />;
 }
 
 function LegacyDashboardRedirect() {
@@ -97,9 +130,8 @@ export function AppRoutes() {
 
       {/* Guest-only — redirect authenticated users to their dashboard */}
       <Route element={<RequireGuest />}>
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/register/supervisor" element={<SupervisorRegisterPage />} />
+        <Route path="/login" element={<LoginRoute />} />
+        <Route path="/register" element={<RegisterRoute />} />
       </Route>
 
       {/* Student-only */}

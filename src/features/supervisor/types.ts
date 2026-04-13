@@ -1,4 +1,5 @@
 import type { ProjectGitHubPreview } from '@/features/projects/types';
+import type { UserRole } from '@/types/roles';
 import type { ProjectFile, ProjectFileConfig } from '@/features/projectfiles/types';
 
 export type SupervisorProjectLifecycle = 'PLANNING' | 'ACTIVE' | 'AT_RISK' | 'BEHIND' | 'COMPLETED';
@@ -24,7 +25,7 @@ export type SupervisorProjectDetailMember = {
   lastName: string | null;
   email: string;
   registrationNumber: string | null;
-  memberRole: 'SUPERVISOR' | 'STUDENT';
+  memberRole: UserRole;
 };
 
 export type SupervisorProjectLeader = {

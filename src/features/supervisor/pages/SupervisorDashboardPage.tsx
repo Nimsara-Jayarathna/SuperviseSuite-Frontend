@@ -1,11 +1,13 @@
-import { useDeferredValue, useEffect, useState } from 'react';
+import { useCallback, useDeferredValue, useEffect, useState } from 'react';
 import { AlertTriangle, ArrowRight, Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useBlockingError } from '@/app/layout/BlockingErrorContext';
 import { EmptyState } from '@/components/feedback/EmptyState';
 import { ErrorState } from '@/components/feedback/ErrorState';
 import { buttonStyles } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { isBlockingError } from '@/utils/errorSeverity';
 import { useSupervisorDashboard } from '../hooks/useSupervisorDashboard';
 import type { SupervisorDashboardProjectItem } from '../types';
 
@@ -61,10 +63,14 @@ function DashboardStatsSkeleton() {
 
 export function SupervisorDashboardPage() {
   const { dashboard, isLoading, error, reload } = useSupervisorDashboard();
+  const { showBlockingError, clearBlockingError } = useBlockingError();
   const [query, setQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const deferredQuery = useDeferredValue(query);
   const normalizedQuery = deferredQuery.trim().toLowerCase();
+  const retryLoad = useCallback(() => {
+    void reload();
+  }, [reload]);
   const pageSize = 5;
 
   const projects = dashboard?.projects ?? [];
@@ -96,7 +102,18 @@ export function SupervisorDashboardPage() {
     })
     .slice(0, 4);
 
+  useEffect(() => {
+    if (error && isBlockingError(error)) {
+      showBlockingError(error, retryLoad);
+      return;
+    }
+    clearBlockingError();
+  }, [error, showBlockingError, clearBlockingError, retryLoad]);
+
   if (error) {
+    if (isBlockingError(error)) {
+      return null;
+    }
     return <ErrorState error={error} onRetry={() => void reload()} />;
   }
 

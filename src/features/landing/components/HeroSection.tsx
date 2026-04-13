@@ -1,12 +1,6 @@
 import { LogoMark } from '@/components/brand/Logo';
-import { Button } from '@/components/ui/Button';
 
-type HeroSectionProps = {
-  onStudentPortal: () => void;
-  onSupervisorAccess: () => void;
-};
-
-export function HeroSection({ onStudentPortal, onSupervisorAccess }: HeroSectionProps) {
+export function HeroSection() {
   return (
     <section className="relative grid gap-6 overflow-hidden rounded-3xl border border-white/35 bg-white/60 p-6 shadow-[0_20px_55px_rgba(15,23,42,0.12)] backdrop-blur-md lg:grid-cols-[minmax(0,1fr)_280px] lg:items-center xl:grid-cols-[minmax(0,1fr)_320px]">
       <div className="pointer-events-none absolute -right-10 top-6 hidden h-32 w-32 rounded-full bg-sky-100/60 blur-3xl lg:block" />
@@ -18,14 +12,6 @@ export function HeroSection({ onStudentPortal, onSupervisorAccess }: HeroSection
           The all-in-one dashboard connecting Supervisors and Students. Track GitHub commits, manage
           meeting minutes, and sync directly with Jira.
         </p>
-        <div className="mt-5 flex flex-col items-start gap-3 sm:flex-row sm:items-center">
-          <Button variant="primary" size="md" onClick={onStudentPortal}>
-            Student Portal
-          </Button>
-          <Button variant="secondary" size="md" onClick={onSupervisorAccess}>
-            Supervisor Access
-          </Button>
-        </div>
         <p className="mt-3 text-xs text-muted-foreground">
           Used by university supervisors and final-year students to manage research projects.
         </p>

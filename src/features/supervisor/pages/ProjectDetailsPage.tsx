@@ -16,6 +16,7 @@ import { Button, buttonStyles } from '@/components/ui/Button';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { PageTabs } from '@/components/ui/PageTabs';
 import { RequestStateModal } from '@/components/ui/RequestStateModal';
+import { Select } from '@/components/ui/Select';
 import { TimeAgo } from '@/components/ui/TimeAgo';
 import { CommitActivitySection } from '@/features/projects/components/CommitActivitySection';
 import { ProjectDetailsSkeleton } from '../components/ProjectDetailsSkeleton';
@@ -752,7 +753,7 @@ export function ProjectDetailsPage() {
               Lifecycle
             </span>
             <div className="mt-0.5">
-              <select
+              <Select
                 value={actions.quickLifecycleStatus}
                 onChange={(e) =>
                   actions.handleQuickStatusChange(e.target.value as SupervisorProjectLifecycle)
@@ -765,7 +766,7 @@ export function ProjectDetailsPage() {
                     {status.replace('_', ' ')}
                   </option>
                 ))}
-              </select>
+              </Select>
             </div>
           </div>
         </div>

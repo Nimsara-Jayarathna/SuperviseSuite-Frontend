@@ -8,9 +8,12 @@ import {
   XCircle,
   Clock,
 } from 'lucide-react';
-import { type ComponentProps } from 'react';
+import { createPortal } from 'react-dom';
+import { type ComponentProps, useEffect, useRef, useState } from 'react';
 import { buttonStyles } from '@/components/ui/Button';
+import { Select } from '@/components/ui/Select';
 import { StatusBadge } from '@/components/ui/StatusBadge';
+import { calculateDropdownLayout } from '@/lib/dropdownSizing';
 import { FIELD_LIMITS, MILESTONE_STATUS_OPTIONS, dateFormatter } from '../../projectDetails.shared';
 import type { MilestonesState } from '../../hooks/useProjectDetailsPageState';
 import type { MilestoneStatus } from '../../projectDetails.shared';
@@ -58,6 +61,62 @@ function getStatusIcon(status: MilestoneStatus, className?: string) {
 }
 
 export function MilestonesTabSection({ project, milestones }: MilestonesTabSectionProps) {
+  const quickStatusMenuRef = useRef<HTMLUListElement>(null);
+  const quickStatusAnchorRef = useRef<HTMLButtonElement | null>(null);
+  const [quickStatusMenu, setQuickStatusMenu] = useState<{
+    milestoneId: string;
+    top: number;
+    left: number;
+    width: number;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!quickStatusMenu) return;
+
+    const closeMenu = () => setQuickStatusMenu(null);
+    const onDocMouseDown = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (!quickStatusMenuRef.current?.contains(target)) {
+        closeMenu();
+      }
+    };
+    const onDocKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') closeMenu();
+    };
+
+    const onResize = () => {
+      if (!quickStatusMenu || !quickStatusAnchorRef.current) return;
+      const rect = quickStatusAnchorRef.current.getBoundingClientRect();
+      const nextLayout = calculateDropdownLayout({
+        triggerRect: rect,
+        labels: MILESTONE_STATUS_OPTIONS.map((status) => status.replace('_', ' ')),
+        fontSourceEl: quickStatusAnchorRef.current,
+      });
+      setQuickStatusMenu((current) =>
+        current
+          ? {
+              ...current,
+              top: nextLayout.top,
+              left: nextLayout.left,
+              width: nextLayout.width,
+            }
+          : current,
+      );
+    };
+
+    document.addEventListener('mousedown', onDocMouseDown);
+    document.addEventListener('keydown', onDocKeyDown);
+    window.addEventListener('resize', onResize);
+    window.addEventListener('scroll', closeMenu, true);
+
+    return () => {
+      document.removeEventListener('mousedown', onDocMouseDown);
+      document.removeEventListener('keydown', onDocKeyDown);
+      window.removeEventListener('resize', onResize);
+      window.removeEventListener('scroll', closeMenu, true);
+    };
+  }, [quickStatusMenu]);
+
   return (
     <section className="rounded-3xl border border-border bg-white p-6 shadow-sm transition-all hover:shadow-md">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -217,7 +276,7 @@ export function MilestonesTabSection({ project, milestones }: MilestonesTabSecti
                       <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 ml-1">
                         Status
                       </span>
-                      <select
+                      <Select
                         value={milestones.editMilestoneForm.status}
                         onChange={(e) =>
                           milestones.setEditMilestoneField(
@@ -232,7 +291,7 @@ export function MilestonesTabSection({ project, milestones }: MilestonesTabSecti
                             {status.replace('_', ' ')}
                           </option>
                         ))}
-                      </select>
+                      </Select>
                     </label>
                     <label className="space-y-1.5 sm:col-span-2">
                       <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 ml-1">
@@ -297,7 +356,29 @@ export function MilestonesTabSection({ project, milestones }: MilestonesTabSecti
                         </div>
 
                         <div className="flex items-center gap-3">
-                          <label
+                          <button
+                            type="button"
+                            aria-label="Change milestone status"
+                            onClick={(event) => {
+                              if (milestones.quickStatusUpdatingId === milestone.id) return;
+                              quickStatusAnchorRef.current = event.currentTarget;
+                              const rect = event.currentTarget.getBoundingClientRect();
+                              setQuickStatusMenu((current) =>
+                                current?.milestoneId === milestone.id
+                                  ? null
+                                  : {
+                                      milestoneId: milestone.id,
+                                      ...calculateDropdownLayout({
+                                        triggerRect: rect,
+                                        labels: MILESTONE_STATUS_OPTIONS.map((status) =>
+                                          status.replace('_', ' '),
+                                        ),
+                                        fontSourceEl: event.currentTarget,
+                                      }),
+                                    },
+                              );
+                            }}
+                            disabled={milestones.quickStatusUpdatingId === milestone.id}
                             className={`relative inline-flex cursor-pointer items-center overflow-hidden rounded-2xl bg-slate-100 hover:ring-2 hover:ring-indigo-100 transition-all ${milestones.quickStatusUpdatingId === milestone.id ? 'opacity-50' : ''}`}
                           >
                             <div className={`flex items-center gap-2 pl-3 pr-2 py-1.5`}>
@@ -322,25 +403,7 @@ export function MilestonesTabSection({ project, milestones }: MilestonesTabSecti
                                 />
                               </svg>
                             </div>
-                            <select
-                              value={milestone.status}
-                              disabled={milestones.quickStatusUpdatingId === milestone.id}
-                              onChange={(e) =>
-                                void milestones.submitQuickMilestoneStatus(
-                                  milestone,
-                                  e.target.value as MilestoneStatus,
-                                )
-                              }
-                              className="absolute inset-0 w-full cursor-pointer appearance-none opacity-0"
-                              aria-label="Change milestone status"
-                            >
-                              {MILESTONE_STATUS_OPTIONS.map((status) => (
-                                <option key={status} value={status}>
-                                  {status.replace('_', ' ')}
-                                </option>
-                              ))}
-                            </select>
-                          </label>
+                          </button>
 
                           <button
                             type="button"
@@ -374,6 +437,58 @@ export function MilestonesTabSection({ project, milestones }: MilestonesTabSecti
           </p>
         </div>
       )}
+      {quickStatusMenu &&
+        createPortal(
+          <ul
+            ref={quickStatusMenuRef}
+            className="overflow-hidden rounded-2xl border border-border bg-white shadow-lg"
+            style={{
+              position: 'absolute',
+              top: quickStatusMenu.top,
+              left: quickStatusMenu.left,
+              width: quickStatusMenu.width,
+              zIndex: 9999,
+            }}
+            role="listbox"
+          >
+            {(() => {
+              const targetMilestone = project.milestones.find(
+                (m) => m.id === quickStatusMenu.milestoneId,
+              );
+              if (!targetMilestone) return null;
+              return MILESTONE_STATUS_OPTIONS.map((status) => {
+                const isSelected = targetMilestone.status === status;
+                return (
+                  <li key={status}>
+                    <button
+                      type="button"
+                      className={`flex w-full items-center justify-between py-2 px-4 text-left text-sm transition-colors ${
+                        isSelected
+                          ? 'bg-slate-50 font-semibold text-foreground'
+                          : 'font-medium text-foreground hover:bg-slate-50'
+                      }`}
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={() => {
+                        setQuickStatusMenu(null);
+                        void milestones.submitQuickMilestoneStatus(targetMilestone, status);
+                      }}
+                    >
+                      <span className="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap pr-3">
+                        {status.replace('_', ' ')}
+                      </span>
+                      <span className="shrink-0">
+                        <span className={isSelected ? 'text-amber-600' : 'text-transparent'}>
+                          ✓
+                        </span>
+                      </span>
+                    </button>
+                  </li>
+                );
+              });
+            })()}
+          </ul>,
+          document.body,
+        )}
     </section>
   );
 }

@@ -1,17 +1,23 @@
-import { useDeferredValue, useState } from 'react';
+import { useCallback, useDeferredValue, useEffect, useState } from 'react';
 import { ErrorState } from '@/components/feedback/ErrorState';
 import { EmptyState } from '@/components/feedback/EmptyState';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { useBlockingError } from '@/app/layout/BlockingErrorContext';
+import { isBlockingError } from '@/utils/errorSeverity';
 import { StudentProjectCard } from '../components/StudentProjectCard';
 import { StudentProjectCardSkeleton } from '../components/StudentProjectCardSkeleton';
 import { useStudentProjects } from '../hooks/useStudentProjects';
 
 export function StudentProjectsPage() {
   const { projects, isLoading, error, reload } = useStudentProjects();
+  const { showBlockingError, clearBlockingError } = useBlockingError();
   const [query, setQuery] = useState('');
   // Defer filtering slightly so the list stays responsive while typing.
   const deferredQuery = useDeferredValue(query);
   const normalizedQuery = deferredQuery.trim().toLowerCase();
+  const retryLoad = useCallback(() => {
+    void reload();
+  }, [reload]);
 
   const visibleProjects = projects.filter((project) =>
     normalizedQuery.length === 0
@@ -23,6 +29,14 @@ export function StudentProjectsPage() {
 
   // The empty state changes its action label depending on whether the user is filtering.
   const hasActiveFilters = normalizedQuery.length > 0;
+
+  useEffect(() => {
+    if (error && isBlockingError(error)) {
+      showBlockingError(error, retryLoad);
+      return;
+    }
+    clearBlockingError();
+  }, [error, showBlockingError, clearBlockingError, retryLoad]);
 
   return (
     <div className="space-y-6">
@@ -45,7 +59,7 @@ export function StudentProjectsPage() {
             <StudentProjectCardSkeleton key={`student-project-skeleton-${index}`} />
           ))}
         </section>
-      ) : error ? (
+      ) : error && !isBlockingError(error) ? (
         <ErrorState error={error} onRetry={() => void reload()} />
       ) : visibleProjects.length > 0 ? (
         <section className="grid gap-4 xl:grid-cols-2">

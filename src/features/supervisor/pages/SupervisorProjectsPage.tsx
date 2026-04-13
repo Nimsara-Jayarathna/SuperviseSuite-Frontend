@@ -1,9 +1,13 @@
-import { useDeferredValue, useState } from 'react';
+import { useCallback, useDeferredValue, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import { useBlockingError } from '@/app/layout/BlockingErrorContext';
 import { EmptyState } from '@/components/feedback/EmptyState';
 import { ErrorState } from '@/components/feedback/ErrorState';
 import { buttonStyles } from '@/components/ui/Button';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { Select } from '@/components/ui/Select';
+import { isBlockingError } from '@/utils/errorSeverity';
 import { SupervisorProjectCard } from '../components/SupervisorProjectCard';
 import { SupervisorProjectCardSkeleton } from '../components/SupervisorProjectCardSkeleton';
 import { useSupervisorProjects } from '../hooks/useSupervisorProjects';
@@ -23,6 +27,7 @@ const LIFECYCLE_OPTIONS: LifecycleFilter[] = [
 export function SupervisorProjectsPage() {
   const navigate = useNavigate();
   const { projects, isLoading, error, reload } = useSupervisorProjects();
+  const { showBlockingError, clearBlockingError } = useBlockingError();
   const [query, setQuery] = useState('');
   const [lifecycle, setLifecycle] = useState<LifecycleFilter>('ALL');
   // Defer the free-text query so large list filtering does not run on every keystroke.
@@ -46,6 +51,17 @@ export function SupervisorProjectsPage() {
     setLifecycle('ALL');
   };
   const hasActiveFilters = normalizedQuery.length > 0 || lifecycle !== 'ALL';
+  const retryLoad = useCallback(() => {
+    void reload();
+  }, [reload]);
+
+  useEffect(() => {
+    if (error && isBlockingError(error)) {
+      showBlockingError(error, retryLoad);
+      return;
+    }
+    clearBlockingError();
+  }, [error, showBlockingError, clearBlockingError, retryLoad]);
 
   return (
     <div className="space-y-5">
@@ -69,7 +85,7 @@ export function SupervisorProjectsPage() {
           placeholder="Search by project title, summary, batch, or semester"
           className="h-10 rounded-2xl border border-border bg-white px-4 text-sm outline-none transition-colors focus:border-amber-300"
         />
-        <select
+        <Select
           value={lifecycle}
           onChange={(event) => setLifecycle(event.target.value as LifecycleFilter)}
           className="h-10 rounded-2xl border border-border bg-white px-4 text-sm outline-none transition-colors focus:border-amber-300"
@@ -79,7 +95,7 @@ export function SupervisorProjectsPage() {
               {option === 'ALL' ? 'All lifecycle states' : option.replace('_', ' ')}
             </option>
           ))}
-        </select>
+        </Select>
       </section>
 
       {isLoading ? (
@@ -88,7 +104,7 @@ export function SupervisorProjectsPage() {
             <SupervisorProjectCardSkeleton key={`supervisor-project-skeleton-${index}`} />
           ))}
         </section>
-      ) : error ? (
+      ) : error && !isBlockingError(error) ? (
         <ErrorState error={error} onRetry={() => void reload()} />
       ) : visibleProjects.length > 0 ? (
         <section className="grid items-stretch gap-2.5 lg:gap-3 xl:grid-cols-2">
