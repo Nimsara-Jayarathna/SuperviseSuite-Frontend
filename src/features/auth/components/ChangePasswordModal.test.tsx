@@ -26,16 +26,33 @@ describe('ChangePasswordModal', () => {
     expect(panel).toHaveAttribute('aria-hidden', 'true');
   });
 
-  it('keeps panel visible after blur when new password has value', () => {
+  it('keeps full panel visible after blur when new password is weak', () => {
     render(<ChangePasswordModal isOpen={true} onClose={vi.fn()} onSubmit={vi.fn()} />);
 
     const panel = screen.getByText(/Requirement:\s*At least 12 characters\./i).closest('div[aria-hidden]');
     const newPassword = screen.getByLabelText('New password');
 
     fireEvent.focus(newPassword);
-    fireEvent.change(newPassword, { target: { value: 'long passphrase one' } });
+    fireEvent.change(newPassword, { target: { value: 'short' } });
     fireEvent.blur(newPassword);
     expect(panel).toHaveAttribute('aria-hidden', 'false');
+    expect(screen.getByText(/Requirement:\s*At least 12 characters\./i)).toBeInTheDocument();
+  });
+
+  it('collapses to compact success on blur when password is strong, and expands again on focus', () => {
+    render(<ChangePasswordModal isOpen={true} onClose={vi.fn()} onSubmit={vi.fn()} />);
+
+    const newPassword = screen.getByLabelText('New password');
+
+    fireEvent.focus(newPassword);
+    fireEvent.change(newPassword, { target: { value: 'my dog loves eating pizza' } });
+    fireEvent.blur(newPassword);
+
+    expect(screen.getByText('✓ Strong password')).toBeInTheDocument();
+    expect(screen.queryByText(/Requirement:\s*At least 12 characters\./i)).not.toBeInTheDocument();
+
+    fireEvent.focus(newPassword);
+    expect(screen.getByText(/Requirement:\s*At least 12 characters\./i)).toBeInTheDocument();
   });
 
   it('shows mismatch tooltip on confirm new password mismatch', () => {

@@ -50,7 +50,6 @@ export function Step4ProfileDetails({ flow, config }: Step4ProfileDetailsProps) 
   const isConfirmPasswordFilled = confirmPassword.trim().length > 0;
   const isConfirmMatched = isConfirmPasswordFilled && password === confirmPassword;
   const isMismatch = isConfirmPasswordFilled && !isConfirmMatched;
-  const showPolicyPanel = isNewPasswordFocused || password.length > 0;
   const liveErrors = useMemo(
     () =>
       validateProfile({
@@ -137,7 +136,11 @@ export function Step4ProfileDetails({ flow, config }: Step4ProfileDetailsProps) 
         onFocus={() => setIsNewPasswordFocused(true)}
         onBlur={() => setIsNewPasswordFocused(false)}
       />
-      <PasswordRequirementsPanel password={password} compact visible={showPolicyPanel} />
+      <PasswordRequirementsPanel
+        password={password}
+        compact
+        isNewPasswordFocused={isNewPasswordFocused}
+      />
       {fieldErrors.password && <p className="text-xs text-red-600">{fieldErrors.password}</p>}
 
       <PasswordField

@@ -24,7 +24,6 @@ export function ResetPasswordForm({ onSubmit, isLoading, onClearError }: ResetPa
   const isConfirmPasswordFilled = confirmNewPassword.trim().length > 0;
   const isConfirmMatched = isConfirmPasswordFilled && newPassword === confirmNewPassword;
   const isMismatch = isConfirmPasswordFilled && !isConfirmMatched;
-  const showPolicyPanel = isNewPasswordFocused || newPassword.length > 0;
 
   const isValid = useMemo(
     () =>
@@ -66,7 +65,10 @@ export function ResetPasswordForm({ onSubmit, isLoading, onClearError }: ResetPa
         onFocus={() => setIsNewPasswordFocused(true)}
         onBlur={() => setIsNewPasswordFocused(false)}
       />
-      <PasswordRequirementsPanel password={newPassword} visible={showPolicyPanel} />
+      <PasswordRequirementsPanel
+        password={newPassword}
+        isNewPasswordFocused={isNewPasswordFocused}
+      />
       {fieldErrors.newPassword && <p className="text-xs text-rose-600">{fieldErrors.newPassword}</p>}
 
       <PasswordField

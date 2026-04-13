@@ -35,7 +35,6 @@ export function ChangePasswordModal({ isOpen, onClose, onSubmit }: ChangePasswor
   const isConfirmPasswordFilled = confirmPassword.trim().length > 0;
   const isConfirmMatched = isConfirmPasswordFilled && newPassword === confirmPassword;
   const isMismatch = isConfirmPasswordFilled && !isConfirmMatched;
-  const showPolicyPanel = isNewPasswordFocused || newPassword.length > 0;
   const passwordPolicyPassed = isPasswordPolicyPassed(passwordChecks);
   const canSubmit = isCurrentPasswordFilled && passwordPolicyPassed && isConfirmMatched;
 
@@ -144,7 +143,10 @@ export function ChangePasswordModal({ isOpen, onClose, onSubmit }: ChangePasswor
               onFocus={() => setIsNewPasswordFocused(true)}
               onBlur={() => setIsNewPasswordFocused(false)}
             />
-            <PasswordRequirementsPanel password={newPassword} visible={showPolicyPanel} />
+            <PasswordRequirementsPanel
+              password={newPassword}
+              isNewPasswordFocused={isNewPasswordFocused}
+            />
             <PasswordField
               id="confirm-password"
               label="Confirm new password"

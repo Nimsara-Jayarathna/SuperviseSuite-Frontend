@@ -40,7 +40,7 @@ describe('ResetPasswordForm', () => {
     expect(panel).toHaveAttribute('aria-hidden', 'true');
   });
 
-  it('keeps panel visible after blur when user has typed', () => {
+  it('keeps full panel visible after blur when password is weak', () => {
     render(
       <ResetPasswordForm
         onSubmit={vi.fn().mockResolvedValue(undefined)}
@@ -53,9 +53,48 @@ describe('ResetPasswordForm', () => {
     const newPassword = screen.getByLabelText('New Password');
 
     fireEvent.focus(newPassword);
-    fireEvent.change(newPassword, { target: { value: 'long passphrase one' } });
+    fireEvent.change(newPassword, { target: { value: 'short' } });
     fireEvent.blur(newPassword);
     expect(panel).toHaveAttribute('aria-hidden', 'false');
+    expect(screen.getByText(/Requirement:\s*At least 12 characters\./i)).toBeInTheDocument();
+  });
+
+  it('collapses to compact success on blur when password is strong, and expands again on focus', () => {
+    render(
+      <ResetPasswordForm
+        onSubmit={vi.fn().mockResolvedValue(undefined)}
+        isLoading={false}
+        onClearError={vi.fn()}
+      />,
+    );
+
+    const newPassword = screen.getByLabelText('New Password');
+
+    fireEvent.focus(newPassword);
+    fireEvent.change(newPassword, { target: { value: 'my dog loves eating pizza' } });
+    fireEvent.blur(newPassword);
+
+    expect(screen.getByText('✓ Strong password')).toBeInTheDocument();
+    expect(screen.queryByText(/Requirement:\s*At least 12 characters\./i)).not.toBeInTheDocument();
+
+    fireEvent.focus(newPassword);
+    expect(screen.getByText(/Requirement:\s*At least 12 characters\./i)).toBeInTheDocument();
+  });
+
+  it('confirm field focus does not control helper state', () => {
+    render(
+      <ResetPasswordForm
+        onSubmit={vi.fn().mockResolvedValue(undefined)}
+        isLoading={false}
+        onClearError={vi.fn()}
+      />,
+    );
+
+    const confirmPassword = screen.getByLabelText('Confirm New Password');
+    fireEvent.focus(confirmPassword);
+    expect(screen.queryByText(/Requirement:\s*At least 12 characters\./i)).toBeInTheDocument();
+    const panel = screen.getByText(/Requirement:\s*At least 12 characters\./i).closest('div[aria-hidden]');
+    expect(panel).toHaveAttribute('aria-hidden', 'true');
   });
 
   it('shows match icon only on confirm field (not on new password field)', async () => {

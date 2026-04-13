@@ -66,16 +66,33 @@ describe('Step4ProfileDetails', () => {
     expect(panel).toHaveAttribute('aria-hidden', 'true');
   });
 
-  it('keeps panel visible after blur when password has value', () => {
+  it('keeps full panel visible after blur when password is weak', () => {
     render(<Step4ProfileDetails flow={createFlow()} config={createConfig()} />);
 
     const panel = screen.getByText(/Requirement:\s*At least 12 characters\./i).closest('div[aria-hidden]');
     const passwordInput = screen.getByLabelText('Password');
 
     fireEvent.focus(passwordInput);
-    fireEvent.change(passwordInput, { target: { value: 'long passphrase one' } });
+    fireEvent.change(passwordInput, { target: { value: 'short' } });
     fireEvent.blur(passwordInput);
     expect(panel).toHaveAttribute('aria-hidden', 'false');
+    expect(screen.getByText(/Requirement:\s*At least 12 characters\./i)).toBeInTheDocument();
+  });
+
+  it('collapses to compact success on blur when password is strong, and expands again on focus', () => {
+    render(<Step4ProfileDetails flow={createFlow()} config={createConfig()} />);
+
+    const passwordInput = screen.getByLabelText('Password');
+
+    fireEvent.focus(passwordInput);
+    fireEvent.change(passwordInput, { target: { value: 'my dog loves eating pizza' } });
+    fireEvent.blur(passwordInput);
+
+    expect(screen.getByText('✓ Strong password')).toBeInTheDocument();
+    expect(screen.queryByText(/Requirement:\s*At least 12 characters\./i)).not.toBeInTheDocument();
+
+    fireEvent.focus(passwordInput);
+    expect(screen.getByText(/Requirement:\s*At least 12 characters\./i)).toBeInTheDocument();
   });
 
   it('auto-fills registration number from student email local-part and locks the field', async () => {
