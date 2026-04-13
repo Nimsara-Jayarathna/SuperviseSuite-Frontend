@@ -32,11 +32,7 @@ export function AccountModal({
 
   return createPortal(
     <div className="fixed inset-0 z-[95] flex items-center justify-center bg-slate-950/45 px-4 backdrop-blur-sm">
-      <div
-        className="absolute inset-0"
-        onClick={onClose}
-        aria-hidden="true"
-      />
+      <div className="absolute inset-0" onClick={onClose} aria-hidden="true" />
       <div className="relative w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl">
         <button
           type="button"
@@ -69,7 +65,13 @@ export function AccountModal({
         </div>
 
         <div className="mt-5 flex flex-col gap-2">
-          <Button type="button" variant="secondary" size="md" className="w-full" onClick={onChangePassword}>
+          <Button
+            type="button"
+            variant="secondary"
+            size="md"
+            className="w-full"
+            onClick={onChangePassword}
+          >
             Change Password
           </Button>
           <Button

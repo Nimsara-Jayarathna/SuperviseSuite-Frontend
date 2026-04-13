@@ -6,10 +6,7 @@ import type { RegisterConfig } from '../../types';
 import { PasswordRequirementsPanel } from '../PasswordRequirementsPanel';
 import { PasswordField } from '../PasswordField';
 import { PASSWORD_MAX_LENGTH } from '../../utils/passwordRules';
-import {
-  type ProfileFieldErrors,
-  validateProfile,
-} from '../../utils/registrationFlowValidation';
+import { type ProfileFieldErrors, validateProfile } from '../../utils/registrationFlowValidation';
 
 type RegistrationFlow = ReturnType<typeof useRegistrationFlow>;
 

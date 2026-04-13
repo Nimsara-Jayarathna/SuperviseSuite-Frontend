@@ -44,7 +44,9 @@ describe('ForgotPasswordForm', () => {
       />,
     );
 
-    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'xx24123456@my.sliit.lk' } });
+    fireEvent.change(screen.getByLabelText('Email'), {
+      target: { value: 'xx24123456@my.sliit.lk' },
+    });
 
     expect(screen.getByText('Invalid IT number format. Use ITXXXXXXXX.')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Send reset link' })).toBeDisabled();

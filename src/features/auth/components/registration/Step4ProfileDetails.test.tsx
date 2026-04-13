@@ -47,7 +47,9 @@ describe('Step4ProfileDetails', () => {
   it('shows requirements panel only when password field is focused', () => {
     render(<Step4ProfileDetails flow={createFlow()} config={createConfig()} />);
 
-    const panel = screen.getByText(/Requirement:\s*At least 12 characters\./i).closest('div[aria-hidden]');
+    const panel = screen
+      .getByText(/Requirement:\s*At least 12 characters\./i)
+      .closest('div[aria-hidden]');
     const passwordInput = screen.getByLabelText('Password');
 
     expect(panel).toHaveAttribute('aria-hidden', 'true');
@@ -58,7 +60,9 @@ describe('Step4ProfileDetails', () => {
   it('hides panel on blur when password is empty', () => {
     render(<Step4ProfileDetails flow={createFlow()} config={createConfig()} />);
 
-    const panel = screen.getByText(/Requirement:\s*At least 12 characters\./i).closest('div[aria-hidden]');
+    const panel = screen
+      .getByText(/Requirement:\s*At least 12 characters\./i)
+      .closest('div[aria-hidden]');
     const passwordInput = screen.getByLabelText('Password');
 
     fireEvent.focus(passwordInput);
@@ -69,7 +73,9 @@ describe('Step4ProfileDetails', () => {
   it('keeps full panel visible after blur when password is weak', () => {
     render(<Step4ProfileDetails flow={createFlow()} config={createConfig()} />);
 
-    const panel = screen.getByText(/Requirement:\s*At least 12 characters\./i).closest('div[aria-hidden]');
+    const panel = screen
+      .getByText(/Requirement:\s*At least 12 characters\./i)
+      .closest('div[aria-hidden]');
     const passwordInput = screen.getByLabelText('Password');
 
     fireEvent.focus(passwordInput);
@@ -148,7 +154,9 @@ describe('Step4ProfileDetails', () => {
 
     fireEvent.change(screen.getByLabelText('First name'), { target: { value: 'Nimal' } });
     fireEvent.change(screen.getByLabelText('Last name'), { target: { value: 'Perera' } });
-    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'long passphrase one' } });
+    fireEvent.change(screen.getByLabelText('Password'), {
+      target: { value: 'long passphrase one' },
+    });
     fireEvent.change(screen.getByLabelText('Confirm password'), {
       target: { value: 'long passphrase one' },
     });
@@ -170,7 +178,9 @@ describe('Step4ProfileDetails', () => {
   it('shows mismatch tooltip on confirm password mismatch', () => {
     render(<Step4ProfileDetails flow={createFlow()} config={createConfig()} />);
 
-    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'long passphrase one' } });
+    fireEvent.change(screen.getByLabelText('Password'), {
+      target: { value: 'long passphrase one' },
+    });
     fireEvent.change(screen.getByLabelText('Confirm password'), {
       target: { value: 'long passphrase two' },
     });

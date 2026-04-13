@@ -61,7 +61,9 @@ export function PasswordField({
         <div className="absolute right-3 top-1/2 flex -translate-y-1/2 items-center gap-2">
           {showMismatch ? (
             <span className="group relative inline-flex" tabIndex={0}>
-              <AlertCircle className={`h-4 w-4 ${mismatch ? 'text-rose-600' : 'text-emerald-600'}`} />
+              <AlertCircle
+                className={`h-4 w-4 ${mismatch ? 'text-rose-600' : 'text-emerald-600'}`}
+              />
               {showTooltip ? (
                 <span
                   id={tooltipId}

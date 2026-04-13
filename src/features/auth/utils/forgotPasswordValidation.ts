@@ -41,7 +41,8 @@ export function getForgotPasswordValidationState(email: string, config: Register
   const hasAt = email.includes('@');
   const hasInvalidFormat = hasAt && !isValidEmailFormat(email);
   const matchedRole = matchDomain(email, config);
-  const hasDomainViolation = hasAt && !hasInvalidFormat && hasDomainRestrictionViolation(email, config);
+  const hasDomainViolation =
+    hasAt && !hasInvalidFormat && hasDomainRestrictionViolation(email, config);
   const hasPrefixViolation = hasAt && !hasInvalidFormat && hasStudentPrefixViolation(email, config);
 
   return {

@@ -13,14 +13,18 @@ describe('ResetPasswordForm', () => {
       />,
     );
 
-    const panel = screen.getByText(/Requirement:\s*At least 12 characters\./i).closest('div[aria-hidden]');
+    const panel = screen
+      .getByText(/Requirement:\s*At least 12 characters\./i)
+      .closest('div[aria-hidden]');
     const requirements = screen.getByText(/Requirement:\s*At least 12 characters\./i);
     const newPassword = screen.getByLabelText('New Password');
 
     expect(panel).toHaveAttribute('aria-hidden', 'true');
     fireEvent.focus(newPassword);
     expect(panel).toHaveAttribute('aria-hidden', 'false');
-    expect(requirements.compareDocumentPosition(newPassword) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
+    expect(
+      requirements.compareDocumentPosition(newPassword) & Node.DOCUMENT_POSITION_PRECEDING,
+    ).toBeTruthy();
   });
 
   it('hides panel on blur when new password is still empty', () => {
@@ -32,7 +36,9 @@ describe('ResetPasswordForm', () => {
       />,
     );
 
-    const panel = screen.getByText(/Requirement:\s*At least 12 characters\./i).closest('div[aria-hidden]');
+    const panel = screen
+      .getByText(/Requirement:\s*At least 12 characters\./i)
+      .closest('div[aria-hidden]');
     const newPassword = screen.getByLabelText('New Password');
 
     fireEvent.focus(newPassword);
@@ -49,7 +55,9 @@ describe('ResetPasswordForm', () => {
       />,
     );
 
-    const panel = screen.getByText(/Requirement:\s*At least 12 characters\./i).closest('div[aria-hidden]');
+    const panel = screen
+      .getByText(/Requirement:\s*At least 12 characters\./i)
+      .closest('div[aria-hidden]');
     const newPassword = screen.getByLabelText('New Password');
 
     fireEvent.focus(newPassword);
@@ -93,7 +101,9 @@ describe('ResetPasswordForm', () => {
     const confirmPassword = screen.getByLabelText('Confirm New Password');
     fireEvent.focus(confirmPassword);
     expect(screen.queryByText(/Requirement:\s*At least 12 characters\./i)).toBeInTheDocument();
-    const panel = screen.getByText(/Requirement:\s*At least 12 characters\./i).closest('div[aria-hidden]');
+    const panel = screen
+      .getByText(/Requirement:\s*At least 12 characters\./i)
+      .closest('div[aria-hidden]');
     expect(panel).toHaveAttribute('aria-hidden', 'true');
   });
 
@@ -106,7 +116,9 @@ describe('ResetPasswordForm', () => {
       />,
     );
 
-    fireEvent.change(screen.getByLabelText('New Password'), { target: { value: 'long passphrase one' } });
+    fireEvent.change(screen.getByLabelText('New Password'), {
+      target: { value: 'long passphrase one' },
+    });
     fireEvent.change(screen.getByLabelText('Confirm New Password'), {
       target: { value: 'long passphrase two' },
     });

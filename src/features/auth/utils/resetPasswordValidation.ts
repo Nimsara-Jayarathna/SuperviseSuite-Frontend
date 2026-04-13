@@ -16,10 +16,12 @@ export function validateResetPasswordForm(fields: {
   const checks = getPasswordChecks(newPassword);
 
   if (!newPassword) errors.newPassword = 'Password is required.';
-  else if (!checks.minLength) errors.newPassword = `Password must be at least ${PASSWORD_MIN_LENGTH} characters.`;
+  else if (!checks.minLength)
+    errors.newPassword = `Password must be at least ${PASSWORD_MIN_LENGTH} characters.`;
 
   if (!confirmNewPassword) errors.confirmNewPassword = 'Please confirm your password.';
-  else if (newPassword !== confirmNewPassword) errors.confirmNewPassword = 'Passwords do not match.';
+  else if (newPassword !== confirmNewPassword)
+    errors.confirmNewPassword = 'Passwords do not match.';
 
   return errors;
 }

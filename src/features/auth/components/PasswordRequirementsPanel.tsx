@@ -1,6 +1,10 @@
 import PasswordStrengthBar from 'react-password-strength-bar';
 import { useMemo, useState } from 'react';
-import { getPasswordChecks, isPasswordPolicyPassed, PASSWORD_MIN_LENGTH } from '../utils/passwordRules';
+import {
+  getPasswordChecks,
+  isPasswordPolicyPassed,
+  PASSWORD_MIN_LENGTH,
+} from '../utils/passwordRules';
 
 type PasswordRequirementsPanelProps = {
   password: string;
@@ -48,8 +52,8 @@ export function PasswordRequirementsPanel({
           <div className="text-sm text-slate-700">
             <p className="font-semibold">Requirement: At least {PASSWORD_MIN_LENGTH} characters.</p>
             <p className="mt-1 text-sky-700">
-              Tip: The strongest passwords are long phrases. We recommend using a memorable
-              sentence or combining 3 to 4 unrelated words.
+              Tip: The strongest passwords are long phrases. We recommend using a memorable sentence
+              or combining 3 to 4 unrelated words.
             </p>
           </div>
           {password.length > 0 && remainingCharacters > 0 ? (

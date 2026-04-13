@@ -9,7 +9,8 @@ export function isValidEmailFormat(email: string): boolean {
 export function matchDomain(email: string, config: RegisterConfig): MatchedEmailRole {
   const normalizedEmail = email.toLowerCase();
   if (config.studentDomain && normalizedEmail.endsWith(config.studentDomain)) return 'STUDENT';
-  if (config.supervisorDomain && normalizedEmail.endsWith(config.supervisorDomain)) return 'SUPERVISOR';
+  if (config.supervisorDomain && normalizedEmail.endsWith(config.supervisorDomain))
+    return 'SUPERVISOR';
   return null;
 }
 
@@ -34,4 +35,3 @@ export function hasDomainRestrictionViolation(email: string, config: RegisterCon
   if (!isValidEmailFormat(email)) return false;
   return matchDomain(email, config) === null;
 }
-

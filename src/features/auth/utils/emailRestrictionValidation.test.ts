@@ -32,9 +32,12 @@ describe('emailRestrictionValidation', () => {
   it('checks domain restriction only when enabled', () => {
     const config = baseConfig();
     expect(hasDomainRestrictionViolation('abc@gmail.com', config)).toBe(true);
-    expect(hasDomainRestrictionViolation('abc@gmail.com', { ...config, domainRestrictionEnabled: false })).toBe(
-      false,
-    );
+    expect(
+      hasDomainRestrictionViolation('abc@gmail.com', {
+        ...config,
+        domainRestrictionEnabled: false,
+      }),
+    ).toBe(false);
   });
 
   it('checks student prefix restriction and tolerates malformed regex', () => {
@@ -50,4 +53,3 @@ describe('emailRestrictionValidation', () => {
     ).toBe(false);
   });
 });
-
