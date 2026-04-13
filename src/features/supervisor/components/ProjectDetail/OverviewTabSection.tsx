@@ -1,5 +1,6 @@
 import { CalendarDays } from 'lucide-react';
 import { buttonStyles } from '@/components/ui/Button';
+import { Select } from '@/components/ui/Select';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { FIELD_LIMITS, LIFECYCLE_OPTIONS, dateFormatter } from '../../projectDetails.shared';
 import type { OverviewState } from '../../hooks/useProjectDetailsPageState';
@@ -48,7 +49,7 @@ export function OverviewTabSection({ project, overview }: OverviewTabSectionProp
                   <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
                     Lifecycle
                   </span>
-                  <select
+                  <Select
                     value={overview.overviewForm.lifecycleStatus}
                     onChange={(e) =>
                       overview.setField(
@@ -63,7 +64,7 @@ export function OverviewTabSection({ project, overview }: OverviewTabSectionProp
                         {status.replace('_', ' ')}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 </label>
                 <label className="space-y-1.5">
                   <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">

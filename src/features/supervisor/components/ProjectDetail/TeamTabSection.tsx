@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { RoleBadge } from '@/components/ui/RoleBadge';
 import { buttonStyles } from '@/components/ui/Button';
+import { Select } from '@/components/ui/Select';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { memberDisplayName } from '../../projectDetails.shared';
 import type { TeamState } from '../../hooks/useProjectDetailsPageState';
@@ -80,7 +81,7 @@ export function TeamTabSection({ project, team }: TeamTabSectionProps) {
             {team.studentMembers.length > 0 ? (
               <div className="flex shrink-0 flex-col gap-2 sm:items-end">
                 <div className="flex items-center gap-2">
-                  <select
+                  <Select
                     value={team.leaderDraftId}
                     onChange={(e) => team.setLeaderDraftId(e.target.value)}
                     disabled={team.isUpdatingLeader}
@@ -92,7 +93,7 @@ export function TeamTabSection({ project, team }: TeamTabSectionProps) {
                         {memberDisplayName(member)}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                   <button
                     type="button"
                     onClick={() => void team.submitLeaderUpdate()}
@@ -123,7 +124,7 @@ export function TeamTabSection({ project, team }: TeamTabSectionProps) {
 
           {team.studentMembers.length > 0 ? (
             <div className="mt-6 flex flex-wrap justify-center gap-3">
-              <select
+              <Select
                 value={team.leaderDraftId}
                 onChange={(e) => team.setLeaderDraftId(e.target.value)}
                 disabled={team.isUpdatingLeader}
@@ -136,7 +137,7 @@ export function TeamTabSection({ project, team }: TeamTabSectionProps) {
                     {memberDisplayName(member)}
                   </option>
                 ))}
-              </select>
+              </Select>
               <button
                 type="button"
                 onClick={() => void team.submitLeaderUpdate()}

@@ -6,6 +6,7 @@ import { EmptyState } from '@/components/feedback/EmptyState';
 import { ErrorState } from '@/components/feedback/ErrorState';
 import { buttonStyles } from '@/components/ui/Button';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { Select } from '@/components/ui/Select';
 import { isBlockingError } from '@/utils/errorSeverity';
 import { SupervisorProjectCard } from '../components/SupervisorProjectCard';
 import { SupervisorProjectCardSkeleton } from '../components/SupervisorProjectCardSkeleton';
@@ -84,7 +85,7 @@ export function SupervisorProjectsPage() {
           placeholder="Search by project title, summary, batch, or semester"
           className="h-10 rounded-2xl border border-border bg-white px-4 text-sm outline-none transition-colors focus:border-amber-300"
         />
-        <select
+        <Select
           value={lifecycle}
           onChange={(event) => setLifecycle(event.target.value as LifecycleFilter)}
           className="h-10 rounded-2xl border border-border bg-white px-4 text-sm outline-none transition-colors focus:border-amber-300"
@@ -94,7 +95,7 @@ export function SupervisorProjectsPage() {
               {option === 'ALL' ? 'All lifecycle states' : option.replace('_', ' ')}
             </option>
           ))}
-        </select>
+        </Select>
       </section>
 
       {isLoading ? (
