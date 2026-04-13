@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/Button';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { useNavigate } from 'react-router-dom';
 import { LoginForm } from './LoginForm';
 import { RequestStateModal } from '@/components/ui/RequestStateModal';
 import { getBlockingAuthErrorTitle, isBlockingAuthError } from '../utils/authErrorModel';
@@ -13,6 +14,7 @@ type LoginPanelProps = {
 };
 
 export function LoginPanel({ onClose, returnTo, inModal = false }: LoginPanelProps) {
+  const navigate = useNavigate();
   const dialogRef = useRef<HTMLDivElement>(null);
   const { login, isLoading, error, clearError } = useAuth();
   const blockingError = isBlockingAuthError(error) ? error : null;
@@ -77,6 +79,10 @@ export function LoginPanel({ onClose, returnTo, inModal = false }: LoginPanelPro
             onClearError={clearError}
             onSuccess={onClose}
             feedbackMode="inline"
+            onForgotPassword={() => {
+              onClose();
+              navigate('/forgot-password');
+            }}
           />
         </div>
       </div>

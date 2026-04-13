@@ -2,8 +2,10 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { RequestStateModal } from '@/components/ui/RequestStateModal';
 import { isApiException } from '@/services/apiClient';
-import { CheckCircle2, AlertCircle, Circle, X } from 'lucide-react';
+import { AlertCircle, CheckCircle2, X } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
+import { PasswordRequirementsPanel } from './PasswordRequirementsPanel';
+import { getPasswordChecks, isPasswordPolicyPassed } from '../utils/passwordRules';
 
 type RequestStatus =
   | { kind: 'idle' }
@@ -23,23 +25,13 @@ export function ChangePasswordModal({ isOpen, onClose, onSubmit }: ChangePasswor
   const [confirmPassword, setConfirmPassword] = useState('');
   const [validationError, setValidationError] = useState<string | null>(null);
   const [requestStatus, setRequestStatus] = useState<RequestStatus>({ kind: 'idle' });
-  const normalizedNewPassword = newPassword ?? '';
-  const passwordChecks = {
-    minLength: normalizedNewPassword.length >= 8,
-    uppercase: /[A-Z]/.test(normalizedNewPassword),
-    lowercase: /[a-z]/.test(normalizedNewPassword),
-    digit: /[0-9]/.test(normalizedNewPassword),
-    special: /[^A-Za-z0-9]/.test(normalizedNewPassword),
-  };
+  const passwordChecks = getPasswordChecks(newPassword);
   const isCurrentPasswordFilled = currentPassword.trim().length > 0;
   const isConfirmPasswordFilled = confirmPassword.trim().length > 0;
-  const isConfirmMatched = isConfirmPasswordFilled && normalizedNewPassword === confirmPassword;
+  const isConfirmMatched = isConfirmPasswordFilled && newPassword === confirmPassword;
   const showMatchStatus = isConfirmPasswordFilled;
-  const passedRuleCount = Object.values(passwordChecks).filter(Boolean).length;
-  const strengthWidth = `${(passedRuleCount / 5) * 100}%`;
-  const strengthLabel = passedRuleCount <= 2 ? 'Weak' : passedRuleCount <= 4 ? 'Fair' : 'Strong';
-  const isPasswordPolicyPassed = Object.values(passwordChecks).every(Boolean);
-  const canSubmit = isCurrentPasswordFilled && isPasswordPolicyPassed && isConfirmMatched;
+  const passwordPolicyPassed = isPasswordPolicyPassed(passwordChecks);
+  const canSubmit = isCurrentPasswordFilled && passwordPolicyPassed && isConfirmMatched;
 
   if (!isOpen || typeof document === 'undefined') {
     return null;
@@ -54,7 +46,7 @@ export function ChangePasswordModal({ isOpen, onClose, onSubmit }: ChangePasswor
       return;
     }
 
-    if (!isPasswordPolicyPassed) {
+    if (!passwordPolicyPassed) {
       setValidationError('New password does not satisfy password requirements.');
       return;
     }
@@ -134,72 +126,7 @@ export function ChangePasswordModal({ isOpen, onClose, onSubmit }: ChangePasswor
                 onChange={(event) => setCurrentPassword(event.target.value)}
               />
             </label>
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Password requirements
-              </p>
-              <div className="mt-2 flex items-center gap-2">
-                <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-200">
-                  <div
-                    className="h-full rounded-full bg-emerald-500 transition-all"
-                    style={{ width: strengthWidth }}
-                  />
-                </div>
-                <span className="text-xs font-medium text-slate-500">{strengthLabel}</span>
-              </div>
-              <ul className="mt-3 space-y-1.5 text-xs">
-                <li
-                  className={`flex items-center gap-2 ${passwordChecks.minLength ? 'text-emerald-700' : 'text-slate-500'}`}
-                >
-                  {passwordChecks.minLength ? (
-                    <CheckCircle2 className="h-3.5 w-3.5" />
-                  ) : (
-                    <Circle className="h-3.5 w-3.5" />
-                  )}
-                  <span>At least 8 characters</span>
-                </li>
-                <li
-                  className={`flex items-center gap-2 ${passwordChecks.uppercase ? 'text-emerald-700' : 'text-slate-500'}`}
-                >
-                  {passwordChecks.uppercase ? (
-                    <CheckCircle2 className="h-3.5 w-3.5" />
-                  ) : (
-                    <Circle className="h-3.5 w-3.5" />
-                  )}
-                  <span>One uppercase letter</span>
-                </li>
-                <li
-                  className={`flex items-center gap-2 ${passwordChecks.lowercase ? 'text-emerald-700' : 'text-slate-500'}`}
-                >
-                  {passwordChecks.lowercase ? (
-                    <CheckCircle2 className="h-3.5 w-3.5" />
-                  ) : (
-                    <Circle className="h-3.5 w-3.5" />
-                  )}
-                  <span>One lowercase letter</span>
-                </li>
-                <li
-                  className={`flex items-center gap-2 ${passwordChecks.digit ? 'text-emerald-700' : 'text-slate-500'}`}
-                >
-                  {passwordChecks.digit ? (
-                    <CheckCircle2 className="h-3.5 w-3.5" />
-                  ) : (
-                    <Circle className="h-3.5 w-3.5" />
-                  )}
-                  <span>One digit</span>
-                </li>
-                <li
-                  className={`flex items-center gap-2 ${passwordChecks.special ? 'text-emerald-700' : 'text-slate-500'}`}
-                >
-                  {passwordChecks.special ? (
-                    <CheckCircle2 className="h-3.5 w-3.5" />
-                  ) : (
-                    <Circle className="h-3.5 w-3.5" />
-                  )}
-                  <span>One special character</span>
-                </li>
-              </ul>
-            </div>
+            <PasswordRequirementsPanel password={newPassword} />
             <label className="block">
               <span className="mb-1.5 block text-sm font-semibold text-slate-700">
                 New password

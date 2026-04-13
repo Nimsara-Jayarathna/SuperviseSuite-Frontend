@@ -1,13 +1,16 @@
 import type {
   AuthUser,
+  ForgotPasswordRequest,
   RegisterConfig,
   RegisterCompleteResponse,
   LoginResponse,
   LoginRequest,
+  ResetPasswordRequest,
   RegisterRequest,
   RegisterVerifyResponse,
   RegisterResponse,
   SupervisorRegisterRequest,
+  ValidateResetTokenResponse,
 } from '../types';
 import { apiClient } from '@/services/apiClient';
 
@@ -116,5 +119,19 @@ export const authApi = {
    */
   async logout(): Promise<void> {
     return apiClient.post<void>('/api/auth/logout', {});
+  },
+
+  async forgotPassword(body: ForgotPasswordRequest): Promise<void> {
+    return apiClient.post<void>('/api/auth/forgot-password', body);
+  },
+
+  async validateResetToken(token: string): Promise<ValidateResetTokenResponse> {
+    return apiClient.get<ValidateResetTokenResponse>(
+      `/api/auth/reset-password/validate?token=${encodeURIComponent(token)}`,
+    );
+  },
+
+  async resetPassword(body: ResetPasswordRequest): Promise<void> {
+    return apiClient.post<void>('/api/auth/reset-password', body);
   },
 };

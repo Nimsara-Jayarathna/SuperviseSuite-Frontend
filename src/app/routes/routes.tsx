@@ -3,6 +3,8 @@ import { StudentLayout } from '@/app/layout/StudentLayout';
 import { LandingPage } from '@/features/landing';
 import { PrivacyPolicyPage, SupportPage, TermsOfServicePage } from '@/features/legal';
 import { StudentProjectDetailsPage, StudentProjectsPage } from '@/features/student';
+import { ForgotPasswordPage } from '@/features/auth/pages/ForgotPasswordPage';
+import { ResetPasswordPage } from '@/features/auth/pages/ResetPasswordPage';
 import {
   CreateProjectPage,
   GitHubAccessUpdatedPage,
@@ -125,6 +127,7 @@ export function AppRoutes() {
       <Route path="/legal/privacy" element={<PrivacyPolicyPage />} />
       <Route path="/legal/terms" element={<TermsOfServicePage />} />
       <Route path="/support" element={<SupportPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/github/request-access" element={<RequestGitHubRepositoryAccessPage />} />
       <Route path="/github/access-updated" element={<GitHubAccessUpdatedPage />} />
 
@@ -132,6 +135,7 @@ export function AppRoutes() {
       <Route element={<RequireGuest />}>
         <Route path="/login" element={<LoginRoute />} />
         <Route path="/register" element={<RegisterRoute />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       </Route>
 
       {/* Student-only */}

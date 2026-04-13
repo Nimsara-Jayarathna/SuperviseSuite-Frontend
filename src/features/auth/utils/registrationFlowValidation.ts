@@ -1,3 +1,5 @@
+import { getPasswordChecks, getPasswordStrength as sharedGetPasswordStrength } from './passwordRules';
+
 export type ProfileFieldErrors = {
   firstName?: string;
   lastName?: string;
@@ -27,18 +29,21 @@ export function validateProfile(fields: {
   requireRegistrationNumber?: boolean;
 }): ProfileFieldErrors {
   const errors: ProfileFieldErrors = {};
+  const checks = getPasswordChecks(fields.password);
+
   if (!fields.firstName.trim()) errors.firstName = 'First name is required.';
   if (!fields.lastName.trim()) errors.lastName = 'Last name is required.';
   if (!fields.password) errors.password = 'Password is required.';
-  else if (fields.password.length < 8) errors.password = 'Must be at least 8 characters.';
-  else if (!/[A-Z]/.test(fields.password)) errors.password = 'Must contain an uppercase letter.';
-  else if (!/[a-z]/.test(fields.password)) errors.password = 'Must contain a lowercase letter.';
-  else if (!/[0-9]/.test(fields.password)) errors.password = 'Must contain a digit.';
-  else if (!/[^A-Za-z0-9]/.test(fields.password))
-    errors.password = 'Must contain a special character.';
+  else if (!checks.minLength) errors.password = 'Must be at least 8 characters.';
+  else if (!checks.uppercase) errors.password = 'Must contain an uppercase letter.';
+  else if (!checks.lowercase) errors.password = 'Must contain a lowercase letter.';
+  else if (!checks.digit) errors.password = 'Must contain a digit.';
+  else if (!checks.special) errors.password = 'Must contain a special character.';
+
   if (!fields.confirmPassword) errors.confirmPassword = 'Please confirm your password.';
   else if (fields.password !== fields.confirmPassword)
     errors.confirmPassword = 'Passwords do not match.';
+
   if (fields.requireRegistrationNumber) {
     if (!fields.registrationNumber?.trim()) {
       errors.registrationNumber = 'Registration number is required.';
@@ -50,13 +55,6 @@ export function validateProfile(fields: {
 }
 
 export function getPasswordStrength(password: string): 'weak' | 'fair' | 'strong' {
-  let score = 0;
-  if (password.length >= 8) score++;
-  if (/[A-Z]/.test(password)) score++;
-  if (/[a-z]/.test(password)) score++;
-  if (/[0-9]/.test(password)) score++;
-  if (/[^A-Za-z0-9]/.test(password)) score++;
-  if (score <= 2) return 'weak';
-  if (score <= 4) return 'fair';
-  return 'strong';
+  return sharedGetPasswordStrength(password);
 }
+
