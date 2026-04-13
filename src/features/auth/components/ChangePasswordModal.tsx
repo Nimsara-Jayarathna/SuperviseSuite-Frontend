@@ -1,11 +1,12 @@
 import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
 import { RequestStateModal } from '@/components/ui/RequestStateModal';
 import { isApiException } from '@/services/apiClient';
-import { AlertCircle, CheckCircle2, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { PasswordRequirementsPanel } from './PasswordRequirementsPanel';
 import { getPasswordChecks, isPasswordPolicyPassed } from '../utils/passwordRules';
+import { PasswordField } from './PasswordField';
+import { PASSWORD_MAX_LENGTH } from '../utils/passwordRules';
 
 type RequestStatus =
   | { kind: 'idle' }
@@ -23,13 +24,16 @@ export function ChangePasswordModal({ isOpen, onClose, onSubmit }: ChangePasswor
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [requestStatus, setRequestStatus] = useState<RequestStatus>({ kind: 'idle' });
   const passwordChecks = getPasswordChecks(newPassword);
   const isCurrentPasswordFilled = currentPassword.trim().length > 0;
   const isConfirmPasswordFilled = confirmPassword.trim().length > 0;
   const isConfirmMatched = isConfirmPasswordFilled && newPassword === confirmPassword;
-  const showMatchStatus = isConfirmPasswordFilled;
+  const isMismatch = isConfirmPasswordFilled && !isConfirmMatched;
   const passwordPolicyPassed = isPasswordPolicyPassed(passwordChecks);
   const canSubmit = isCurrentPasswordFilled && passwordPolicyPassed && isConfirmMatched;
 
@@ -78,6 +82,9 @@ export function ChangePasswordModal({ isOpen, onClose, onSubmit }: ChangePasswor
     setCurrentPassword('');
     setNewPassword('');
     setConfirmPassword('');
+    setShowCurrentPassword(false);
+    setShowNewPassword(false);
+    setShowConfirmPassword(false);
     onClose();
   }
 
@@ -114,65 +121,36 @@ export function ChangePasswordModal({ isOpen, onClose, onSubmit }: ChangePasswor
           <p className="mt-1 text-sm text-slate-500">Update your account password securely.</p>
 
           <div className="mt-5 space-y-3">
-            <label className="block">
-              <span className="mb-1.5 block text-sm font-semibold text-slate-700">
-                Current password
-              </span>
-              <Input
-                id="current-password"
-                type="password"
-                className="h-11 w-full rounded-2xl border border-slate-200 px-3 text-sm text-slate-900 outline-none transition focus:border-sky-300 focus:ring-2 focus:ring-sky-100"
-                value={currentPassword}
-                onChange={(event) => setCurrentPassword(event.target.value)}
-              />
-            </label>
+            <PasswordField
+              id="current-password"
+              label="Current password"
+              value={currentPassword}
+              onChange={setCurrentPassword}
+              maxLength={PASSWORD_MAX_LENGTH}
+              isVisible={showCurrentPassword}
+              onToggleVisibility={() => setShowCurrentPassword((value) => !value)}
+            />
             <PasswordRequirementsPanel password={newPassword} />
-            <label className="block">
-              <span className="mb-1.5 block text-sm font-semibold text-slate-700">
-                New password
-              </span>
-              <div className="relative">
-                <Input
-                  id="new-password"
-                  type="password"
-                  className="h-11 w-full rounded-2xl border border-slate-200 px-3 pr-10 text-sm text-slate-900 outline-none transition focus:border-sky-300 focus:ring-2 focus:ring-sky-100"
-                  value={newPassword}
-                  onChange={(event) => setNewPassword(event.target.value)}
-                />
-                {showMatchStatus ? (
-                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
-                    {isConfirmMatched ? (
-                      <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                    ) : (
-                      <AlertCircle className="h-4 w-4 text-rose-600" />
-                    )}
-                  </span>
-                ) : null}
-              </div>
-            </label>
-            <label className="block">
-              <span className="mb-1.5 block text-sm font-semibold text-slate-700">
-                Confirm new password
-              </span>
-              <div className="relative">
-                <Input
-                  id="confirm-password"
-                  type="password"
-                  className="h-11 w-full rounded-2xl border border-slate-200 px-3 pr-10 text-sm text-slate-900 outline-none transition focus:border-sky-300 focus:ring-2 focus:ring-sky-100"
-                  value={confirmPassword}
-                  onChange={(event) => setConfirmPassword(event.target.value)}
-                />
-                {showMatchStatus ? (
-                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
-                    {isConfirmMatched ? (
-                      <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                    ) : (
-                      <AlertCircle className="h-4 w-4 text-rose-600" />
-                    )}
-                  </span>
-                ) : null}
-              </div>
-            </label>
+            <PasswordField
+              id="new-password"
+              label="New password"
+              value={newPassword}
+              onChange={setNewPassword}
+              maxLength={PASSWORD_MAX_LENGTH}
+              isVisible={showNewPassword}
+              onToggleVisibility={() => setShowNewPassword((value) => !value)}
+            />
+            <PasswordField
+              id="confirm-password"
+              label="Confirm new password"
+              value={confirmPassword}
+              onChange={setConfirmPassword}
+              maxLength={PASSWORD_MAX_LENGTH}
+              isVisible={showConfirmPassword}
+              onToggleVisibility={() => setShowConfirmPassword((value) => !value)}
+              showMismatch={isConfirmPasswordFilled}
+              mismatch={isMismatch}
+            />
           </div>
 
           {validationError ? (

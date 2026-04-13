@@ -1,5 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { fireEvent } from '@testing-library/react';
 import { vi } from 'vitest';
 import type { useRegistrationFlow } from '../../hooks/useRegistrationFlow';
 import type { RegisterConfig } from '../../types';
@@ -44,6 +45,15 @@ function createConfig(overrides: Partial<RegisterConfig> = {}): RegisterConfig {
 }
 
 describe('Step4ProfileDetails', () => {
+  it('renders password requirements panel before password fields', () => {
+    render(<Step4ProfileDetails flow={createFlow()} config={createConfig()} />);
+
+    const requirements = screen.getByText('Password requirements');
+    const passwordInput = screen.getByLabelText('Password');
+
+    expect(requirements.compareDocumentPosition(passwordInput) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it('auto-fills registration number from student email local-part and locks the field', async () => {
     render(<Step4ProfileDetails flow={createFlow()} config={createConfig()} />);
 
@@ -86,17 +96,16 @@ describe('Step4ProfileDetails', () => {
   });
 
   it('submits the auto-filled registration number in locked mode', async () => {
-    const user = userEvent.setup();
     const submitProfile = vi.fn().mockResolvedValue(undefined);
     const flow = createFlow({ submitProfile });
 
     render(<Step4ProfileDetails flow={flow} config={createConfig()} />);
 
-    await user.type(screen.getByLabelText('First name'), 'Nimal');
-    await user.type(screen.getByLabelText('Last name'), 'Perera');
-    await user.type(screen.getByLabelText('Password'), 'Secure@123');
-    await user.type(screen.getByLabelText('Confirm password'), 'Secure@123');
-    await user.click(screen.getByRole('button', { name: 'Create account' }));
+    fireEvent.change(screen.getByLabelText('First name'), { target: { value: 'Nimal' } });
+    fireEvent.change(screen.getByLabelText('Last name'), { target: { value: 'Perera' } });
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'Secure@123' } });
+    fireEvent.change(screen.getByLabelText('Confirm password'), { target: { value: 'Secure@123' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Create account' }));
 
     await waitFor(() => {
       expect(submitProfile).toHaveBeenCalledWith({
@@ -106,5 +115,14 @@ describe('Step4ProfileDetails', () => {
         registrationNumber: 'IT24103464',
       });
     });
+  });
+
+  it('shows mismatch tooltip on confirm password mismatch', () => {
+    render(<Step4ProfileDetails flow={createFlow()} config={createConfig()} />);
+
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'Secure@123' } });
+    fireEvent.change(screen.getByLabelText('Confirm password'), { target: { value: 'Secure@124' } });
+
+    expect(screen.getByRole('tooltip')).toHaveTextContent('Passwords do not match.');
   });
 });

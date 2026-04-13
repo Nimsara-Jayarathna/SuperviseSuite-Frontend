@@ -1,8 +1,8 @@
 import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { PasswordRequirementsPanel } from './PasswordRequirementsPanel';
+import { PasswordField } from './PasswordField';
+import { PASSWORD_MAX_LENGTH } from '../utils/passwordRules';
 import {
   type ResetPasswordFieldErrors,
   validateResetPasswordForm,
@@ -17,9 +17,12 @@ export type ResetPasswordFormProps = {
 export function ResetPasswordForm({ onSubmit, isLoading, onClearError }: ResetPasswordFormProps) {
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<ResetPasswordFieldErrors>({});
   const isConfirmPasswordFilled = confirmNewPassword.trim().length > 0;
   const isConfirmMatched = isConfirmPasswordFilled && newPassword === confirmNewPassword;
+  const isMismatch = isConfirmPasswordFilled && !isConfirmMatched;
 
   const isValid = useMemo(
     () =>
@@ -50,50 +53,35 @@ export function ResetPasswordForm({ onSubmit, isLoading, onClearError }: ResetPa
     <form onSubmit={handleSubmit} noValidate className="space-y-3">
       <PasswordRequirementsPanel password={newPassword} />
 
-      <div className="space-y-1">
-        <label htmlFor="reset-password-new" className="text-sm font-semibold text-slate-700">
-          New Password
-        </label>
-        <Input
+      <PasswordField
           id="reset-password-new"
-          type="password"
+          label="New Password"
           autoComplete="new-password"
           placeholder="Enter your new password"
           value={newPassword}
-          onChange={(event) => setNewPassword(event.target.value)}
-          className="h-11 w-full rounded-2xl border border-slate-200 px-3 pr-10 text-sm text-slate-900 outline-none transition focus:border-sky-300 focus:ring-2 focus:ring-sky-100"
+        onChange={setNewPassword}
+        maxLength={PASSWORD_MAX_LENGTH}
+        isVisible={showNewPassword}
+          onToggleVisibility={() => setShowNewPassword((value) => !value)}
         />
-        {fieldErrors.newPassword && <p className="text-xs text-rose-600">{fieldErrors.newPassword}</p>}
-      </div>
+      {fieldErrors.newPassword && <p className="text-xs text-rose-600">{fieldErrors.newPassword}</p>}
 
-      <div className="space-y-1">
-        <label htmlFor="reset-password-confirm" className="text-sm font-semibold text-slate-700">
-          Confirm New Password
-        </label>
-        <div className="relative">
-          <Input
+      <PasswordField
             id="reset-password-confirm"
-            type="password"
+            label="Confirm New Password"
             autoComplete="new-password"
             placeholder="Re-enter new password"
             value={confirmNewPassword}
-            onChange={(event) => setConfirmNewPassword(event.target.value)}
-            className="h-11 w-full rounded-2xl border border-slate-200 px-3 pr-10 text-sm text-slate-900 outline-none transition focus:border-sky-300 focus:ring-2 focus:ring-sky-100"
+        onChange={setConfirmNewPassword}
+        maxLength={PASSWORD_MAX_LENGTH}
+        isVisible={showConfirmPassword}
+            onToggleVisibility={() => setShowConfirmPassword((value) => !value)}
+            showMismatch={isConfirmPasswordFilled}
+            mismatch={isMismatch}
           />
-          {isConfirmPasswordFilled ? (
-            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
-              {isConfirmMatched ? (
-                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-              ) : (
-                <AlertCircle className="h-4 w-4 text-rose-600" />
-              )}
-            </span>
-          ) : null}
-        </div>
-        {fieldErrors.confirmNewPassword && (
-          <p className="text-xs text-rose-600">{fieldErrors.confirmNewPassword}</p>
-        )}
-      </div>
+      {fieldErrors.confirmNewPassword && (
+        <p className="text-xs text-rose-600">{fieldErrors.confirmNewPassword}</p>
+      )}
 
       <Button type="submit" variant="primary" size="lg" fullWidth disabled={isLoading || !isValid}>
         Update password

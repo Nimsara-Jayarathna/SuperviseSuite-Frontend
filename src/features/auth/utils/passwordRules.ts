@@ -7,6 +7,7 @@ export type PasswordChecks = {
 };
 
 export type PasswordStrength = 'weak' | 'fair' | 'strong';
+export const PASSWORD_MAX_LENGTH = 128;
 
 export function getPasswordChecks(password: string): PasswordChecks {
   const normalized = password ?? '';
@@ -37,4 +38,3 @@ export function isPasswordPolicyPassed(checks: PasswordChecks): boolean {
 export function getPasswordStrength(password: string): PasswordStrength {
   return getPasswordStrengthFromChecks(getPasswordChecks(password));
 }
-
