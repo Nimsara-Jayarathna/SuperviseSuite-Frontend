@@ -60,13 +60,17 @@ export function RegistrationPanel({
     Boolean(flow.registrationToken) ||
     Boolean(flow.inferredRole) ||
     Boolean(flow.selectedRole);
-  const effectiveConfig: RegisterConfig = config ?? {
-    domainRestrictionEnabled: false,
-    studentDomain: null,
-    supervisorDomain: null,
-    studentEmailPrefixRestrictionEnabled: false,
-    studentEmailPrefixRegex: null,
-  };
+  const effectiveConfig: RegisterConfig = useMemo(
+    () =>
+      config ?? {
+        domainRestrictionEnabled: false,
+        studentDomain: null,
+        supervisorDomain: null,
+        studentEmailPrefixRestrictionEnabled: false,
+        studentEmailPrefixRegex: null,
+      },
+    [config],
+  );
   const showProfileStateModal =
     flow.step === 'profile' && (flow.isLoading || !!flow.error || flow.isSuccess);
   const blockingError = isBlockingAuthError(flow.error) ? flow.error : null;

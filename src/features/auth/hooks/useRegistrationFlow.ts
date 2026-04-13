@@ -123,6 +123,7 @@ export function useRegistrationFlow(options: UseRegistrationFlowOptions = {}) {
         role: state.inferredRole ? undefined : (state.selectedRole ?? undefined),
       });
       setState((s) => ({ ...s, isLoading: false, isSuccess: true }));
+      options.onSuccess?.();
     } catch (e) {
       if (isApiException(e)) setError(e.apiError);
       else setUnexpectedError();

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/cn';
@@ -50,7 +50,7 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
     };
   }
 
-  async function openRegisterTab() {
+  const openRegisterTab = useCallback(async () => {
     if (registerConfigLoading) {
       return;
     }
@@ -65,7 +65,7 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
     } finally {
       setRegisterConfigLoading(false);
     }
-  }
+  }, [registerConfigLoading]);
 
   // Sync active tab when parent re-opens the modal with a different tab
   useEffect(() => {
@@ -79,7 +79,7 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
     }
 
     setActiveTab(initialTab);
-  }, [isOpen, initialTab]);
+  }, [isOpen, initialTab, openRegisterTab]);
 
   // Close on Escape key
   useEffect(() => {

@@ -3,8 +3,11 @@ import { fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { vi } from 'vitest';
 import { Step2OTPVerify } from './Step2OTPVerify';
+import type { useRegistrationFlow } from '../../hooks/useRegistrationFlow';
 
-function makeFlow(overrides: Partial<any> = {}) {
+type RegistrationFlow = ReturnType<typeof useRegistrationFlow>;
+
+function makeFlow(overrides: Partial<RegistrationFlow> = {}): RegistrationFlow {
   return {
     step: 'otp',
     email: 'user@example.com',
@@ -26,7 +29,7 @@ function makeFlow(overrides: Partial<any> = {}) {
     goBack: vi.fn(),
     dismiss: vi.fn(),
     ...overrides,
-  };
+  } as RegistrationFlow;
 }
 
 describe('Step2OTPVerify', () => {
