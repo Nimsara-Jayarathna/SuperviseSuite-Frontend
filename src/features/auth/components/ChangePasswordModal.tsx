@@ -70,9 +70,19 @@ export function ChangePasswordModal({ isOpen, onClose, onSubmit }: ChangePasswor
       setNewPassword('');
       setConfirmPassword('');
     } catch (error) {
-      const message = isApiException(error)
-        ? error.apiError.message
-        : 'Unable to update password right now. Please try again.';
+      let message = 'Unable to update password right now. Please try again.';
+      if (isApiException(error)) {
+        const newPasswordDetail = error.apiError.details.find(
+          (detail) => detail.field === 'newPassword',
+        );
+        const currentPasswordDetail = error.apiError.details.find(
+          (detail) => detail.field === 'currentPassword',
+        );
+        message =
+          (newPasswordDetail?.message ?? newPasswordDetail?.issue) ||
+          (currentPasswordDetail?.message ?? currentPasswordDetail?.issue) ||
+          error.apiError.message;
+      }
       setRequestStatus({ kind: 'error', message });
     }
   }

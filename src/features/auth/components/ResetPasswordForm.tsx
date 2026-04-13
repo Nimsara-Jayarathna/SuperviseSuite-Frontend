@@ -9,12 +9,18 @@ import {
 } from '../utils/resetPasswordValidation';
 
 export type ResetPasswordFormProps = {
-  onSubmit: (newPassword: string) => Promise<void>;
+  onSubmit: (newPassword: string) => Promise<ResetPasswordFieldErrors | void>;
   isLoading: boolean;
   onClearError: () => void;
+  backendFieldErrors?: ResetPasswordFieldErrors;
 };
 
-export function ResetPasswordForm({ onSubmit, isLoading, onClearError }: ResetPasswordFormProps) {
+export function ResetPasswordForm({
+  onSubmit,
+  isLoading,
+  onClearError,
+  backendFieldErrors,
+}: ResetPasswordFormProps) {
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
   const [isNewPasswordFocused, setIsNewPasswordFocused] = useState(false);
@@ -47,8 +53,16 @@ export function ResetPasswordForm({ onSubmit, isLoading, onClearError }: ResetPa
     }
 
     setFieldErrors({});
-    await onSubmit(newPassword);
+    const submitResult = await onSubmit(newPassword);
+    if (submitResult && Object.keys(submitResult).length > 0) {
+      setFieldErrors(submitResult);
+    }
   }
+
+  const mergedFieldErrors: ResetPasswordFieldErrors = {
+    ...backendFieldErrors,
+    ...fieldErrors,
+  };
 
   return (
     <form onSubmit={handleSubmit} noValidate className="space-y-3">
@@ -69,7 +83,9 @@ export function ResetPasswordForm({ onSubmit, isLoading, onClearError }: ResetPa
         password={newPassword}
         isNewPasswordFocused={isNewPasswordFocused}
       />
-      {fieldErrors.newPassword && <p className="text-xs text-rose-600">{fieldErrors.newPassword}</p>}
+      {mergedFieldErrors.newPassword && (
+        <p className="text-xs text-rose-600">{mergedFieldErrors.newPassword}</p>
+      )}
 
       <PasswordField
         id="reset-password-confirm"
@@ -84,8 +100,8 @@ export function ResetPasswordForm({ onSubmit, isLoading, onClearError }: ResetPa
         showMismatch={isConfirmPasswordFilled}
         mismatch={isMismatch}
       />
-      {fieldErrors.confirmNewPassword && (
-        <p className="text-xs text-rose-600">{fieldErrors.confirmNewPassword}</p>
+      {mergedFieldErrors.confirmNewPassword && (
+        <p className="text-xs text-rose-600">{mergedFieldErrors.confirmNewPassword}</p>
       )}
 
       <Button type="submit" variant="primary" size="lg" fullWidth disabled={isLoading || !isValid}>

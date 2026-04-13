@@ -1,5 +1,6 @@
 import { getPasswordChecks } from './passwordRules';
 import { PASSWORD_MIN_LENGTH } from './passwordRules';
+import type { ApiError } from '@/types';
 
 export type ResetPasswordFieldErrors = {
   newPassword?: string;
@@ -21,4 +22,20 @@ export function validateResetPasswordForm(fields: {
   else if (newPassword !== confirmNewPassword) errors.confirmNewPassword = 'Passwords do not match.';
 
   return errors;
+}
+
+export function mapBackendResetPasswordFieldErrors(
+  error: ApiError | null | undefined,
+): ResetPasswordFieldErrors {
+  if (!error?.details?.length) return {};
+
+  return error.details.reduce<ResetPasswordFieldErrors>((acc, detail) => {
+    if (detail.field === 'newPassword') {
+      acc.newPassword = (detail.message ?? detail.issue) as string;
+    }
+    if (detail.field === 'confirmNewPassword') {
+      acc.confirmNewPassword = (detail.message ?? detail.issue) as string;
+    }
+    return acc;
+  }, {});
 }

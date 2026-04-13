@@ -10,6 +10,10 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { authApi } from '../api/authApi';
 import { ResetPasswordForm } from '../components/ResetPasswordForm';
 import { getBlockingErrorTitle, isBlockingError } from '@/utils/errorSeverity';
+import {
+  mapBackendResetPasswordFieldErrors,
+  type ResetPasswordFieldErrors,
+} from '../utils/resetPasswordValidation';
 
 type ValidationStatus = 'loading' | 'valid' | 'invalid' | 'error';
 type SubmitStatus = 'idle' | 'loading' | 'success' | 'error';
@@ -23,6 +27,7 @@ export function ResetPasswordPage() {
   const [validationError, setValidationError] = useState<ApiError | null>(null);
   const [submitStatus, setSubmitStatus] = useState<SubmitStatus>('idle');
   const [submitErrorMessage, setSubmitErrorMessage] = useState<string | null>(null);
+  const [submitFieldErrors, setSubmitFieldErrors] = useState<ResetPasswordFieldErrors>({});
 
   useEffect(() => {
     document.title = 'Reset your password - SuperviseSuite';
@@ -68,15 +73,26 @@ export function ResetPasswordPage() {
 
   async function handleSubmit(newPassword: string) {
     setSubmitErrorMessage(null);
+    setSubmitFieldErrors({});
     setSubmitStatus('loading');
     try {
       await authApi.resetPassword({ token, newPassword });
       setSubmitStatus('success');
+      return;
     } catch (error) {
       setSubmitStatus('error');
-      setSubmitErrorMessage(
-        isApiException(error) ? error.apiError.message : 'Something went wrong. Please try again.',
-      );
+      if (isApiException(error)) {
+        const fieldErrors = mapBackendResetPasswordFieldErrors(error.apiError);
+        setSubmitFieldErrors(fieldErrors);
+        if (Object.keys(fieldErrors).length > 0) {
+          setSubmitStatus('idle');
+          return fieldErrors;
+        }
+        setSubmitErrorMessage(error.apiError.message);
+        return;
+      }
+
+      setSubmitErrorMessage('Something went wrong. Please try again.');
     }
   }
 
@@ -99,8 +115,10 @@ export function ResetPasswordPage() {
             <ResetPasswordForm
               onSubmit={handleSubmit}
               isLoading={submitStatus === 'loading'}
+              backendFieldErrors={submitFieldErrors}
               onClearError={() => {
                 setSubmitErrorMessage(null);
+                setSubmitFieldErrors({});
                 if (submitStatus === 'error') {
                   setSubmitStatus('idle');
                 }
