@@ -1,22 +1,15 @@
 export type PasswordChecks = {
   minLength: boolean;
-  uppercase: boolean;
-  lowercase: boolean;
-  digit: boolean;
-  special: boolean;
 };
 
 export type PasswordStrength = 'weak' | 'fair' | 'strong';
 export const PASSWORD_MAX_LENGTH = 128;
+export const PASSWORD_MIN_LENGTH = 12;
 
 export function getPasswordChecks(password: string): PasswordChecks {
   const normalized = password ?? '';
   return {
-    minLength: normalized.length >= 8,
-    uppercase: /[A-Z]/.test(normalized),
-    lowercase: /[a-z]/.test(normalized),
-    digit: /[0-9]/.test(normalized),
-    special: /[^A-Za-z0-9]/.test(normalized),
+    minLength: normalized.length >= PASSWORD_MIN_LENGTH,
   };
 }
 
@@ -25,10 +18,7 @@ export function getPassedRuleCount(checks: PasswordChecks): number {
 }
 
 export function getPasswordStrengthFromChecks(checks: PasswordChecks): PasswordStrength {
-  const passed = getPassedRuleCount(checks);
-  if (passed <= 2) return 'weak';
-  if (passed <= 4) return 'fair';
-  return 'strong';
+  return checks.minLength ? 'strong' : 'weak';
 }
 
 export function isPasswordPolicyPassed(checks: PasswordChecks): boolean {

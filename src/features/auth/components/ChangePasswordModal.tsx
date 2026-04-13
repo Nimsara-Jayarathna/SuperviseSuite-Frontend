@@ -24,6 +24,7 @@ export function ChangePasswordModal({ isOpen, onClose, onSubmit }: ChangePasswor
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [isNewPasswordFocused, setIsNewPasswordFocused] = useState(false);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -34,6 +35,7 @@ export function ChangePasswordModal({ isOpen, onClose, onSubmit }: ChangePasswor
   const isConfirmPasswordFilled = confirmPassword.trim().length > 0;
   const isConfirmMatched = isConfirmPasswordFilled && newPassword === confirmPassword;
   const isMismatch = isConfirmPasswordFilled && !isConfirmMatched;
+  const showPolicyPanel = isNewPasswordFocused || newPassword.length > 0;
   const passwordPolicyPassed = isPasswordPolicyPassed(passwordChecks);
   const canSubmit = isCurrentPasswordFilled && passwordPolicyPassed && isConfirmMatched;
 
@@ -85,6 +87,7 @@ export function ChangePasswordModal({ isOpen, onClose, onSubmit }: ChangePasswor
     setShowCurrentPassword(false);
     setShowNewPassword(false);
     setShowConfirmPassword(false);
+    setIsNewPasswordFocused(false);
     onClose();
   }
 
@@ -130,7 +133,6 @@ export function ChangePasswordModal({ isOpen, onClose, onSubmit }: ChangePasswor
               isVisible={showCurrentPassword}
               onToggleVisibility={() => setShowCurrentPassword((value) => !value)}
             />
-            <PasswordRequirementsPanel password={newPassword} />
             <PasswordField
               id="new-password"
               label="New password"
@@ -139,7 +141,10 @@ export function ChangePasswordModal({ isOpen, onClose, onSubmit }: ChangePasswor
               maxLength={PASSWORD_MAX_LENGTH}
               isVisible={showNewPassword}
               onToggleVisibility={() => setShowNewPassword((value) => !value)}
+              onFocus={() => setIsNewPasswordFocused(true)}
+              onBlur={() => setIsNewPasswordFocused(false)}
             />
+            <PasswordRequirementsPanel password={newPassword} visible={showPolicyPanel} />
             <PasswordField
               id="confirm-password"
               label="Confirm new password"

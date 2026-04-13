@@ -1,4 +1,5 @@
 import { getPasswordChecks } from './passwordRules';
+import { PASSWORD_MIN_LENGTH } from './passwordRules';
 
 export type ResetPasswordFieldErrors = {
   newPassword?: string;
@@ -14,12 +15,7 @@ export function validateResetPasswordForm(fields: {
   const checks = getPasswordChecks(newPassword);
 
   if (!newPassword) errors.newPassword = 'Password is required.';
-  else if (!checks.minLength) errors.newPassword = 'Password must be at least 8 characters.';
-  else if (!checks.uppercase) errors.newPassword = 'Password must contain an uppercase letter.';
-  else if (!checks.lowercase) errors.newPassword = 'Password must contain a lowercase letter.';
-  else if (!checks.digit) errors.newPassword = 'Password must contain a digit.';
-  else if (!checks.special)
-    errors.newPassword = 'Password must contain a special character.';
+  else if (!checks.minLength) errors.newPassword = `Password must be at least ${PASSWORD_MIN_LENGTH} characters.`;
 
   if (!confirmNewPassword) errors.confirmNewPassword = 'Please confirm your password.';
   else if (newPassword !== confirmNewPassword) errors.confirmNewPassword = 'Passwords do not match.';

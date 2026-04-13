@@ -2,6 +2,8 @@ import { Button } from '@/components/ui/Button';
 import { RequestStateModal } from '@/components/ui/RequestStateModal';
 import { LandingPage } from '@/features/landing';
 import { isApiException } from '@/services/apiClient';
+import { clearSessionCaches } from '@/services/sessionCache';
+import { tokenStorage } from '@/services/tokenStorage';
 import type { ApiError } from '@/types';
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -24,6 +26,14 @@ export function ResetPasswordPage() {
 
   useEffect(() => {
     document.title = 'Reset your password - SuperviseSuite';
+  }, []);
+
+  useEffect(() => {
+    // Reset-password flow must run as a guest flow.
+    // Clear local auth state immediately, then ask backend to revoke cookies.
+    clearSessionCaches();
+    tokenStorage.clearAll();
+    void authApi.logout().catch(() => undefined);
   }, []);
 
   const validateResetLink = useCallback(async () => {

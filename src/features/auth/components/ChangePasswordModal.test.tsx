@@ -4,13 +4,38 @@ import { vi } from 'vitest';
 import { ChangePasswordModal } from './ChangePasswordModal';
 
 describe('ChangePasswordModal', () => {
-  it('renders requirement card before new/confirm fields', () => {
+  it('shows requirements panel only when new password is focused', () => {
     render(<ChangePasswordModal isOpen={true} onClose={vi.fn()} onSubmit={vi.fn()} />);
 
-    const requirements = screen.getByText(/Requirement:\s*At least 12 characters\./i);
+    const panel = screen.getByText(/Requirement:\s*At least 12 characters\./i).closest('div[aria-hidden]');
     const newPassword = screen.getByLabelText('New password');
 
-    expect(requirements.compareDocumentPosition(newPassword) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(panel).toHaveAttribute('aria-hidden', 'true');
+    fireEvent.focus(newPassword);
+    expect(panel).toHaveAttribute('aria-hidden', 'false');
+  });
+
+  it('hides panel on blur when new password is empty', () => {
+    render(<ChangePasswordModal isOpen={true} onClose={vi.fn()} onSubmit={vi.fn()} />);
+
+    const panel = screen.getByText(/Requirement:\s*At least 12 characters\./i).closest('div[aria-hidden]');
+    const newPassword = screen.getByLabelText('New password');
+
+    fireEvent.focus(newPassword);
+    fireEvent.blur(newPassword);
+    expect(panel).toHaveAttribute('aria-hidden', 'true');
+  });
+
+  it('keeps panel visible after blur when new password has value', () => {
+    render(<ChangePasswordModal isOpen={true} onClose={vi.fn()} onSubmit={vi.fn()} />);
+
+    const panel = screen.getByText(/Requirement:\s*At least 12 characters\./i).closest('div[aria-hidden]');
+    const newPassword = screen.getByLabelText('New password');
+
+    fireEvent.focus(newPassword);
+    fireEvent.change(newPassword, { target: { value: 'long passphrase one' } });
+    fireEvent.blur(newPassword);
+    expect(panel).toHaveAttribute('aria-hidden', 'false');
   });
 
   it('shows mismatch tooltip on confirm new password mismatch', () => {

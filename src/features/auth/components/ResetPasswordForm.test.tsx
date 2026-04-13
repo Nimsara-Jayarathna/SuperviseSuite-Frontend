@@ -4,7 +4,7 @@ import { vi } from 'vitest';
 import { ResetPasswordForm } from './ResetPasswordForm';
 
 describe('ResetPasswordForm', () => {
-  it('renders requirement card before new/confirm fields', () => {
+  it('shows requirements panel only when new password is focused', () => {
     render(
       <ResetPasswordForm
         onSubmit={vi.fn().mockResolvedValue(undefined)}
@@ -13,10 +13,49 @@ describe('ResetPasswordForm', () => {
       />,
     );
 
+    const panel = screen.getByText(/Requirement:\s*At least 12 characters\./i).closest('div[aria-hidden]');
     const requirements = screen.getByText(/Requirement:\s*At least 12 characters\./i);
     const newPassword = screen.getByLabelText('New Password');
 
-    expect(requirements.compareDocumentPosition(newPassword) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(panel).toHaveAttribute('aria-hidden', 'true');
+    fireEvent.focus(newPassword);
+    expect(panel).toHaveAttribute('aria-hidden', 'false');
+    expect(requirements.compareDocumentPosition(newPassword) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
+  });
+
+  it('hides panel on blur when new password is still empty', () => {
+    render(
+      <ResetPasswordForm
+        onSubmit={vi.fn().mockResolvedValue(undefined)}
+        isLoading={false}
+        onClearError={vi.fn()}
+      />,
+    );
+
+    const panel = screen.getByText(/Requirement:\s*At least 12 characters\./i).closest('div[aria-hidden]');
+    const newPassword = screen.getByLabelText('New Password');
+
+    fireEvent.focus(newPassword);
+    fireEvent.blur(newPassword);
+    expect(panel).toHaveAttribute('aria-hidden', 'true');
+  });
+
+  it('keeps panel visible after blur when user has typed', () => {
+    render(
+      <ResetPasswordForm
+        onSubmit={vi.fn().mockResolvedValue(undefined)}
+        isLoading={false}
+        onClearError={vi.fn()}
+      />,
+    );
+
+    const panel = screen.getByText(/Requirement:\s*At least 12 characters\./i).closest('div[aria-hidden]');
+    const newPassword = screen.getByLabelText('New Password');
+
+    fireEvent.focus(newPassword);
+    fireEvent.change(newPassword, { target: { value: 'long passphrase one' } });
+    fireEvent.blur(newPassword);
+    expect(panel).toHaveAttribute('aria-hidden', 'false');
   });
 
   it('shows match icon only on confirm field (not on new password field)', async () => {

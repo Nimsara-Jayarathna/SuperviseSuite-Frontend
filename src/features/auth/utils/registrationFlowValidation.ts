@@ -1,4 +1,5 @@
 import { getPasswordChecks, getPasswordStrength as sharedGetPasswordStrength } from './passwordRules';
+import { PASSWORD_MIN_LENGTH } from './passwordRules';
 
 export type ProfileFieldErrors = {
   firstName?: string;
@@ -34,11 +35,7 @@ export function validateProfile(fields: {
   if (!fields.firstName.trim()) errors.firstName = 'First name is required.';
   if (!fields.lastName.trim()) errors.lastName = 'Last name is required.';
   if (!fields.password) errors.password = 'Password is required.';
-  else if (!checks.minLength) errors.password = 'Must be at least 8 characters.';
-  else if (!checks.uppercase) errors.password = 'Must contain an uppercase letter.';
-  else if (!checks.lowercase) errors.password = 'Must contain a lowercase letter.';
-  else if (!checks.digit) errors.password = 'Must contain a digit.';
-  else if (!checks.special) errors.password = 'Must contain a special character.';
+  else if (!checks.minLength) errors.password = `Must be at least ${PASSWORD_MIN_LENGTH} characters.`;
 
   if (!fields.confirmPassword) errors.confirmPassword = 'Please confirm your password.';
   else if (fields.password !== fields.confirmPassword)
@@ -57,4 +54,3 @@ export function validateProfile(fields: {
 export function getPasswordStrength(password: string): 'weak' | 'fair' | 'strong' {
   return sharedGetPasswordStrength(password);
 }
-

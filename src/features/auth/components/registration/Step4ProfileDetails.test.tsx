@@ -1,5 +1,4 @@
 import { render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { fireEvent } from '@testing-library/react';
 import { vi } from 'vitest';
 import type { useRegistrationFlow } from '../../hooks/useRegistrationFlow';
@@ -45,13 +44,38 @@ function createConfig(overrides: Partial<RegisterConfig> = {}): RegisterConfig {
 }
 
 describe('Step4ProfileDetails', () => {
-  it('renders requirement card before password fields', () => {
+  it('shows requirements panel only when password field is focused', () => {
     render(<Step4ProfileDetails flow={createFlow()} config={createConfig()} />);
 
-    const requirements = screen.getByText(/Requirement:\s*At least 12 characters\./i);
+    const panel = screen.getByText(/Requirement:\s*At least 12 characters\./i).closest('div[aria-hidden]');
     const passwordInput = screen.getByLabelText('Password');
 
-    expect(requirements.compareDocumentPosition(passwordInput) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(panel).toHaveAttribute('aria-hidden', 'true');
+    fireEvent.focus(passwordInput);
+    expect(panel).toHaveAttribute('aria-hidden', 'false');
+  });
+
+  it('hides panel on blur when password is empty', () => {
+    render(<Step4ProfileDetails flow={createFlow()} config={createConfig()} />);
+
+    const panel = screen.getByText(/Requirement:\s*At least 12 characters\./i).closest('div[aria-hidden]');
+    const passwordInput = screen.getByLabelText('Password');
+
+    fireEvent.focus(passwordInput);
+    fireEvent.blur(passwordInput);
+    expect(panel).toHaveAttribute('aria-hidden', 'true');
+  });
+
+  it('keeps panel visible after blur when password has value', () => {
+    render(<Step4ProfileDetails flow={createFlow()} config={createConfig()} />);
+
+    const panel = screen.getByText(/Requirement:\s*At least 12 characters\./i).closest('div[aria-hidden]');
+    const passwordInput = screen.getByLabelText('Password');
+
+    fireEvent.focus(passwordInput);
+    fireEvent.change(passwordInput, { target: { value: 'long passphrase one' } });
+    fireEvent.blur(passwordInput);
+    expect(panel).toHaveAttribute('aria-hidden', 'false');
   });
 
   it('auto-fills registration number from student email local-part and locks the field', async () => {

@@ -15,6 +15,8 @@ type PasswordFieldProps = {
   mismatch?: boolean;
   showMismatch?: boolean;
   maxLength?: number;
+  onFocus?: () => void;
+  onBlur?: () => void;
 };
 
 export function PasswordField({
@@ -29,6 +31,8 @@ export function PasswordField({
   mismatch = false,
   showMismatch = false,
   maxLength,
+  onFocus,
+  onBlur,
 }: PasswordFieldProps) {
   const tooltipId = useId();
   const showTooltip = Boolean(showMismatch && mismatch);
@@ -48,6 +52,8 @@ export function PasswordField({
           maxLength={maxLength}
           value={value}
           onChange={(event) => onChange(event.target.value)}
+          onFocus={onFocus}
+          onBlur={onBlur}
           className={PASSWORD_INPUT_CLASS}
           aria-describedby={showTooltip ? tooltipId : undefined}
         />

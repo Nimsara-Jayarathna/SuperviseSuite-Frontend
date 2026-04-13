@@ -17,12 +17,14 @@ export type ResetPasswordFormProps = {
 export function ResetPasswordForm({ onSubmit, isLoading, onClearError }: ResetPasswordFormProps) {
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [isNewPasswordFocused, setIsNewPasswordFocused] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<ResetPasswordFieldErrors>({});
   const isConfirmPasswordFilled = confirmNewPassword.trim().length > 0;
   const isConfirmMatched = isConfirmPasswordFilled && newPassword === confirmNewPassword;
   const isMismatch = isConfirmPasswordFilled && !isConfirmMatched;
+  const showPolicyPanel = isNewPasswordFocused || newPassword.length > 0;
 
   const isValid = useMemo(
     () =>
@@ -51,34 +53,35 @@ export function ResetPasswordForm({ onSubmit, isLoading, onClearError }: ResetPa
 
   return (
     <form onSubmit={handleSubmit} noValidate className="space-y-3">
-      <PasswordRequirementsPanel password={newPassword} />
-
       <PasswordField
-          id="reset-password-new"
-          label="New Password"
-          autoComplete="new-password"
-          placeholder="Enter your new password"
-          value={newPassword}
+        id="reset-password-new"
+        label="New Password"
+        autoComplete="new-password"
+        placeholder="Enter your new password"
+        value={newPassword}
         onChange={setNewPassword}
         maxLength={PASSWORD_MAX_LENGTH}
         isVisible={showNewPassword}
-          onToggleVisibility={() => setShowNewPassword((value) => !value)}
-        />
+        onToggleVisibility={() => setShowNewPassword((value) => !value)}
+        onFocus={() => setIsNewPasswordFocused(true)}
+        onBlur={() => setIsNewPasswordFocused(false)}
+      />
+      <PasswordRequirementsPanel password={newPassword} visible={showPolicyPanel} />
       {fieldErrors.newPassword && <p className="text-xs text-rose-600">{fieldErrors.newPassword}</p>}
 
       <PasswordField
-            id="reset-password-confirm"
-            label="Confirm New Password"
-            autoComplete="new-password"
-            placeholder="Re-enter new password"
-            value={confirmNewPassword}
+        id="reset-password-confirm"
+        label="Confirm New Password"
+        autoComplete="new-password"
+        placeholder="Re-enter new password"
+        value={confirmNewPassword}
         onChange={setConfirmNewPassword}
         maxLength={PASSWORD_MAX_LENGTH}
         isVisible={showConfirmPassword}
-            onToggleVisibility={() => setShowConfirmPassword((value) => !value)}
-            showMismatch={isConfirmPasswordFilled}
-            mismatch={isMismatch}
-          />
+        onToggleVisibility={() => setShowConfirmPassword((value) => !value)}
+        showMismatch={isConfirmPasswordFilled}
+        mismatch={isMismatch}
+      />
       {fieldErrors.confirmNewPassword && (
         <p className="text-xs text-rose-600">{fieldErrors.confirmNewPassword}</p>
       )}
