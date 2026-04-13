@@ -3,6 +3,7 @@ import { Logo } from '@/components/brand/Logo';
 import { Button } from '@/components/ui/Button';
 import { RoleBadge } from '@/components/ui/RoleBadge';
 import { cn } from '@/lib/cn';
+import type { UserRoleLower } from '@/types/roles';
 
 type NavItem = {
   label: string;
@@ -18,7 +19,7 @@ type PublicAction = {
 
 type PrivateTopBarProps = {
   mode?: 'private';
-  role: 'student' | 'supervisor';
+  role: UserRoleLower;
   homePath: string;
   navItems: NavItem[];
   userName: string;

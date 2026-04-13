@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { TopBar } from '@/components/ui/TopBar';
 import { isApiException } from '@/services/apiClient';
 import type { ApiError } from '@/types';
+import type { UserRoleLower } from '@/types/roles';
 import { getBlockingErrorTitle } from '@/utils/errorSeverity';
 import { BlockingErrorProvider } from './BlockingErrorContext';
 import type { BlockingErrorRequest } from './BlockingErrorContext';
@@ -15,7 +16,7 @@ type AppShellNavItem = {
 };
 
 type AppShellProps = {
-  role: 'student' | 'supervisor';
+  role: UserRoleLower;
   homePath: string;
   navItems: AppShellNavItem[];
   userName: string;

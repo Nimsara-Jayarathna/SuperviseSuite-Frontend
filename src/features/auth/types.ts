@@ -1,5 +1,4 @@
-/** Matches the `role` constraint in the users table: SUPERVISOR | STUDENT */
-export type UserRole = 'SUPERVISOR' | 'STUDENT';
+import type { UserRole } from '@/types/roles';
 
 /** Authenticated user shape returned by the backend */
 export type AuthUser = {
