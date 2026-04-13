@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { RequestStateModal } from '@/components/ui/RequestStateModal';
 import { isApiException } from '@/services/apiClient';
-import { X } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Circle, X } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 
 type RequestStatus =
@@ -14,11 +14,7 @@ type RequestStatus =
 type ChangePasswordModalProps = {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (payload: {
-    currentPassword: string;
-    newPassword: string;
-    confirmPassword: string;
-  }) => Promise<void>;
+  onSubmit: (payload: { currentPassword: string; newPassword: string }) => Promise<void>;
 };
 
 export function ChangePasswordModal({ isOpen, onClose, onSubmit }: ChangePasswordModalProps) {
@@ -38,6 +34,10 @@ export function ChangePasswordModal({ isOpen, onClose, onSubmit }: ChangePasswor
   const isCurrentPasswordFilled = currentPassword.trim().length > 0;
   const isConfirmPasswordFilled = confirmPassword.trim().length > 0;
   const isConfirmMatched = isConfirmPasswordFilled && normalizedNewPassword === confirmPassword;
+  const showMatchStatus = isConfirmPasswordFilled;
+  const passedRuleCount = Object.values(passwordChecks).filter(Boolean).length;
+  const strengthWidth = `${(passedRuleCount / 5) * 100}%`;
+  const strengthLabel = passedRuleCount <= 2 ? 'Weak' : passedRuleCount <= 4 ? 'Fair' : 'Strong';
   const isPasswordPolicyPassed = Object.values(passwordChecks).every(Boolean);
   const canSubmit = isCurrentPasswordFilled && isPasswordPolicyPassed && isConfirmMatched;
 
@@ -67,7 +67,7 @@ export function ChangePasswordModal({ isOpen, onClose, onSubmit }: ChangePasswor
     setRequestStatus({ kind: 'loading' });
 
     try {
-      await onSubmit({ currentPassword, newPassword, confirmPassword });
+      await onSubmit({ currentPassword, newPassword });
       setRequestStatus({ kind: 'success', message: 'Your password has been updated.' });
       setCurrentPassword('');
       setNewPassword('');
@@ -104,11 +104,7 @@ export function ChangePasswordModal({ isOpen, onClose, onSubmit }: ChangePasswor
   return (
     <>
       <div className="fixed inset-0 z-[95] flex items-center justify-center bg-slate-950/45 px-4 backdrop-blur-sm">
-        <div
-          className="absolute inset-0"
-          onClick={handleClose}
-          aria-hidden="true"
-        />
+        <div className="absolute inset-0" onClick={handleClose} aria-hidden="true" />
         <form
           className="relative w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl"
           onSubmit={(event) => void handleSubmit(event)}
@@ -127,7 +123,9 @@ export function ChangePasswordModal({ isOpen, onClose, onSubmit }: ChangePasswor
 
           <div className="mt-5 space-y-3">
             <label className="block">
-              <span className="mb-1.5 block text-sm font-semibold text-slate-700">Current password</span>
+              <span className="mb-1.5 block text-sm font-semibold text-slate-700">
+                Current password
+              </span>
               <Input
                 id="current-password"
                 type="password"
@@ -136,47 +134,117 @@ export function ChangePasswordModal({ isOpen, onClose, onSubmit }: ChangePasswor
                 onChange={(event) => setCurrentPassword(event.target.value)}
               />
             </label>
-            <label className="block">
-              <span className="mb-1.5 block text-sm font-semibold text-slate-700">New password</span>
-              <Input
-                id="new-password"
-                type="password"
-                className="h-11 w-full rounded-2xl border border-slate-200 px-3 text-sm text-slate-900 outline-none transition focus:border-sky-300 focus:ring-2 focus:ring-sky-100"
-                value={newPassword}
-                onChange={(event) => setNewPassword(event.target.value)}
-              />
-              <ul className="mt-2 space-y-1 text-xs">
-                <li className={passwordChecks.minLength ? 'text-emerald-700' : 'text-slate-500'}>
-                  At least 8 characters
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Password requirements
+              </p>
+              <div className="mt-2 flex items-center gap-2">
+                <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-200">
+                  <div
+                    className="h-full rounded-full bg-emerald-500 transition-all"
+                    style={{ width: strengthWidth }}
+                  />
+                </div>
+                <span className="text-xs font-medium text-slate-500">{strengthLabel}</span>
+              </div>
+              <ul className="mt-3 space-y-1.5 text-xs">
+                <li
+                  className={`flex items-center gap-2 ${passwordChecks.minLength ? 'text-emerald-700' : 'text-slate-500'}`}
+                >
+                  {passwordChecks.minLength ? (
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                  ) : (
+                    <Circle className="h-3.5 w-3.5" />
+                  )}
+                  <span>At least 8 characters</span>
                 </li>
-                <li className={passwordChecks.uppercase ? 'text-emerald-700' : 'text-slate-500'}>
-                  One uppercase letter
+                <li
+                  className={`flex items-center gap-2 ${passwordChecks.uppercase ? 'text-emerald-700' : 'text-slate-500'}`}
+                >
+                  {passwordChecks.uppercase ? (
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                  ) : (
+                    <Circle className="h-3.5 w-3.5" />
+                  )}
+                  <span>One uppercase letter</span>
                 </li>
-                <li className={passwordChecks.lowercase ? 'text-emerald-700' : 'text-slate-500'}>
-                  One lowercase letter
+                <li
+                  className={`flex items-center gap-2 ${passwordChecks.lowercase ? 'text-emerald-700' : 'text-slate-500'}`}
+                >
+                  {passwordChecks.lowercase ? (
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                  ) : (
+                    <Circle className="h-3.5 w-3.5" />
+                  )}
+                  <span>One lowercase letter</span>
                 </li>
-                <li className={passwordChecks.digit ? 'text-emerald-700' : 'text-slate-500'}>
-                  One digit
+                <li
+                  className={`flex items-center gap-2 ${passwordChecks.digit ? 'text-emerald-700' : 'text-slate-500'}`}
+                >
+                  {passwordChecks.digit ? (
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                  ) : (
+                    <Circle className="h-3.5 w-3.5" />
+                  )}
+                  <span>One digit</span>
                 </li>
-                <li className={passwordChecks.special ? 'text-emerald-700' : 'text-slate-500'}>
-                  One special character
+                <li
+                  className={`flex items-center gap-2 ${passwordChecks.special ? 'text-emerald-700' : 'text-slate-500'}`}
+                >
+                  {passwordChecks.special ? (
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                  ) : (
+                    <Circle className="h-3.5 w-3.5" />
+                  )}
+                  <span>One special character</span>
                 </li>
               </ul>
+            </div>
+            <label className="block">
+              <span className="mb-1.5 block text-sm font-semibold text-slate-700">
+                New password
+              </span>
+              <div className="relative">
+                <Input
+                  id="new-password"
+                  type="password"
+                  className="h-11 w-full rounded-2xl border border-slate-200 px-3 pr-10 text-sm text-slate-900 outline-none transition focus:border-sky-300 focus:ring-2 focus:ring-sky-100"
+                  value={newPassword}
+                  onChange={(event) => setNewPassword(event.target.value)}
+                />
+                {showMatchStatus ? (
+                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
+                    {isConfirmMatched ? (
+                      <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                    ) : (
+                      <AlertCircle className="h-4 w-4 text-rose-600" />
+                    )}
+                  </span>
+                ) : null}
+              </div>
             </label>
             <label className="block">
-              <span className="mb-1.5 block text-sm font-semibold text-slate-700">Confirm new password</span>
-              <Input
-                id="confirm-password"
-                type="password"
-                className="h-11 w-full rounded-2xl border border-slate-200 px-3 text-sm text-slate-900 outline-none transition focus:border-sky-300 focus:ring-2 focus:ring-sky-100"
-                value={confirmPassword}
-                onChange={(event) => setConfirmPassword(event.target.value)}
-              />
-              {confirmPassword ? (
-                <p className={`mt-1 text-xs ${isConfirmMatched ? 'text-emerald-700' : 'text-rose-700'}`}>
-                  {isConfirmMatched ? 'Passwords match.' : 'Passwords do not match.'}
-                </p>
-              ) : null}
+              <span className="mb-1.5 block text-sm font-semibold text-slate-700">
+                Confirm new password
+              </span>
+              <div className="relative">
+                <Input
+                  id="confirm-password"
+                  type="password"
+                  className="h-11 w-full rounded-2xl border border-slate-200 px-3 pr-10 text-sm text-slate-900 outline-none transition focus:border-sky-300 focus:ring-2 focus:ring-sky-100"
+                  value={confirmPassword}
+                  onChange={(event) => setConfirmPassword(event.target.value)}
+                />
+                {showMatchStatus ? (
+                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
+                    {isConfirmMatched ? (
+                      <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                    ) : (
+                      <AlertCircle className="h-4 w-4 text-rose-600" />
+                    )}
+                  </span>
+                ) : null}
+              </div>
             </label>
           </div>
 
@@ -190,7 +258,12 @@ export function ChangePasswordModal({ isOpen, onClose, onSubmit }: ChangePasswor
             <Button type="button" variant="secondary" size="md" onClick={handleClose}>
               Cancel
             </Button>
-            <Button type="submit" variant="primary" size="md" disabled={!canSubmit || requestStatus.kind === 'loading'}>
+            <Button
+              type="submit"
+              variant="primary"
+              size="md"
+              disabled={!canSubmit || requestStatus.kind === 'loading'}
+            >
               Save password
             </Button>
           </div>

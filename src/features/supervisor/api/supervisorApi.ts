@@ -116,7 +116,6 @@ export const supervisorApi = {
   changePassword(payload: {
     currentPassword: string;
     newPassword: string;
-    confirmPassword: string;
   }): Promise<void> {
     return apiClient.patch<void>('/api/supervisor/me/password', payload);
   },

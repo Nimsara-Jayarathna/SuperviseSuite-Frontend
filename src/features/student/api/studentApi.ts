@@ -64,7 +64,6 @@ export const studentApi = {
   changePassword(payload: {
     currentPassword: string;
     newPassword: string;
-    confirmPassword: string;
   }): Promise<void> {
     return apiClient.patch<void>('/api/student/me/password', payload);
   },

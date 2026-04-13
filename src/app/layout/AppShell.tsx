@@ -72,11 +72,7 @@ export function AppShell({
     setLogoutError(null);
   }
 
-  async function handleChangePassword(payload: {
-    currentPassword: string;
-    newPassword: string;
-    confirmPassword: string;
-  }) {
+  async function handleChangePassword(payload: { currentPassword: string; newPassword: string }) {
     const normalizedRole = normalizeUserRole(userRole);
     if (normalizedRole === 'SUPERVISOR') {
       await supervisorApi.changePassword(payload);
