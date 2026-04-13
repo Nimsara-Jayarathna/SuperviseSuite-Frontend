@@ -113,6 +113,14 @@ export const supervisorApi = {
     clearSupervisorApiCache();
   },
 
+  changePassword(payload: {
+    currentPassword: string;
+    newPassword: string;
+    confirmPassword: string;
+  }): Promise<void> {
+    return apiClient.patch<void>('/api/supervisor/me/password', payload);
+  },
+
   getDashboard(): Promise<SupervisorDashboard> {
     return apiClient.get<SupervisorDashboard>('/api/supervisor/dashboard');
   },

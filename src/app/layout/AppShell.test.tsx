@@ -6,9 +6,9 @@ import { AppShell } from './AppShell';
 import { useBlockingError } from './BlockingErrorContext';
 
 vi.mock('@/components/ui/TopBar', () => ({
-  TopBar: ({ onLogout }: { onLogout: () => Promise<void> }) => (
-    <button type="button" onClick={() => void onLogout()}>
-      Logout
+  TopBar: ({ onOpenAccount }: { onOpenAccount: () => void }) => (
+    <button type="button" onClick={onOpenAccount}>
+      Open account
     </button>
   ),
 }));
@@ -64,6 +64,7 @@ describe('AppShell blocking modal', () => {
         navItems={[]}
         userName="Jane"
         userEmail="jane@example.com"
+        userRole="STUDENT"
         onLogout={vi.fn().mockResolvedValue(undefined)}
       >
         <BlockingErrorHarness onRetry={onRetry} />
@@ -99,6 +100,7 @@ describe('AppShell blocking modal', () => {
         navItems={[]}
         userName="Jane"
         userEmail="jane@example.com"
+        userRole="STUDENT"
         onLogout={vi.fn().mockResolvedValue(undefined)}
       >
         <BlockingErrorHarness onRetry={onRetry} />
@@ -130,6 +132,7 @@ describe('AppShell blocking modal', () => {
         navItems={[]}
         userName="Jane"
         userEmail="jane@example.com"
+        userRole="STUDENT"
         onLogout={vi.fn().mockResolvedValue(undefined)}
       >
         <BlockingErrorHarness />
