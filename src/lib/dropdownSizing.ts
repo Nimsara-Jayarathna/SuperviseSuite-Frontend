@@ -32,7 +32,10 @@ export function calculateDropdownLayout(params: {
   const minWidth = triggerRect.width;
   const font = getContextFont(fontSourceEl);
   const contentWidth =
-    measureLongestLabelWidth(labels, font) + MENU_HORIZONTAL_PADDING + CHECKMARK_SPACE + SAFETY_BUFFER;
+    measureLongestLabelWidth(labels, font) +
+    MENU_HORIZONTAL_PADDING +
+    CHECKMARK_SPACE +
+    SAFETY_BUFFER;
   const maxWidth = Math.max(0, window.innerWidth - VIEWPORT_HORIZONTAL_PADDING * 2);
   const width = Math.min(Math.max(minWidth, contentWidth), maxWidth);
 

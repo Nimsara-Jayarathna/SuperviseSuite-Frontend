@@ -1,4 +1,3 @@
-import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { RequestStateModal } from '@/components/ui/RequestStateModal';
@@ -44,7 +43,6 @@ function hasStudentPrefixViolation(email: string, config: RegisterConfig): boole
 }
 
 export function Step1EmailInput({ flow, config }: Step1EmailInputProps) {
-  const navigate = useNavigate();
   const [email, setEmail] = useState(flow.email ?? '');
   const blockingError = isBlockingAuthError(flow.error);
   const errorMessage = flow.error?.message ?? null;
@@ -195,7 +193,7 @@ export function Step1EmailInput({ flow, config }: Step1EmailInputProps) {
               size="md"
               onClick={() => {
                 flow.clearError();
-                navigate('/login');
+                window.location.assign('/login');
               }}
             >
               Sign in

@@ -140,7 +140,7 @@ export function TeamTabSection({ project, team }: TeamTabSectionProps) {
         )}
       </div>
 
-      {team.isManagingStudents && (
+      {team.isManagingStudents &&
         createPortal(
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
             <div className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-200 mx-4">
@@ -216,7 +216,9 @@ export function TeamTabSection({ project, team }: TeamTabSectionProps) {
                               </p>
                               <p className="block truncate text-xs font-bold text-slate-400 group-hover:text-indigo-500">
                                 {student.email}
-                                {student.registrationNumber ? ` • ${student.registrationNumber}` : ''}
+                                {student.registrationNumber
+                                  ? ` • ${student.registrationNumber}`
+                                  : ''}
                               </p>
                             </div>
                             <Plus className="h-4 w-4 shrink-0 text-slate-300 group-hover:text-indigo-600 transition-colors" />
@@ -295,8 +297,7 @@ export function TeamTabSection({ project, team }: TeamTabSectionProps) {
             </div>
           </div>,
           document.body,
-        )
-      )}
+        )}
 
       <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {project.members.map((member) => (

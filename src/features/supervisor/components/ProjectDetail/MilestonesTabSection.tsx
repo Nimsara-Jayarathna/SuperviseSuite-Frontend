@@ -452,7 +452,9 @@ export function MilestonesTabSection({ project, milestones }: MilestonesTabSecti
             role="listbox"
           >
             {(() => {
-              const targetMilestone = project.milestones.find((m) => m.id === quickStatusMenu.milestoneId);
+              const targetMilestone = project.milestones.find(
+                (m) => m.id === quickStatusMenu.milestoneId,
+              );
               if (!targetMilestone) return null;
               return MILESTONE_STATUS_OPTIONS.map((status) => {
                 const isSelected = targetMilestone.status === status;
@@ -475,7 +477,9 @@ export function MilestonesTabSection({ project, milestones }: MilestonesTabSecti
                         {status.replace('_', ' ')}
                       </span>
                       <span className="shrink-0">
-                        <span className={isSelected ? 'text-amber-600' : 'text-transparent'}>✓</span>
+                        <span className={isSelected ? 'text-amber-600' : 'text-transparent'}>
+                          ✓
+                        </span>
                       </span>
                     </button>
                   </li>

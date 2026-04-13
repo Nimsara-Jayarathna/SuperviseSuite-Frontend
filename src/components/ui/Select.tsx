@@ -190,9 +190,7 @@ export function Select(props: SelectProps) {
                       option.disabled
                         ? 'cursor-not-allowed text-muted-foreground opacity-50'
                         : 'cursor-pointer text-foreground hover:bg-slate-50'
-                    } ${
-                      isSelected ? 'bg-slate-50 font-semibold text-foreground' : 'font-medium'
-                    }`}
+                    } ${isSelected ? 'bg-slate-50 font-semibold text-foreground' : 'font-medium'}`}
                     onMouseDown={(event) => event.preventDefault()}
                     onClick={() => {
                       if (!option.disabled) handleOptionSelect(option.value);
