@@ -23,9 +23,7 @@ type PrivateTopBarProps = {
   homePath: string;
   navItems: NavItem[];
   userName: string;
-  userEmail: string;
-  onLogout: () => void;
-  isLogoutPending?: boolean;
+  onOpenAccount: () => void;
 };
 
 type PublicTopBarProps = {
@@ -63,7 +61,8 @@ export function TopBar(props: TopBarProps) {
     );
   }
 
-  const { role, homePath, navItems, userName, userEmail, onLogout, isLogoutPending } = props;
+  const { role, homePath, navItems, userName, onOpenAccount } = props;
+  const userInitial = userName.trim().charAt(0).toUpperCase() || 'U';
 
   return (
     <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/85 backdrop-blur">
@@ -94,21 +93,17 @@ export function TopBar(props: TopBarProps) {
               ))}
             </nav>
 
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              <div className="text-sm">
-                <p className="font-medium text-foreground">{userName}</p>
-                <p className="text-muted-foreground">{userEmail}</p>
-              </div>
-              <Button
-                variant="secondary"
-                size="md"
-                className="font-medium"
-                onClick={onLogout}
-                disabled={isLogoutPending}
-              >
-                {isLogoutPending ? 'Logging out…' : 'Log out'}
-              </Button>
-            </div>
+            <button
+              type="button"
+              onClick={onOpenAccount}
+              className="inline-flex items-center gap-3 self-start rounded-2xl border border-slate-200 bg-white px-3 py-2 text-left transition hover:bg-slate-50 sm:self-auto"
+              aria-label="Open account menu"
+            >
+              <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 text-xs font-black text-emerald-700">
+                {userInitial}
+              </span>
+              <span className="text-sm font-semibold text-foreground">{userName}</span>
+            </button>
           </div>
         </div>
       </div>

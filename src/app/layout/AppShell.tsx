@@ -2,8 +2,13 @@ import { RequestStateModal } from '@/components/ui/RequestStateModal';
 import { useCallback, useState } from 'react';
 import type { ReactNode } from 'react';
 import { TopBar } from '@/components/ui/TopBar';
+import { AccountModal } from '@/features/auth/components/AccountModal';
+import { ChangePasswordModal } from '@/features/auth/components/ChangePasswordModal';
+import { studentApi } from '@/features/student/api/studentApi';
+import { supervisorApi } from '@/features/supervisor/api/supervisorApi';
 import { isApiException } from '@/services/apiClient';
 import type { ApiError } from '@/types';
+import { normalizeUserRole } from '@/types/roles';
 import type { UserRoleLower } from '@/types/roles';
 import { getBlockingErrorTitle } from '@/utils/errorSeverity';
 import { BlockingErrorProvider } from './BlockingErrorContext';
@@ -21,6 +26,7 @@ type AppShellProps = {
   navItems: AppShellNavItem[];
   userName: string;
   userEmail: string;
+  userRole: 'SUPERVISOR' | 'STUDENT';
   onLogout: () => Promise<void>;
   children: ReactNode;
 };
@@ -31,11 +37,14 @@ export function AppShell({
   navItems,
   userName,
   userEmail,
+  userRole,
   onLogout,
   children,
 }: AppShellProps) {
   const [isLogoutPending, setIsLogoutPending] = useState(false);
   const [logoutError, setLogoutError] = useState<string | null>(null);
+  const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const [blockingError, setBlockingError] = useState<BlockingErrorRequest | null>(null);
   const [isBlockingRetryPending, setIsBlockingRetryPending] = useState(false);
 
@@ -61,6 +70,15 @@ export function AppShell({
 
   function closeLogoutErrorModal() {
     setLogoutError(null);
+  }
+
+  async function handleChangePassword(payload: { currentPassword: string; newPassword: string }) {
+    const normalizedRole = normalizeUserRole(userRole);
+    if (normalizedRole === 'SUPERVISOR') {
+      await supervisorApi.changePassword(payload);
+      return;
+    }
+    await studentApi.changePassword(payload);
   }
 
   const showBlockingError = useCallback((error: ApiError, onRetry?: () => void | Promise<void>) => {
@@ -132,9 +150,28 @@ export function AppShell({
           homePath={homePath}
           navItems={navItems}
           userName={userName}
-          userEmail={userEmail}
-          onLogout={handleLogout}
+          onOpenAccount={() => setIsAccountModalOpen(true)}
+        />
+        <AccountModal
+          isOpen={isAccountModalOpen}
+          name={userName}
+          email={userEmail}
+          role={normalizeUserRole(userRole)}
           isLogoutPending={isLogoutPending}
+          onClose={() => setIsAccountModalOpen(false)}
+          onChangePassword={() => {
+            setIsAccountModalOpen(false);
+            setIsChangePasswordOpen(true);
+          }}
+          onLogout={() => {
+            setIsAccountModalOpen(false);
+            void handleLogout();
+          }}
+        />
+        <ChangePasswordModal
+          isOpen={isChangePasswordOpen}
+          onClose={() => setIsChangePasswordOpen(false)}
+          onSubmit={handleChangePassword}
         />
         <main className="relative z-10 mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
           {children}

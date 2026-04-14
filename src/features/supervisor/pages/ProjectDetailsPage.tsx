@@ -17,7 +17,9 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { PageTabs } from '@/components/ui/PageTabs';
 import { RequestStateModal } from '@/components/ui/RequestStateModal';
 import { Select } from '@/components/ui/Select';
-import { TimeAgo } from '@/components/ui/TimeAgo';
+import { LastSyncedBadge } from '@/components/ui/LastSyncedBadge';
+import { SyncStatusBadge } from '@/components/ui/SyncStatusBadge';
+import { normalizeSyncStatus } from '@/lib/syncStatus';
 import { CommitActivitySection } from '@/features/projects/components/CommitActivitySection';
 import { ProjectDetailsSkeleton } from '../components/ProjectDetailsSkeleton';
 import { IntegrationsTabSection } from '../components/ProjectDetail/IntegrationsTabSection';
@@ -170,6 +172,7 @@ export function ProjectDetailsPage() {
       projectRepositories?.repositories.find((r) => r.id === selectedGitHubRepositoryLinkId) ?? null
     );
   }, [projectRepositories, selectedGitHubRepositoryLinkId]);
+  const activeRepositorySyncStatus = normalizeSyncStatus(activeRepository?.syncStatus);
 
   const loadActivityPage = useCallback(
     (page: number) => {
@@ -910,28 +913,15 @@ export function ProjectDetailsPage() {
                           {activeRepository.defaultBranch}
                         </span>
                       )}
-                      {activeRepository.lastSyncedAt && (
-                        <span className="flex items-center gap-1 text-[11px] text-slate-400">
-                          <RefreshCw className="h-3 w-3 text-emerald-400" />
-                          <TimeAgo date={activeRepository.lastSyncedAt} />
-                        </span>
-                      )}
-                      <span
-                        className={`flex items-center gap-1.5 text-[11px] font-semibold ${
-                          activeRepository.syncStatus === 'SUCCESS'
-                            ? 'text-emerald-600'
-                            : 'text-slate-400'
-                        }`}
-                      >
-                        <span
-                          className={`h-1.5 w-1.5 rounded-full ${
-                            activeRepository.syncStatus === 'SUCCESS'
-                              ? 'bg-emerald-500'
-                              : 'bg-slate-300'
-                          }`}
-                        />
-                        {activeRepository.syncStatus === 'SUCCESS' ? 'Healthy' : 'Pending'}
-                      </span>
+                      {activeRepository.lastSyncedAt &&
+                        activeRepositorySyncStatus === 'SUCCESS' && (
+                          <LastSyncedBadge
+                            lastSyncedAt={activeRepository.lastSyncedAt}
+                            className="bg-transparent p-0 text-[11px] text-slate-400"
+                            iconClassName="h-3 w-3 text-emerald-400"
+                          />
+                        )}
+                      <SyncStatusBadge syncStatus={activeRepositorySyncStatus} mode="health" />
                     </div>
                   </div>
                 </div>

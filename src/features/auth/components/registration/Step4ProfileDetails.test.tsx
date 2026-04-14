@@ -1,5 +1,5 @@
 import { render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { fireEvent } from '@testing-library/react';
 import { vi } from 'vitest';
 import type { useRegistrationFlow } from '../../hooks/useRegistrationFlow';
 import type { RegisterConfig } from '../../types';
@@ -44,6 +44,63 @@ function createConfig(overrides: Partial<RegisterConfig> = {}): RegisterConfig {
 }
 
 describe('Step4ProfileDetails', () => {
+  it('shows requirements panel only when password field is focused', () => {
+    render(<Step4ProfileDetails flow={createFlow()} config={createConfig()} />);
+
+    const panel = screen
+      .getByText(/Requirement:\s*At least 12 characters\./i)
+      .closest('div[aria-hidden]');
+    const passwordInput = screen.getByLabelText('Password');
+
+    expect(panel).toHaveAttribute('aria-hidden', 'true');
+    fireEvent.focus(passwordInput);
+    expect(panel).toHaveAttribute('aria-hidden', 'false');
+  });
+
+  it('hides panel on blur when password is empty', () => {
+    render(<Step4ProfileDetails flow={createFlow()} config={createConfig()} />);
+
+    const panel = screen
+      .getByText(/Requirement:\s*At least 12 characters\./i)
+      .closest('div[aria-hidden]');
+    const passwordInput = screen.getByLabelText('Password');
+
+    fireEvent.focus(passwordInput);
+    fireEvent.blur(passwordInput);
+    expect(panel).toHaveAttribute('aria-hidden', 'true');
+  });
+
+  it('keeps full panel visible after blur when password is weak', () => {
+    render(<Step4ProfileDetails flow={createFlow()} config={createConfig()} />);
+
+    const panel = screen
+      .getByText(/Requirement:\s*At least 12 characters\./i)
+      .closest('div[aria-hidden]');
+    const passwordInput = screen.getByLabelText('Password');
+
+    fireEvent.focus(passwordInput);
+    fireEvent.change(passwordInput, { target: { value: 'short' } });
+    fireEvent.blur(passwordInput);
+    expect(panel).toHaveAttribute('aria-hidden', 'false');
+    expect(screen.getByText(/Requirement:\s*At least 12 characters\./i)).toBeInTheDocument();
+  });
+
+  it('collapses to compact success on blur when password is strong, and expands again on focus', () => {
+    render(<Step4ProfileDetails flow={createFlow()} config={createConfig()} />);
+
+    const passwordInput = screen.getByLabelText('Password');
+
+    fireEvent.focus(passwordInput);
+    fireEvent.change(passwordInput, { target: { value: 'my dog loves eating pizza' } });
+    fireEvent.blur(passwordInput);
+
+    expect(screen.getByText('✓ Strong password')).toBeInTheDocument();
+    expect(screen.queryByText(/Requirement:\s*At least 12 characters\./i)).not.toBeInTheDocument();
+
+    fireEvent.focus(passwordInput);
+    expect(screen.getByText(/Requirement:\s*At least 12 characters\./i)).toBeInTheDocument();
+  });
+
   it('auto-fills registration number from student email local-part and locks the field', async () => {
     render(<Step4ProfileDetails flow={createFlow()} config={createConfig()} />);
 
@@ -86,25 +143,48 @@ describe('Step4ProfileDetails', () => {
   });
 
   it('submits the auto-filled registration number in locked mode', async () => {
-    const user = userEvent.setup();
     const submitProfile = vi.fn().mockResolvedValue(undefined);
     const flow = createFlow({ submitProfile });
 
     render(<Step4ProfileDetails flow={flow} config={createConfig()} />);
 
-    await user.type(screen.getByLabelText('First name'), 'Nimal');
-    await user.type(screen.getByLabelText('Last name'), 'Perera');
-    await user.type(screen.getByLabelText('Password'), 'Secure@123');
-    await user.type(screen.getByLabelText('Confirm password'), 'Secure@123');
-    await user.click(screen.getByRole('button', { name: 'Create account' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Registration Number')).toHaveValue('IT24103464');
+    });
+
+    fireEvent.change(screen.getByLabelText('First name'), { target: { value: 'Nimal' } });
+    fireEvent.change(screen.getByLabelText('Last name'), { target: { value: 'Perera' } });
+    fireEvent.change(screen.getByLabelText('Password'), {
+      target: { value: 'long passphrase one' },
+    });
+    fireEvent.change(screen.getByLabelText('Confirm password'), {
+      target: { value: 'long passphrase one' },
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Create account' })).toBeEnabled();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Create account' }));
 
     await waitFor(() => {
       expect(submitProfile).toHaveBeenCalledWith({
         firstName: 'Nimal',
         lastName: 'Perera',
-        password: 'Secure@123',
+        password: 'long passphrase one',
         registrationNumber: 'IT24103464',
       });
     });
+  });
+
+  it('shows mismatch tooltip on confirm password mismatch', () => {
+    render(<Step4ProfileDetails flow={createFlow()} config={createConfig()} />);
+
+    fireEvent.change(screen.getByLabelText('Password'), {
+      target: { value: 'long passphrase one' },
+    });
+    fireEvent.change(screen.getByLabelText('Confirm password'), {
+      target: { value: 'long passphrase two' },
+    });
+
+    expect(screen.getByRole('tooltip')).toHaveTextContent('Passwords do not match.');
   });
 });

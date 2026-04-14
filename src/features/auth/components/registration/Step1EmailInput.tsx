@@ -5,7 +5,12 @@ import { useState } from 'react';
 import { cn } from '@/lib/cn';
 import type { useRegistrationFlow } from '../../hooks/useRegistrationFlow';
 import type { RegisterConfig } from '../../types';
-import { isBlockingAuthError } from '../../utils/authErrorModel';
+import { isBlockingError } from '@/utils/errorSeverity';
+import {
+  hasStudentPrefixViolation,
+  isValidEmailFormat,
+  matchDomain,
+} from '../../utils/emailRestrictionValidation';
 
 type RegistrationFlow = ReturnType<typeof useRegistrationFlow>;
 
@@ -14,37 +19,9 @@ type Step1EmailInputProps = {
   config: RegisterConfig;
 };
 
-function matchDomain(email: string, config: RegisterConfig): 'STUDENT' | 'SUPERVISOR' | null {
-  const e = email.toLowerCase();
-  if (config.studentDomain && e.endsWith(config.studentDomain)) return 'STUDENT';
-  if (config.supervisorDomain && e.endsWith(config.supervisorDomain)) return 'SUPERVISOR';
-  return null;
-}
-
-function isValidEmailFormat(email: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
-
-function hasStudentPrefixViolation(email: string, config: RegisterConfig): boolean {
-  if (!config.domainRestrictionEnabled) return false;
-  if (!config.studentEmailPrefixRestrictionEnabled || !config.studentEmailPrefixRegex) return false;
-  if (matchDomain(email, config) !== 'STUDENT') return false;
-
-  const atIndex = email.indexOf('@');
-  if (atIndex <= 0) return true;
-
-  const localPart = email.slice(0, atIndex).trim();
-  try {
-    return !new RegExp(config.studentEmailPrefixRegex, 'i').test(localPart);
-  } catch {
-    // Backend remains the source of truth; do not block the UI on malformed config regex.
-    return false;
-  }
-}
-
 export function Step1EmailInput({ flow, config }: Step1EmailInputProps) {
   const [email, setEmail] = useState(flow.email ?? '');
-  const blockingError = isBlockingAuthError(flow.error);
+  const blockingError = isBlockingError(flow.error);
   const errorMessage = flow.error?.message ?? null;
   const hasAt = email.includes('@');
   const matchedRole = matchDomain(email, config);

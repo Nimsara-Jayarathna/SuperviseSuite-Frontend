@@ -63,6 +63,8 @@ export type SupervisorProjectDetail = {
     connected: boolean;
     workspaceName: string | null;
     workspaceUrl?: string | null;
+    lastSyncedAt?: string | null;
+    syncStatus?: string | null;
   } | null;
   leader: SupervisorProjectLeader | null;
   members: SupervisorProjectDetailMember[];
@@ -536,7 +538,7 @@ export type GitHubAccessUpdatedAcknowledge = {
 
 export type GitHubAccessType = 'PUBLIC_URL' | 'INSTALLATION_DIRECT' | 'INSTALLATION_REQUESTED';
 export type GitHubOwnerType = 'USER' | 'ORG';
-export type GitHubSyncStatus = 'PENDING' | 'SUCCESS' | 'FAILED' | 'DISABLED';
+export type GitHubSyncStatus = 'IN_PROGRESS' | 'PENDING' | 'SUCCESS' | 'FAILED' | 'DISABLED';
 
 export type GitHubAccessSource = {
   id: string;

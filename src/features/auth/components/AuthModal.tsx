@@ -11,6 +11,7 @@ import { RequestStateModal } from '@/components/ui/RequestStateModal';
 import { isApiException } from '@/services/apiClient';
 import type { ApiError } from '@/types';
 import { getBlockingErrorTitle } from '@/utils/errorSeverity';
+import { useNavigate } from 'react-router-dom';
 
 type AuthTab = 'login' | 'register';
 
@@ -21,6 +22,7 @@ type AuthModalProps = {
 };
 
 export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalProps) {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<AuthTab>(initialTab);
   const [registerConfig, setRegisterConfig] = useState<RegisterConfig | null>(null);
   const [registerConfigLoading, setRegisterConfigLoading] = useState(false);
@@ -173,6 +175,10 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
               error={loginError}
               onClearError={clearLoginError}
               onSuccess={onClose}
+              onForgotPassword={() => {
+                onClose();
+                navigate('/forgot-password');
+              }}
             />
           ) : registerConfig ? (
             <RegistrationPanel inModal={true} config={registerConfig} onClose={onClose} />

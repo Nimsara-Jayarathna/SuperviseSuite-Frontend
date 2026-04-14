@@ -2,9 +2,10 @@ import { Button } from '@/components/ui/Button';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { useNavigate } from 'react-router-dom';
 import { LoginForm } from './LoginForm';
 import { RequestStateModal } from '@/components/ui/RequestStateModal';
-import { getBlockingAuthErrorTitle, isBlockingAuthError } from '../utils/authErrorModel';
+import { getBlockingErrorTitle, isBlockingError } from '@/utils/errorSeverity';
 
 type LoginPanelProps = {
   onClose: () => void;
@@ -13,9 +14,10 @@ type LoginPanelProps = {
 };
 
 export function LoginPanel({ onClose, returnTo, inModal = false }: LoginPanelProps) {
+  const navigate = useNavigate();
   const dialogRef = useRef<HTMLDivElement>(null);
   const { login, isLoading, error, clearError } = useAuth();
-  const blockingError = isBlockingAuthError(error) ? error : null;
+  const blockingError = isBlockingError(error) ? error : null;
   const inlineError = blockingError ? null : error;
 
   useEffect(() => {
@@ -77,13 +79,17 @@ export function LoginPanel({ onClose, returnTo, inModal = false }: LoginPanelPro
             onClearError={clearError}
             onSuccess={onClose}
             feedbackMode="inline"
+            onForgotPassword={() => {
+              onClose();
+              navigate('/forgot-password');
+            }}
           />
         </div>
       </div>
       <RequestStateModal
         isOpen={isLoading || !!blockingError}
         status={isLoading ? 'loading' : 'error'}
-        title={isLoading ? 'Signing in...' : getBlockingAuthErrorTitle(blockingError)}
+        title={isLoading ? 'Signing in...' : getBlockingErrorTitle(blockingError)}
         message={
           isLoading
             ? 'We are verifying your credentials.'

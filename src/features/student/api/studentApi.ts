@@ -61,6 +61,10 @@ export const studentApi = {
     clearStudentApiCache();
   },
 
+  changePassword(payload: { currentPassword: string; newPassword: string }): Promise<void> {
+    return apiClient.patch<void>('/api/student/me/password', payload);
+  },
+
   getProjects(): Promise<StudentProjectSummary[]> {
     return apiClient.get<StudentProjectSummary[]>('/api/student/projects');
   },

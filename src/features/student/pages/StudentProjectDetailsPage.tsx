@@ -15,7 +15,6 @@ import {
   ShieldCheck,
   Crown,
   GitBranch,
-  RefreshCw,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState, type ComponentProps } from 'react';
 import { useBlockingError } from '@/app/layout/BlockingErrorContext';
@@ -27,7 +26,9 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { PageTabs } from '@/components/ui/PageTabs';
 import { RoleBadge } from '@/components/ui/RoleBadge';
 import { StatusBadge } from '@/components/ui/StatusBadge';
-import { TimeAgo } from '@/components/ui/TimeAgo';
+import { LastSyncedBadge } from '@/components/ui/LastSyncedBadge';
+import { SyncStatusBadge } from '@/components/ui/SyncStatusBadge';
+import { normalizeSyncStatus } from '@/lib/syncStatus';
 import { StudentProjectDetailsSkeleton } from '../components/StudentProjectDetailsSkeleton';
 import { useStudentProject } from '../hooks/useStudentProject';
 import { studentApi } from '../api/studentApi';
@@ -157,6 +158,7 @@ export function StudentProjectDetailsPage() {
       null,
     [enabledRepositories, selectedGitHubRepositoryLinkId],
   );
+  const activeRepositorySyncStatus = normalizeSyncStatus(activeRepository?.syncStatus);
 
   useEffect(() => {
     setGithubView(project?.github ?? null);
@@ -684,28 +686,15 @@ export function StudentProjectDetailsPage() {
                           {activeRepository.defaultBranch}
                         </span>
                       )}
-                      {activeRepository.lastSyncedAt && (
-                        <span className="flex items-center gap-1 text-[11px] text-slate-400">
-                          <RefreshCw className="h-3 w-3 text-emerald-400" />
-                          <TimeAgo date={activeRepository.lastSyncedAt} />
-                        </span>
-                      )}
-                      <span
-                        className={`flex items-center gap-1.5 text-[11px] font-semibold ${
-                          activeRepository.syncStatus === 'SUCCESS'
-                            ? 'text-emerald-600'
-                            : 'text-slate-400'
-                        }`}
-                      >
-                        <span
-                          className={`h-1.5 w-1.5 rounded-full ${
-                            activeRepository.syncStatus === 'SUCCESS'
-                              ? 'bg-emerald-500'
-                              : 'bg-slate-300'
-                          }`}
-                        />
-                        {activeRepository.syncStatus === 'SUCCESS' ? 'Healthy' : 'Pending'}
-                      </span>
+                      {activeRepository.lastSyncedAt &&
+                        activeRepositorySyncStatus === 'SUCCESS' && (
+                          <LastSyncedBadge
+                            lastSyncedAt={activeRepository.lastSyncedAt}
+                            className="bg-transparent p-0 text-[11px] text-slate-400"
+                            iconClassName="h-3 w-3 text-emerald-400"
+                          />
+                        )}
+                      <SyncStatusBadge syncStatus={activeRepositorySyncStatus} mode="health" />
                     </div>
                   </div>
                 </div>
@@ -796,15 +785,17 @@ export function StudentProjectDetailsPage() {
       {activeTab === 'jira' ? (
         <section className="space-y-4">
           {jira?.connected && projectId ? (
-            <JiraHealthOverview
-              fetcher={studentApi.getJiraHealth}
-              sprintFetcher={studentApi.getJiraSprintProgress}
-              workloadFetcher={studentApi.getJiraWorkload}
-              hierarchyFetcher={studentApi.getProjectJiraHierarchy}
-              projectId={projectId}
-              workspaceName={jira.workspaceName}
-              workspaceUrl={jira.workspaceUrl}
-            />
+            <>
+              <JiraHealthOverview
+                fetcher={studentApi.getJiraHealth}
+                sprintFetcher={studentApi.getJiraSprintProgress}
+                workloadFetcher={studentApi.getJiraWorkload}
+                hierarchyFetcher={studentApi.getProjectJiraHierarchy}
+                projectId={projectId}
+                workspaceName={jira.workspaceName}
+                workspaceUrl={jira.workspaceUrl}
+              />
+            </>
           ) : (
             <div className="rounded-3xl border border-dashed border-slate-200 bg-white p-10 text-center text-slate-500 shadow-sm">
               Jira workspace is not connected for this project. Ask your supervisor to connect it

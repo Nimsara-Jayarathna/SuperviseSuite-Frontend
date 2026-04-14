@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { buttonStyles } from '@/components/ui/Button';
+import { LastSyncedBadge } from '@/components/ui/LastSyncedBadge';
 import { RequestStateModal } from '@/components/ui/RequestStateModal';
 import { GithubDetailsModal } from '@/features/projects/components/GithubDetailsModal';
+import { normalizeSyncStatus, toSyncLabel } from '@/lib/syncStatus';
 import { isApiException } from '@/services/apiClient';
-import { Github, RefreshCw } from 'lucide-react';
+import { Github } from 'lucide-react';
 import { supervisorApi } from '../../api/supervisorApi';
 import { useAvailableRepositories } from '../../hooks/useAvailableRepositories';
 import { useGitHubSetupFlow } from '../../hooks/useGitHubSetupFlow';
@@ -42,14 +44,6 @@ type RequestModalState = {
   title: string;
   message: string;
 };
-
-function toSyncLabel(value: string | null | undefined): string {
-  if (value === 'SUCCESS') return 'Synced';
-  if (value === 'FAILED') return 'Sync failed';
-  if (value === 'PENDING') return 'Pending';
-  if (value === 'DISABLED') return 'Disabled';
-  return 'Unknown';
-}
 
 function toSourceLabel(source: ProjectGitHubRepositories['accessSources'][number]): string {
   return `${source.ownerLogin} (${source.accessType})`;
@@ -575,6 +569,16 @@ export function RepositorySection({
   }
 
   async function handleUnlinkRepository(linkId: string) {
+    const target = linkedRepositories.find((repository) => repository.id === linkId);
+    if (target && normalizeSyncStatus(target.syncStatus) === 'IN_PROGRESS') {
+      openRequestModal(
+        'error',
+        'Repository is syncing',
+        'Cannot unlink repository while sync is in progress.',
+      );
+      return;
+    }
+
     setIsMutatingLinks(true);
     openRequestModal('loading', 'Unlinking repository', 'Removing repository from this project.');
     try {
@@ -586,16 +590,39 @@ export function RepositorySection({
         'Repository was removed from this project.',
       );
     } catch (error) {
-      const message = isApiException(error)
-        ? error.apiError.message
-        : 'Unable to unlink repository right now.';
-      openRequestModal('error', 'Repository unlink failed', message);
+      if (isApiException(error) && error.apiError.status === 409) {
+        await reloadRepositoriesData();
+        openRequestModal(
+          'error',
+          'Repository is syncing',
+          'Cannot unlink while repository sync is in progress. Try again after sync completes.',
+        );
+      } else {
+        const message = isApiException(error)
+          ? error.apiError.message
+          : 'Unable to unlink repository right now.';
+        openRequestModal('error', 'Repository unlink failed', message);
+      }
     } finally {
       setIsMutatingLinks(false);
     }
   }
 
   async function handleDisconnectAccessSource(sourceId: string) {
+    const sourceHasSyncInProgress = linkedRepositories.some(
+      (repository) =>
+        repository.sourceId === sourceId &&
+        normalizeSyncStatus(repository.syncStatus) === 'IN_PROGRESS',
+    );
+    if (sourceHasSyncInProgress) {
+      openRequestModal(
+        'error',
+        'Repository is syncing',
+        'Cannot disconnect access source while a repository sync is in progress.',
+      );
+      return;
+    }
+
     setIsMutatingLinks(true);
     openRequestModal(
       'loading',
@@ -611,10 +638,19 @@ export function RepositorySection({
         'GitHub access source and related project links were removed.',
       );
     } catch (error) {
-      const message = isApiException(error)
-        ? error.apiError.message
-        : 'Unable to disconnect access source right now.';
-      openRequestModal('error', 'Access source disconnect failed', message);
+      if (isApiException(error) && error.apiError.status === 409) {
+        await reloadRepositoriesData();
+        openRequestModal(
+          'error',
+          'Repository is syncing',
+          'Cannot unlink while repository sync is in progress. Try again after sync completes.',
+        );
+      } else {
+        const message = isApiException(error)
+          ? error.apiError.message
+          : 'Unable to disconnect access source right now.';
+        openRequestModal('error', 'Access source disconnect failed', message);
+      }
     } finally {
       setIsMutatingLinks(false);
     }
@@ -1001,85 +1037,95 @@ export function RepositorySection({
         </div>
       ) : (
         <div className="mt-5 space-y-3">
-          {linkedRepositories.map((repository) => (
-            <article
-              key={repository.id}
-              className={`rounded-2xl border p-4 transition-all duration-300 ${repository.primary ? 'border-amber-200 border-l-4 border-l-amber-500 bg-amber-50/40 shadow-sm' : 'border-slate-200 bg-white'} ${!repository.enabled ? 'bg-slate-50/50 opacity-60 grayscale-[0.2]' : ''}`}
-            >
-              <div className="flex flex-wrap items-center justify-between gap-4">
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <h3
-                      className={`truncate text-sm font-semibold ${repository.enabled ? 'text-foreground' : 'text-slate-600'}`}
-                    >
-                      {repository.customName?.trim() ||
-                        repository.name ||
-                        repository.fullName ||
-                        'Repository'}
-                    </h3>
-                    {repository.primary ? (
-                      <span className="inline-flex shrink-0 items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-800">
-                        Primary
-                      </span>
-                    ) : null}
-                    {!repository.enabled ? (
-                      <span className="inline-flex shrink-0 items-center rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-700">
-                        Disabled
-                      </span>
-                    ) : null}
-                  </div>
-
-                  <div className="mt-3 grid grid-cols-1 gap-2 text-xs text-slate-500 sm:grid-cols-12 sm:gap-4">
-                    {/* Repository Path */}
-                    <div className="flex min-w-0 items-center gap-1.5 hover:text-foreground sm:col-span-5">
-                      <Github className="h-3.5 w-3.5 shrink-0" />
-                      {repository.url ? (
-                        <a
-                          href={repository.url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="truncate hover:underline"
+          {linkedRepositories.map((repository) =>
+            (() => {
+              const normalizedSyncStatus = normalizeSyncStatus(repository.syncStatus);
+              const isSynced = normalizedSyncStatus === 'SUCCESS';
+              const isSyncing = normalizedSyncStatus === 'IN_PROGRESS';
+              return (
+                <article
+                  key={repository.id}
+                  className={`rounded-2xl border p-4 transition-all duration-300 ${repository.primary ? 'border-amber-200 border-l-4 border-l-amber-500 bg-amber-50/40 shadow-sm' : 'border-slate-200 bg-white'} ${!repository.enabled ? 'bg-slate-50/50 opacity-60 grayscale-[0.2]' : ''}`}
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <h3
+                          className={`truncate text-sm font-semibold ${repository.enabled ? 'text-foreground' : 'text-slate-600'}`}
                         >
-                          {repository.fullName}
-                        </a>
-                      ) : (
-                        <span className="truncate">{repository.fullName}</span>
-                      )}
-                    </div>
+                          {repository.customName?.trim() ||
+                            repository.name ||
+                            repository.fullName ||
+                            'Repository'}
+                        </h3>
+                        {repository.primary ? (
+                          <span className="inline-flex shrink-0 items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-800">
+                            Primary
+                          </span>
+                        ) : null}
+                        {!repository.enabled ? (
+                          <span className="inline-flex shrink-0 items-center rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-700">
+                            Disabled
+                          </span>
+                        ) : null}
+                      </div>
 
-                    {/* Owner */}
-                    <div className="flex min-w-0 items-center sm:col-span-4">
-                      <span className="truncate">
-                        Owner:{' '}
-                        <span className="font-medium text-slate-700">
-                          {repository.ownerLogin || 'unknown'}
-                        </span>
-                      </span>
-                    </div>
+                      <div className="mt-3 grid grid-cols-1 gap-2 text-xs text-slate-500 sm:grid-cols-12 sm:gap-4">
+                        {/* Repository Path */}
+                        <div className="flex min-w-0 items-center gap-1.5 hover:text-foreground sm:col-span-5">
+                          <Github className="h-3.5 w-3.5 shrink-0" />
+                          {repository.url ? (
+                            <a
+                              href={repository.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="truncate hover:underline"
+                            >
+                              {repository.fullName}
+                            </a>
+                          ) : (
+                            <span className="truncate">{repository.fullName}</span>
+                          )}
+                        </div>
 
-                    {/* Sync Status */}
-                    <div className="flex min-w-0 items-center gap-1.5 sm:col-span-3 sm:justify-end">
-                      <RefreshCw
-                        className={`h-3.5 w-3.5 shrink-0 ${repository.syncStatus === 'SUCCESS' ? 'text-emerald-500' : 'text-slate-400'}`}
-                      />
-                      <span
-                        className={`truncate ${repository.syncStatus === 'SUCCESS' ? 'font-medium text-emerald-700' : ''}`}
-                        title={
-                          repository.lastSyncedAt
-                            ? new Date(repository.lastSyncedAt).toLocaleString()
-                            : undefined
-                        }
-                      >
-                        {repository.syncStatus === 'SUCCESS' && repository.lastSyncedAt
-                          ? `Synced ${new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }).format(new Date(repository.lastSyncedAt))}`
-                          : toSyncLabel(repository.syncStatus)}
-                      </span>
+                        {/* Owner */}
+                        <div className="flex min-w-0 items-center sm:col-span-4">
+                          <span className="truncate">
+                            Owner:{' '}
+                            <span className="font-medium text-slate-700">
+                              {repository.ownerLogin || 'unknown'}
+                            </span>
+                          </span>
+                        </div>
+
+                        {/* Sync Status */}
+                        <div className="flex min-w-0 items-center gap-1.5 sm:col-span-3 sm:justify-end">
+                          <LastSyncedBadge
+                            lastSyncedAt={isSynced ? repository.lastSyncedAt : null}
+                            fallbackText={toSyncLabel(normalizedSyncStatus)}
+                            className={
+                              isSynced
+                                ? 'bg-transparent p-0 text-[12px] text-emerald-700'
+                                : isSyncing
+                                  ? 'bg-transparent p-0 text-[12px] text-indigo-600'
+                                  : 'bg-transparent p-0 text-[12px] text-slate-500'
+                            }
+                            iconClassName={
+                              isSynced
+                                ? 'h-3.5 w-3.5 text-emerald-500'
+                                : isSyncing
+                                  ? 'h-3.5 w-3.5 animate-spin text-indigo-500'
+                                  : 'h-3.5 w-3.5 text-slate-400'
+                            }
+                          />
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </div>
-            </article>
-          ))}
+                </article>
+              );
+            })(),
+          )}
         </div>
       )}
     </section>

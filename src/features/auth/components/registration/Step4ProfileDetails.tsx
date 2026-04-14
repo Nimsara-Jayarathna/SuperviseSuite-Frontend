@@ -3,11 +3,10 @@ import { Input } from '@/components/ui/Input';
 import { useEffect, useMemo, useState } from 'react';
 import type { useRegistrationFlow } from '../../hooks/useRegistrationFlow';
 import type { RegisterConfig } from '../../types';
-import {
-  getPasswordStrength,
-  type ProfileFieldErrors,
-  validateProfile,
-} from '../../utils/registrationFlowValidation';
+import { PasswordRequirementsPanel } from '../PasswordRequirementsPanel';
+import { PasswordField } from '../PasswordField';
+import { PASSWORD_MAX_LENGTH } from '../../utils/passwordRules';
+import { type ProfileFieldErrors, validateProfile } from '../../utils/registrationFlowValidation';
 
 type RegistrationFlow = ReturnType<typeof useRegistrationFlow>;
 
@@ -16,20 +15,14 @@ type Step4ProfileDetailsProps = {
   config: RegisterConfig;
 };
 
-const strengthStyle: Record<
-  'weak' | 'fair' | 'strong',
-  { width: string; color: string; label: string }
-> = {
-  weak: { width: '33%', color: 'bg-red-500', label: 'Weak' },
-  fair: { width: '66%', color: 'bg-amber-500', label: 'Fair' },
-  strong: { width: '100%', color: 'bg-emerald-500', label: 'Strong' },
-};
-
 export function Step4ProfileDetails({ flow, config }: Step4ProfileDetailsProps) {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [isNewPasswordFocused, setIsNewPasswordFocused] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [registrationNumber, setRegistrationNumber] = useState('');
   const [fieldErrors, setFieldErrors] = useState<ProfileFieldErrors>({});
 
@@ -51,7 +44,9 @@ export function Step4ProfileDetails({ flow, config }: Step4ProfileDetailsProps) 
     }
   }, [autoFilledRegistrationNumber]);
 
-  const strength = useMemo(() => getPasswordStrength(password), [password]);
+  const isConfirmPasswordFilled = confirmPassword.trim().length > 0;
+  const isConfirmMatched = isConfirmPasswordFilled && password === confirmPassword;
+  const isMismatch = isConfirmPasswordFilled && !isConfirmMatched;
   const liveErrors = useMemo(
     () =>
       validateProfile({
@@ -126,46 +121,40 @@ export function Step4ProfileDetails({ flow, config }: Step4ProfileDetailsProps) 
         </div>
       </div>
 
-      <div className="space-y-1">
-        <label htmlFor="reg-password" className="text-sm font-medium text-foreground">
-          Password
-        </label>
-        <Input
-          id="reg-password"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          autoComplete="new-password"
-          className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
-        />
-        <div className="flex items-center gap-2">
-          <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-200">
-            <div
-              className={`h-full rounded-full transition-all ${strengthStyle[strength].color}`}
-              style={{ width: strengthStyle[strength].width }}
-            />
-          </div>
-          <span className="text-xs text-muted-foreground">{strengthStyle[strength].label}</span>
-        </div>
-        {fieldErrors.password && <p className="text-xs text-red-600">{fieldErrors.password}</p>}
-      </div>
+      <PasswordField
+        id="reg-password"
+        label="Password"
+        value={password}
+        onChange={setPassword}
+        maxLength={PASSWORD_MAX_LENGTH}
+        autoComplete="new-password"
+        isVisible={showPassword}
+        onToggleVisibility={() => setShowPassword((value) => !value)}
+        onFocus={() => setIsNewPasswordFocused(true)}
+        onBlur={() => setIsNewPasswordFocused(false)}
+      />
+      <PasswordRequirementsPanel
+        password={password}
+        compact
+        isNewPasswordFocused={isNewPasswordFocused}
+      />
+      {fieldErrors.password && <p className="text-xs text-red-600">{fieldErrors.password}</p>}
 
-      <div className="space-y-1">
-        <label htmlFor="reg-confirm-password" className="text-sm font-medium text-foreground">
-          Confirm password
-        </label>
-        <Input
-          id="reg-confirm-password"
-          type="password"
-          value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
-          autoComplete="new-password"
-          className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
-        />
-        {fieldErrors.confirmPassword && (
-          <p className="text-xs text-red-600">{fieldErrors.confirmPassword}</p>
-        )}
-      </div>
+      <PasswordField
+        id="reg-confirm-password"
+        label="Confirm password"
+        value={confirmPassword}
+        onChange={setConfirmPassword}
+        maxLength={PASSWORD_MAX_LENGTH}
+        autoComplete="new-password"
+        isVisible={showConfirmPassword}
+        onToggleVisibility={() => setShowConfirmPassword((value) => !value)}
+        showMismatch={isConfirmPasswordFilled}
+        mismatch={isMismatch}
+      />
+      {fieldErrors.confirmPassword && (
+        <p className="text-xs text-red-600">{fieldErrors.confirmPassword}</p>
+      )}
 
       {requireRegistrationNumber && (
         <div className="space-y-1">

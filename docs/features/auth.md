@@ -33,6 +33,8 @@ Registration only opens after config is fetched successfully; config failure use
 | `/login` | `LoginPage` | `RequireGuest` | Public (redirects authenticated users) |
 | `/register` | `RegisterPage` | `RequireGuest` | Public (redirects authenticated users) |
 | `/register/supervisor` | `SupervisorRegisterPage` | `RequireGuest` | Public (redirects authenticated users) |
+| `/forgot-password` | `ForgotPasswordPage` | `RequireGuest` | Public |
+| `/reset-password` | `ResetPasswordPage` | `RequireGuest` | Public |
 | `/student/*` | `StudentLayout` + pages | `RequireRole("STUDENT")` | STUDENT |
 | `/supervisor/*` | `SupervisorLayout` + pages | `RequireRole("SUPERVISOR")` | SUPERVISOR |
 | `*` (catch-all) | `LegacyDashboardRedirect` | None | Redirects to role home or `/login` |
@@ -50,6 +52,12 @@ RegisterPage
 
 SupervisorRegisterPage
 └── RegisterForm       — first/last name, SLIIT email, password, confirm password fields
+
+ForgotPasswordPage
+└── ForgotPasswordForm — email field with dynamic student/supervisor validation rules
+
+ResetPasswordPage
+└── ResetPasswordForm  — password creation rules, validation modal, confirm field
 ```
 
 ---
@@ -82,6 +90,21 @@ Same layout shell as `RegisterPage`.
 - Hides registration number input
 - Enforces SLIIT institutional email rules (`@sliit.lk`, excludes `@my.sliit.lk`)
 - Link to `/login`
+
+### `ForgotPasswordPage` (`src/features/auth/pages/ForgotPasswordPage.tsx`)
+
+Layout shell similar to `LoginPage`. First step in the password reset UX.
+
+- Evaluates `RegisterConfig` to enforce standard domain rules
+- Renders `ForgotPasswordForm`
+- Provides 60-second cooldown after a successful request.
+
+### `ResetPasswordPage` (`src/features/auth/pages/ResetPasswordPage.tsx`)
+
+- Intercepts users from the email reset link via `?token=...` query param
+- Validates token locally through `authApi.validateResetToken()`
+- Shows `RequestStateModal` dynamically for invalid/expired tokens with a retry action
+- Renders `ResetPasswordForm` mapping backend validation (e.g. reused passwords) to generic inline errors or state modals.
 
 ---
 
@@ -138,6 +161,26 @@ Same layout shell as `RegisterPage`.
 - Backend field errors (`VALIDATION_ERROR`) render under inputs
 - Backend conflict/global errors (`CONFLICT`, `INTERNAL_ERROR`, etc.) render in form banner
 - On success, form transitions to success state then redirects to `/login`
+
+### `ForgotPasswordForm` (`src/features/auth/components/ForgotPasswordForm.tsx`)
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| `onSubmit` | `(data: { email: string }) => Promise<void>` | Yes | Payload for backend request. |
+| `isLoading` | `boolean` | Yes | Shows loading spinner. |
+| `globalError` | `string \| null` | Yes | Banner-level API errors matching the `ApiError` code |
+
+Provides initial email verification step. Standard validation uses dynamically-loaded domain configuration similar to Registration. Emits a uniform success response preventing user enumeration attacks via server-side delays.
+
+### `ResetPasswordForm` (`src/features/auth/components/ResetPasswordForm.tsx`)
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| `onSubmit` | `(data: z.infer<typeof ResetPasswordSchema>) => Promise<void>` | Yes | Provides standard z-schema passwords. |
+| `isLoading` | `boolean` | Yes | Toggles submit interaction. |
+| `onCancel` | `() => void` | Yes | Action to revert to login if unneeded. |
+
+Uses internal state tracking to assess password strength (`PasswordRequirementsPanel`). Validation fails instantly for length, missing numbers/characters, or mismatch with `confirmNewPassword`. Does not maintain inline fields for the `Backend Error Mapping` instead feeding them visually to `RequestStateModal` from the `ResetPasswordPage`.
 
 ---
 

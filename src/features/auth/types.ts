@@ -79,3 +79,14 @@ export type RegisterConfig = {
   studentEmailPrefixRestrictionEnabled: boolean;
   studentEmailPrefixRegex: string | null;
 };
+
+export type ForgotPasswordRequest = { email: string };
+
+export type ResetPasswordRequest = {
+  token: string;
+  newPassword: string;
+};
+
+export type ValidateResetTokenResponse = {
+  valid: boolean;
+};

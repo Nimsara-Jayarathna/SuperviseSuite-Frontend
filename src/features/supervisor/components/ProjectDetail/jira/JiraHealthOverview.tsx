@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { buttonStyles } from '@/components/ui/Button';
+import { LastSyncedBadge } from '@/components/ui/LastSyncedBadge';
 import { RequestStateModal } from '@/components/ui/RequestStateModal';
 import { EmptyState } from '@/components/feedback/EmptyState';
 import { ErrorState } from '@/components/feedback/ErrorState';
@@ -45,16 +46,6 @@ type JiraHealthOverviewProps = {
 };
 
 type JiraInsightsTab = 'health' | 'sprint-progress' | 'workload' | 'hierarchy';
-
-function formatSyncedAt(iso: string): string {
-  const d = new Date(iso);
-  return d.toLocaleString(undefined, {
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-}
 
 function toRefreshApiError(error: unknown): ApiError {
   if (isApiException(error)) {
@@ -234,9 +225,6 @@ export function JiraHealthOverview({
 
   const workspaceLabel = workspaceName?.trim() ? workspaceName : 'Connected workspace';
   const syncedAtIso = health?.lastSyncedAt ?? lastRefreshAt;
-  const syncedAtLabel = syncedAtIso ? formatSyncedAt(syncedAtIso) : 'Not synced yet';
-  const isJustRefreshed =
-    lastRefreshAt !== null && Date.now() - new Date(lastRefreshAt).getTime() < 2 * 60 * 1000;
   const insightsTabs: Array<{ value: JiraInsightsTab; label: string; icon: typeof Activity }> = [
     { value: 'health', label: 'Health', icon: Activity },
     ...(sprintFetcher
@@ -281,11 +269,12 @@ export function JiraHealthOverview({
               <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
                 Connected
               </span>
-              <span className="flex items-center gap-1 text-[11px] text-slate-400">
-                <RefreshCw className="h-3 w-3 shrink-0 text-emerald-500" />
-                {syncedAtLabel}
-                {isJustRefreshed ? ' (just now)' : ''}
-              </span>
+              <LastSyncedBadge
+                lastSyncedAt={syncedAtIso}
+                fallbackText="Not synced yet"
+                className="bg-transparent p-0 text-[11px] text-slate-400"
+                iconClassName="h-3 w-3 text-emerald-500"
+              />
             </div>
           </div>
         </div>

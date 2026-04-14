@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import type { ApiError } from '@/types';
 import type { LoginRequest } from '../types';
+import { Link } from 'react-router-dom';
 import {
   getLoginGeneralError,
   mapBackendLoginFieldErrors,
@@ -24,6 +25,7 @@ export type LoginFormProps = {
   onClearError: () => void;
   onSuccess?: () => void;
   feedbackMode?: 'inline' | 'modal';
+  onForgotPassword?: () => void;
 };
 
 export function LoginForm({
@@ -33,6 +35,7 @@ export function LoginForm({
   onClearError,
   onSuccess,
   feedbackMode = 'inline',
+  onForgotPassword,
 }: LoginFormProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -117,6 +120,20 @@ export function LoginForm({
       >
         Sign In
       </Button>
+
+      {onForgotPassword ? (
+        <button
+          type="button"
+          className="mx-auto text-sm text-primary hover:underline"
+          onClick={onForgotPassword}
+        >
+          Forgot your password?
+        </button>
+      ) : (
+        <Link to="/forgot-password" className="mx-auto text-sm text-primary hover:underline">
+          Forgot your password?
+        </Link>
+      )}
     </form>
   );
 }
