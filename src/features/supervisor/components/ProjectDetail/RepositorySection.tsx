@@ -590,10 +590,19 @@ export function RepositorySection({
         'Repository was removed from this project.',
       );
     } catch (error) {
-      const message = isApiException(error)
-        ? error.apiError.message
-        : 'Unable to unlink repository right now.';
-      openRequestModal('error', 'Repository unlink failed', message);
+      if (isApiException(error) && error.apiError.status === 409) {
+        await reloadRepositoriesData();
+        openRequestModal(
+          'error',
+          'Repository is syncing',
+          'Cannot unlink while repository sync is in progress. Try again after sync completes.',
+        );
+      } else {
+        const message = isApiException(error)
+          ? error.apiError.message
+          : 'Unable to unlink repository right now.';
+        openRequestModal('error', 'Repository unlink failed', message);
+      }
     } finally {
       setIsMutatingLinks(false);
     }
@@ -628,10 +637,19 @@ export function RepositorySection({
         'GitHub access source and related project links were removed.',
       );
     } catch (error) {
-      const message = isApiException(error)
-        ? error.apiError.message
-        : 'Unable to disconnect access source right now.';
-      openRequestModal('error', 'Access source disconnect failed', message);
+      if (isApiException(error) && error.apiError.status === 409) {
+        await reloadRepositoriesData();
+        openRequestModal(
+          'error',
+          'Repository is syncing',
+          'Cannot unlink while repository sync is in progress. Try again after sync completes.',
+        );
+      } else {
+        const message = isApiException(error)
+          ? error.apiError.message
+          : 'Unable to disconnect access source right now.';
+        openRequestModal('error', 'Access source disconnect failed', message);
+      }
     } finally {
       setIsMutatingLinks(false);
     }
