@@ -7,11 +7,7 @@ type SyncStatusBadgeProps = {
   className?: string;
 };
 
-export function SyncStatusBadge({
-  syncStatus,
-  mode = 'health',
-  className,
-}: SyncStatusBadgeProps) {
+export function SyncStatusBadge({ syncStatus, mode = 'health', className }: SyncStatusBadgeProps) {
   const normalized = normalizeSyncStatus(syncStatus);
   const label = mode === 'health' ? toSyncHealthLabel(normalized) : toSyncLabel(normalized);
 
@@ -34,10 +30,11 @@ export function SyncStatusBadge({
           : 'bg-slate-300';
 
   return (
-    <span className={cn('flex items-center gap-1.5 text-[11px] font-semibold', toneClass, className)}>
+    <span
+      className={cn('flex items-center gap-1.5 text-[11px] font-semibold', toneClass, className)}
+    >
       <span className={cn('h-1.5 w-1.5 rounded-full', dotClass)} />
       {label}
     </span>
   );
 }
-

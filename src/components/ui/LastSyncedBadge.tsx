@@ -29,7 +29,9 @@ export function LastSyncedBadge({
         className={cn('h-3.5 w-3.5 shrink-0 text-emerald-500', iconClassName)}
         aria-hidden="true"
       />
-      <span className="truncate">{formatted.isSynced ? `Synced ${formatted.displayText}` : fallbackText}</span>
+      <span className="truncate">
+        {formatted.isSynced ? `Synced ${formatted.displayText}` : fallbackText}
+      </span>
     </span>
   );
 }

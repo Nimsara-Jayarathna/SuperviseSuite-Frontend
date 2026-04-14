@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  normalizeSyncStatus,
-  toSyncHealthLabel,
-  toSyncLabel,
-} from './syncStatus';
+import { normalizeSyncStatus, toSyncHealthLabel, toSyncLabel } from './syncStatus';
 
 describe('syncStatus', () => {
   it('normalizes known statuses', () => {
@@ -38,4 +34,3 @@ describe('syncStatus', () => {
     expect(toSyncHealthLabel('UNKNOWN')).toBe('Status unavailable');
   });
 });
-

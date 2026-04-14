@@ -54,9 +54,15 @@ export function IntegrationsTabSection({
                 })}
                 disabled={isDisconnectingJira || jiraSyncing}
                 onClick={() => void onDisconnectJira()}
-                title={jiraSyncing ? 'Cannot disconnect while Jira sync is in progress.' : undefined}
+                title={
+                  jiraSyncing ? 'Cannot disconnect while Jira sync is in progress.' : undefined
+                }
               >
-                {isDisconnectingJira ? 'Disconnecting...' : jiraSyncing ? 'Syncing...' : 'Disconnect'}
+                {isDisconnectingJira
+                  ? 'Disconnecting...'
+                  : jiraSyncing
+                    ? 'Syncing...'
+                    : 'Disconnect'}
               </button>
             ) : (
               <button
