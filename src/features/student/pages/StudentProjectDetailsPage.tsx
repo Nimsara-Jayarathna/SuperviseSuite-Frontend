@@ -27,6 +27,8 @@ import { PageTabs } from '@/components/ui/PageTabs';
 import { RoleBadge } from '@/components/ui/RoleBadge';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { LastSyncedBadge } from '@/components/ui/LastSyncedBadge';
+import { SyncStatusBadge } from '@/components/ui/SyncStatusBadge';
+import { normalizeSyncStatus } from '@/lib/syncStatus';
 import { StudentProjectDetailsSkeleton } from '../components/StudentProjectDetailsSkeleton';
 import { useStudentProject } from '../hooks/useStudentProject';
 import { studentApi } from '../api/studentApi';
@@ -156,6 +158,7 @@ export function StudentProjectDetailsPage() {
       null,
     [enabledRepositories, selectedGitHubRepositoryLinkId],
   );
+  const activeRepositorySyncStatus = normalizeSyncStatus(activeRepository?.syncStatus);
 
   useEffect(() => {
     setGithubView(project?.github ?? null);
@@ -683,29 +686,14 @@ export function StudentProjectDetailsPage() {
                           {activeRepository.defaultBranch}
                         </span>
                       )}
-                      {activeRepository.lastSyncedAt && (
+                      {activeRepository.lastSyncedAt && activeRepositorySyncStatus === 'SUCCESS' && (
                         <LastSyncedBadge
                           lastSyncedAt={activeRepository.lastSyncedAt}
                           className="bg-transparent p-0 text-[11px] text-slate-400"
                           iconClassName="h-3 w-3 text-emerald-400"
                         />
                       )}
-                      <span
-                        className={`flex items-center gap-1.5 text-[11px] font-semibold ${
-                          activeRepository.syncStatus === 'SUCCESS'
-                            ? 'text-emerald-600'
-                            : 'text-slate-400'
-                        }`}
-                      >
-                        <span
-                          className={`h-1.5 w-1.5 rounded-full ${
-                            activeRepository.syncStatus === 'SUCCESS'
-                              ? 'bg-emerald-500'
-                              : 'bg-slate-300'
-                          }`}
-                        />
-                        {activeRepository.syncStatus === 'SUCCESS' ? 'Healthy' : 'Pending'}
-                      </span>
+                      <SyncStatusBadge syncStatus={activeRepositorySyncStatus} mode="health" />
                     </div>
                   </div>
                 </div>
@@ -797,36 +785,6 @@ export function StudentProjectDetailsPage() {
         <section className="space-y-4">
           {jira?.connected && projectId ? (
             <>
-              <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                <div className="grid grid-cols-1 gap-2 text-xs text-slate-500 sm:grid-cols-12 sm:gap-4">
-                  <div className="min-w-0 sm:col-span-5">
-                    {jira.workspaceUrl ? (
-                      <a
-                        href={jira.workspaceUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex min-w-0 items-center gap-1 truncate font-medium text-slate-700 hover:underline"
-                        title={jira.workspaceUrl}
-                      >
-                        <span className="truncate">{jira.workspaceName ?? 'Workspace'}</span>
-                        <ExternalLink className="h-3 w-3 shrink-0" />
-                      </a>
-                    ) : (
-                      <span className="truncate font-medium text-slate-700">
-                        {jira.workspaceName ?? 'Workspace'}
-                      </span>
-                    )}
-                  </div>
-                  <div className="min-w-0 sm:col-span-4">
-                    <span className="truncate">
-                      Integration: <span className="font-medium text-slate-700">Atlassian OAuth</span>
-                    </span>
-                  </div>
-                  <div className="flex min-w-0 items-center gap-1.5 sm:col-span-3 sm:justify-end">
-                    <LastSyncedBadge lastSyncedAt={jira.lastSyncedAt} />
-                  </div>
-                </div>
-              </article>
               <JiraHealthOverview
                 fetcher={studentApi.getJiraHealth}
                 sprintFetcher={studentApi.getJiraSprintProgress}

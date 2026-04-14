@@ -1,4 +1,6 @@
 import { buttonStyles } from '@/components/ui/Button';
+import { SyncStatusBadge } from '@/components/ui/SyncStatusBadge';
+import { normalizeSyncStatus } from '@/lib/syncStatus';
 import { Pencil, RefreshCw, Github, Unlink } from 'lucide-react';
 import { RepositoryRowSkeleton } from './RepositoryRowSkeleton';
 
@@ -189,6 +191,7 @@ export function RepositoryManagementModalContent({
             </thead>
             <tbody className="divide-y divide-slate-100">
               {rows.map((row) => {
+                const normalizedSyncStatus = normalizeSyncStatus(row.syncStatus);
                 const blockedByEnabledLimit = !row.enabled && remainingEnabledSlots < 1;
                 const blockedByLinkedLimit = !row.enabled && !row.linkId && remainingLinkSlots < 1;
                 const enableBlocked = blockedByEnabledLimit || blockedByLinkedLimit;
@@ -282,6 +285,12 @@ export function RepositoryManagementModalContent({
                               }`}
                             />
                           </button>
+                        </div>
+                        <div className="flex items-center gap-2 pt-1">
+                          <span className="w-12 text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+                            Sync
+                          </span>
+                          <SyncStatusBadge syncStatus={normalizedSyncStatus} mode="sync" />
                         </div>
                       </div>
                     </td>
