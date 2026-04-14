@@ -913,13 +913,14 @@ export function ProjectDetailsPage() {
                           {activeRepository.defaultBranch}
                         </span>
                       )}
-                      {activeRepository.lastSyncedAt && activeRepositorySyncStatus === 'SUCCESS' && (
-                        <LastSyncedBadge
-                          lastSyncedAt={activeRepository.lastSyncedAt}
-                          className="bg-transparent p-0 text-[11px] text-slate-400"
-                          iconClassName="h-3 w-3 text-emerald-400"
-                        />
-                      )}
+                      {activeRepository.lastSyncedAt &&
+                        activeRepositorySyncStatus === 'SUCCESS' && (
+                          <LastSyncedBadge
+                            lastSyncedAt={activeRepository.lastSyncedAt}
+                            className="bg-transparent p-0 text-[11px] text-slate-400"
+                            iconClassName="h-3 w-3 text-emerald-400"
+                          />
+                        )}
                       <SyncStatusBadge syncStatus={activeRepositorySyncStatus} mode="health" />
                     </div>
                   </div>

@@ -36,4 +36,3 @@ export function toSyncHealthLabel(status: CanonicalSyncStatus): string {
   if (status === 'PENDING') return 'Pending';
   return 'Status unavailable';
 }
-
