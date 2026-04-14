@@ -63,6 +63,7 @@ export type SupervisorProjectDetail = {
     connected: boolean;
     workspaceName: string | null;
     workspaceUrl?: string | null;
+    lastSyncedAt?: string | null;
   } | null;
   leader: SupervisorProjectLeader | null;
   members: SupervisorProjectDetailMember[];

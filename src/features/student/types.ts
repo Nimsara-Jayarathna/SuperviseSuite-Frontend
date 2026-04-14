@@ -64,6 +64,7 @@ export type StudentProjectDetail = {
     connected: boolean;
     workspaceName: string | null;
     workspaceUrl?: string | null;
+    lastSyncedAt?: string | null;
   } | null;
   leader: StudentProjectDetailLeader | null;
   members: StudentProjectDetailMember[];

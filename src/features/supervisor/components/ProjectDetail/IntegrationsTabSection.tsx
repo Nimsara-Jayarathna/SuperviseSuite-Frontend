@@ -1,5 +1,6 @@
-import { ExternalLink, KanbanSquare, Link2, RefreshCw } from 'lucide-react';
+import { ExternalLink, KanbanSquare, Link2 } from 'lucide-react';
 import { buttonStyles } from '@/components/ui/Button';
+import { LastSyncedBadge } from '@/components/ui/LastSyncedBadge';
 import { RepositorySection } from './RepositorySection';
 import type { SupervisorProjectDetail } from '../../types';
 
@@ -93,8 +94,7 @@ export function IntegrationsTabSection({
                 </span>
               </div>
               <div className="flex min-w-0 items-center gap-1.5 sm:col-span-3 sm:justify-end">
-                <RefreshCw className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
-                <span className="truncate font-medium text-emerald-700">Workspace connected</span>
+                <LastSyncedBadge lastSyncedAt={jira.lastSyncedAt} />
               </div>
             </div>
           </article>

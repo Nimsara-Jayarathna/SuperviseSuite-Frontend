@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { buttonStyles } from '@/components/ui/Button';
+import { LastSyncedBadge } from '@/components/ui/LastSyncedBadge';
 import { RequestStateModal } from '@/components/ui/RequestStateModal';
 import { GithubDetailsModal } from '@/features/projects/components/GithubDetailsModal';
 import { isApiException } from '@/services/apiClient';
@@ -1059,21 +1060,22 @@ export function RepositorySection({
 
                     {/* Sync Status */}
                     <div className="flex min-w-0 items-center gap-1.5 sm:col-span-3 sm:justify-end">
-                      <RefreshCw
-                        className={`h-3.5 w-3.5 shrink-0 ${repository.syncStatus === 'SUCCESS' ? 'text-emerald-500' : 'text-slate-400'}`}
-                      />
-                      <span
-                        className={`truncate ${repository.syncStatus === 'SUCCESS' ? 'font-medium text-emerald-700' : ''}`}
-                        title={
-                          repository.lastSyncedAt
-                            ? new Date(repository.lastSyncedAt).toLocaleString()
-                            : undefined
+                      <LastSyncedBadge
+                        lastSyncedAt={
+                          repository.syncStatus === 'SUCCESS' ? repository.lastSyncedAt : null
                         }
-                      >
-                        {repository.syncStatus === 'SUCCESS' && repository.lastSyncedAt
-                          ? `Synced ${new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }).format(new Date(repository.lastSyncedAt))}`
-                          : toSyncLabel(repository.syncStatus)}
-                      </span>
+                        fallbackText={toSyncLabel(repository.syncStatus)}
+                        className={
+                          repository.syncStatus === 'SUCCESS'
+                            ? 'bg-transparent p-0 text-[12px] text-emerald-700'
+                            : 'bg-transparent p-0 text-[12px] text-slate-500'
+                        }
+                        iconClassName={
+                          repository.syncStatus === 'SUCCESS'
+                            ? 'h-3.5 w-3.5 text-emerald-500'
+                            : 'h-3.5 w-3.5 text-slate-400'
+                        }
+                      />
                     </div>
                   </div>
                 </div>

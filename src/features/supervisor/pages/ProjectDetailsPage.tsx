@@ -17,7 +17,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { PageTabs } from '@/components/ui/PageTabs';
 import { RequestStateModal } from '@/components/ui/RequestStateModal';
 import { Select } from '@/components/ui/Select';
-import { TimeAgo } from '@/components/ui/TimeAgo';
+import { LastSyncedBadge } from '@/components/ui/LastSyncedBadge';
 import { CommitActivitySection } from '@/features/projects/components/CommitActivitySection';
 import { ProjectDetailsSkeleton } from '../components/ProjectDetailsSkeleton';
 import { IntegrationsTabSection } from '../components/ProjectDetail/IntegrationsTabSection';
@@ -911,10 +911,11 @@ export function ProjectDetailsPage() {
                         </span>
                       )}
                       {activeRepository.lastSyncedAt && (
-                        <span className="flex items-center gap-1 text-[11px] text-slate-400">
-                          <RefreshCw className="h-3 w-3 text-emerald-400" />
-                          <TimeAgo date={activeRepository.lastSyncedAt} />
-                        </span>
+                        <LastSyncedBadge
+                          lastSyncedAt={activeRepository.lastSyncedAt}
+                          className="bg-transparent p-0 text-[11px] text-slate-400"
+                          iconClassName="h-3 w-3 text-emerald-400"
+                        />
                       )}
                       <span
                         className={`flex items-center gap-1.5 text-[11px] font-semibold ${
