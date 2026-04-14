@@ -76,6 +76,15 @@ export function RepositoryManagementModalContent({
   const linkedLimitReached = linkedCount >= maxLinkedRepositories;
   const enabledLimitReached = enabledCount >= maxEnabledRepositories;
   const bothLimitsReached = linkedLimitReached && enabledLimitReached;
+  const sourceHasSyncInProgress = rows.reduce<Record<string, boolean>>((acc, row) => {
+    if (!row.sourceId || !row.linkId) {
+      return acc;
+    }
+    if (normalizeSyncStatus(row.syncStatus) === 'IN_PROGRESS') {
+      acc[row.sourceId] = true;
+    }
+    return acc;
+  }, {});
 
   return (
     <div className="space-y-4">
@@ -192,9 +201,11 @@ export function RepositoryManagementModalContent({
             <tbody className="divide-y divide-slate-100">
               {rows.map((row) => {
                 const normalizedSyncStatus = normalizeSyncStatus(row.syncStatus);
+                const isSyncing = normalizedSyncStatus === 'IN_PROGRESS';
                 const blockedByEnabledLimit = !row.enabled && remainingEnabledSlots < 1;
                 const blockedByLinkedLimit = !row.enabled && !row.linkId && remainingLinkSlots < 1;
                 const enableBlocked = blockedByEnabledLimit || blockedByLinkedLimit;
+                const sourceSyncing = !!(row.sourceId && sourceHasSyncInProgress[row.sourceId]);
                 return (
                   <tr
                     key={row.rowKey}
@@ -341,10 +352,18 @@ export function RepositoryManagementModalContent({
                       {row.linkId ? (
                         <button
                           type="button"
-                          className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-rose-200 bg-white text-rose-600 shadow-sm transition-colors hover:border-rose-300 hover:bg-rose-50"
+                          className={`inline-flex h-10 w-10 items-center justify-center rounded-full border shadow-sm transition-colors ${
+                            isSyncing
+                              ? 'cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400'
+                              : 'border-rose-200 bg-white text-rose-600 hover:border-rose-300 hover:bg-rose-50'
+                          }`}
                           onClick={() => onUnlinkRepository(row.linkId!)}
-                          disabled={isMutating || isSavingDisplayName}
-                          title="Unlink this repository"
+                          disabled={isMutating || isSavingDisplayName || isSyncing}
+                          title={
+                            isSyncing
+                              ? 'Cannot unlink while repository sync is in progress.'
+                              : 'Unlink this repository'
+                          }
                           aria-label="Unlink this repository"
                         >
                           <Unlink className="h-4 w-4" strokeWidth={2.25} />
@@ -352,10 +371,18 @@ export function RepositoryManagementModalContent({
                       ) : row.sourceId ? (
                         <button
                           type="button"
-                          className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-rose-200 bg-white text-rose-600 shadow-sm transition-colors hover:border-rose-300 hover:bg-rose-50"
+                          className={`inline-flex h-10 w-10 items-center justify-center rounded-full border shadow-sm transition-colors ${
+                            sourceSyncing
+                              ? 'cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400'
+                              : 'border-rose-200 bg-white text-rose-600 hover:border-rose-300 hover:bg-rose-50'
+                          }`}
                           onClick={() => onDisconnectSource(row.sourceId!)}
-                          disabled={isMutating || isSavingDisplayName}
-                          title="Disconnect source completely (removes all links from this source)"
+                          disabled={isMutating || isSavingDisplayName || sourceSyncing}
+                          title={
+                            sourceSyncing
+                              ? 'Cannot disconnect source while any linked repository sync is in progress.'
+                              : 'Disconnect source completely (removes all links from this source)'
+                          }
                           aria-label="Disconnect source completely"
                         >
                           <Unlink className="h-4 w-4" strokeWidth={2.25} />

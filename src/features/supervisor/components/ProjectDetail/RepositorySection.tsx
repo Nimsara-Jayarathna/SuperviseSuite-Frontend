@@ -569,6 +569,16 @@ export function RepositorySection({
   }
 
   async function handleUnlinkRepository(linkId: string) {
+    const target = linkedRepositories.find((repository) => repository.id === linkId);
+    if (target && normalizeSyncStatus(target.syncStatus) === 'IN_PROGRESS') {
+      openRequestModal(
+        'error',
+        'Repository is syncing',
+        'Cannot unlink repository while sync is in progress.',
+      );
+      return;
+    }
+
     setIsMutatingLinks(true);
     openRequestModal('loading', 'Unlinking repository', 'Removing repository from this project.');
     try {
@@ -590,6 +600,19 @@ export function RepositorySection({
   }
 
   async function handleDisconnectAccessSource(sourceId: string) {
+    const sourceHasSyncInProgress = linkedRepositories.some(
+      (repository) =>
+        repository.sourceId === sourceId && normalizeSyncStatus(repository.syncStatus) === 'IN_PROGRESS',
+    );
+    if (sourceHasSyncInProgress) {
+      openRequestModal(
+        'error',
+        'Repository is syncing',
+        'Cannot disconnect access source while a repository sync is in progress.',
+      );
+      return;
+    }
+
     setIsMutatingLinks(true);
     openRequestModal(
       'loading',
