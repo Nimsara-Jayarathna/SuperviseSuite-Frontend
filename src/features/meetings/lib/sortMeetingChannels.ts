@@ -15,4 +15,3 @@ export function sortMeetingChannels(channels: MeetingChannel[]) {
     return left.id.localeCompare(right.id);
   });
 }
-

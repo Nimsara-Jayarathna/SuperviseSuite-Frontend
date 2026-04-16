@@ -18,7 +18,11 @@ export function StudentMeetingsTabSection({ projectId }: StudentMeetingsTabSecti
   return (
     <section className="space-y-5">
       <section className="rounded-3xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-        <ul className="flex flex-wrap items-center justify-center gap-1.5" role="tablist" aria-label="Meeting insights">
+        <ul
+          className="flex flex-wrap items-center justify-center gap-1.5"
+          role="tablist"
+          aria-label="Meeting insights"
+        >
           {tabs.map((tab) => {
             const isActive = activeTab === tab.value;
             return (

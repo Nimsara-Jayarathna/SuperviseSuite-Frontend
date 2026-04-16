@@ -38,7 +38,12 @@ export function StudentMeetingChannelsSection({
           >
             <RefreshCw className={`h-4 w-4 ${state.isLoading ? 'animate-spin' : ''}`} />
           </button>
-          <Button variant="primary" size="sm" onClick={state.openAdd} leftIcon={<Plus className="h-4 w-4" />}>
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={state.openAdd}
+            leftIcon={<Plus className="h-4 w-4" />}
+          >
             Add channel
           </Button>
         </div>
@@ -76,7 +81,11 @@ export function StudentMeetingChannelsSection({
         title={state.requestModal.title}
         message={state.requestModal.message}
         onClose={state.requestModal.status === 'loading' ? undefined : state.closeRequestModal}
-        onRetry={state.requestModal.status === 'error' ? state.requestModal.retryAction ?? undefined : undefined}
+        onRetry={
+          state.requestModal.status === 'error'
+            ? (state.requestModal.retryAction ?? undefined)
+            : undefined
+        }
       />
     </section>
   );

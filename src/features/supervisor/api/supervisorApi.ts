@@ -64,9 +64,7 @@ type JiraCache = {
 };
 const cachedJiraByProjectId: Partial<Record<string, JiraCache>> = {};
 const cachedMeetingChannelsByProjectId: Partial<Record<string, MeetingChannel[]>> = {};
-const inFlightMeetingChannelsByProjectId: Partial<
-  Record<string, Promise<MeetingChannel[]>>
-> = {};
+const inFlightMeetingChannelsByProjectId: Partial<Record<string, Promise<MeetingChannel[]>>> = {};
 
 function clearRecord(record: Partial<Record<string, unknown>>) {
   for (const key of Object.keys(record)) {
@@ -727,15 +725,22 @@ export const supervisorApi = {
   },
 
   async deleteProjectMeetingChannel(projectId: string, channelId: string): Promise<void> {
-    await apiClient.del<void>(`/api/supervisor/projects/${projectId}/meeting-channels/${channelId}`);
+    await apiClient.del<void>(
+      `/api/supervisor/projects/${projectId}/meeting-channels/${channelId}`,
+    );
     delete inFlightMeetingChannelsByProjectId[projectId];
     const existing = cachedMeetingChannelsByProjectId[projectId];
     if (existing) {
-      cachedMeetingChannelsByProjectId[projectId] = existing.filter((item) => item.id !== channelId);
+      cachedMeetingChannelsByProjectId[projectId] = existing.filter(
+        (item) => item.id !== channelId,
+      );
     }
   },
 
-  async approveProjectMeetingChannel(projectId: string, channelId: string): Promise<MeetingChannel> {
+  async approveProjectMeetingChannel(
+    projectId: string,
+    channelId: string,
+  ): Promise<MeetingChannel> {
     const approved = await apiClient.post<MeetingChannel>(
       `/api/supervisor/projects/${projectId}/meeting-channels/${channelId}/approve`,
       {},

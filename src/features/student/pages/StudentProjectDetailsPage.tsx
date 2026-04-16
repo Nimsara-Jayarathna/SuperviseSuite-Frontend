@@ -806,7 +806,9 @@ export function StudentProjectDetailsPage() {
         </section>
       ) : null}
 
-      {activeTab === 'meetings' && projectId ? <StudentMeetingsTabSection projectId={projectId} /> : null}
+      {activeTab === 'meetings' && projectId ? (
+        <StudentMeetingsTabSection projectId={projectId} />
+      ) : null}
     </div>
   );
 }

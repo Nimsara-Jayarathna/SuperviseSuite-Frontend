@@ -5,7 +5,11 @@ import { cn } from '@/lib/cn';
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
-import { MEETING_CHANNEL_PLATFORMS, type MeetingChannel, type MeetingChannelUpsertPayload } from '../types';
+import {
+  MEETING_CHANNEL_PLATFORMS,
+  type MeetingChannel,
+  type MeetingChannelUpsertPayload,
+} from '../types';
 
 type MeetingChannelFormModalProps = {
   isOpen: boolean;
@@ -116,7 +120,9 @@ export function MeetingChannelFormModal({
       <div
         className={cn(
           'w-full max-w-lg overflow-hidden rounded-3xl border border-border bg-white shadow-[0_24px_56px_rgba(15,23,42,0.24)] transition-all duration-200',
-          isMounted ? 'translate-y-0 scale-100 opacity-100' : 'translate-y-1 scale-[0.99] opacity-0',
+          isMounted
+            ? 'translate-y-0 scale-100 opacity-100'
+            : 'translate-y-1 scale-[0.99] opacity-0',
         )}
         onClick={(event) => event.stopPropagation()}
       >
@@ -139,7 +145,9 @@ export function MeetingChannelFormModal({
             </label>
             <Select
               value={platform}
-              onChange={(event) => setPlatform(event.target.value as MeetingChannelUpsertPayload['platform'])}
+              onChange={(event) =>
+                setPlatform(event.target.value as MeetingChannelUpsertPayload['platform'])
+              }
               className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 outline-none transition-all focus:border-indigo-400 focus:ring-4 focus:ring-indigo-50"
               aria-label="Select platform"
             >

@@ -6,4 +6,3 @@ export function isProbablyUrl(value: string): boolean {
     return false;
   }
 }
-

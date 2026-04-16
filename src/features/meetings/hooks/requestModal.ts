@@ -29,4 +29,3 @@ export function toApiError(error: unknown, fallbackMessage: string): ApiError {
         timestamp: new Date().toISOString(),
       };
 }
-

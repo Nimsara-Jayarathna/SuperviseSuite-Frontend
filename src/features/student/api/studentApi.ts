@@ -228,7 +228,10 @@ export const studentApi = {
     return data;
   },
 
-  async getProjectMeetingChannels(projectId: string, forceRefresh = false): Promise<MeetingChannel[]> {
+  async getProjectMeetingChannels(
+    projectId: string,
+    forceRefresh = false,
+  ): Promise<MeetingChannel[]> {
     if (!forceRefresh && cachedMeetingChannelsByProjectId[projectId]) {
       return cachedMeetingChannelsByProjectId[projectId] as MeetingChannel[];
     }
@@ -241,7 +244,9 @@ export const studentApi = {
       delete cachedMeetingChannelsByProjectId[projectId];
     }
 
-    const request = apiClient.get<MeetingChannel[]>(`/api/student/projects/${projectId}/meeting-channels`);
+    const request = apiClient.get<MeetingChannel[]>(
+      `/api/student/projects/${projectId}/meeting-channels`,
+    );
     inFlightMeetingChannelsByProjectId[projectId] = request;
 
     try {

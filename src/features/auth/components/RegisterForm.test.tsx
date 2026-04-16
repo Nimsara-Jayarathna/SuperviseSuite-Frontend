@@ -1,5 +1,5 @@
 import { vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ApiError } from '@/types';
 import { RegisterForm, type RegisterFormProps } from './RegisterForm';
@@ -174,12 +174,16 @@ describe('RegisterForm', () => {
       const user = userEvent.setup();
       renderForm();
 
-      await user.type(screen.getByLabelText('First Name'), 'Jane');
-      await user.type(screen.getByLabelText('Last Name'), 'Smith');
-      await user.type(screen.getByLabelText('Registration Number'), 'IT24100400');
-      await user.type(screen.getByLabelText('Email'), 'jane@example.com');
-      await user.type(screen.getByLabelText('Password'), 'Secure@abc');
-      await user.type(screen.getByLabelText('Confirm Password'), 'Secure@abc');
+      fireEvent.change(screen.getByLabelText('First Name'), { target: { value: 'Jane' } });
+      fireEvent.change(screen.getByLabelText('Last Name'), { target: { value: 'Smith' } });
+      fireEvent.change(screen.getByLabelText('Registration Number'), {
+        target: { value: 'IT24100400' },
+      });
+      fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'jane@example.com' } });
+      fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'Secure@abc' } });
+      fireEvent.change(screen.getByLabelText('Confirm Password'), {
+        target: { value: 'Secure@abc' },
+      });
       await user.click(screen.getByRole('button', { name: 'Create Account' }));
 
       expect(screen.getByText('Password must contain a digit.')).toBeInTheDocument();

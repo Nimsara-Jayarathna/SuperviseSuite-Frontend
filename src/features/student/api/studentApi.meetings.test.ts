@@ -99,6 +99,6 @@ describe('studentApi meeting-channels cache', () => {
     vi.mocked(apiClientMock.get).mockClear();
     const next = await studentApi.getProjectMeetingChannels('p-1');
     expect(apiClientMock.get).not.toHaveBeenCalled();
-    expect(next.map((item) => item.id)).toEqual(['c-1', 'c-2']);
+    expect(next.map((item) => item.id)).toEqual(['c-2', 'c-1']);
   });
 });

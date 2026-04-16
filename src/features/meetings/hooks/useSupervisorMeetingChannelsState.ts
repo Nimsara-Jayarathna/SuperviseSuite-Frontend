@@ -15,9 +15,9 @@ type SupervisorMeetingChannelsState = {
   editingChannel: MeetingChannel | null;
   pendingDelete: MeetingChannel | null;
   requestModal: RequestModalState;
-  load: (options?: { forceRefresh?: boolean }) => Promise<
-    { ok: true } | { ok: false; error: ApiError }
-  >;
+  load: (options?: {
+    forceRefresh?: boolean;
+  }) => Promise<{ ok: true } | { ok: false; error: ApiError }>;
   refresh: () => Promise<void>;
   openAdd: () => void;
   openEdit: (channel: MeetingChannel) => void;
@@ -66,20 +66,23 @@ export function useSupervisorMeetingChannelsState(
     setRequestModal({ isOpen: true, status: 'success', title, message, retryAction: null });
   }, []);
 
-  const openErrorModal = useCallback((title: string, apiError: ApiError, retryAction: () => void) => {
-    setRequestModal({
-      isOpen: true,
-      status: 'error',
-      title,
-      message: apiError.message,
-      retryAction,
-    });
-  }, []);
+  const openErrorModal = useCallback(
+    (title: string, apiError: ApiError, retryAction: () => void) => {
+      setRequestModal({
+        isOpen: true,
+        status: 'error',
+        title,
+        message: apiError.message,
+        retryAction,
+      });
+    },
+    [],
+  );
 
   const load = useCallback(
-    async (options?: { forceRefresh?: boolean }): Promise<
-      { ok: true } | { ok: false; error: ApiError }
-    > => {
+    async (options?: {
+      forceRefresh?: boolean;
+    }): Promise<{ ok: true } | { ok: false; error: ApiError }> => {
       if (loadInFlightRef.current) {
         return { ok: false, error: toApiError(null, 'Unable to load meeting channels right now.') };
       }
@@ -110,10 +113,16 @@ export function useSupervisorMeetingChannelsState(
   );
 
   const refresh = useCallback(async () => {
-    openLoadingModal('Refreshing meeting channels', 'Fetching the latest meeting channels for this project.');
+    openLoadingModal(
+      'Refreshing meeting channels',
+      'Fetching the latest meeting channels for this project.',
+    );
     const result = await load({ forceRefresh: true });
     if (result.ok) {
-      openSuccessModal('Meeting channels refreshed', 'You are viewing the latest meeting channels.');
+      openSuccessModal(
+        'Meeting channels refreshed',
+        'You are viewing the latest meeting channels.',
+      );
       return;
     }
 
@@ -180,11 +189,19 @@ export function useSupervisorMeetingChannelsState(
       try {
         if (formMode === 'add') {
           const created = await supervisorApi.createProjectMeetingChannel(projectId, payload);
-          setChannels((current) => sortMeetingChannels([created, ...current.filter((item) => item.id !== created.id)]));
+          setChannels((current) =>
+            sortMeetingChannels([created, ...current.filter((item) => item.id !== created.id)]),
+          );
           openSuccessModal('Meeting channel added', 'Meeting channel was added successfully.');
         } else {
-          const updated = await supervisorApi.updateProjectMeetingChannel(projectId, editingChannel!.id, payload);
-          setChannels((current) => sortMeetingChannels(current.map((item) => (item.id === updated.id ? updated : item))));
+          const updated = await supervisorApi.updateProjectMeetingChannel(
+            projectId,
+            editingChannel!.id,
+            payload,
+          );
+          setChannels((current) =>
+            sortMeetingChannels(current.map((item) => (item.id === updated.id ? updated : item))),
+          );
           openSuccessModal('Meeting channel updated', 'Meeting channel was updated successfully.');
         }
         closeForm();
@@ -236,7 +253,9 @@ export function useSupervisorMeetingChannelsState(
       openLoadingModal('Approving meeting channel', 'Approving the selected meeting channel.');
       try {
         const approved = await supervisorApi.approveProjectMeetingChannel(projectId, channel.id);
-        setChannels((current) => sortMeetingChannels(current.map((item) => (item.id === approved.id ? approved : item))));
+        setChannels((current) =>
+          sortMeetingChannels(current.map((item) => (item.id === approved.id ? approved : item))),
+        );
         openSuccessModal('Meeting channel approved', 'Meeting channel was approved successfully.');
       } catch (caught) {
         const apiError = toApiError(caught, 'Unable to approve meeting channel right now.');
@@ -263,7 +282,10 @@ export function useSupervisorMeetingChannelsState(
     [openErrorModal],
   );
 
-  const canLoad = useMemo(() => enabled && !hasLoaded && !isLoading, [enabled, hasLoaded, isLoading]);
+  const canLoad = useMemo(
+    () => enabled && !hasLoaded && !isLoading,
+    [enabled, hasLoaded, isLoading],
+  );
 
   useEffect(() => {
     if (canLoad) {

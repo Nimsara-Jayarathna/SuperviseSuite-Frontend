@@ -32,4 +32,3 @@ export type MeetingChannelUpsertPayload = {
   channelName: string;
   linkOrIdentifier: string;
 };
-

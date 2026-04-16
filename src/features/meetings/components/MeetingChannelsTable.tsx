@@ -118,9 +118,7 @@ export function MeetingChannelsTable({
               const isCopied = copiedChannelId === channel.id;
               const displayChannelName =
                 channel.channelName.length > MAX_CHANNEL_NAME_CHARS
-                  ? `${channel.channelName
-                      .slice(0, MAX_CHANNEL_NAME_CHARS - 3)
-                      .trimEnd()}...`
+                  ? `${channel.channelName.slice(0, MAX_CHANNEL_NAME_CHARS - 3).trimEnd()}...`
                   : channel.channelName;
 
               return (
@@ -218,7 +216,10 @@ export function MeetingChannelsTable({
                     </div>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap align-middle text-center">
-                    <div className="flex justify-center cursor-help" title={buildStatusTitle(channel)}>
+                    <div
+                      className="flex justify-center cursor-help"
+                      title={buildStatusTitle(channel)}
+                    >
                       <StatusBadge tone={statusTone(channel.status)}>{channel.status}</StatusBadge>
                     </div>
                   </td>

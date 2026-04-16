@@ -13,4 +13,3 @@ describe('isProbablyUrl', () => {
     expect(isProbablyUrl('meet.google.com/abc')).toBe(false);
   });
 });
-
