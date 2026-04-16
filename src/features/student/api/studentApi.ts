@@ -19,6 +19,7 @@ import type {
   JiraWorkload,
 } from '@/features/supervisor/types';
 import type { MeetingChannel, MeetingChannelUpsertPayload } from '@/features/meetings/types';
+import { sortMeetingChannels } from '@/features/meetings/lib/sortMeetingChannels';
 
 const cachedProjectsById: Partial<Record<string, StudentProjectDetail>> = {};
 const inFlightProjectRequests: Partial<Record<string, Promise<StudentProjectDetail>>> = {};
@@ -32,6 +33,8 @@ type JiraCache = {
   hierarchy?: JiraHierarchy;
 };
 const cachedJiraByProjectId: Partial<Record<string, JiraCache>> = {};
+const cachedMeetingChannelsByProjectId: Partial<Record<string, MeetingChannel[]>> = {};
+const inFlightMeetingChannelsByProjectId: Partial<Record<string, Promise<MeetingChannel[]>>> = {};
 
 function clearRecord(record: Partial<Record<string, unknown>>) {
   for (const key of Object.keys(record)) {
@@ -45,6 +48,8 @@ function clearStudentApiCache() {
   clearRecord(cachedProjectGitHubByKey);
   clearRecord(inFlightProjectGitHubRequestsByKey);
   clearRecord(cachedJiraByProjectId);
+  clearRecord(cachedMeetingChannelsByProjectId);
+  clearRecord(inFlightMeetingChannelsByProjectId);
 }
 
 function appendQuery(url: string, params: URLSearchParams): string {
@@ -223,14 +228,47 @@ export const studentApi = {
     return data;
   },
 
-  getProjectMeetingChannels(projectId: string): Promise<MeetingChannel[]> {
-    return apiClient.get<MeetingChannel[]>(`/api/student/projects/${projectId}/meeting-channels`);
+  async getProjectMeetingChannels(projectId: string, forceRefresh = false): Promise<MeetingChannel[]> {
+    if (!forceRefresh && cachedMeetingChannelsByProjectId[projectId]) {
+      return cachedMeetingChannelsByProjectId[projectId] as MeetingChannel[];
+    }
+
+    if (!forceRefresh && inFlightMeetingChannelsByProjectId[projectId]) {
+      return inFlightMeetingChannelsByProjectId[projectId] as Promise<MeetingChannel[]>;
+    }
+
+    if (forceRefresh) {
+      delete cachedMeetingChannelsByProjectId[projectId];
+    }
+
+    const request = apiClient.get<MeetingChannel[]>(`/api/student/projects/${projectId}/meeting-channels`);
+    inFlightMeetingChannelsByProjectId[projectId] = request;
+
+    try {
+      const channels = await request;
+      cachedMeetingChannelsByProjectId[projectId] = channels;
+      return channels;
+    } finally {
+      delete inFlightMeetingChannelsByProjectId[projectId];
+    }
   },
 
-  createProjectMeetingChannel(
+  async createProjectMeetingChannel(
     projectId: string,
     payload: MeetingChannelUpsertPayload,
   ): Promise<MeetingChannel> {
-    return apiClient.post<MeetingChannel>(`/api/student/projects/${projectId}/meeting-channels`, payload);
+    const created = await apiClient.post<MeetingChannel>(
+      `/api/student/projects/${projectId}/meeting-channels`,
+      payload,
+    );
+    delete inFlightMeetingChannelsByProjectId[projectId];
+    const existing = cachedMeetingChannelsByProjectId[projectId];
+    if (existing) {
+      cachedMeetingChannelsByProjectId[projectId] = sortMeetingChannels([
+        created,
+        ...existing.filter((item) => item.id !== created.id),
+      ]);
+    }
+    return created;
   },
 };

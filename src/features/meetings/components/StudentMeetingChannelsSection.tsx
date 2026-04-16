@@ -8,10 +8,14 @@ import { useStudentMeetingChannelsState } from '../hooks/useStudentMeetingChanne
 
 type StudentMeetingChannelsSectionProps = {
   projectId: string;
+  enabled?: boolean;
 };
 
-export function StudentMeetingChannelsSection({ projectId }: StudentMeetingChannelsSectionProps) {
-  const state = useStudentMeetingChannelsState(projectId);
+export function StudentMeetingChannelsSection({
+  projectId,
+  enabled = true,
+}: StudentMeetingChannelsSectionProps) {
+  const state = useStudentMeetingChannelsState(projectId, enabled);
 
   return (
     <section className="rounded-3xl border border-border bg-white p-6 shadow-sm transition-all hover:shadow-md">
@@ -77,4 +81,3 @@ export function StudentMeetingChannelsSection({ projectId }: StudentMeetingChann
     </section>
   );
 }
-

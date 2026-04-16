@@ -3,6 +3,7 @@ import type { ApiError } from '@/types';
 import { studentApi } from '@/features/student/api/studentApi';
 import type { MeetingChannel, MeetingChannelUpsertPayload } from '../types';
 import { toApiError, type RequestModalState } from './requestModal';
+import { sortMeetingChannels } from '../lib/sortMeetingChannels';
 
 type StudentMeetingChannelsState = {
   channels: MeetingChannel[];
@@ -11,7 +12,9 @@ type StudentMeetingChannelsState = {
   hasLoaded: boolean;
   isFormOpen: boolean;
   requestModal: RequestModalState;
-  load: () => Promise<{ ok: true } | { ok: false; error: ApiError }>;
+  load: (options?: { forceRefresh?: boolean }) => Promise<
+    { ok: true } | { ok: false; error: ApiError }
+  >;
   refresh: () => Promise<void>;
   openAdd: () => void;
   closeForm: () => void;
@@ -28,7 +31,10 @@ const INITIAL_REQUEST_MODAL: RequestModalState = {
   retryAction: null,
 };
 
-export function useStudentMeetingChannelsState(projectId: string): StudentMeetingChannelsState {
+export function useStudentMeetingChannelsState(
+  projectId: string,
+  enabled = true,
+): StudentMeetingChannelsState {
   const [channels, setChannels] = useState<MeetingChannel[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
@@ -59,33 +65,38 @@ export function useStudentMeetingChannelsState(projectId: string): StudentMeetin
     });
   }, []);
 
-  const load = useCallback(async (): Promise<{ ok: true } | { ok: false; error: ApiError }> => {
-    if (loadInFlightRef.current) {
-      return { ok: false, error: toApiError(null, 'Unable to load meeting channels right now.') };
-    }
-    loadInFlightRef.current = true;
-    setIsLoading(true);
-    setError(null);
+  const load = useCallback(
+    async (options?: { forceRefresh?: boolean }): Promise<
+      { ok: true } | { ok: false; error: ApiError }
+    > => {
+      if (loadInFlightRef.current) {
+        return { ok: false, error: toApiError(null, 'Unable to load meeting channels right now.') };
+      }
+      loadInFlightRef.current = true;
+      setIsLoading(true);
+      setError(null);
 
-    try {
-      const data = await studentApi.getProjectMeetingChannels(projectId);
-      setChannels(data);
-      setHasLoaded(true);
-      return { ok: true };
-    } catch (caught) {
-      const apiError = toApiError(caught, 'Unable to load meeting channels right now.');
-      setChannels([]);
-      setError(apiError);
-      return { ok: false, error: apiError };
-    } finally {
-      loadInFlightRef.current = false;
-      setIsLoading(false);
-    }
-  }, [projectId]);
+      try {
+        const data = await studentApi.getProjectMeetingChannels(projectId, options?.forceRefresh ?? false);
+        setChannels(sortMeetingChannels(data));
+        setHasLoaded(true);
+        return { ok: true };
+      } catch (caught) {
+        const apiError = toApiError(caught, 'Unable to load meeting channels right now.');
+        setChannels([]);
+        setError(apiError);
+        return { ok: false, error: apiError };
+      } finally {
+        loadInFlightRef.current = false;
+        setIsLoading(false);
+      }
+    },
+    [projectId],
+  );
 
   const refresh = useCallback(async () => {
     openLoadingModal('Refreshing meeting channels', 'Fetching the latest meeting channels for this project.');
-    const result = await load();
+    const result = await load({ forceRefresh: true });
     if (result.ok) {
       openSuccessModal('Meeting channels refreshed', 'You are viewing the latest meeting channels.');
       return;
@@ -117,16 +128,18 @@ export function useStudentMeetingChannelsState(projectId: string): StudentMeetin
       openLoadingModal('Submitting meeting channel', 'Submitting meeting channel for this project.');
 
       try {
-        await studentApi.createProjectMeetingChannel(projectId, payload);
+        const created = await studentApi.createProjectMeetingChannel(projectId, payload);
+        setChannels((current) =>
+          sortMeetingChannels([created, ...current.filter((item) => item.id !== created.id)]),
+        );
         openSuccessModal('Meeting channel submitted', 'Meeting channel was submitted for approval.');
         closeForm();
-        await load();
       } catch (caught) {
         const apiError = toApiError(caught, 'Unable to submit meeting channel right now.');
         openErrorModal('Unable to submit meeting channel', apiError, () => void submitForm(payload));
       }
     },
-    [closeForm, load, openErrorModal, openLoadingModal, openSuccessModal, projectId],
+    [closeForm, openErrorModal, openLoadingModal, openSuccessModal, projectId],
   );
 
   const copyToClipboard = useCallback(
@@ -144,7 +157,7 @@ export function useStudentMeetingChannelsState(projectId: string): StudentMeetin
     [openErrorModal],
   );
 
-  const canLoad = useMemo(() => !hasLoaded && !isLoading, [hasLoaded, isLoading]);
+  const canLoad = useMemo(() => enabled && !hasLoaded && !isLoading, [enabled, hasLoaded, isLoading]);
 
   useEffect(() => {
     if (canLoad) {

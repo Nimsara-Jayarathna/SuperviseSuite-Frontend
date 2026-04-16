@@ -24,17 +24,18 @@ export function StudentMeetingsTabSection({ projectId }: StudentMeetingsTabSecti
         tone="student"
       />
 
-      {activeTab === 'channels' ? <StudentMeetingChannelsSection projectId={projectId} /> : null}
+      <div hidden={activeTab !== 'channels'}>
+        <StudentMeetingChannelsSection projectId={projectId} enabled={activeTab === 'channels'} />
+      </div>
 
-      {activeTab === 'records' ? (
+      <div hidden={activeTab !== 'records'}>
         <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <EmptyState
             title="Records coming soon"
             description="Meeting records will be available in a future update."
           />
         </div>
-      ) : null}
+      </div>
     </section>
   );
 }
-

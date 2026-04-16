@@ -147,9 +147,9 @@ export function MeetingChannelFormModal({
               placeholder="Weekly supervision call"
               className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 outline-none transition-all focus:border-indigo-400 focus:ring-4 focus:ring-indigo-50"
             />
-            <p className="text-[11px] text-slate-400">
-              {channelName.length}/{maxNameLength}
-            </p>
+            {channelName.length >= maxNameLength ? (
+              <p className="text-[11px] font-semibold text-amber-600">{`Max ${maxNameLength} characters reached`}</p>
+            ) : null}
           </div>
 
           <div className="space-y-1.5">
@@ -163,9 +163,9 @@ export function MeetingChannelFormModal({
               placeholder="https://meet.google.com/..."
               className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 outline-none transition-all focus:border-indigo-400 focus:ring-4 focus:ring-indigo-50"
             />
-            <p className="text-[11px] text-slate-400">
-              {linkOrIdentifier.length}/{maxLinkLength}
-            </p>
+            {linkOrIdentifier.length >= maxLinkLength ? (
+              <p className="text-[11px] font-semibold text-amber-600">{`Max ${maxLinkLength} characters reached`}</p>
+            ) : null}
           </div>
         </div>
 
@@ -187,4 +187,3 @@ export function MeetingChannelFormModal({
 
   return createPortal(modal, document.body);
 }
-

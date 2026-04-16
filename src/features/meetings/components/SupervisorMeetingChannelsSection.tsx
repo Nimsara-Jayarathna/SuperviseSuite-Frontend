@@ -9,10 +9,14 @@ import { useSupervisorMeetingChannelsState } from '../hooks/useSupervisorMeeting
 
 type SupervisorMeetingChannelsSectionProps = {
   projectId: string;
+  enabled?: boolean;
 };
 
-export function SupervisorMeetingChannelsSection({ projectId }: SupervisorMeetingChannelsSectionProps) {
-  const state = useSupervisorMeetingChannelsState(projectId);
+export function SupervisorMeetingChannelsSection({
+  projectId,
+  enabled = true,
+}: SupervisorMeetingChannelsSectionProps) {
+  const state = useSupervisorMeetingChannelsState(projectId, enabled);
 
   return (
     <section className="rounded-3xl border border-border bg-white p-6 shadow-sm transition-all hover:shadow-md">
@@ -88,4 +92,3 @@ export function SupervisorMeetingChannelsSection({ projectId }: SupervisorMeetin
     </section>
   );
 }
-
