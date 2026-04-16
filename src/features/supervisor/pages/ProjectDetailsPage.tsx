@@ -28,6 +28,7 @@ import { MilestonesTabSection } from '../components/ProjectDetail/MilestonesTabS
 import { OverviewTabSection } from '../components/ProjectDetail/OverviewTabSection';
 import { TeamTabSection } from '../components/ProjectDetail/TeamTabSection';
 import { FilesTabSection } from '../components/ProjectDetail/FilesTabSection';
+import { MeetingsTabSection } from '../components/ProjectDetail/MeetingsTabSection';
 import { useProjectRepositories } from '../hooks/useProjectRepositories';
 import { parseGitHubSetupRedirect } from '../hooks/useGitHubSetupFlow';
 import { useProjectDetailsPageState } from '../hooks/useProjectDetailsPageState';
@@ -866,6 +867,8 @@ export function ProjectDetailsPage() {
       {activeTab === 'files' ? (
         <FilesTabSection projectId={project.id} initialFiles={project.files} />
       ) : null}
+
+      {activeTab === 'meetings' ? <MeetingsTabSection projectId={project.id} /> : null}
 
       {activeTab === 'github' ? (
         <div className="space-y-4">

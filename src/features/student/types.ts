@@ -82,4 +82,5 @@ export type StudentProjectDetailTab =
   | 'milestones'
   | 'files'
   | 'github'
-  | 'jira';
+  | 'jira'
+  | 'meetings';

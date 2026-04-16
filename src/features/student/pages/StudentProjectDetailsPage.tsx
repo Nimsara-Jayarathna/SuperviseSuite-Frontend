@@ -41,6 +41,7 @@ import { studentApi } from '../api/studentApi';
 import { JiraHealthOverview } from '@/features/supervisor/components/ProjectDetail/jira/JiraHealthOverview';
 import { isBlockingError } from '@/utils/errorSeverity';
 import { StudentFilesTabSection } from '../components/StudentFilesTabSection';
+import { StudentMeetingsTabSection } from '../components/StudentMeetingsTabSection';
 import type {
   ProjectGitHubActivity,
   StudentProjectDetailLeader,
@@ -270,7 +271,7 @@ export function StudentProjectDetailsPage() {
   }
 
   const requestedTab = searchParams.get('tab') as StudentProjectDetailTab | null;
-  const tabs: StudentProjectDetailTab[] = [...BASE_TABS, 'files', 'github', 'jira'];
+  const tabs: StudentProjectDetailTab[] = [...BASE_TABS, 'files', 'github', 'jira', 'meetings'];
   const activeTab = requestedTab && tabs.includes(requestedTab) ? requestedTab : 'overview';
 
   return (
@@ -803,6 +804,10 @@ export function StudentProjectDetailsPage() {
             </div>
           )}
         </section>
+      ) : null}
+
+      {activeTab === 'meetings' && projectId ? (
+        <StudentMeetingsTabSection projectId={projectId} />
       ) : null}
     </div>
   );

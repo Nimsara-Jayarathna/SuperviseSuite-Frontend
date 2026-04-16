@@ -5,6 +5,7 @@ Supervisor workspace for dashboard monitoring, project listing, project creation
 Related major-fixes doc: `docs/branches/major-fixes-scrum-97-supervisor-ui-workflow.md`
 Related GitHub integration doc: `docs/branches/major-fixes-scrum-80-github-dashboard-integration.md`
 Related multi-repository doc: `docs/branches/major-fixes-scrum-81-multiple-github-repositories.md`
+Related meetings doc: `docs/branches/major-fixes-meetings-tab-channel-management.md`
 
 ## Routes
 
@@ -52,6 +53,11 @@ Supervisor feature currently uses these APIs:
 - `GET /api/supervisor/projects/{projectId}/jira/workload`
 - `GET /api/supervisor/projects/{projectId}/jira/hierarchy`
 - `POST /api/supervisor/projects/{projectId}/jira/refresh`
+- `GET /api/supervisor/projects/{projectId}/meeting-channels`
+- `POST /api/supervisor/projects/{projectId}/meeting-channels`
+- `PATCH /api/supervisor/projects/{projectId}/meeting-channels/{channelId}`
+- `DELETE /api/supervisor/projects/{projectId}/meeting-channels/{channelId}`
+- `POST /api/supervisor/projects/{projectId}/meeting-channels/{channelId}/approve`
 - `GET /api/supervisor/projects/{projectId}/files`
 - `POST /api/supervisor/projects/{projectId}/files/upload-url`
 - `POST /api/supervisor/projects/{projectId}/files/confirm`
@@ -86,6 +92,12 @@ Supervisor feature currently uses these APIs:
 | `src/features/supervisor/components/ProjectDetail/RepositoryLinkModalContent.tsx` | Guided modal with method-first UX, installation repository selection, loading skeletons, and GitHub App/request-access actions |
 | `src/features/supervisor/components/ProjectDetail/IntegrationsTabSection.tsx` | Integrations tab containing GitHub repository controls and Jira connect/disconnect actions |
 | `src/features/supervisor/components/ProjectDetail/JiraTabSection.tsx` | Jira tab shell for Jira workspace context and Jira health overview rendering |
+| `src/features/supervisor/components/ProjectDetail/MeetingsTabSection.tsx` | Meetings tab shell (`Channels`/`Records`) with Jira-style pill navigation |
+| `src/features/meetings/components/SupervisorMeetingChannelsSection.tsx` | Supervisor meeting channels panel with add/edit/delete/approve actions |
+| `src/features/meetings/hooks/useSupervisorMeetingChannelsState.ts` | Supervisor meetings state orchestration (load/mutations/request-state modal lifecycle) |
+| `src/features/meetings/components/MeetingChannelsTable.tsx` | Shared table for channel listing/status display |
+| `src/features/meetings/components/MeetingChannelFormModal.tsx` | Shared meeting channel create/edit modal form |
+| `src/features/meetings/components/MeetingChannelDeleteConfirmModal.tsx` | Supervisor delete confirmation modal |
 | `src/features/supervisor/components/ProjectDetail/FilesTabSection.tsx` | Files tab for upload, list, download, and soft-delete flows |
 | `src/features/supervisor/components/ProjectDetail/jira/JiraHealthOverview.tsx` | Shared Jira analytics orchestrator (tab switcher, context bar, refresh action) |
 | `src/features/supervisor/components/ProjectDetail/jira/workload/JiraWorkloadPanel.tsx` | Member workload comparison dashboard with imbalance alerts and unassigned warnings |
@@ -208,6 +220,7 @@ Supervisor feature currently uses these APIs:
 - `Files`
 - `GitHub`
 - `Jira`
+- `Meetings`
 
 ### Files tab: attachment management
 
@@ -346,6 +359,21 @@ Scope note:
 
 - Jira tab remains data/monitoring focused.
 - OAuth connect/disconnect controls remain in Integrations tab.
+
+### Meetings tab: channel management
+
+- Inner sub-tabs use Jira-style pill navigation with `role="tablist"`:
+  - `Channels`
+  - `Records` (placeholder state)
+- `Channels` data/actions:
+  - list channels: `GET /api/supervisor/projects/{projectId}/meeting-channels`
+  - add channel: `POST /api/supervisor/projects/{projectId}/meeting-channels`
+  - update channel: `PATCH /api/supervisor/projects/{projectId}/meeting-channels/{channelId}`
+  - delete channel: `DELETE /api/supervisor/projects/{projectId}/meeting-channels/{channelId}`
+  - approve pending channel: `POST /api/supervisor/projects/{projectId}/meeting-channels/{channelId}/approve`
+- Status behavior:
+  - supervisor-created channels are approved immediately
+  - student-created channels appear as pending until approved
 
 ### Jira - Hierarchy tab
 
