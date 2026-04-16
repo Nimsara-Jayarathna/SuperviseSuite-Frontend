@@ -47,6 +47,7 @@ import type {
   UpdateSupervisorProjectRequest,
   UpdateSupervisorProjectStatusRequest,
 } from '../types';
+import type { MeetingChannel, MeetingChannelUpsertPayload } from '@/features/meetings/types';
 import { normalizeGitHubRepositoryUrl } from '../utils/githubRepositoryUrl';
 
 const cachedProjectsById: Partial<Record<string, SupervisorProjectDetail>> = {};
@@ -648,5 +649,38 @@ export const supervisorApi = {
     );
     cachedProjectsById[projectId] = updated;
     return updated;
+  },
+
+  getProjectMeetingChannels(projectId: string): Promise<MeetingChannel[]> {
+    return apiClient.get<MeetingChannel[]>(`/api/supervisor/projects/${projectId}/meeting-channels`);
+  },
+
+  createProjectMeetingChannel(
+    projectId: string,
+    payload: MeetingChannelUpsertPayload,
+  ): Promise<MeetingChannel> {
+    return apiClient.post<MeetingChannel>(`/api/supervisor/projects/${projectId}/meeting-channels`, payload);
+  },
+
+  updateProjectMeetingChannel(
+    projectId: string,
+    channelId: string,
+    payload: MeetingChannelUpsertPayload,
+  ): Promise<MeetingChannel> {
+    return apiClient.patch<MeetingChannel>(
+      `/api/supervisor/projects/${projectId}/meeting-channels/${channelId}`,
+      payload,
+    );
+  },
+
+  deleteProjectMeetingChannel(projectId: string, channelId: string): Promise<void> {
+    return apiClient.del<void>(`/api/supervisor/projects/${projectId}/meeting-channels/${channelId}`);
+  },
+
+  approveProjectMeetingChannel(projectId: string, channelId: string): Promise<MeetingChannel> {
+    return apiClient.post<MeetingChannel>(
+      `/api/supervisor/projects/${projectId}/meeting-channels/${channelId}/approve`,
+      {},
+    );
   },
 };

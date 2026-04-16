@@ -18,6 +18,7 @@ import type {
   JiraSprintProgress,
   JiraWorkload,
 } from '@/features/supervisor/types';
+import type { MeetingChannel, MeetingChannelUpsertPayload } from '@/features/meetings/types';
 
 const cachedProjectsById: Partial<Record<string, StudentProjectDetail>> = {};
 const inFlightProjectRequests: Partial<Record<string, Promise<StudentProjectDetail>>> = {};
@@ -220,5 +221,16 @@ export const studentApi = {
     );
     cachedJiraByProjectId[projectId] = { ...cachedJiraByProjectId[projectId], hierarchy: data };
     return data;
+  },
+
+  getProjectMeetingChannels(projectId: string): Promise<MeetingChannel[]> {
+    return apiClient.get<MeetingChannel[]>(`/api/student/projects/${projectId}/meeting-channels`);
+  },
+
+  createProjectMeetingChannel(
+    projectId: string,
+    payload: MeetingChannelUpsertPayload,
+  ): Promise<MeetingChannel> {
+    return apiClient.post<MeetingChannel>(`/api/student/projects/${projectId}/meeting-channels`, payload);
   },
 };
