@@ -1,7 +1,7 @@
 import { RoleBadge } from '@/components/ui/RoleBadge';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { cn } from '@/lib/cn';
-import { Check, CheckCircle2, Copy, ExternalLink, Pencil, Trash2 } from 'lucide-react';
+import { Check, CheckCircle2, Copy, Pencil, Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import type { MeetingChannel } from '../types';
 
@@ -80,9 +80,9 @@ export function MeetingChannelsTable({
         <table className="min-w-full table-fixed">
           <colgroup>
             <col className="w-[140px]" />
-            <col className="w-[240px]" />
-            <col className="w-[320px]" />
-            <col className="w-[260px]" />
+            <col className="w-[200px]" />
+            <col className="w-[420px]" />
+            <col className="w-[220px]" />
             <col className="w-[140px]" />
             {canManage ? <col className="w-[140px]" /> : null}
           </colgroup>
@@ -97,14 +97,14 @@ export function MeetingChannelsTable({
               <th className="whitespace-nowrap px-4 py-3 align-middle text-left text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">
                 Link / Identifier
               </th>
-              <th className="whitespace-nowrap px-4 py-3 align-middle text-left text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">
+              <th className="whitespace-nowrap px-4 py-3 align-middle text-center text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">
                 Added By
               </th>
-              <th className="whitespace-nowrap px-4 py-3 align-middle text-left text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">
+              <th className="whitespace-nowrap px-4 py-3 align-middle text-center text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">
                 Status
               </th>
               {canManage ? (
-                <th className="whitespace-nowrap py-3 pl-4 pr-6 align-middle text-right text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">
+                <th className="whitespace-nowrap px-4 py-3 align-middle text-center text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">
                   Actions
                 </th>
               ) : null}
@@ -115,7 +115,10 @@ export function MeetingChannelsTable({
               const isCopied = copiedChannelId === channel.id;
 
               return (
-                <tr key={channel.id} className="border-t border-slate-100">
+                <tr
+                  key={channel.id}
+                  className="border-t border-slate-100 transition-colors hover:bg-slate-50/60"
+                >
                   <td className="px-4 py-3 whitespace-nowrap align-middle">
                     <StatusBadge tone="neutral">{channel.platform.split('_').join(' ')}</StatusBadge>
                   </td>
@@ -128,7 +131,7 @@ export function MeetingChannelsTable({
                     </span>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap align-middle">
-                    <div className="flex min-w-0 items-center justify-between gap-3">
+                    <div className="flex min-w-0 items-center gap-2">
                       <div className="min-w-0 flex-1">
                         <a
                           href={channel.linkOrIdentifier}
@@ -141,52 +144,48 @@ export function MeetingChannelsTable({
                         </a>
                       </div>
 
-                      <div className="flex shrink-0 items-center gap-2.5">
-                        <ExternalLink className="h-3.5 w-3.5 text-slate-300" />
+                      <button
+                        type="button"
+                        className={cn(
+                          'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border transition-colors',
+                          isCopied
+                            ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                            : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-700',
+                        )}
+                        aria-label="Copy value"
+                        title="Copy"
+                        onClick={async () => {
+                          const ok = (await onCopy?.(channel.linkOrIdentifier)) ?? false;
+                          if (!ok) return;
 
-                        <button
-                          type="button"
-                          className={cn(
-                            'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border transition-colors',
-                            isCopied
-                              ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                              : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-700',
-                          )}
-                          aria-label="Copy value"
-                          title="Copy"
-                          onClick={async () => {
-                            const ok = (await onCopy?.(channel.linkOrIdentifier)) ?? false;
-                            if (!ok) return;
-
-                            resetCopiedTimer();
-                            setCopiedChannelId(channel.id);
-                            copiedResetTimeoutRef.current = window.setTimeout(() => {
-                              setCopiedChannelId(null);
-                              copiedResetTimeoutRef.current = null;
-                            }, 1000);
-                          }}
-                        >
-                          {isCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                        </button>
-                      </div>
+                          resetCopiedTimer();
+                          setCopiedChannelId(channel.id);
+                          copiedResetTimeoutRef.current = window.setTimeout(() => {
+                            setCopiedChannelId(null);
+                            copiedResetTimeoutRef.current = null;
+                          }, 1000);
+                        }}
+                      >
+                        {isCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                      </button>
                     </div>
                   </td>
-                  <td className="max-w-0 px-4 py-3 w-[260px] whitespace-nowrap align-middle text-xs text-slate-500">
-                    <div className="inline-flex cursor-help" title={channel.addedByName}>
+                  <td className="max-w-0 px-4 py-3 w-[220px] whitespace-nowrap align-middle text-center text-xs text-slate-500">
+                    <div className="flex justify-center cursor-help" title={channel.addedByName}>
                       <RoleBadge
                         role={channel.addedByRole}
                         className="min-w-[110px] justify-center px-2 py-0.5 text-[10px]"
                       />
                     </div>
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap align-middle">
-                    <div className="inline-flex cursor-help" title={buildStatusTitle(channel)}>
+                  <td className="px-4 py-3 whitespace-nowrap align-middle text-center">
+                    <div className="flex justify-center cursor-help" title={buildStatusTitle(channel)}>
                       <StatusBadge tone={statusTone(channel.status)}>{channel.status}</StatusBadge>
                     </div>
                   </td>
                   {canManage ? (
-                    <td className="py-3 pl-4 pr-6 whitespace-nowrap align-middle">
-                      <div className="flex items-center justify-end gap-2.5">
+                    <td className="px-4 py-3 whitespace-nowrap align-middle text-center">
+                      <div className="flex items-center justify-center gap-2.5">
                         {channel.status === 'PENDING' ? (
                           <button
                             type="button"
