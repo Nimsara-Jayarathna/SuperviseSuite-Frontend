@@ -31,6 +31,8 @@ Student pages currently use:
 - `GET /api/student/projects/{projectId}/jira/sprint-progress`
 - `GET /api/student/projects/{projectId}/jira/workload`
 - `GET /api/student/projects/{projectId}/jira/hierarchy`
+- `GET /api/student/projects/{projectId}/meeting-channels`
+- `POST /api/student/projects/{projectId}/meeting-channels`
 - `GET /api/student/projects/{projectId}/files`
 - `POST /api/student/projects/{projectId}/files/upload-url`
 - `POST /api/student/projects/{projectId}/files/confirm`
@@ -49,6 +51,11 @@ Student pages currently use:
 | `src/features/student/components/StudentProjectDetailsSkeleton.tsx` | Detail loading placeholder |
 | `src/features/student/hooks/useStudentProjects.ts` | List hook |
 | `src/features/student/hooks/useStudentProject.ts` | Detail hook |
+| `src/features/student/components/StudentMeetingsTabSection.tsx` | Meetings inner tab shell (`Channels`/`Records`) with Jira-style pill navigation |
+| `src/features/meetings/components/StudentMeetingChannelsSection.tsx` | Student meeting channels panel with add/list flow |
+| `src/features/meetings/hooks/useStudentMeetingChannelsState.ts` | Student meetings state orchestration (load/add/refresh modal lifecycle) |
+| `src/features/meetings/components/MeetingChannelsTable.tsx` | Shared table for channel listing/status display |
+| `src/features/meetings/components/MeetingChannelFormModal.tsx` | Shared meeting channel create/edit modal form |
 | `src/features/student/components/StudentFilesTabSection.tsx` | Student files tab for upload/list/download (no delete) |
 | `src/features/projectfiles/hooks/useStudentProjectFiles.ts` | Files tab state: lazy load, seed from project detail, upload/download actions |
 | `src/features/projectfiles/components/UploadFileModal.tsx` | Shared upload modal with FE validation + request-state lifecycle |
@@ -99,6 +106,7 @@ Student pages currently use:
 - `Files`
 - `GitHub`
 - `Jira`
+- `Meetings`
 
 ### Header chips
 
@@ -125,6 +133,14 @@ Student pages currently use:
   - Fetches data via `GET /api/student/projects/{projectId}/jira/*` endpoints.
   - No manual refresh or connect/disconnect actions are exposed for students.
   - When Jira is not connected, displays a read-only empty state.
+- Meetings:
+  - Inner sub-tabs use Jira-style pill navigation with `role="tablist"`:
+    - `Channels`
+    - `Records` (placeholder state)
+  - `Channels` fetches and renders `GET /api/student/projects/{projectId}/meeting-channels`.
+  - Students can submit channels via `POST /api/student/projects/{projectId}/meeting-channels`.
+  - Student-submitted channels are shown as pending until supervisor approval.
+  - No student edit/delete/approve actions are exposed.
 
 ### Files (student scope)
 
