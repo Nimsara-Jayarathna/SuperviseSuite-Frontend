@@ -4,6 +4,7 @@ import { cn } from '@/lib/cn';
 import { Check, CheckCircle2, Copy, Pencil, Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import type { MeetingChannel } from '../types';
+import { getMeetingPlatformDisplay } from '../lib/platformDisplay';
 
 const dateTimeFormatter = new Intl.DateTimeFormat('en', {
   month: 'short',
@@ -120,7 +121,24 @@ export function MeetingChannelsTable({
                   className="border-t border-slate-100 transition-colors hover:bg-slate-50/60"
                 >
                   <td className="px-4 py-3 whitespace-nowrap align-middle">
-                    <StatusBadge tone="neutral">{channel.platform.split('_').join(' ')}</StatusBadge>
+                    {(() => {
+                      const display = getMeetingPlatformDisplay(channel.platform);
+                      const Icon = display.Icon;
+
+                      return (
+                        <span
+                          className={cn(
+                            'inline-flex h-8 w-10 items-center justify-center rounded-full border',
+                            display.toneClassName,
+                          )}
+                          title={display.label}
+                          aria-label={display.label}
+                        >
+                          <Icon aria-hidden className="h-4 w-4" strokeWidth={2.25} />
+                          <span className="sr-only">{display.label}</span>
+                        </span>
+                      );
+                    })()}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap align-middle">
                     <span
