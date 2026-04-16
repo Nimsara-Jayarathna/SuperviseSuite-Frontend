@@ -27,7 +27,7 @@ type SupervisorMeetingChannelsState = {
   closeDelete: () => void;
   confirmDelete: () => Promise<void>;
   approve: (channel: MeetingChannel) => Promise<void>;
-  copyToClipboard: (value: string) => Promise<void>;
+  copyToClipboard: (value: string) => Promise<boolean>;
   closeRequestModal: () => void;
 };
 
@@ -250,12 +250,14 @@ export function useSupervisorMeetingChannelsState(
     async (value: string) => {
       try {
         await navigator.clipboard.writeText(value);
+        return true;
       } catch {
         openErrorModal(
           'Copy failed',
           toApiError(null, 'Unable to copy value automatically.'),
           () => void copyToClipboard(value),
         );
+        return false;
       }
     },
     [openErrorModal],

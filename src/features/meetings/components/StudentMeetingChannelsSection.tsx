@@ -57,7 +57,7 @@ export function StudentMeetingChannelsSection({
           <MeetingChannelsTable
             channels={state.channels}
             canManage={false}
-            onCopy={(value) => void state.copyToClipboard(value)}
+            onCopy={state.copyToClipboard}
           />
         ) : null}
       </div>

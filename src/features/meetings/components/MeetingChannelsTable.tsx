@@ -1,7 +1,8 @@
-import { Button } from '@/components/ui/Button';
+import { RoleBadge } from '@/components/ui/RoleBadge';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { cn } from '@/lib/cn';
-import { Copy, ExternalLink, Pencil, Trash2, CheckCircle2 } from 'lucide-react';
+import { Check, CheckCircle2, Copy, ExternalLink, Pencil, Trash2 } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import type { MeetingChannel } from '../types';
 import { isProbablyUrl } from '../lib/linkOrIdentifier';
 
@@ -19,7 +20,7 @@ type MeetingChannelsTableProps = {
   onApprove?: (channel: MeetingChannel) => void;
   onEdit?: (channel: MeetingChannel) => void;
   onDelete?: (channel: MeetingChannel) => void;
-  onCopy?: (value: string) => void;
+  onCopy?: (value: string) => Promise<boolean>;
 };
 
 function statusTone(status: MeetingChannel['status']) {
@@ -27,8 +28,18 @@ function statusTone(status: MeetingChannel['status']) {
   return 'warning';
 }
 
-function roleTone(role: MeetingChannel['addedByRole']) {
-  return role === 'SUPERVISOR' ? 'supervisor' : 'student';
+function buildStatusTitle(channel: MeetingChannel) {
+  const parts = [
+    `Added by ${channel.addedByName} (${channel.addedByRole})`,
+    dateTimeFormatter.format(new Date(channel.createdAt)),
+  ];
+
+  if (channel.status === 'APPROVED' && channel.approvedByName && channel.approvedAt) {
+    parts.push(`Approved by ${channel.approvedByName}`);
+    parts.push(dateTimeFormatter.format(new Date(channel.approvedAt)));
+  }
+
+  return parts.join(' • ');
 }
 
 export function MeetingChannelsTable({
@@ -39,6 +50,23 @@ export function MeetingChannelsTable({
   onDelete,
   onCopy,
 }: MeetingChannelsTableProps) {
+  const [copiedChannelId, setCopiedChannelId] = useState<string | null>(null);
+  const copiedResetTimeoutRef = useRef<number | null>(null);
+
+  const resetCopiedTimer = () => {
+    if (copiedResetTimeoutRef.current !== null) {
+      window.clearTimeout(copiedResetTimeoutRef.current);
+      copiedResetTimeoutRef.current = null;
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      resetCopiedTimer();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   if (channels.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/60 p-8 text-center">
@@ -52,13 +80,13 @@ export function MeetingChannelsTable({
       <div className="overflow-x-auto">
         <table className="min-w-full table-fixed">
           <colgroup>
-            <col className="w-[150px]" />
+            <col className="w-[140px]" />
             <col className="w-[240px]" />
-            <col className="w-[340px]" />
-            <col className="w-[220px]" />
-            <col className="w-[220px]" />
-            <col className={cn('w-[160px]', canManage ? '' : 'w-[120px]')} />
-            {canManage ? <col className="w-[220px]" /> : null}
+            <col className="w-[320px]" />
+            <col className="w-[260px]" />
+            <col className="w-[140px]" />
+            <col className="w-[190px]" />
+            {canManage ? <col className="w-[110px]" /> : null}
           </colgroup>
           <thead className="bg-slate-50">
             <tr>
@@ -90,25 +118,23 @@ export function MeetingChannelsTable({
           <tbody>
             {channels.map((channel) => {
               const isUrl = isProbablyUrl(channel.linkOrIdentifier);
-              const approvedDetails =
-                channel.status === 'APPROVED' && channel.approvedByName && channel.approvedAt
-                  ? `Approved by ${channel.approvedByName} • ${dateTimeFormatter.format(
-                      new Date(channel.approvedAt),
-                    )}`
-                  : null;
+              const isCopied = copiedChannelId === channel.id;
 
               return (
                 <tr key={channel.id} className="border-t border-slate-100">
-                  <td className="px-4 py-4">
-                    <StatusBadge tone="neutral">{channel.platform.replace('_', ' ')}</StatusBadge>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <StatusBadge tone="neutral">{channel.platform.split('_').join(' ')}</StatusBadge>
                   </td>
-                  <td className="px-4 py-4">
-                    <p className="truncate text-sm font-semibold text-slate-900" title={channel.channelName}>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <span
+                      className="block truncate text-sm font-semibold text-slate-900"
+                      title={channel.channelName}
+                    >
                       {channel.channelName}
-                    </p>
+                    </span>
                   </td>
-                  <td className="px-4 py-4">
-                    <div className="flex items-center gap-2">
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <div className="flex min-w-0 items-center gap-2">
                       {isUrl ? (
                         <a
                           href={channel.linkOrIdentifier}
@@ -120,7 +146,10 @@ export function MeetingChannelsTable({
                           {channel.linkOrIdentifier}
                         </a>
                       ) : (
-                        <span className="min-w-0 truncate text-sm font-semibold text-slate-700" title={channel.linkOrIdentifier}>
+                        <span
+                          className="min-w-0 truncate text-sm font-semibold text-slate-700"
+                          title={channel.linkOrIdentifier}
+                        >
                           {channel.linkOrIdentifier}
                         </span>
                       )}
@@ -129,67 +158,81 @@ export function MeetingChannelsTable({
 
                       <button
                         type="button"
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700"
+                        className={cn(
+                          'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border transition-colors',
+                          isCopied
+                            ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                            : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-700',
+                        )}
                         aria-label="Copy value"
                         title="Copy"
-                        onClick={() => onCopy?.(channel.linkOrIdentifier)}
+                        onClick={async () => {
+                          const ok = (await onCopy?.(channel.linkOrIdentifier)) ?? false;
+                          if (!ok) return;
+
+                          resetCopiedTimer();
+                          setCopiedChannelId(channel.id);
+                          copiedResetTimeoutRef.current = window.setTimeout(() => {
+                            setCopiedChannelId(null);
+                            copiedResetTimeoutRef.current = null;
+                          }, 1000);
+                        }}
                       >
-                        <Copy className="h-4 w-4" />
+                        {isCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                       </button>
                     </div>
                   </td>
-                  <td className="px-4 py-4">
-                    <div className="space-y-1">
-                      <p className="truncate text-sm font-semibold text-slate-900" title={channel.addedByName}>
+                  <td className="max-w-0 px-4 py-3 w-[260px] whitespace-nowrap text-xs text-slate-500">
+                    <div className="inline-flex items-center gap-2">
+                      <span
+                        className="max-w-[140px] truncate font-semibold text-slate-700"
+                        title={channel.addedByName}
+                      >
                         {channel.addedByName}
-                      </p>
-                      <StatusBadge tone={roleTone(channel.addedByRole)}>{channel.addedByRole}</StatusBadge>
+                      </span>
+                      <RoleBadge role={channel.addedByRole} className="shrink-0 px-2 py-0.5 text-[10px]" />
                     </div>
                   </td>
-                  <td className="px-4 py-4">
-                    <div className="space-y-1">
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <div className="inline-flex cursor-help" title={buildStatusTitle(channel)}>
                       <StatusBadge tone={statusTone(channel.status)}>{channel.status}</StatusBadge>
-                      {approvedDetails ? (
-                        <p className="text-[11px] text-slate-400" title={approvedDetails}>
-                          {approvedDetails}
-                        </p>
-                      ) : null}
                     </div>
                   </td>
-                  <td className="px-4 py-4">
-                    <p className="text-sm text-slate-600">
-                      {dateTimeFormatter.format(new Date(channel.createdAt))}
-                    </p>
+                  <td className="px-4 py-3 whitespace-nowrap text-xs text-slate-500">
+                    {dateTimeFormatter.format(new Date(channel.createdAt))}
                   </td>
                   {canManage ? (
-                    <td className="px-4 py-4">
-                      <div className="flex justify-end gap-2">
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <div className="flex items-center justify-end gap-2">
                         {channel.status === 'PENDING' ? (
-                          <Button
-                            variant="outline"
-                            size="sm"
+                          <button
+                            type="button"
                             onClick={() => onApprove?.(channel)}
-                            leftIcon={<CheckCircle2 className="h-4 w-4" />}
+                            title="Approve channel"
+                            aria-label="Approve channel"
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 transition-colors hover:bg-emerald-100"
                           >
-                            Approve
-                          </Button>
+                            <CheckCircle2 className="h-3.5 w-3.5" />
+                          </button>
                         ) : null}
-                        <Button
-                          variant="secondary"
-                          size="sm"
+                        <button
+                          type="button"
                           onClick={() => onEdit?.(channel)}
-                          leftIcon={<Pencil className="h-4 w-4" />}
+                          title="Edit channel"
+                          aria-label="Edit channel"
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 transition-colors hover:bg-slate-50"
                         >
-                          Edit
-                        </Button>
-                        <Button
-                          variant="danger"
-                          size="sm"
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          type="button"
                           onClick={() => onDelete?.(channel)}
-                          leftIcon={<Trash2 className="h-4 w-4" />}
+                          title="Delete channel"
+                          aria-label="Delete channel"
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-rose-200 bg-rose-50 text-rose-700 transition-colors hover:bg-rose-100"
                         >
-                          Delete
-                        </Button>
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
                       </div>
                     </td>
                   ) : null}
@@ -202,4 +245,3 @@ export function MeetingChannelsTable({
     </div>
   );
 }
-

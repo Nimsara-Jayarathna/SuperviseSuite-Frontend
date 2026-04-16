@@ -61,7 +61,7 @@ export function SupervisorMeetingChannelsSection({
             onApprove={(channel) => void state.approve(channel)}
             onEdit={(channel) => state.openEdit(channel)}
             onDelete={(channel) => state.openDelete(channel)}
-            onCopy={(value) => void state.copyToClipboard(value)}
+            onCopy={state.copyToClipboard}
           />
         ) : null}
       </div>
