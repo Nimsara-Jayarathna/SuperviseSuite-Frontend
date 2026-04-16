@@ -85,7 +85,6 @@ export function MeetingChannelsTable({
             <col className="w-[320px]" />
             <col className="w-[260px]" />
             <col className="w-[140px]" />
-            <col className="w-[190px]" />
             {canManage ? <col className="w-[110px]" /> : null}
           </colgroup>
           <thead className="bg-slate-50">
@@ -104,9 +103,6 @@ export function MeetingChannelsTable({
               </th>
               <th className="whitespace-nowrap px-4 py-3 text-left text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">
                 Status
-              </th>
-              <th className="whitespace-nowrap px-4 py-3 text-left text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">
-                Added At
               </th>
               {canManage ? (
                 <th className="whitespace-nowrap px-4 py-3 text-right text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">
@@ -183,13 +179,7 @@ export function MeetingChannelsTable({
                     </div>
                   </td>
                   <td className="max-w-0 px-4 py-3 w-[260px] whitespace-nowrap text-xs text-slate-500">
-                    <div className="inline-flex items-center gap-2">
-                      <span
-                        className="max-w-[140px] truncate font-semibold text-slate-700"
-                        title={channel.addedByName}
-                      >
-                        {channel.addedByName}
-                      </span>
+                    <div className="inline-flex cursor-help" title={channel.addedByName}>
                       <RoleBadge role={channel.addedByRole} className="shrink-0 px-2 py-0.5 text-[10px]" />
                     </div>
                   </td>
@@ -197,9 +187,6 @@ export function MeetingChannelsTable({
                     <div className="inline-flex cursor-help" title={buildStatusTitle(channel)}>
                       <StatusBadge tone={statusTone(channel.status)}>{channel.status}</StatusBadge>
                     </div>
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-xs text-slate-500">
-                    {dateTimeFormatter.format(new Date(channel.createdAt))}
                   </td>
                   {canManage ? (
                     <td className="px-4 py-3 whitespace-nowrap">
