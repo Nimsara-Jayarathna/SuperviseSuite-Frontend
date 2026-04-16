@@ -268,7 +268,8 @@ export type SupervisorProjectDetailTab =
   | 'files'
   | 'github'
   | 'integrations'
-  | 'jira';
+  | 'jira'
+  | 'meetings';
 
 export type SupervisorProjectMember = {
   id: string;

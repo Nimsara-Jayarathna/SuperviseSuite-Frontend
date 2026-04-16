@@ -29,6 +29,7 @@ export const TABS: SupervisorProjectDetailTab[] = [
   'integrations',
   'github',
   'jira',
+  'meetings',
 ];
 
 export const FIELD_LIMITS = {
