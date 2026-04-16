@@ -1,0 +1,280 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { ApiError } from '@/types';
+import { supervisorApi } from '@/features/supervisor/api/supervisorApi';
+import type { MeetingChannel, MeetingChannelUpsertPayload } from '../types';
+import { toApiError, type RequestModalState } from './requestModal';
+
+type SupervisorMeetingChannelsState = {
+  channels: MeetingChannel[];
+  isLoading: boolean;
+  error: ApiError | null;
+  hasLoaded: boolean;
+  isFormOpen: boolean;
+  formMode: 'add' | 'edit';
+  editingChannel: MeetingChannel | null;
+  pendingDelete: MeetingChannel | null;
+  requestModal: RequestModalState;
+  load: () => Promise<{ ok: true } | { ok: false; error: ApiError }>;
+  refresh: () => Promise<void>;
+  openAdd: () => void;
+  openEdit: (channel: MeetingChannel) => void;
+  closeForm: () => void;
+  submitForm: (payload: MeetingChannelUpsertPayload) => Promise<void>;
+  openDelete: (channel: MeetingChannel) => void;
+  closeDelete: () => void;
+  confirmDelete: () => Promise<void>;
+  approve: (channel: MeetingChannel) => Promise<void>;
+  copyToClipboard: (value: string) => Promise<void>;
+  closeRequestModal: () => void;
+};
+
+const INITIAL_REQUEST_MODAL: RequestModalState = {
+  isOpen: false,
+  status: 'loading',
+  title: '',
+  message: '',
+  retryAction: null,
+};
+
+export function useSupervisorMeetingChannelsState(projectId: string): SupervisorMeetingChannelsState {
+  const [channels, setChannels] = useState<MeetingChannel[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasLoaded, setHasLoaded] = useState(false);
+  const [error, setError] = useState<ApiError | null>(null);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [formMode, setFormMode] = useState<'add' | 'edit'>('add');
+  const [editingChannel, setEditingChannel] = useState<MeetingChannel | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<MeetingChannel | null>(null);
+  const [requestModal, setRequestModal] = useState<RequestModalState>(INITIAL_REQUEST_MODAL);
+  const loadInFlightRef = useRef(false);
+
+  const closeRequestModal = useCallback(() => {
+    setRequestModal((current) => ({ ...current, isOpen: false, retryAction: null }));
+  }, []);
+
+  const openLoadingModal = useCallback((title: string, message: string) => {
+    setRequestModal({ isOpen: true, status: 'loading', title, message, retryAction: null });
+  }, []);
+
+  const openSuccessModal = useCallback((title: string, message: string) => {
+    setRequestModal({ isOpen: true, status: 'success', title, message, retryAction: null });
+  }, []);
+
+  const openErrorModal = useCallback((title: string, apiError: ApiError, retryAction: () => void) => {
+    setRequestModal({
+      isOpen: true,
+      status: 'error',
+      title,
+      message: apiError.message,
+      retryAction,
+    });
+  }, []);
+
+  const load = useCallback(async (): Promise<{ ok: true } | { ok: false; error: ApiError }> => {
+    if (loadInFlightRef.current) {
+      return { ok: false, error: toApiError(null, 'Unable to load meeting channels right now.') };
+    }
+    loadInFlightRef.current = true;
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const data = await supervisorApi.getProjectMeetingChannels(projectId);
+      setChannels(data);
+      setHasLoaded(true);
+      return { ok: true };
+    } catch (caught) {
+      const apiError = toApiError(caught, 'Unable to load meeting channels right now.');
+      setChannels([]);
+      setError(apiError);
+      return { ok: false, error: apiError };
+    } finally {
+      loadInFlightRef.current = false;
+      setIsLoading(false);
+    }
+  }, [projectId]);
+
+  const refresh = useCallback(async () => {
+    openLoadingModal('Refreshing meeting channels', 'Fetching the latest meeting channels for this project.');
+    const result = await load();
+    if (result.ok) {
+      openSuccessModal('Meeting channels refreshed', 'You are viewing the latest meeting channels.');
+      return;
+    }
+
+    openErrorModal('Unable to refresh meeting channels', result.error, () => void refresh());
+  }, [load, openErrorModal, openLoadingModal, openSuccessModal]);
+
+  useEffect(() => {
+    setChannels([]);
+    setIsLoading(false);
+    setHasLoaded(false);
+    setError(null);
+    setIsFormOpen(false);
+    setFormMode('add');
+    setEditingChannel(null);
+    setPendingDelete(null);
+    setRequestModal(INITIAL_REQUEST_MODAL);
+    loadInFlightRef.current = false;
+  }, [projectId]);
+
+  const openAdd = useCallback(() => {
+    setFormMode('add');
+    setEditingChannel(null);
+    setIsFormOpen(true);
+  }, []);
+
+  const openEdit = useCallback((channel: MeetingChannel) => {
+    setFormMode('edit');
+    setEditingChannel(channel);
+    setIsFormOpen(true);
+  }, []);
+
+  const closeForm = useCallback(() => {
+    setIsFormOpen(false);
+    setEditingChannel(null);
+    setFormMode('add');
+  }, []);
+
+  const openDelete = useCallback((channel: MeetingChannel) => {
+    setPendingDelete(channel);
+  }, []);
+
+  const closeDelete = useCallback(() => {
+    setPendingDelete(null);
+  }, []);
+
+  const submitForm = useCallback(
+    async (payload: MeetingChannelUpsertPayload) => {
+      if (formMode === 'edit' && !editingChannel) {
+        openErrorModal(
+          'Unable to save channel',
+          toApiError(null, 'Select a valid channel and try again.'),
+          () => void submitForm(payload),
+        );
+        return;
+      }
+
+      openLoadingModal(
+        formMode === 'add' ? 'Adding meeting channel' : 'Saving meeting channel',
+        formMode === 'add'
+          ? 'Submitting meeting channel for this project.'
+          : 'Updating meeting channel details.',
+      );
+
+      try {
+        if (formMode === 'add') {
+          await supervisorApi.createProjectMeetingChannel(projectId, payload);
+          openSuccessModal('Meeting channel added', 'Meeting channel was added successfully.');
+        } else {
+          await supervisorApi.updateProjectMeetingChannel(projectId, editingChannel!.id, payload);
+          openSuccessModal('Meeting channel updated', 'Meeting channel was updated successfully.');
+        }
+        closeForm();
+        await load();
+      } catch (caught) {
+        const apiError = toApiError(
+          caught,
+          formMode === 'add'
+            ? 'Unable to add meeting channel right now.'
+            : 'Unable to update meeting channel right now.',
+        );
+        openErrorModal(
+          formMode === 'add' ? 'Unable to add meeting channel' : 'Unable to update meeting channel',
+          apiError,
+          () => void submitForm(payload),
+        );
+      }
+    },
+    [
+      closeForm,
+      editingChannel,
+      formMode,
+      load,
+      openErrorModal,
+      openLoadingModal,
+      openSuccessModal,
+      projectId,
+    ],
+  );
+
+  const confirmDelete = useCallback(async () => {
+    if (!pendingDelete) {
+      return;
+    }
+
+    const channelId = pendingDelete.id;
+    openLoadingModal('Deleting meeting channel', 'Removing meeting channel from this project.');
+    try {
+      await supervisorApi.deleteProjectMeetingChannel(projectId, channelId);
+      closeDelete();
+      openSuccessModal('Meeting channel deleted', 'Meeting channel was removed successfully.');
+      await load();
+    } catch (caught) {
+      const apiError = toApiError(caught, 'Unable to delete meeting channel right now.');
+      openErrorModal('Unable to delete meeting channel', apiError, () => void confirmDelete());
+    }
+  }, [closeDelete, load, openErrorModal, openLoadingModal, openSuccessModal, pendingDelete, projectId]);
+
+  const approve = useCallback(
+    async (channel: MeetingChannel) => {
+      openLoadingModal('Approving meeting channel', 'Approving the selected meeting channel.');
+      try {
+        await supervisorApi.approveProjectMeetingChannel(projectId, channel.id);
+        openSuccessModal('Meeting channel approved', 'Meeting channel was approved successfully.');
+        await load();
+      } catch (caught) {
+        const apiError = toApiError(caught, 'Unable to approve meeting channel right now.');
+        openErrorModal('Unable to approve meeting channel', apiError, () => void approve(channel));
+      }
+    },
+    [load, openErrorModal, openLoadingModal, openSuccessModal, projectId],
+  );
+
+  const copyToClipboard = useCallback(
+    async (value: string) => {
+      try {
+        await navigator.clipboard.writeText(value);
+      } catch {
+        openErrorModal(
+          'Copy failed',
+          toApiError(null, 'Unable to copy value automatically.'),
+          () => void copyToClipboard(value),
+        );
+      }
+    },
+    [openErrorModal],
+  );
+
+  const canLoad = useMemo(() => !hasLoaded && !isLoading, [hasLoaded, isLoading]);
+
+  useEffect(() => {
+    if (canLoad) {
+      void load();
+    }
+  }, [canLoad, load]);
+
+  return {
+    channels,
+    isLoading,
+    error,
+    hasLoaded,
+    isFormOpen,
+    formMode,
+    editingChannel,
+    pendingDelete,
+    requestModal,
+    load,
+    refresh,
+    openAdd,
+    openEdit,
+    closeForm,
+    submitForm,
+    openDelete,
+    closeDelete,
+    confirmDelete,
+    approve,
+    copyToClipboard,
+    closeRequestModal,
+  };
+}
