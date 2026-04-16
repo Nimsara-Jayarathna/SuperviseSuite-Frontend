@@ -1,5 +1,4 @@
-import { act, render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { MeetingChannel } from '../types';
 import { MeetingChannelsTable } from './MeetingChannelsTable';
@@ -28,7 +27,9 @@ describe('MeetingChannelsTable', () => {
   it('truncates channel name by character limit and preserves hover title', () => {
     const longName = 'This is a very long channel name that should be truncated';
 
-    render(<MeetingChannelsTable channels={[channel({ channelName: longName })]} canManage={false} />);
+    render(
+      <MeetingChannelsTable channels={[channel({ channelName: longName })]} canManage={false} />,
+    );
 
     const nameNode = screen.getByLabelText(longName);
     expect(nameNode).toHaveAttribute('title', longName);
@@ -37,32 +38,31 @@ describe('MeetingChannelsTable', () => {
 
   it('shows a copied tick state for ~1s after successful copy', async () => {
     vi.useFakeTimers();
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
-    const onCopy = vi.fn().mockResolvedValue(true);
+    try {
+      const onCopy = vi.fn().mockResolvedValue(true);
 
-    render(
-      <MeetingChannelsTable
-        channels={[channel()]}
-        canManage={false}
-        onCopy={onCopy}
-      />,
-    );
+      render(<MeetingChannelsTable channels={[channel()]} canManage={false} onCopy={onCopy} />);
 
-    const copyButton = screen.getByRole('button', { name: 'Copy value' });
-    expect(copyButton.className).not.toContain('border-emerald-200');
+      const copyButton = screen.getByRole('button', { name: 'Copy value' });
+      expect(copyButton.className).not.toContain('border-emerald-200');
 
-    await user.click(copyButton);
-    expect(onCopy).toHaveBeenCalledTimes(1);
+      fireEvent.click(copyButton);
+      await act(async () => {
+        // Flush async click handler: await onCopy(...) -> setState(...)
+        await Promise.resolve();
+      });
+      expect(onCopy).toHaveBeenCalledTimes(1);
 
-    // Copied style applies immediately after successful copy.
-    expect(copyButton.className).toContain('border-emerald-200');
+      // Copied style applies immediately after successful copy.
+      expect(copyButton.className).toContain('border-emerald-200');
 
-    act(() => {
-      vi.advanceTimersByTime(1000);
-    });
+      act(() => {
+        vi.advanceTimersByTime(1000);
+      });
 
-    expect(copyButton.className).not.toContain('border-emerald-200');
-    vi.useRealTimers();
+      expect(copyButton.className).not.toContain('border-emerald-200');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
-

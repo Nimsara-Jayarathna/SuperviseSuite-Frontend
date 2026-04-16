@@ -22,13 +22,23 @@ describe('MeetingChannelFormModal', () => {
     expect(submit).toBeDisabled();
 
     await user.type(screen.getByPlaceholderText('Weekly supervision call'), 'Weekly sync');
-    await user.type(screen.getByPlaceholderText('https://meet.google.com/...'), 'meet.google.com/abc');
-    expect(screen.getByText('Enter a valid link starting with http:// or https://')).toBeInTheDocument();
+    await user.type(
+      screen.getByPlaceholderText('https://meet.google.com/...'),
+      'meet.google.com/abc',
+    );
+    expect(
+      screen.getByText('Enter a valid link starting with http:// or https://'),
+    ).toBeInTheDocument();
     expect(submit).toBeDisabled();
 
     await user.clear(screen.getByPlaceholderText('https://meet.google.com/...'));
-    await user.type(screen.getByPlaceholderText('https://meet.google.com/...'), 'https://meet.google.com/abc-defg-hij');
-    expect(screen.queryByText('Enter a valid link starting with http:// or https://')).not.toBeInTheDocument();
+    await user.type(
+      screen.getByPlaceholderText('https://meet.google.com/...'),
+      'https://meet.google.com/abc-defg-hij',
+    );
+    expect(
+      screen.queryByText('Enter a valid link starting with http:// or https://'),
+    ).not.toBeInTheDocument();
     expect(submit).toBeEnabled();
   });
 
@@ -47,7 +57,10 @@ describe('MeetingChannelFormModal', () => {
     );
 
     await user.type(screen.getByPlaceholderText('Weekly supervision call'), '  Weekly sync  ');
-    await user.type(screen.getByPlaceholderText('https://meet.google.com/...'), '  https://example.com  ');
+    await user.type(
+      screen.getByPlaceholderText('https://meet.google.com/...'),
+      '  https://example.com  ',
+    );
 
     await user.click(screen.getByRole('button', { name: 'Add channel' }));
 
@@ -58,4 +71,3 @@ describe('MeetingChannelFormModal', () => {
     });
   });
 });
-

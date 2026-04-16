@@ -35,4 +35,3 @@ describe('getMeetingPlatformDisplay', () => {
     expect(display.kind).toBe('lucide');
   });
 });
-
