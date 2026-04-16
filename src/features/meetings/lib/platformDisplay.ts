@@ -1,38 +1,53 @@
 import type { LucideIcon } from 'lucide-react';
-import { Camera, Link2, MessageCircle, Users, Video } from 'lucide-react';
+import { Link2, Users } from 'lucide-react';
+import { siGooglemeet, siWhatsapp, siZoom } from 'simple-icons';
 import type { MeetingChannelPlatform } from '../types';
 
-type PlatformDisplay = {
+type SimpleIconDisplay = {
+  kind: 'simple-icon';
+  label: string;
+  path: string;
+  hex: string;
+};
+
+type LucideIconDisplay = {
+  kind: 'lucide';
   label: string;
   Icon: LucideIcon;
-  toneClassName: string;
+  hex?: string;
 };
+
+export type PlatformDisplay = SimpleIconDisplay | LucideIconDisplay;
 
 const PLATFORM_DISPLAY: Record<MeetingChannelPlatform, PlatformDisplay> = {
   GOOGLE_MEET: {
+    kind: 'simple-icon',
     label: 'Google Meet',
-    Icon: Video,
-    toneClassName: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+    path: siGooglemeet.path,
+    hex: siGooglemeet.hex,
   },
   ZOOM: {
+    kind: 'simple-icon',
     label: 'Zoom',
-    Icon: Camera,
-    toneClassName: 'border-sky-200 bg-sky-50 text-sky-700',
+    path: siZoom.path,
+    hex: siZoom.hex,
   },
   TEAMS: {
-    label: 'Teams',
+    kind: 'lucide',
+    label: 'Microsoft Teams',
     Icon: Users,
-    toneClassName: 'border-violet-200 bg-violet-50 text-violet-700',
+    hex: '6264A7',
   },
   WHATSAPP: {
+    kind: 'simple-icon',
     label: 'WhatsApp',
-    Icon: MessageCircle,
-    toneClassName: 'border-green-200 bg-green-50 text-green-700',
+    path: siWhatsapp.path,
+    hex: siWhatsapp.hex,
   },
   OTHER: {
+    kind: 'lucide',
     label: 'Other',
     Icon: Link2,
-    toneClassName: 'border-slate-200 bg-slate-100 text-slate-700',
   },
 };
 

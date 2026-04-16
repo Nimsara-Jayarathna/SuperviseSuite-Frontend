@@ -23,6 +23,8 @@ type MeetingChannelsTableProps = {
   onCopy?: (value: string) => Promise<boolean>;
 };
 
+const MAX_CHANNEL_NAME_CHARS = 28;
+
 function statusTone(status: MeetingChannel['status']) {
   if (status === 'APPROVED') return 'success';
   return 'warning';
@@ -114,6 +116,12 @@ export function MeetingChannelsTable({
           <tbody>
             {channels.map((channel) => {
               const isCopied = copiedChannelId === channel.id;
+              const displayChannelName =
+                channel.channelName.length > MAX_CHANNEL_NAME_CHARS
+                  ? `${channel.channelName
+                      .slice(0, MAX_CHANNEL_NAME_CHARS - 3)
+                      .trimEnd()}...`
+                  : channel.channelName;
 
               return (
                 <tr
@@ -123,18 +131,30 @@ export function MeetingChannelsTable({
                   <td className="px-4 py-3 whitespace-nowrap align-middle">
                     {(() => {
                       const display = getMeetingPlatformDisplay(channel.platform);
-                      const Icon = display.Icon;
 
                       return (
                         <span
-                          className={cn(
-                            'inline-flex h-8 w-10 items-center justify-center rounded-full border',
-                            display.toneClassName,
-                          )}
+                          className="inline-flex h-8 w-10 items-center justify-center rounded-full border border-slate-200 bg-slate-50/60"
                           title={display.label}
                           aria-label={display.label}
                         >
-                          <Icon aria-hidden className="h-4 w-4" strokeWidth={2.25} />
+                          {display.kind === 'simple-icon' ? (
+                            <svg
+                              aria-hidden
+                              viewBox="0 0 24 24"
+                              className="h-4 w-4"
+                              style={{ color: `#${display.hex}` }}
+                            >
+                              <path d={display.path} fill="currentColor" />
+                            </svg>
+                          ) : (
+                            <display.Icon
+                              aria-hidden
+                              className="h-4 w-4 text-slate-700"
+                              style={display.hex ? { color: `#${display.hex}` } : undefined}
+                              strokeWidth={2.25}
+                            />
+                          )}
                           <span className="sr-only">{display.label}</span>
                         </span>
                       );
@@ -142,10 +162,11 @@ export function MeetingChannelsTable({
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap align-middle">
                     <span
-                      className="block truncate text-sm font-semibold text-slate-900"
+                      className="block truncate text-sm font-semibold text-slate-900 cursor-help transition-colors hover:text-slate-950 hover:underline"
                       title={channel.channelName}
+                      aria-label={channel.channelName}
                     >
-                      {channel.channelName}
+                      {displayChannelName}
                     </span>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap align-middle">
