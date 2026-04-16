@@ -21,6 +21,21 @@ function toPlatformLabel(value: string) {
   return value.replace('_', ' ');
 }
 
+function isValidHttpLink(value: string) {
+  const trimmed = value.trim();
+  if (!/^https?:\/\//i.test(trimmed)) {
+    return false;
+  }
+
+  try {
+    // eslint-disable-next-line no-new
+    new URL(trimmed);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function MeetingChannelFormModal({
   isOpen,
   mode,
@@ -71,7 +86,7 @@ export function MeetingChannelFormModal({
     return (
       platform.trim().length > 0 &&
       channelName.trim().length > 0 &&
-      linkOrIdentifier.trim().length > 0
+      isValidHttpLink(linkOrIdentifier)
     );
   }, [channelName, linkOrIdentifier, platform]);
 
@@ -163,6 +178,11 @@ export function MeetingChannelFormModal({
               placeholder="https://meet.google.com/..."
               className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 outline-none transition-all focus:border-indigo-400 focus:ring-4 focus:ring-indigo-50"
             />
+            {!isValidHttpLink(linkOrIdentifier) && linkOrIdentifier.trim().length > 0 ? (
+              <p className="text-[11px] font-semibold text-amber-600">
+                Enter a valid link starting with http:// or https://
+              </p>
+            ) : null}
             {linkOrIdentifier.length >= maxLinkLength ? (
               <p className="text-[11px] font-semibold text-amber-600">{`Max ${maxLinkLength} characters reached`}</p>
             ) : null}
