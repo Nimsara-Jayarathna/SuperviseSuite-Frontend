@@ -9,7 +9,7 @@ This story documents the fully implemented Meetings tab channel management flow 
 - Added Meetings top-level tab in student and supervisor project detail pages.
 - Added Meetings inner sub-tab navigation with Jira-style pill/tablist UX:
   - `Channels`
-  - `Records` (placeholder state for future scope)
+  - `Records` (implemented; see records management doc)
 - Implemented role-specific channel workflows:
   - Student:
     - list meeting channels
@@ -57,5 +57,5 @@ This story documents the fully implemented Meetings tab channel management flow 
 ## Notes
 
 - Meetings channel data is backend-authorized; frontend route guards remain UX-only.
-- Records sub-tab is intentionally a non-functional placeholder in current scope.
+- Records sub-tab is implemented; see `docs/branches/major-fixes-meetings-tab-records-management.md`.
 - Student users cannot edit/delete/approve channels in current scope.
