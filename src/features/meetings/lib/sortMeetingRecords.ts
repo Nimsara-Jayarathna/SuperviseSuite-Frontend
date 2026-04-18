@@ -22,4 +22,3 @@ export function sortMeetingRecords(records: MeetingRecord[]) {
     return left.id.localeCompare(right.id);
   });
 }
-

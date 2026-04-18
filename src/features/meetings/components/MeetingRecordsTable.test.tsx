@@ -65,7 +65,12 @@ describe('MeetingRecordsTable', () => {
 
   it('shows only view action for students', () => {
     render(
-      <MeetingRecordsTable records={[record()]} channelsById={{}} canManage={false} onView={() => {}} />,
+      <MeetingRecordsTable
+        records={[record()]}
+        channelsById={{}}
+        canManage={false}
+        onView={() => {}}
+      />,
     );
 
     expect(screen.getByRole('button', { name: 'View record' })).toBeInTheDocument();
@@ -112,6 +117,8 @@ describe('MeetingRecordsTable', () => {
     );
 
     expect(screen.getByText('Zoom room')).toBeInTheDocument();
-    expect(screen.getByLabelText(getMeetingPlatformDisplay(linked.platform).label)).toBeInTheDocument();
+    expect(
+      screen.getByLabelText(getMeetingPlatformDisplay(linked.platform).label),
+    ).toBeInTheDocument();
   });
 });

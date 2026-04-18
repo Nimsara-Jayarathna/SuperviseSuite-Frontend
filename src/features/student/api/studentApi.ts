@@ -303,7 +303,9 @@ export const studentApi = {
       delete cachedMeetingRecordsByProjectId[projectId];
     }
 
-    const request = apiClient.get<MeetingRecord[]>(`/api/student/projects/${projectId}/meeting-records`);
+    const request = apiClient.get<MeetingRecord[]>(
+      `/api/student/projects/${projectId}/meeting-records`,
+    );
     inFlightMeetingRecordsByProjectId[projectId] = request;
 
     try {

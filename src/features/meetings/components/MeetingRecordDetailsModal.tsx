@@ -187,7 +187,10 @@ export function MeetingRecordDetailsModal({
               ...(record.status === 'APPROVED' && record.approvedByName && record.approvedAt
                 ? [
                     { label: 'Approved by', value: record.approvedByName },
-                    { label: 'Approved at', value: dateTimeFormatter.format(new Date(record.approvedAt)) },
+                    {
+                      label: 'Approved at',
+                      value: dateTimeFormatter.format(new Date(record.approvedAt)),
+                    },
                   ]
                 : []),
             ];

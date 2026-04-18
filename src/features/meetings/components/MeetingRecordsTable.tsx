@@ -37,7 +37,10 @@ function buildStatusTitle(record: MeetingRecord) {
     `Added by ${record.addedByName} (${record.addedByRole})`,
     dateTimeFormatter.format(new Date(record.createdAt)),
     ...(record.status === 'APPROVED' && record.approvedByName && record.approvedAt
-      ? [`Approved by ${record.approvedByName}`, dateTimeFormatter.format(new Date(record.approvedAt))]
+      ? [
+          `Approved by ${record.approvedByName}`,
+          dateTimeFormatter.format(new Date(record.approvedAt)),
+        ]
       : []),
   ].join(' • ');
 }

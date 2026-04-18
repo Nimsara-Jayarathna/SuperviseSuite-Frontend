@@ -14,7 +14,9 @@ type StudentMeetingRecordsState = {
   isFormOpen: boolean;
   viewingRecord: MeetingRecord | null;
   requestModal: RequestModalState;
-  load: (options?: { forceRefresh?: boolean }) => Promise<{ ok: true } | { ok: false; error: ApiError }>;
+  load: (options?: {
+    forceRefresh?: boolean;
+  }) => Promise<{ ok: true } | { ok: false; error: ApiError }>;
   refresh: () => Promise<void>;
   openAdd: () => void;
   closeForm: () => void;
@@ -106,7 +108,10 @@ export function useStudentMeetingRecordsState(
   );
 
   const refresh = useCallback(async () => {
-    openLoadingModal('Refreshing meeting records', 'Fetching the latest meeting records for this project.');
+    openLoadingModal(
+      'Refreshing meeting records',
+      'Fetching the latest meeting records for this project.',
+    );
     const result = await load({ forceRefresh: true });
     if (result.ok) {
       openSuccessModal('Meeting records refreshed', 'You are viewing the latest meeting records.');
@@ -163,7 +168,10 @@ export function useStudentMeetingRecordsState(
     setViewingRecord(null);
   }, []);
 
-  const canLoad = useMemo(() => enabled && !hasLoaded && !isLoading, [enabled, hasLoaded, isLoading]);
+  const canLoad = useMemo(
+    () => enabled && !hasLoaded && !isLoading,
+    [enabled, hasLoaded, isLoading],
+  );
 
   useEffect(() => {
     if (canLoad) {
@@ -190,4 +198,3 @@ export function useStudentMeetingRecordsState(
     closeRequestModal,
   };
 }
-

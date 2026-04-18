@@ -17,7 +17,9 @@ type SupervisorMeetingRecordsState = {
   viewingRecord: MeetingRecord | null;
   pendingDelete: MeetingRecord | null;
   requestModal: RequestModalState;
-  load: (options?: { forceRefresh?: boolean }) => Promise<{ ok: true } | { ok: false; error: ApiError }>;
+  load: (options?: {
+    forceRefresh?: boolean;
+  }) => Promise<{ ok: true } | { ok: false; error: ApiError }>;
   refresh: () => Promise<void>;
   openAdd: () => void;
   openEdit: (record: MeetingRecord) => void;
@@ -117,7 +119,10 @@ export function useSupervisorMeetingRecordsState(
   );
 
   const refresh = useCallback(async () => {
-    openLoadingModal('Refreshing meeting records', 'Fetching the latest meeting records for this project.');
+    openLoadingModal(
+      'Refreshing meeting records',
+      'Fetching the latest meeting records for this project.',
+    );
     const result = await load({ forceRefresh: true });
     if (result.ok) {
       openSuccessModal('Meeting records refreshed', 'You are viewing the latest meeting records.');
@@ -163,15 +168,19 @@ export function useSupervisorMeetingRecordsState(
   const submitForm = useCallback(
     async (payload: MeetingRecordUpsertPayload) => {
       if (formMode === 'edit' && !editingRecord) {
-        openErrorModal('Unable to save record', toApiError(null, 'Select a valid record and try again.'), () =>
-          void submitForm(payload),
+        openErrorModal(
+          'Unable to save record',
+          toApiError(null, 'Select a valid record and try again.'),
+          () => void submitForm(payload),
         );
         return;
       }
 
       openLoadingModal(
         formMode === 'add' ? 'Adding meeting record' : 'Saving meeting record',
-        formMode === 'add' ? 'Submitting meeting record for this project.' : 'Updating meeting record details.',
+        formMode === 'add'
+          ? 'Submitting meeting record for this project.'
+          : 'Updating meeting record details.',
       );
 
       try {
@@ -182,7 +191,11 @@ export function useSupervisorMeetingRecordsState(
           );
           openSuccessModal('Meeting record added', 'Meeting record was added successfully.');
         } else {
-          const updated = await supervisorApi.updateProjectMeetingRecord(projectId, editingRecord!.id, payload);
+          const updated = await supervisorApi.updateProjectMeetingRecord(
+            projectId,
+            editingRecord!.id,
+            payload,
+          );
           setRecords((current) =>
             sortMeetingRecords(current.map((item) => (item.id === updated.id ? updated : item))),
           );
@@ -192,7 +205,9 @@ export function useSupervisorMeetingRecordsState(
       } catch (caught) {
         const apiError = toApiError(
           caught,
-          formMode === 'add' ? 'Unable to add meeting record right now.' : 'Unable to update meeting record right now.',
+          formMode === 'add'
+            ? 'Unable to add meeting record right now.'
+            : 'Unable to update meeting record right now.',
         );
         openErrorModal(
           formMode === 'add' ? 'Unable to add meeting record' : 'Unable to update meeting record',
@@ -201,7 +216,15 @@ export function useSupervisorMeetingRecordsState(
         );
       }
     },
-    [closeForm, editingRecord, formMode, openErrorModal, openLoadingModal, openSuccessModal, projectId],
+    [
+      closeForm,
+      editingRecord,
+      formMode,
+      openErrorModal,
+      openLoadingModal,
+      openSuccessModal,
+      projectId,
+    ],
   );
 
   const openDelete = useCallback((record: MeetingRecord) => {
@@ -255,7 +278,10 @@ export function useSupervisorMeetingRecordsState(
     setViewingRecord(null);
   }, []);
 
-  const canLoad = useMemo(() => enabled && !hasLoaded && !isLoading, [enabled, hasLoaded, isLoading]);
+  const canLoad = useMemo(
+    () => enabled && !hasLoaded && !isLoading,
+    [enabled, hasLoaded, isLoading],
+  );
 
   useEffect(() => {
     if (canLoad) {
@@ -290,4 +316,3 @@ export function useSupervisorMeetingRecordsState(
     closeRequestModal,
   };
 }
-

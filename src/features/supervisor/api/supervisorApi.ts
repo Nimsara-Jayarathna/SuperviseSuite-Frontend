@@ -842,10 +842,7 @@ export const supervisorApi = {
     }
   },
 
-  async approveProjectMeetingRecord(
-    projectId: string,
-    recordId: string,
-  ): Promise<MeetingRecord> {
+  async approveProjectMeetingRecord(projectId: string, recordId: string): Promise<MeetingRecord> {
     const approved = await apiClient.post<MeetingRecord>(
       `/api/supervisor/projects/${projectId}/meeting-records/${recordId}/approve`,
       {},
