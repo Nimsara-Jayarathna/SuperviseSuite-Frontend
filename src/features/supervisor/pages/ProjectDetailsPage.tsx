@@ -167,11 +167,14 @@ export function ProjectDetailsPage() {
   });
   const jiraCompletionGuardRef = useRef<string | null>(null);
 
-  const activeRepository = useMemo(() => {
-    return (
-      projectRepositories?.repositories.find((r) => r.id === selectedGitHubRepositoryLinkId) ?? null
-    );
-  }, [projectRepositories, selectedGitHubRepositoryLinkId]);
+  const enabledRepositories = useMemo(
+    () => projectRepositories?.repositories.filter((repository) => repository.enabled) ?? [],
+    [projectRepositories?.repositories],
+  );
+  const activeRepository = useMemo(
+    () => enabledRepositories.find((repository) => repository.id === selectedGitHubRepositoryLinkId) ?? null,
+    [enabledRepositories, selectedGitHubRepositoryLinkId],
+  );
   const activeRepositorySyncStatus = normalizeSyncStatus(activeRepository?.syncStatus);
 
   const loadActivityPage = useCallback(
@@ -501,11 +504,9 @@ export function ProjectDetailsPage() {
 
   useEffect(() => {
     const primaryLink =
-      projectRepositories?.repositories.find((repository) => repository.primary) ??
-      projectRepositories?.repositories[0] ??
-      null;
+      enabledRepositories.find((repository) => repository.primary) ?? enabledRepositories[0] ?? null;
     setSelectedGitHubRepositoryLinkId(primaryLink?.id ?? null);
-  }, [projectRepositories?.repositories]);
+  }, [enabledRepositories]);
 
   async function handleSelectGitHubRepository(linkedRepositoryId: string) {
     if (!projectId) {
@@ -884,9 +885,7 @@ export function ProjectDetailsPage() {
 
       {activeTab === 'github' ? (
         <div className="space-y-4">
-          {projectRepositories &&
-          projectRepositories.repositories.length > 0 &&
-          activeRepository ? (
+          {enabledRepositories.length > 0 && activeRepository ? (
             <section className="relative z-20">
               <div className="flex flex-col items-start justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3.5 shadow-sm transition-all hover:border-slate-300 hover:shadow-md sm:flex-row">
                 {/* Left: icon + full repo identity */}
@@ -942,7 +941,7 @@ export function ProjectDetailsPage() {
                 </div>
 
                 {/* Right: Refresh + Switch */}
-                <div className="flex shrink-0 items-center gap-2 pt-0.5">
+                <div className="flex w-full shrink-0 items-center gap-2 pt-0.5 sm:w-auto">
                   <button
                     type="button"
                     aria-label={isRefreshingGitHub ? 'Refreshing' : 'Refresh GitHub data'}
@@ -959,8 +958,27 @@ export function ProjectDetailsPage() {
                     />
                   </button>
 
-                  {projectRepositories.repositories.filter((r) => r.enabled).length > 1 && (
-                    <div className="relative">
+                  {enabledRepositories.length > 1 && (
+                    <div className="min-w-0 flex-1 sm:hidden">
+                      <Select
+                        value={selectedGitHubRepositoryLinkId ?? ''}
+                        onChange={(e) => {
+                          void handleSelectGitHubRepository(e.target.value);
+                        }}
+                        className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 outline-none transition-all focus:border-amber-300 focus:ring-4 focus:ring-amber-50"
+                        aria-label="Switch repository"
+                      >
+                        {enabledRepositories.map((repo) => (
+                          <option key={repo.id} value={repo.id}>
+                            {repo.customName?.trim() || repo.name || 'Unnamed repository'}
+                          </option>
+                        ))}
+                      </Select>
+                    </div>
+                  )}
+
+                  {enabledRepositories.length > 1 && (
+                    <div className="relative hidden sm:block">
                       <button
                         type="button"
                         onClick={() => setIsRepoSelectorOpen(!isRepoSelectorOpen)}
@@ -979,9 +997,7 @@ export function ProjectDetailsPage() {
                             onClick={() => setIsRepoSelectorOpen(false)}
                           />
                           <div className="absolute left-0 right-0 top-full z-20 mt-2 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl animate-in fade-in slide-in-from-top-2 duration-200 sm:left-auto sm:right-0 sm:min-w-[280px]">
-                            {projectRepositories.repositories
-                              .filter((repo) => repo.enabled)
-                              .map((repo) => {
+                            {enabledRepositories.map((repo) => {
                                 const isSelected = repo.id === selectedGitHubRepositoryLinkId;
                                 return (
                                   <button
