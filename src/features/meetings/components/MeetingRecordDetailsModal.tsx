@@ -29,6 +29,11 @@ function statusTone(status: MeetingRecord['status']) {
   return 'warning';
 }
 
+type MetadataItem = {
+  label: string;
+  value: string;
+};
+
 type MeetingRecordDetailsModalProps = {
   isOpen: boolean;
   record: MeetingRecord | null;
@@ -90,86 +95,78 @@ export function MeetingRecordDetailsModal({
               {dateFormatter.format(parseIsoDate(record.meetingDate))}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-muted-foreground transition-colors hover:bg-slate-100 hover:text-foreground"
-            aria-label="Close modal"
-          >
-            <X className="h-4 w-4" />
-          </button>
+          <div className="flex items-center gap-2">
+            <StatusBadge tone={statusTone(record.status)}>{record.status}</StatusBadge>
+            <button
+              type="button"
+              onClick={onClose}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-muted-foreground transition-colors hover:bg-slate-100 hover:text-foreground"
+              aria-label="Close modal"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
         </div>
 
-        <div className="space-y-5 px-6 py-5">
-          <div className="flex flex-wrap items-center gap-2">
-            <StatusBadge tone={statusTone(record.status)}>{record.status}</StatusBadge>
-            <span className="text-xs font-semibold text-slate-500">
-              Duration: {record.durationMinutes} minutes
-            </span>
-            {linkedChannel ? (
-              <span
-                className="inline-flex max-w-full truncate rounded-xl border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700"
-                title={linkedChannel.channelName}
-              >
-                {linkedChannel.channelName}
-              </span>
+        <div className="space-y-7 px-6 py-6">
+          <div className="space-y-6">
+            <section className="space-y-2.5">
+              <h4 className="text-sm font-bold tracking-tight text-slate-900">
+                Discussion summary
+              </h4>
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <p className="text-sm font-semibold leading-relaxed text-slate-800">
+                  {record.discussionSummary}
+                </p>
+              </div>
+            </section>
+
+            {record.discussionDetails ? (
+              <section className="space-y-2.5">
+                <h4 className="text-sm font-bold tracking-tight text-slate-900">
+                  Discussion details
+                </h4>
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-700">
+                    {record.discussionDetails}
+                  </p>
+                </div>
+              </section>
             ) : null}
           </div>
 
-          <div className="grid gap-5 sm:grid-cols-2">
-            <div className="space-y-1">
-              <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">
-                Added by
-              </p>
-              <p className="text-sm font-semibold text-slate-800">{record.addedByName}</p>
-              <p className="text-xs font-semibold text-slate-400">{record.addedByRole}</p>
-            </div>
-            <div className="space-y-1">
-              <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">
-                Created at
-              </p>
-              <p className="text-sm font-semibold text-slate-800">
-                {dateTimeFormatter.format(new Date(record.createdAt))}
-              </p>
-            </div>
-          </div>
+          {(() => {
+            const metadata: MetadataItem[] = [
+              { label: 'Duration', value: `${record.durationMinutes} minutes` },
+              ...(linkedChannel ? [{ label: 'Linked channel', value: linkedChannel.channelName }] : []),
+              { label: 'Added by', value: `${record.addedByName} (${record.addedByRole})` },
+              { label: 'Created at', value: dateTimeFormatter.format(new Date(record.createdAt)) },
+              ...(record.status === 'APPROVED' && record.approvedByName && record.approvedAt
+                ? [
+                    { label: 'Approved by', value: record.approvedByName },
+                    { label: 'Approved at', value: dateTimeFormatter.format(new Date(record.approvedAt)) },
+                  ]
+                : []),
+            ];
 
-          <div className="space-y-2">
-            <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">
-              Discussion summary
-            </p>
-            <p className="text-sm font-semibold text-slate-800">{record.discussionSummary}</p>
-          </div>
-
-          {record.discussionDetails ? (
-            <div className="space-y-2">
-              <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">
-                Discussion details
-              </p>
-              <p className="whitespace-pre-wrap text-sm text-slate-700">
-                {record.discussionDetails}
-              </p>
-            </div>
-          ) : null}
-
-          {record.status === 'APPROVED' && record.approvedByName && record.approvedAt ? (
-            <div className="grid gap-5 sm:grid-cols-2">
-              <div className="space-y-1">
+            return (
+              <section className="rounded-2xl border border-slate-200 bg-slate-50/40 p-4">
                 <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">
-                  Approved by
+                  Record metadata
                 </p>
-                <p className="text-sm font-semibold text-slate-800">{record.approvedByName}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">
-                  Approved at
-                </p>
-                <p className="text-sm font-semibold text-slate-800">
-                  {dateTimeFormatter.format(new Date(record.approvedAt))}
-                </p>
-              </div>
-            </div>
-          ) : null}
+                <div className="mt-3 grid gap-4 sm:grid-cols-2">
+                  {metadata.map((item) => (
+                    <div key={item.label} className="space-y-1">
+                      <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">
+                        {item.label}
+                      </p>
+                      <p className="text-sm font-semibold text-slate-800">{item.value}</p>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            );
+          })()}
         </div>
       </div>
     </div>
@@ -181,4 +178,3 @@ export function MeetingRecordDetailsModal({
 
   return createPortal(modal, document.body);
 }
-
