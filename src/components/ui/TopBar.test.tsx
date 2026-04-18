@@ -68,7 +68,8 @@ describe('TopBar', () => {
     const mobileToggle = screen.getByRole('button', { name: 'Open navigation menu' });
     expect(mobileToggle).toHaveAttribute('aria-expanded', 'false');
 
-    const navWrapper = mobileToggle.closest('div')?.nextElementSibling as HTMLElement;
+    const projectsLink = screen.getByRole('link', { name: 'Projects' });
+    const navWrapper = projectsLink.closest('nav')?.parentElement as HTMLElement;
     expect(navWrapper.className).toContain('hidden');
 
     fireEvent.click(mobileToggle);
