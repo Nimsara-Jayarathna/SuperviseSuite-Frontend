@@ -1,11 +1,11 @@
 import { useCallback, useDeferredValue, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
+import { Plus } from 'lucide-react';
 import { useBlockingError } from '@/app/layout/BlockingErrorContext';
 import { EmptyState } from '@/components/feedback/EmptyState';
 import { ErrorState } from '@/components/feedback/ErrorState';
 import { buttonStyles } from '@/components/ui/Button';
-import { PageHeader } from '@/components/ui/PageHeader';
 import { Select } from '@/components/ui/Select';
 import { isBlockingError } from '@/utils/errorSeverity';
 import { SupervisorProjectCard } from '../components/SupervisorProjectCard';
@@ -65,18 +65,27 @@ export function SupervisorProjectsPage() {
 
   return (
     <div className="space-y-5">
-      <PageHeader
-        title="Projects"
-        subtitle="Review every supervised project in one place."
-        actions={
-          <Link
-            to="/supervisor/projects/new"
-            className={buttonStyles({ variant: 'primary', size: 'md' })}
-          >
-            New project
-          </Link>
-        }
-      />
+      <section className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl lg:text-4xl">
+            Projects
+          </h1>
+          <p className="mt-1.5 text-sm leading-6 text-muted-foreground sm:text-base sm:leading-7">
+            Review every supervised project in one place.
+          </p>
+        </div>
+        <Link
+          to="/supervisor/projects/new"
+          className={buttonStyles({
+            variant: 'primary',
+            size: 'md',
+            className: 'shrink-0 whitespace-nowrap',
+          })}
+        >
+          <Plus className="h-4 w-4" aria-hidden />
+          New Project
+        </Link>
+      </section>
 
       <section className="grid gap-2.5 sm:gap-3 md:grid-cols-[minmax(0,1fr)_210px] md:gap-4">
         <input
