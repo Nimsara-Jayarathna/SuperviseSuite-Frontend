@@ -63,24 +63,39 @@ function DashboardStatsSkeleton() {
 
 function ProjectHealthMobileCard({ project }: { project: SupervisorDashboardProjectItem }) {
   return (
-    <article className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+    <article className="rounded-2xl border border-slate-200 bg-white px-4 py-3.5 shadow-sm">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="truncate font-semibold text-foreground">{project.title}</p>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="truncate text-[17px] font-semibold leading-tight text-foreground">
+            {project.title}
+          </p>
+          <p
+            className="mt-1 text-sm leading-5 text-muted-foreground"
+            style={{
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+            }}
+          >
             {project.summary ?? 'No summary provided yet.'}
           </p>
         </div>
         <Link
           to={`/supervisor/projects/${project.id}`}
-          className={buttonStyles({ variant: 'primary', size: 'sm' })}
+          className={buttonStyles({
+            variant: 'primary',
+            size: 'sm',
+            className: 'h-8 rounded-full px-3 text-xs font-bold',
+          })}
         >
           Open
         </Link>
       </div>
-      <dl className="mt-3 grid grid-cols-2 gap-2 text-xs">
-        <div>
-          <dt className="text-muted-foreground">Status</dt>
+
+      <dl className="mt-3 grid grid-cols-2 gap-x-5 gap-y-3 border-t border-slate-100 pt-3 text-xs">
+        <div className="space-y-1">
+          <dt className="font-medium uppercase tracking-wide text-slate-500">Status</dt>
           <dd className="mt-1">
             <span
               className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold ${statusClasses(project.lifecycleStatus)}`}
@@ -89,20 +104,20 @@ function ProjectHealthMobileCard({ project }: { project: SupervisorDashboardProj
             </span>
           </dd>
         </div>
-        <div>
-          <dt className="text-muted-foreground">Progress</dt>
-          <dd className="mt-1 text-sm font-semibold text-foreground">
+        <div className="space-y-1">
+          <dt className="font-medium uppercase tracking-wide text-slate-500">Progress</dt>
+          <dd className="text-base font-bold leading-none text-foreground">
             {project.progressPercent ?? 0}%
           </dd>
         </div>
-        <div>
-          <dt className="text-muted-foreground">Milestone</dt>
-          <dd className="mt-1 text-sm font-semibold text-foreground">
+        <div className="space-y-1">
+          <dt className="font-medium uppercase tracking-wide text-slate-500">Milestone</dt>
+          <dd className="text-sm font-semibold text-foreground">
             {formatMilestoneDate(project.milestoneDate)}
           </dd>
         </div>
-        <div>
-          <dt className="text-muted-foreground">Jira Health</dt>
+        <div className="space-y-1">
+          <dt className="font-medium uppercase tracking-wide text-slate-500">Jira Health</dt>
           <dd className="mt-1">
             <span
               className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold ${jiraIndicatorClasses(project.jiraHealthIndicator)}`}
@@ -426,17 +441,24 @@ export function SupervisorDashboardPage() {
               {upcomingProjects.map((project) => (
                 <div
                   key={project.id}
-                  className="flex flex-col items-start justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:flex-row sm:items-center"
+                  className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:flex-row sm:items-center"
                 >
-                  <div>
-                    <p className="font-medium text-foreground">{project.title}</p>
+                  <div className="min-w-0">
+                    <p className="truncate text-[15px] font-semibold text-foreground sm:text-base">
+                      {project.title}
+                    </p>
                     <p className="mt-1 text-sm text-muted-foreground">
                       {formatMilestoneDate(project.milestoneDate)}
                     </p>
                   </div>
                   <Link
                     to={`/supervisor/projects/${project.id}`}
-                    className={buttonStyles({ variant: 'ghost', size: 'sm' })}
+                    className={buttonStyles({
+                      variant: 'ghost',
+                      size: 'sm',
+                      className:
+                        'h-auto shrink-0 rounded-none px-0 py-0 text-xs font-semibold text-slate-500 hover:bg-transparent hover:text-slate-800 sm:h-9 sm:rounded-2xl sm:px-3 sm:py-2 sm:text-sm sm:font-medium sm:text-muted-foreground',
+                    })}
                   >
                     Review
                   </Link>
