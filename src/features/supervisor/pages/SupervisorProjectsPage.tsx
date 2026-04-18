@@ -1,12 +1,9 @@
 import { useCallback, useDeferredValue, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
 import { Plus } from 'lucide-react';
 import { useBlockingError } from '@/app/layout/BlockingErrorContext';
-import { EmptyState } from '@/components/feedback/EmptyState';
-import { ErrorState } from '@/components/feedback/ErrorState';
-import { buttonStyles } from '@/components/ui/Button';
-import { Select } from '@/components/ui/Select';
+import { ProjectsPageView } from '@/features/projects/components/ProjectsPageView';
 import { isBlockingError } from '@/utils/errorSeverity';
 import { SupervisorProjectCard } from '../components/SupervisorProjectCard';
 import { SupervisorProjectCardSkeleton } from '../components/SupervisorProjectCardSkeleton';
@@ -64,81 +61,49 @@ export function SupervisorProjectsPage() {
   }, [error, showBlockingError, clearBlockingError, retryLoad]);
 
   return (
-    <div className="space-y-5">
-      <section className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl lg:text-4xl">
-            Projects
-          </h1>
-          <p className="mt-1.5 text-sm leading-6 text-muted-foreground sm:text-base sm:leading-7">
-            Review every supervised project in one place.
-          </p>
-        </div>
-        <Link
-          to="/supervisor/projects/new"
-          className={buttonStyles({
-            variant: 'primary',
-            size: 'md',
-            className: 'shrink-0 whitespace-nowrap',
-          })}
-        >
-          <Plus className="h-4 w-4" aria-hidden />
-          New Project
-        </Link>
-      </section>
-
-      <section className="grid gap-2.5 sm:gap-3 md:grid-cols-[minmax(0,1fr)_210px] md:gap-4">
-        <input
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="Search by project title, summary, batch, or semester"
-          className="h-10 w-full rounded-2xl border border-border bg-white px-4 text-sm outline-none transition-colors focus:border-amber-300"
-        />
-        <Select
-          value={lifecycle}
-          onChange={(event) => setLifecycle(event.target.value as LifecycleFilter)}
-          className="h-10 w-full rounded-2xl border border-border bg-white px-4 text-sm outline-none transition-colors focus:border-amber-300"
-        >
-          {LIFECYCLE_OPTIONS.map((option) => (
-            <option key={option} value={option}>
-              {option === 'ALL' ? 'All lifecycle states' : option.replace('_', ' ')}
-            </option>
-          ))}
-        </Select>
-      </section>
-
-      {isLoading ? (
-        <section className="grid items-stretch gap-2.5 lg:gap-3 xl:grid-cols-2 2xl:grid-cols-3">
-          {Array.from({ length: 4 }).map((_, index) => (
-            <SupervisorProjectCardSkeleton key={`supervisor-project-skeleton-${index}`} />
-          ))}
-        </section>
-      ) : error && !isBlockingError(error) ? (
-        <ErrorState error={error} onRetry={() => void reload()} />
-      ) : visibleProjects.length > 0 ? (
-        <section className="grid items-stretch gap-2.5 lg:gap-3 xl:grid-cols-2 2xl:grid-cols-3">
-          {visibleProjects.map((project) => (
-            <SupervisorProjectCard key={project.id} project={project} />
-          ))}
-        </section>
-      ) : (
-        <EmptyState
-          title="No projects found"
-          description="No supervised projects match your current filters."
-          primaryAction={{
-            label: 'Create new project',
-            onClick: () => navigate('/supervisor/projects/new'),
-          }}
-          secondaryAction={
-            hasActiveFilters
-              ? {
-                  label: 'Clear filters',
-                  onClick: resetFilters,
-                }
-              : undefined
-          }
-        />
+    <ProjectsPageView
+      title="Projects"
+      subtitle="Review every supervised project in one place."
+      searchValue={query}
+      onSearchChange={setQuery}
+      searchPlaceholder="Search by project title, summary, batch, or semester"
+      action={{
+        to: '/supervisor/projects/new',
+        label: 'New Project',
+        icon: <Plus className="h-4 w-4" aria-hidden />,
+      }}
+      filter={{
+        value: lifecycle,
+        onChange: (nextValue) => setLifecycle(nextValue as LifecycleFilter),
+        options: LIFECYCLE_OPTIONS.map((option) => ({
+          value: option,
+          label: option === 'ALL' ? 'All lifecycle states' : option.replace('_', ' '),
+        })),
+      }}
+      isLoading={isLoading}
+      error={error && !isBlockingError(error) ? error : null}
+      onRetry={() => void reload()}
+      items={visibleProjects}
+      renderSkeleton={(index) => (
+        <SupervisorProjectCardSkeleton key={`supervisor-project-skeleton-${index}`} />
       )}
-    </div>
+      renderItem={(project) => <SupervisorProjectCard key={project.id} project={project} />}
+      listGridClassName="grid items-stretch gap-2.5 lg:gap-3 xl:grid-cols-2 2xl:grid-cols-3"
+      emptyState={{
+        title: 'No projects found',
+        description: 'No supervised projects match your current filters.',
+        primaryAction: {
+          label: 'Create new project',
+          onClick: () => navigate('/supervisor/projects/new'),
+        },
+        secondaryAction: hasActiveFilters
+          ? {
+              label: 'Clear filters',
+              onClick: resetFilters,
+            }
+          : undefined,
+      }}
+      rootClassName="space-y-5"
+    />
   );
 }

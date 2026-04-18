@@ -13,7 +13,6 @@ import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { ErrorState } from '@/components/feedback/ErrorState';
 import { Button, buttonStyles } from '@/components/ui/Button';
-import { PageHeader } from '@/components/ui/PageHeader';
 import { PageTabs } from '@/components/ui/PageTabs';
 import { RequestStateModal } from '@/components/ui/RequestStateModal';
 import { Select } from '@/components/ui/Select';
@@ -745,13 +744,24 @@ export function ProjectDetailsPage() {
         }
       />
 
-      <PageHeader
-        title={project.title}
-        subtitle={project.summary ?? 'No summary has been recorded for this project yet.'}
-      />
-
-      <section className="flex flex-wrap items-center gap-3">
-        <div className="inline-flex items-center rounded-2xl border border-slate-200 bg-white px-4 py-2 shadow-sm transition-all hover:border-amber-200 hover:shadow-md">
+      <section className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <h1 className="truncate text-2xl font-semibold tracking-tight text-foreground sm:text-3xl lg:text-4xl">
+            {project.title}
+          </h1>
+          <p
+            className="mt-1.5 text-sm leading-6 text-muted-foreground sm:text-base sm:leading-7"
+            style={{
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+            }}
+          >
+            {project.summary ?? 'No summary has been recorded for this project yet.'}
+          </p>
+        </div>
+        <div className="inline-flex shrink-0 items-center rounded-2xl border border-slate-200 bg-white px-4 py-2 shadow-sm transition-all hover:border-amber-200 hover:shadow-md">
           <div className="flex flex-col leading-tight">
             <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
               Lifecycle
@@ -774,7 +784,9 @@ export function ProjectDetailsPage() {
             </div>
           </div>
         </div>
+      </section>
 
+      <section className="flex flex-wrap items-center gap-3">
         <div className="flex flex-wrap items-center gap-2">
           <div className="inline-flex items-center gap-2 rounded-2xl bg-white border border-slate-100 px-4 py-2 text-sm text-slate-600 shadow-sm transition-all hover:shadow-md">
             <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">

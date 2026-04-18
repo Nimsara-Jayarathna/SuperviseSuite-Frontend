@@ -135,7 +135,7 @@ export function OverviewTabSection({ project, overview }: OverviewTabSectionProp
               </div>
             </form>
           ) : (
-            <div className="mt-6 grid gap-6 sm:grid-cols-2">
+            <div className="mt-6 grid grid-cols-2 gap-6 sm:grid-cols-2">
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
                   Batch
@@ -148,7 +148,7 @@ export function OverviewTabSection({ project, overview }: OverviewTabSectionProp
                 </p>
                 <p className="mt-1 font-semibold text-slate-700">{project.semester ?? 'Not set'}</p>
               </div>
-              <div className="sm:col-span-2">
+              <div className="col-span-2">
                 <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
                   Health note
                 </p>
@@ -158,7 +158,7 @@ export function OverviewTabSection({ project, overview }: OverviewTabSectionProp
                   </p>
                 </div>
               </div>
-              <div className="sm:col-span-2">
+              <div className="col-span-2">
                 <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
                   Project leader
                 </p>
