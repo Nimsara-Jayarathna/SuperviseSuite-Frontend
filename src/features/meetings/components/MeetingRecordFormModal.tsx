@@ -15,9 +15,11 @@ type MeetingRecordFormModalProps = {
   onClose: () => void;
   onSubmit: (payload: MeetingRecordUpsertPayload) => void;
   maxSummaryLength?: number;
+  maxDetailsLength?: number;
 };
 
 const DEFAULT_MAX_SUMMARY_LENGTH = 1024;
+const DEFAULT_MAX_DETAILS_LENGTH = 5000;
 
 export function MeetingRecordFormModal({
   isOpen,
@@ -27,6 +29,7 @@ export function MeetingRecordFormModal({
   onClose,
   onSubmit,
   maxSummaryLength = DEFAULT_MAX_SUMMARY_LENGTH,
+  maxDetailsLength = DEFAULT_MAX_DETAILS_LENGTH,
 }: MeetingRecordFormModalProps) {
   const [isMounted, setIsMounted] = useState(false);
   const [meetingDate, setMeetingDate] = useState('');
@@ -203,10 +206,14 @@ export function MeetingRecordFormModal({
             <textarea
               value={discussionDetails}
               onChange={(event) => setDiscussionDetails(event.target.value)}
+              maxLength={maxDetailsLength}
               rows={5}
               placeholder="Optional detailed notes..."
               className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition-all focus:border-indigo-400 focus:ring-4 focus:ring-indigo-50"
             />
+            {discussionDetails.length >= maxDetailsLength ? (
+              <p className="text-[11px] font-semibold text-amber-600">{`Max ${maxDetailsLength} characters reached`}</p>
+            ) : null}
           </div>
         </div>
 
@@ -228,4 +235,3 @@ export function MeetingRecordFormModal({
 
   return createPortal(modal, document.body);
 }
-
