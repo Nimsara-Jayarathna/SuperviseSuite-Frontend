@@ -119,7 +119,7 @@ export function MilestonesTabSection({ project, milestones }: MilestonesTabSecti
 
   return (
     <section className="rounded-3xl border border-border bg-white p-6 shadow-sm transition-all hover:shadow-md">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <div className="flex flex-col">
           <h2 className="text-lg font-bold tracking-tight text-slate-800">Project Milestones</h2>
           <p className="text-xs font-medium text-slate-400">
@@ -132,7 +132,7 @@ export function MilestonesTabSection({ project, milestones }: MilestonesTabSecti
             className={buttonStyles({
               variant: 'primary',
               size: 'sm',
-              className: 'rounded-xl shadow-lg shadow-indigo-100',
+              className: 'w-full rounded-xl shadow-lg shadow-indigo-100 sm:w-auto',
             })}
             onClick={milestones.startAddMilestone}
           >
@@ -336,17 +336,17 @@ export function MilestonesTabSection({ project, milestones }: MilestonesTabSecti
                 </form>
               ) : (
                 <>
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-                    <div className="flex shrink-0 items-center justify-center">
+                  <div className="flex items-start gap-3 sm:gap-4">
+                    <div className="flex shrink-0 items-start justify-center pt-0.5 sm:items-center">
                       <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-50 text-base font-black text-slate-400 shadow-inner group-hover:bg-indigo-50 group-hover:text-indigo-500 transition-colors">
                         {String(milestone.sequenceNo).padStart(2, '0')}
                       </div>
                     </div>
 
                     <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-3">
                         <div className="flex flex-col">
-                          <h4 className="text-lg font-black tracking-tight text-slate-800 transition-colors group-hover:text-indigo-900">
+                          <h4 className="line-clamp-2 text-base font-black tracking-tight text-slate-800 transition-colors group-hover:text-indigo-900 sm:text-lg sm:line-clamp-1">
                             {milestone.title}
                           </h4>
                           <div className="mt-1 flex items-center gap-2 text-xs font-bold text-slate-400">
@@ -355,7 +355,7 @@ export function MilestonesTabSection({ project, milestones }: MilestonesTabSecti
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-3">
+                        <div className="flex w-full items-center justify-between gap-3 sm:w-auto sm:justify-start">
                           <button
                             type="button"
                             aria-label="Change milestone status"
@@ -379,9 +379,9 @@ export function MilestonesTabSection({ project, milestones }: MilestonesTabSecti
                               );
                             }}
                             disabled={milestones.quickStatusUpdatingId === milestone.id}
-                            className={`relative inline-flex cursor-pointer items-center overflow-hidden rounded-2xl bg-slate-100 hover:ring-2 hover:ring-indigo-100 transition-all ${milestones.quickStatusUpdatingId === milestone.id ? 'opacity-50' : ''}`}
+                            className={`relative inline-flex cursor-pointer items-center overflow-hidden rounded-2xl bg-slate-100 transition-all hover:ring-2 hover:ring-indigo-100 ${milestones.quickStatusUpdatingId === milestone.id ? 'opacity-50' : ''}`}
                           >
-                            <div className={`flex items-center gap-2 pl-3 pr-2 py-1.5`}>
+                            <div className="flex items-center gap-2 px-3 py-1.5">
                               {getStatusIcon(milestone.status, 'h-3.5 w-3.5')}
                               <StatusBadge
                                 tone={getMilestoneTone(milestone.status)}
