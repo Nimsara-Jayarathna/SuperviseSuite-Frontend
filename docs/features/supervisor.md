@@ -6,6 +6,7 @@ Related major-fixes doc: `docs/branches/major-fixes-scrum-97-supervisor-ui-workf
 Related GitHub integration doc: `docs/branches/major-fixes-scrum-80-github-dashboard-integration.md`
 Related multi-repository doc: `docs/branches/major-fixes-scrum-81-multiple-github-repositories.md`
 Related meetings doc: `docs/branches/major-fixes-meetings-tab-channel-management.md`
+Related meeting records doc: `docs/branches/major-fixes-meetings-tab-records-management.md`
 
 ## Routes
 
@@ -58,6 +59,11 @@ Supervisor feature currently uses these APIs:
 - `PATCH /api/supervisor/projects/{projectId}/meeting-channels/{channelId}`
 - `DELETE /api/supervisor/projects/{projectId}/meeting-channels/{channelId}`
 - `POST /api/supervisor/projects/{projectId}/meeting-channels/{channelId}/approve`
+- `GET /api/supervisor/projects/{projectId}/meeting-records`
+- `POST /api/supervisor/projects/{projectId}/meeting-records`
+- `PATCH /api/supervisor/projects/{projectId}/meeting-records/{recordId}`
+- `DELETE /api/supervisor/projects/{projectId}/meeting-records/{recordId}`
+- `POST /api/supervisor/projects/{projectId}/meeting-records/{recordId}/approve`
 - `GET /api/supervisor/projects/{projectId}/files`
 - `POST /api/supervisor/projects/{projectId}/files/upload-url`
 - `POST /api/supervisor/projects/{projectId}/files/confirm`
@@ -98,6 +104,12 @@ Supervisor feature currently uses these APIs:
 | `src/features/meetings/components/MeetingChannelsTable.tsx` | Shared table for channel listing/status display |
 | `src/features/meetings/components/MeetingChannelFormModal.tsx` | Shared meeting channel create/edit modal form |
 | `src/features/meetings/components/MeetingChannelDeleteConfirmModal.tsx` | Supervisor delete confirmation modal |
+| `src/features/meetings/components/SupervisorMeetingRecordsSection.tsx` | Supervisor meeting records panel with add/edit/delete/approve actions |
+| `src/features/meetings/hooks/useSupervisorMeetingRecordsState.ts` | Supervisor meeting records state orchestration (load/mutations/request-state modal lifecycle) |
+| `src/features/meetings/components/MeetingRecordsTable.tsx` | Shared table for record listing/status display |
+| `src/features/meetings/components/MeetingRecordFormModal.tsx` | Shared meeting record create/edit modal form |
+| `src/features/meetings/components/MeetingRecordDeleteConfirmModal.tsx` | Supervisor delete confirmation modal |
+| `src/features/meetings/components/MeetingRecordDetailsModal.tsx` | Shared meeting record details modal |
 | `src/features/supervisor/components/ProjectDetail/FilesTabSection.tsx` | Files tab for upload, list, download, and soft-delete flows |
 | `src/features/supervisor/components/ProjectDetail/jira/JiraHealthOverview.tsx` | Shared Jira analytics orchestrator (tab switcher, context bar, refresh action) |
 | `src/features/supervisor/components/ProjectDetail/jira/workload/JiraWorkloadPanel.tsx` | Member workload comparison dashboard with imbalance alerts and unassigned warnings |
@@ -374,6 +386,15 @@ Scope note:
 - Status behavior:
   - supervisor-created channels are approved immediately
   - student-created channels appear as pending until approved
+
+- `Records` data/actions:
+  - list records: `GET /api/supervisor/projects/{projectId}/meeting-records`
+  - add record: `POST /api/supervisor/projects/{projectId}/meeting-records`
+  - update record: `PATCH /api/supervisor/projects/{projectId}/meeting-records/{recordId}`
+  - delete record: `DELETE /api/supervisor/projects/{projectId}/meeting-records/{recordId}`
+  - approve pending record: `POST /api/supervisor/projects/{projectId}/meeting-records/{recordId}/approve`
+  - supervisor-created records are approved immediately
+  - student-created records appear as pending until approved
 
 ### Jira - Hierarchy tab
 

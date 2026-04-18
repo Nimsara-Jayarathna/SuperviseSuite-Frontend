@@ -18,8 +18,14 @@ import type {
   JiraSprintProgress,
   JiraWorkload,
 } from '@/features/supervisor/types';
-import type { MeetingChannel, MeetingChannelUpsertPayload } from '@/features/meetings/types';
+import type {
+  MeetingChannel,
+  MeetingChannelUpsertPayload,
+  MeetingRecord,
+  MeetingRecordUpsertPayload,
+} from '@/features/meetings/types';
 import { sortMeetingChannels } from '@/features/meetings/lib/sortMeetingChannels';
+import { sortMeetingRecords } from '@/features/meetings/lib/sortMeetingRecords';
 
 const cachedProjectsById: Partial<Record<string, StudentProjectDetail>> = {};
 const inFlightProjectRequests: Partial<Record<string, Promise<StudentProjectDetail>>> = {};
@@ -35,6 +41,8 @@ type JiraCache = {
 const cachedJiraByProjectId: Partial<Record<string, JiraCache>> = {};
 const cachedMeetingChannelsByProjectId: Partial<Record<string, MeetingChannel[]>> = {};
 const inFlightMeetingChannelsByProjectId: Partial<Record<string, Promise<MeetingChannel[]>>> = {};
+const cachedMeetingRecordsByProjectId: Partial<Record<string, MeetingRecord[]>> = {};
+const inFlightMeetingRecordsByProjectId: Partial<Record<string, Promise<MeetingRecord[]>>> = {};
 
 function clearRecord(record: Partial<Record<string, unknown>>) {
   for (const key of Object.keys(record)) {
@@ -50,6 +58,8 @@ function clearStudentApiCache() {
   clearRecord(cachedJiraByProjectId);
   clearRecord(cachedMeetingChannelsByProjectId);
   clearRecord(inFlightMeetingChannelsByProjectId);
+  clearRecord(cachedMeetingRecordsByProjectId);
+  clearRecord(inFlightMeetingRecordsByProjectId);
 }
 
 function appendQuery(url: string, params: URLSearchParams): string {
@@ -270,6 +280,55 @@ export const studentApi = {
     const existing = cachedMeetingChannelsByProjectId[projectId];
     if (existing) {
       cachedMeetingChannelsByProjectId[projectId] = sortMeetingChannels([
+        created,
+        ...existing.filter((item) => item.id !== created.id),
+      ]);
+    }
+    return created;
+  },
+
+  async getProjectMeetingRecords(
+    projectId: string,
+    forceRefresh = false,
+  ): Promise<MeetingRecord[]> {
+    if (!forceRefresh && cachedMeetingRecordsByProjectId[projectId]) {
+      return cachedMeetingRecordsByProjectId[projectId] as MeetingRecord[];
+    }
+
+    if (!forceRefresh && inFlightMeetingRecordsByProjectId[projectId]) {
+      return inFlightMeetingRecordsByProjectId[projectId] as Promise<MeetingRecord[]>;
+    }
+
+    if (forceRefresh) {
+      delete cachedMeetingRecordsByProjectId[projectId];
+    }
+
+    const request = apiClient.get<MeetingRecord[]>(
+      `/api/student/projects/${projectId}/meeting-records`,
+    );
+    inFlightMeetingRecordsByProjectId[projectId] = request;
+
+    try {
+      const records = sortMeetingRecords(await request);
+      cachedMeetingRecordsByProjectId[projectId] = records;
+      return records;
+    } finally {
+      delete inFlightMeetingRecordsByProjectId[projectId];
+    }
+  },
+
+  async createProjectMeetingRecord(
+    projectId: string,
+    payload: MeetingRecordUpsertPayload,
+  ): Promise<MeetingRecord> {
+    const created = await apiClient.post<MeetingRecord>(
+      `/api/student/projects/${projectId}/meeting-records`,
+      payload,
+    );
+    delete inFlightMeetingRecordsByProjectId[projectId];
+    const existing = cachedMeetingRecordsByProjectId[projectId];
+    if (existing) {
+      cachedMeetingRecordsByProjectId[projectId] = sortMeetingRecords([
         created,
         ...existing.filter((item) => item.id !== created.id),
       ]);

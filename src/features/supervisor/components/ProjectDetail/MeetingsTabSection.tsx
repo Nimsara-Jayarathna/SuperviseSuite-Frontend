@@ -1,6 +1,6 @@
-import { EmptyState } from '@/components/feedback/EmptyState';
 import { useState } from 'react';
 import { SupervisorMeetingChannelsSection } from '@/features/meetings/components/SupervisorMeetingChannelsSection';
+import { SupervisorMeetingRecordsSection } from '@/features/meetings/components/SupervisorMeetingRecordsSection';
 
 type MeetingsTabSectionProps = {
   projectId: string;
@@ -54,12 +54,7 @@ export function MeetingsTabSection({ projectId }: MeetingsTabSectionProps) {
       </div>
 
       <div hidden={activeTab !== 'records'}>
-        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <EmptyState
-            title="Records coming soon"
-            description="Meeting records will be available in a future update."
-          />
-        </div>
+        <SupervisorMeetingRecordsSection projectId={projectId} enabled={activeTab === 'records'} />
       </div>
     </section>
   );

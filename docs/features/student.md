@@ -33,6 +33,8 @@ Student pages currently use:
 - `GET /api/student/projects/{projectId}/jira/hierarchy`
 - `GET /api/student/projects/{projectId}/meeting-channels`
 - `POST /api/student/projects/{projectId}/meeting-channels`
+- `GET /api/student/projects/{projectId}/meeting-records`
+- `POST /api/student/projects/{projectId}/meeting-records`
 - `GET /api/student/projects/{projectId}/files`
 - `POST /api/student/projects/{projectId}/files/upload-url`
 - `POST /api/student/projects/{projectId}/files/confirm`
@@ -56,6 +58,11 @@ Student pages currently use:
 | `src/features/meetings/hooks/useStudentMeetingChannelsState.ts` | Student meetings state orchestration (load/add/refresh modal lifecycle) |
 | `src/features/meetings/components/MeetingChannelsTable.tsx` | Shared table for channel listing/status display |
 | `src/features/meetings/components/MeetingChannelFormModal.tsx` | Shared meeting channel create/edit modal form |
+| `src/features/meetings/components/StudentMeetingRecordsSection.tsx` | Student meeting records panel with add/list/view flow |
+| `src/features/meetings/hooks/useStudentMeetingRecordsState.ts` | Student meeting records state orchestration (load/add/refresh modal lifecycle) |
+| `src/features/meetings/components/MeetingRecordsTable.tsx` | Shared table for record listing/status display |
+| `src/features/meetings/components/MeetingRecordFormModal.tsx` | Shared meeting record create/edit modal form |
+| `src/features/meetings/components/MeetingRecordDetailsModal.tsx` | Shared meeting record details modal |
 | `src/features/student/components/StudentFilesTabSection.tsx` | Student files tab for upload/list/download (no delete) |
 | `src/features/projectfiles/hooks/useStudentProjectFiles.ts` | Files tab state: lazy load, seed from project detail, upload/download actions |
 | `src/features/projectfiles/components/UploadFileModal.tsx` | Shared upload modal with FE validation + request-state lifecycle |
@@ -136,11 +143,15 @@ Student pages currently use:
 - Meetings:
   - Inner sub-tabs use Jira-style pill navigation with `role="tablist"`:
     - `Channels`
-    - `Records` (placeholder state)
+    - `Records`
   - `Channels` fetches and renders `GET /api/student/projects/{projectId}/meeting-channels`.
   - Students can submit channels via `POST /api/student/projects/{projectId}/meeting-channels`.
   - Student-submitted channels are shown as pending until supervisor approval.
   - No student edit/delete/approve actions are exposed.
+  - `Records` fetches and renders `GET /api/student/projects/{projectId}/meeting-records`.
+  - Students can submit records via `POST /api/student/projects/{projectId}/meeting-records`.
+  - Student-submitted records are shown as pending until supervisor approval.
+  - Student records are view-only after submission (no edit/delete/approve actions are exposed).
 
 ### Files (student scope)
 

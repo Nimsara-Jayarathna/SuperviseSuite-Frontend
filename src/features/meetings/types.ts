@@ -32,3 +32,32 @@ export type MeetingChannelUpsertPayload = {
   channelName: string;
   linkOrIdentifier: string;
 };
+
+export type MeetingRecordStatus = 'PENDING' | 'APPROVED';
+
+export type MeetingRecord = {
+  id: string;
+  projectId: string;
+  meetingDate: string; // YYYY-MM-DD
+  durationMinutes: number;
+  discussionSummary: string;
+  discussionDetails: string | null;
+  channelId: string | null;
+  addedBy: string;
+  addedByName: string;
+  addedByRole: 'SUPERVISOR' | 'STUDENT';
+  status: MeetingRecordStatus;
+  approvedBy: string | null;
+  approvedByName: string | null;
+  approvedAt: string | null;
+  createdAt: string;
+  updatedAt: string | null;
+};
+
+export type MeetingRecordUpsertPayload = {
+  meetingDate: string;
+  durationMinutes: number;
+  discussionSummary: string;
+  discussionDetails?: string | null;
+  channelId?: string | null;
+};
