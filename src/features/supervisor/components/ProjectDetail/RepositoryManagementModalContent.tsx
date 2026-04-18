@@ -123,7 +123,9 @@ export function RepositoryManagementModalContent({
             <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100 ring-1 ring-inset ring-slate-200">
               <div
                 className={`h-full rounded-full transition-all duration-500 ${enabledLimitReached ? 'bg-amber-500' : 'bg-emerald-500'}`}
-                style={{ width: `${Math.min(100, (enabledCount / maxEnabledRepositories) * 100)}%` }}
+                style={{
+                  width: `${Math.min(100, (enabledCount / maxEnabledRepositories) * 100)}%`,
+                }}
               />
             </div>
           </div>
@@ -413,7 +415,8 @@ export function RepositoryManagementModalContent({
                   const normalizedSyncStatus = normalizeSyncStatus(row.syncStatus);
                   const isSyncing = normalizedSyncStatus === 'IN_PROGRESS';
                   const blockedByEnabledLimit = !row.enabled && remainingEnabledSlots < 1;
-                  const blockedByLinkedLimit = !row.enabled && !row.linkId && remainingLinkSlots < 1;
+                  const blockedByLinkedLimit =
+                    !row.enabled && !row.linkId && remainingLinkSlots < 1;
                   const enableBlocked = blockedByEnabledLimit || blockedByLinkedLimit;
                   const sourceSyncing = !!(row.sourceId && sourceHasSyncInProgress[row.sourceId]);
 
@@ -427,7 +430,9 @@ export function RepositoryManagementModalContent({
                       <td className="px-5 py-4.5 text-sm font-medium text-foreground">
                         {row.customName?.trim() || <span className="text-slate-400">-</span>}
                       </td>
-                      <td className="px-5 py-4.5 text-sm text-slate-600">{row.ownerLogin || 'unknown'}</td>
+                      <td className="px-5 py-4.5 text-sm text-slate-600">
+                        {row.ownerLogin || 'unknown'}
+                      </td>
                       <td className="px-5 py-4.5 text-sm text-slate-600">
                         {formatAccessTypeLabel(row.accessType)}
                       </td>
@@ -479,7 +484,9 @@ export function RepositoryManagementModalContent({
                               role="switch"
                               aria-checked={row.primary}
                               aria-label={
-                                row.primary ? 'Primary repository selected' : 'Set as primary repository'
+                                row.primary
+                                  ? 'Primary repository selected'
+                                  : 'Set as primary repository'
                               }
                               className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border transition-colors ${
                                 row.primary

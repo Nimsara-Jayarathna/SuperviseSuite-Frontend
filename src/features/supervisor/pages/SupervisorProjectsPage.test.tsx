@@ -23,7 +23,9 @@ vi.mock('@/app/layout/BlockingErrorContext', () => ({
 }));
 
 vi.mock('../components/SupervisorProjectCard', () => ({
-  SupervisorProjectCard: ({ project }: { project: { title: string } }) => <div>{project.title}</div>,
+  SupervisorProjectCard: ({ project }: { project: { title: string } }) => (
+    <div>{project.title}</div>
+  ),
 }));
 
 vi.mock('../components/SupervisorProjectCardSkeleton', () => ({

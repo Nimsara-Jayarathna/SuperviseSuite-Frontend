@@ -172,7 +172,9 @@ export function ProjectDetailsPage() {
     [projectRepositories?.repositories],
   );
   const activeRepository = useMemo(
-    () => enabledRepositories.find((repository) => repository.id === selectedGitHubRepositoryLinkId) ?? null,
+    () =>
+      enabledRepositories.find((repository) => repository.id === selectedGitHubRepositoryLinkId) ??
+      null,
     [enabledRepositories, selectedGitHubRepositoryLinkId],
   );
   const activeRepositorySyncStatus = normalizeSyncStatus(activeRepository?.syncStatus);
@@ -504,7 +506,9 @@ export function ProjectDetailsPage() {
 
   useEffect(() => {
     const primaryLink =
-      enabledRepositories.find((repository) => repository.primary) ?? enabledRepositories[0] ?? null;
+      enabledRepositories.find((repository) => repository.primary) ??
+      enabledRepositories[0] ??
+      null;
     setSelectedGitHubRepositoryLinkId(primaryLink?.id ?? null);
   }, [enabledRepositories]);
 
@@ -998,48 +1002,46 @@ export function ProjectDetailsPage() {
                           />
                           <div className="absolute left-0 right-0 top-full z-20 mt-2 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl animate-in fade-in slide-in-from-top-2 duration-200 sm:left-auto sm:right-0 sm:min-w-[280px]">
                             {enabledRepositories.map((repo) => {
-                                const isSelected = repo.id === selectedGitHubRepositoryLinkId;
-                                return (
-                                  <button
-                                    key={repo.id}
-                                    type="button"
-                                    onClick={() => {
-                                      void handleSelectGitHubRepository(repo.id);
-                                      setIsRepoSelectorOpen(false);
-                                    }}
-                                    className={`flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm transition-all hover:bg-amber-50 ${
-                                      isSelected ? 'bg-amber-50/60' : 'bg-white'
+                              const isSelected = repo.id === selectedGitHubRepositoryLinkId;
+                              return (
+                                <button
+                                  key={repo.id}
+                                  type="button"
+                                  onClick={() => {
+                                    void handleSelectGitHubRepository(repo.id);
+                                    setIsRepoSelectorOpen(false);
+                                  }}
+                                  className={`flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm transition-all hover:bg-amber-50 ${
+                                    isSelected ? 'bg-amber-50/60' : 'bg-white'
+                                  }`}
+                                >
+                                  <div
+                                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
+                                      isSelected
+                                        ? 'bg-amber-100 text-amber-600'
+                                        : 'bg-slate-100 text-slate-400'
                                     }`}
                                   >
-                                    <div
-                                      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
-                                        isSelected
-                                          ? 'bg-amber-100 text-amber-600'
-                                          : 'bg-slate-100 text-slate-400'
+                                    <Github className="h-4 w-4" />
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <span
+                                      className={`block truncate text-[13px] font-bold ${
+                                        isSelected ? 'text-amber-800' : 'text-slate-800'
                                       }`}
                                     >
-                                      <Github className="h-4 w-4" />
-                                    </div>
-                                    <div className="min-w-0 flex-1">
-                                      <span
-                                        className={`block truncate text-[13px] font-bold ${
-                                          isSelected ? 'text-amber-800' : 'text-slate-800'
-                                        }`}
-                                      >
-                                        {repo.customName?.trim() ||
-                                          repo.name ||
-                                          'Unnamed repository'}
-                                      </span>
-                                      <span className="block truncate text-[11px] text-slate-400">
-                                        {repo.fullName}
-                                      </span>
-                                    </div>
-                                    {isSelected && (
-                                      <Check className="h-4 w-4 shrink-0 text-amber-500" />
-                                    )}
-                                  </button>
-                                );
-                              })}
+                                      {repo.customName?.trim() || repo.name || 'Unnamed repository'}
+                                    </span>
+                                    <span className="block truncate text-[11px] text-slate-400">
+                                      {repo.fullName}
+                                    </span>
+                                  </div>
+                                  {isSelected && (
+                                    <Check className="h-4 w-4 shrink-0 text-amber-500" />
+                                  )}
+                                </button>
+                              );
+                            })}
                           </div>
                         </>
                       )}
