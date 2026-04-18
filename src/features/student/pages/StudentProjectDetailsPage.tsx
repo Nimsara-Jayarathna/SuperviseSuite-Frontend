@@ -343,7 +343,7 @@ export function StudentProjectDetailsPage() {
         </div>
       </section>
 
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         {[
           { label: 'Batch', value: project.batch ?? 'Not set' },
           { label: 'Semester', value: project.semester ?? 'Not set' },
@@ -647,7 +647,7 @@ export function StudentProjectDetailsPage() {
         <div className="space-y-4">
           {activeRepository && (
             <section className="relative z-20">
-              <div className="flex items-start justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3.5 shadow-sm transition-all hover:border-slate-300 hover:shadow-md">
+              <div className="flex flex-col items-start justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3.5 shadow-sm transition-all hover:border-slate-300 hover:shadow-md sm:flex-row">
                 {/* Left: icon + full repo identity */}
                 <div className="flex min-w-0 flex-1 items-center gap-3">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
@@ -720,7 +720,7 @@ export function StudentProjectDetailsPage() {
                           className="fixed inset-0 z-10"
                           onClick={() => setIsRepoSelectorOpen(false)}
                         />
-                        <div className="absolute right-0 top-full z-20 mt-2 min-w-[280px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl animate-in fade-in slide-in-from-top-2 duration-200">
+                        <div className="absolute left-0 right-0 top-full z-20 mt-2 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl animate-in fade-in slide-in-from-top-2 duration-200 sm:left-auto sm:right-0 sm:min-w-[280px]">
                           {enabledRepositories.map((repo) => {
                             const isSelected = repo.id === selectedGitHubRepositoryLinkId;
                             return (

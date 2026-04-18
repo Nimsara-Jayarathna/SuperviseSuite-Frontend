@@ -78,17 +78,17 @@ export function SupervisorProjectsPage() {
         }
       />
 
-      <section className="grid gap-2.5 sm:gap-3 lg:grid-cols-[minmax(0,1fr)_210px] lg:gap-4">
+      <section className="grid gap-2.5 sm:gap-3 md:grid-cols-[minmax(0,1fr)_210px] md:gap-4">
         <input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Search by project title, summary, batch, or semester"
-          className="h-10 rounded-2xl border border-border bg-white px-4 text-sm outline-none transition-colors focus:border-amber-300"
+          className="h-10 w-full rounded-2xl border border-border bg-white px-4 text-sm outline-none transition-colors focus:border-amber-300"
         />
         <Select
           value={lifecycle}
           onChange={(event) => setLifecycle(event.target.value as LifecycleFilter)}
-          className="h-10 rounded-2xl border border-border bg-white px-4 text-sm outline-none transition-colors focus:border-amber-300"
+          className="h-10 w-full rounded-2xl border border-border bg-white px-4 text-sm outline-none transition-colors focus:border-amber-300"
         >
           {LIFECYCLE_OPTIONS.map((option) => (
             <option key={option} value={option}>
@@ -99,7 +99,7 @@ export function SupervisorProjectsPage() {
       </section>
 
       {isLoading ? (
-        <section className="grid items-stretch gap-2.5 lg:gap-3 xl:grid-cols-2">
+        <section className="grid items-stretch gap-2.5 lg:gap-3 xl:grid-cols-2 2xl:grid-cols-3">
           {Array.from({ length: 4 }).map((_, index) => (
             <SupervisorProjectCardSkeleton key={`supervisor-project-skeleton-${index}`} />
           ))}
@@ -107,7 +107,7 @@ export function SupervisorProjectsPage() {
       ) : error && !isBlockingError(error) ? (
         <ErrorState error={error} onRetry={() => void reload()} />
       ) : visibleProjects.length > 0 ? (
-        <section className="grid items-stretch gap-2.5 lg:gap-3 xl:grid-cols-2">
+        <section className="grid items-stretch gap-2.5 lg:gap-3 xl:grid-cols-2 2xl:grid-cols-3">
           {visibleProjects.map((project) => (
             <SupervisorProjectCard key={project.id} project={project} />
           ))}

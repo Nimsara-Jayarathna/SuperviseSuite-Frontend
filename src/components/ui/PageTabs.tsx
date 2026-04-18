@@ -22,22 +22,24 @@ const ACTIVE_TONE_CLASSES = {
 export function PageTabs({ items, value, onChange, tone = 'neutral', className }: PageTabsProps) {
   return (
     <section className={cn('rounded-3xl border border-border bg-white p-3 shadow-sm', className)}>
-      <div className="flex flex-wrap gap-2">
-        {items.map((item) => (
-          <button
-            key={item.value}
-            type="button"
-            onClick={() => onChange(item.value)}
-            className={cn(
-              'rounded-2xl px-4 py-2 text-sm font-medium transition-colors',
-              value === item.value
-                ? ACTIVE_TONE_CLASSES[tone]
-                : 'bg-transparent text-muted-foreground hover:bg-slate-100 hover:text-foreground',
-            )}
-          >
-            {item.label}
-          </button>
-        ))}
+      <div className="-mx-1 overflow-x-auto px-1">
+        <div className="inline-flex min-w-full gap-2 sm:flex sm:flex-wrap">
+          {items.map((item) => (
+            <button
+              key={item.value}
+              type="button"
+              onClick={() => onChange(item.value)}
+              className={cn(
+                'shrink-0 whitespace-nowrap rounded-2xl px-4 py-2 text-sm font-medium transition-colors',
+                value === item.value
+                  ? ACTIVE_TONE_CLASSES[tone]
+                  : 'bg-transparent text-muted-foreground hover:bg-slate-100 hover:text-foreground',
+              )}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
       </div>
     </section>
   );

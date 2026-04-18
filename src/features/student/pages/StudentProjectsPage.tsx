@@ -48,13 +48,13 @@ export function StudentProjectsPage() {
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Search your projects"
-            className="h-10 w-full rounded-2xl border border-border bg-white px-4 text-sm outline-none transition-colors focus:border-slate-300 sm:w-64"
+            className="h-10 w-full min-w-0 rounded-2xl border border-border bg-white px-4 text-sm outline-none transition-colors focus:border-slate-300 sm:w-64"
           />
         }
       />
 
       {isLoading ? (
-        <section className="grid gap-4 xl:grid-cols-2">
+        <section className="grid gap-4 xl:grid-cols-2 2xl:grid-cols-3">
           {Array.from({ length: 4 }).map((_, index) => (
             <StudentProjectCardSkeleton key={`student-project-skeleton-${index}`} />
           ))}
@@ -62,7 +62,7 @@ export function StudentProjectsPage() {
       ) : error && !isBlockingError(error) ? (
         <ErrorState error={error} onRetry={() => void reload()} />
       ) : visibleProjects.length > 0 ? (
-        <section className="grid gap-4 xl:grid-cols-2">
+        <section className="grid gap-4 xl:grid-cols-2 2xl:grid-cols-3">
           {visibleProjects.map((project) => (
             <StudentProjectCard key={project.id} project={project} />
           ))}

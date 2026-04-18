@@ -31,6 +31,7 @@ Technical notes, architecture summaries, and feature guides for the SuperviseSui
 | File | Description |
 |------|-------------|
 | [ui/button-system.md](ui/button-system.md) | Shared button contract and variant guidance |
+| [ui/responsive-contract.md](ui/responsive-contract.md) | Mobile-first layout and component responsiveness rules (breakpoints, tab/header behavior, table-to-card fallback) |
 
 ### API
 

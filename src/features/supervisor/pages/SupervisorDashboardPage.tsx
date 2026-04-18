@@ -46,7 +46,7 @@ function formatMilestoneDate(value: string | null) {
 
 function DashboardStatsSkeleton() {
   return (
-    <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-7">
+    <section className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-7">
       {Array.from({ length: 7 }).map((_, index) => (
         <Card
           key={`dashboard-stat-skeleton-${index}`}
@@ -58,6 +58,61 @@ function DashboardStatsSkeleton() {
         </Card>
       ))}
     </section>
+  );
+}
+
+function ProjectHealthMobileCard({ project }: { project: SupervisorDashboardProjectItem }) {
+  return (
+    <article className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="truncate font-semibold text-foreground">{project.title}</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {project.summary ?? 'No summary provided yet.'}
+          </p>
+        </div>
+        <Link
+          to={`/supervisor/projects/${project.id}`}
+          className={buttonStyles({ variant: 'primary', size: 'sm' })}
+        >
+          Open
+        </Link>
+      </div>
+      <dl className="mt-3 grid grid-cols-2 gap-2 text-xs">
+        <div>
+          <dt className="text-muted-foreground">Status</dt>
+          <dd className="mt-1">
+            <span
+              className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold ${statusClasses(project.lifecycleStatus)}`}
+            >
+              {project.lifecycleStatus.replace('_', ' ')}
+            </span>
+          </dd>
+        </div>
+        <div>
+          <dt className="text-muted-foreground">Progress</dt>
+          <dd className="mt-1 text-sm font-semibold text-foreground">
+            {project.progressPercent ?? 0}%
+          </dd>
+        </div>
+        <div>
+          <dt className="text-muted-foreground">Milestone</dt>
+          <dd className="mt-1 text-sm font-semibold text-foreground">
+            {formatMilestoneDate(project.milestoneDate)}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-muted-foreground">Jira Health</dt>
+          <dd className="mt-1">
+            <span
+              className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold ${jiraIndicatorClasses(project.jiraHealthIndicator)}`}
+            >
+              {jiraIndicatorLabel(project.jiraHealthIndicator)}
+            </span>
+          </dd>
+        </div>
+      </dl>
+    </article>
   );
 }
 
@@ -123,7 +178,7 @@ export function SupervisorDashboardPage() {
         title="Supervisor Dashboard"
         subtitle="Monitor delivery health across every supervised project."
         actions={
-          <label className="relative block w-full max-w-md">
+          <label className="relative block w-full min-w-0 max-w-md">
             <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
               value={query}
@@ -138,7 +193,7 @@ export function SupervisorDashboardPage() {
       {isLoading || !dashboard ? (
         <DashboardStatsSkeleton />
       ) : (
-        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-7">
+        <section className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-7">
           <Card className="rounded-2xl" padding="md">
             <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
               Total projects
@@ -194,7 +249,7 @@ export function SupervisorDashboardPage() {
         </section>
       )}
 
-      <section className="rounded-3xl border border-border bg-white p-6 shadow-sm">
+      <section className="rounded-3xl border border-border bg-white p-4 shadow-sm sm:p-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h2 className="text-xl font-semibold text-foreground">Project health</h2>
@@ -222,7 +277,7 @@ export function SupervisorDashboardPage() {
           </div>
         ) : visibleProjects.length > 0 ? (
           <div className="mt-5 space-y-3">
-            <div className="overflow-x-auto">
+            <div className="hidden overflow-x-auto md:block">
               <table className="min-w-full text-left text-sm">
                 <thead className="border-b border-slate-200 text-xs uppercase tracking-[0.2em] text-muted-foreground">
                   <tr>
@@ -276,13 +331,18 @@ export function SupervisorDashboardPage() {
                 </tbody>
               </table>
             </div>
-            <div className="flex items-center justify-between">
+            <div className="space-y-3 md:hidden">
+              {pagedProjects.map((project) => (
+                <ProjectHealthMobileCard key={project.id} project={project} />
+              ))}
+            </div>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-xs text-muted-foreground">
                 Showing {(safeCurrentPage - 1) * pageSize + 1}-
                 {Math.min(safeCurrentPage * pageSize, visibleProjects.length)} of{' '}
                 {visibleProjects.length}
               </p>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
                   className={buttonStyles({ variant: 'secondary', size: 'sm' })}
@@ -316,7 +376,7 @@ export function SupervisorDashboardPage() {
       </section>
 
       <section className="grid gap-5 xl:grid-cols-2">
-        <div className="rounded-3xl border border-border bg-white p-6 shadow-sm">
+        <div className="rounded-3xl border border-border bg-white p-4 shadow-sm sm:p-6">
           <h2 className="text-lg font-semibold text-foreground">Projects needing attention</h2>
           {isLoading ? (
             <div className="mt-5 space-y-4 animate-pulse">
@@ -353,7 +413,7 @@ export function SupervisorDashboardPage() {
           )}
         </div>
 
-        <div className="rounded-3xl border border-border bg-white p-6 shadow-sm">
+        <div className="rounded-3xl border border-border bg-white p-4 shadow-sm sm:p-6">
           <h2 className="text-lg font-semibold text-foreground">Upcoming milestones</h2>
           {isLoading ? (
             <div className="mt-5 space-y-4 animate-pulse">
@@ -366,7 +426,7 @@ export function SupervisorDashboardPage() {
               {upcomingProjects.map((project) => (
                 <div
                   key={project.id}
-                  className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 p-4"
+                  className="flex flex-col items-start justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:flex-row sm:items-center"
                 >
                   <div>
                     <p className="font-medium text-foreground">{project.title}</p>

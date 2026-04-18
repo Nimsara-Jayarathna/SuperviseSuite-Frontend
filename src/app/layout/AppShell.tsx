@@ -173,7 +173,7 @@ export function AppShell({
           onClose={() => setIsChangePasswordOpen(false)}
           onSubmit={handleChangePassword}
         />
-        <main className="relative z-10 mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <main className="relative z-10 mx-auto w-full max-w-7xl px-3 py-5 sm:px-6 sm:py-8 lg:px-8">
           {children}
         </main>
       </div>

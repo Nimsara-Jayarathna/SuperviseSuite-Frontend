@@ -148,7 +148,7 @@ export function MilestonesStepSection({
                   </div>
 
                   <div className="space-y-5 pt-1">
-                    <div className="flex gap-4">
+                    <div className="flex flex-col gap-4 sm:flex-row">
                       <label className="block min-w-0 flex-1">
                         <span className="mb-2 block text-sm font-medium text-slate-800">Title</span>
                         <input
@@ -162,7 +162,7 @@ export function MilestonesStepSection({
                         />
                       </label>
 
-                      <label className="block w-[200px] shrink-0">
+                      <label className="block shrink-0 sm:w-[200px]">
                         <span className="mb-2 block text-sm font-medium text-slate-800">
                           Due date
                         </span>
