@@ -18,6 +18,8 @@ const dateTimeFormatter = new Intl.DateTimeFormat('en', {
   minute: '2-digit',
 });
 
+const MAX_DISCUSSION_SUMMARY_CHARS = 25;
+
 function statusTone(status: MeetingRecord['status']) {
   if (status === 'APPROVED') return 'success';
   return 'warning';
@@ -109,6 +111,11 @@ export function MeetingRecordsTable({
                 record.channelId && channelsById[record.channelId]
                   ? channelsById[record.channelId]
                   : null;
+              const fullSummary = record.discussionSummary;
+              const displaySummary =
+                fullSummary.length > MAX_DISCUSSION_SUMMARY_CHARS
+                  ? `${fullSummary.slice(0, MAX_DISCUSSION_SUMMARY_CHARS - 3).trimEnd()}...`
+                  : fullSummary;
 
               return (
                 <tr
@@ -123,11 +130,11 @@ export function MeetingRecordsTable({
                   </td>
                   <td className="px-4 py-3 align-middle">
                     <span
-                      className="block text-sm font-semibold text-slate-900 line-clamp-2 cursor-help"
-                      title={record.discussionSummary}
-                      aria-label={record.discussionSummary}
+                      className="block truncate whitespace-nowrap text-sm font-semibold text-slate-900 cursor-help"
+                      title={fullSummary}
+                      aria-label={fullSummary}
                     >
-                      {record.discussionSummary}
+                      {displaySummary}
                     </span>
                   </td>
                   <td className="px-4 py-3 align-middle">

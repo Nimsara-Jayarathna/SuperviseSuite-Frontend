@@ -46,7 +46,7 @@ function record(overrides: Partial<MeetingRecord> = {}): MeetingRecord {
 }
 
 describe('MeetingRecordsTable', () => {
-  it('renders summary with title and line-clamp class', () => {
+  it('truncates summary by character limit and preserves hover title', () => {
     const summary = 'This is a longer discussion summary that should be clamped in the table cell.';
     render(
       <MeetingRecordsTable
@@ -59,7 +59,7 @@ describe('MeetingRecordsTable', () => {
 
     const summaryNode = screen.getByLabelText(summary);
     expect(summaryNode).toHaveAttribute('title', summary);
-    expect(summaryNode.className).toContain('line-clamp-2');
+    expect(summaryNode.textContent).toMatch(/\.\.\.$/);
   });
 
   it('shows only view action for students', () => {
@@ -113,4 +113,3 @@ describe('MeetingRecordsTable', () => {
     expect(screen.getByText('Zoom room')).toBeInTheDocument();
   });
 });
-

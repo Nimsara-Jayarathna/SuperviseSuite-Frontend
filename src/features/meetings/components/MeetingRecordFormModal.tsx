@@ -21,6 +21,13 @@ type MeetingRecordFormModalProps = {
 const DEFAULT_MAX_SUMMARY_LENGTH = 1024;
 const DEFAULT_MAX_DETAILS_LENGTH = 5000;
 
+function toLocalIsoDate(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 export function MeetingRecordFormModal({
   isOpen,
   mode,
@@ -64,7 +71,7 @@ export function MeetingRecordFormModal({
       return;
     }
 
-    setMeetingDate('');
+    setMeetingDate(toLocalIsoDate(new Date()));
     setDurationMinutes('');
     setDiscussionSummary('');
     setDiscussionDetails('');
