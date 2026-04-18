@@ -4,6 +4,7 @@ import { X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import type { MeetingChannel, MeetingRecord } from '../types';
 import { StatusBadge } from '@/components/ui/StatusBadge';
+import { getMeetingPlatformDisplay } from '../lib/platformDisplay';
 
 const dateFormatter = new Intl.DateTimeFormat('en', {
   month: 'long',
@@ -31,7 +32,7 @@ function statusTone(status: MeetingRecord['status']) {
 
 type MetadataItem = {
   label: string;
-  value: string;
+  value: React.ReactNode;
 };
 
 type MeetingRecordDetailsModalProps = {
@@ -138,7 +139,49 @@ export function MeetingRecordDetailsModal({
           {(() => {
             const metadata: MetadataItem[] = [
               { label: 'Duration', value: `${record.durationMinutes} minutes` },
-              ...(linkedChannel ? [{ label: 'Linked channel', value: linkedChannel.channelName }] : []),
+              ...(linkedChannel
+                ? [
+                    {
+                      label: 'Linked channel',
+                      value: (() => {
+                        const display = getMeetingPlatformDisplay(linkedChannel.platform);
+                        return (
+                          <span
+                            className="inline-flex max-w-full items-center gap-2"
+                            title={linkedChannel.channelName}
+                          >
+                            <span
+                              className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white"
+                              title={display.label}
+                              aria-label={display.label}
+                            >
+                              {display.kind === 'simple-icon' ? (
+                                <svg
+                                  aria-hidden
+                                  viewBox="0 0 24 24"
+                                  className="h-4 w-4"
+                                  style={{ color: `#${display.hex}` }}
+                                >
+                                  <path d={display.path} fill="currentColor" />
+                                </svg>
+                              ) : (
+                                <display.Icon
+                                  aria-hidden
+                                  className="h-4 w-4 text-slate-700"
+                                  style={display.hex ? { color: `#${display.hex}` } : undefined}
+                                  strokeWidth={2.25}
+                                />
+                              )}
+                            </span>
+                            <span className="min-w-0 truncate text-sm font-semibold text-slate-800">
+                              {linkedChannel.channelName}
+                            </span>
+                          </span>
+                        );
+                      })(),
+                    },
+                  ]
+                : []),
               { label: 'Added by', value: `${record.addedByName} (${record.addedByRole})` },
               { label: 'Created at', value: dateTimeFormatter.format(new Date(record.createdAt)) },
               ...(record.status === 'APPROVED' && record.approvedByName && record.approvedAt
@@ -160,7 +203,7 @@ export function MeetingRecordDetailsModal({
                       <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">
                         {item.label}
                       </p>
-                      <p className="text-sm font-semibold text-slate-800">{item.value}</p>
+                      <div className="text-sm font-semibold text-slate-800">{item.value}</div>
                     </div>
                   ))}
                 </div>

@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { MeetingChannel, MeetingRecord } from '../types';
 import { MeetingRecordsTable } from './MeetingRecordsTable';
+import { getMeetingPlatformDisplay } from '../lib/platformDisplay';
 
 function channel(overrides: Partial<MeetingChannel> = {}): MeetingChannel {
   return {
@@ -111,5 +112,6 @@ describe('MeetingRecordsTable', () => {
     );
 
     expect(screen.getByText('Zoom room')).toBeInTheDocument();
+    expect(screen.getByLabelText(getMeetingPlatformDisplay(linked.platform).label)).toBeInTheDocument();
   });
 });

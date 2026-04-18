@@ -3,6 +3,7 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { cn } from '@/lib/cn';
 import { CheckCircle2, Eye, Pencil, Trash2 } from 'lucide-react';
 import type { MeetingChannel, MeetingRecord } from '../types';
+import { getMeetingPlatformDisplay } from '../lib/platformDisplay';
 
 const dateFormatter = new Intl.DateTimeFormat('en', {
   month: 'short',
@@ -19,6 +20,7 @@ const dateTimeFormatter = new Intl.DateTimeFormat('en', {
 });
 
 const MAX_DISCUSSION_SUMMARY_CHARS = 25;
+const MAX_CHANNEL_NAME_CHARS = 26;
 
 function statusTone(status: MeetingRecord['status']) {
   if (status === 'APPROVED') return 'success';
@@ -139,12 +141,45 @@ export function MeetingRecordsTable({
                   </td>
                   <td className="px-4 py-3 align-middle">
                     {linkedChannel ? (
-                      <span
-                        className="inline-flex max-w-full truncate rounded-xl border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700"
-                        title={linkedChannel.channelName}
-                      >
-                        {linkedChannel.channelName}
-                      </span>
+                      (() => {
+                        const display = getMeetingPlatformDisplay(linkedChannel.platform);
+                        const displayName =
+                          linkedChannel.channelName.length > MAX_CHANNEL_NAME_CHARS
+                            ? `${linkedChannel.channelName.slice(0, MAX_CHANNEL_NAME_CHARS - 3).trimEnd()}...`
+                            : linkedChannel.channelName;
+
+                        return (
+                          <span
+                            className="inline-flex max-w-full items-center gap-2 truncate rounded-xl border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700"
+                            title={linkedChannel.channelName}
+                          >
+                            <span
+                              className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-50/60"
+                              title={display.label}
+                              aria-label={display.label}
+                            >
+                              {display.kind === 'simple-icon' ? (
+                                <svg
+                                  aria-hidden
+                                  viewBox="0 0 24 24"
+                                  className="h-3.5 w-3.5"
+                                  style={{ color: `#${display.hex}` }}
+                                >
+                                  <path d={display.path} fill="currentColor" />
+                                </svg>
+                              ) : (
+                                <display.Icon
+                                  aria-hidden
+                                  className="h-3.5 w-3.5 text-slate-700"
+                                  style={display.hex ? { color: `#${display.hex}` } : undefined}
+                                  strokeWidth={2.25}
+                                />
+                              )}
+                            </span>
+                            <span className="min-w-0 truncate">{displayName}</span>
+                          </span>
+                        );
+                      })()
                     ) : (
                       <span className="text-xs font-semibold text-slate-400">—</span>
                     )}
