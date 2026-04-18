@@ -49,17 +49,21 @@ describe('TopBar', () => {
 
   it('toggles mobile navigation without affecting desktop branch classes', () => {
     useIsMobileLayoutMock.mockReturnValue(true);
+    const onOpenAccount = vi.fn();
     const { container } = render(
       <MemoryRouter>
         <TopBar
           role="student"
           homePath="/student/projects"
           userName="Jane Student"
-          onOpenAccount={() => {}}
+          onOpenAccount={onOpenAccount}
           navItems={[{ label: 'Projects', to: '/student/projects', active: true }]}
         />
       </MemoryRouter>,
     );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open account menu' }));
+    expect(onOpenAccount).toHaveBeenCalledTimes(1);
 
     const mobileToggle = screen.getByRole('button', { name: 'Open navigation menu' });
     expect(mobileToggle).toHaveAttribute('aria-expanded', 'false');

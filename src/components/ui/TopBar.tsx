@@ -1,4 +1,4 @@
-import { Menu, X } from 'lucide-react';
+import { Menu, UserRound, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Logo } from '@/components/brand/Logo';
@@ -162,15 +162,25 @@ export function TopBar(props: TopBarProps) {
             </Link>
             <RoleBadge role={role} uppercase />
           </div>
-          <button
-            type="button"
-            onClick={() => setIsMobileMenuOpen((current) => !current)}
-            aria-label={isMobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
-            aria-expanded={isMobileMenuOpen}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 transition-colors hover:bg-slate-50"
-          >
-            {isMobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onOpenAccount}
+              aria-label="Open account menu"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 transition-colors hover:bg-slate-50"
+            >
+              <UserRound className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsMobileMenuOpen((current) => !current)}
+              aria-label={isMobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+              aria-expanded={isMobileMenuOpen}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 transition-colors hover:bg-slate-50"
+            >
+              {isMobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+            </button>
+          </div>
         </div>
         <div
           className={cn(
@@ -178,35 +188,22 @@ export function TopBar(props: TopBarProps) {
             isMobileMenuOpen ? 'block' : 'hidden',
           )}
         >
-          <div className="space-y-3">
-            <nav className="grid gap-2">
-              {navItems.map((item) => (
-                <Link
-                  key={item.to}
-                  to={item.to}
-                  className={cn(
-                    'rounded-2xl px-4 py-2 text-sm font-medium transition-colors',
-                    item.active
-                      ? 'bg-slate-900 text-white'
-                      : 'bg-white text-muted-foreground hover:bg-slate-100 hover:text-foreground',
-                  )}
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </nav>
-            <button
-              type="button"
-              onClick={onOpenAccount}
-              className="inline-flex w-full items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-left transition hover:bg-slate-50"
-              aria-label="Open account menu"
-            >
-              <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 text-xs font-black text-emerald-700">
-                {userInitial}
-              </span>
-              <span className="text-sm font-semibold text-foreground">{userName}</span>
-            </button>
-          </div>
+          <nav className="grid gap-2">
+            {navItems.map((item) => (
+              <Link
+                key={item.to}
+                to={item.to}
+                className={cn(
+                  'rounded-2xl px-4 py-2 text-sm font-medium transition-colors',
+                  item.active
+                    ? 'bg-slate-900 text-white'
+                    : 'bg-white text-muted-foreground hover:bg-slate-100 hover:text-foreground',
+                )}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </nav>
         </div>
       </div>
     </header>
