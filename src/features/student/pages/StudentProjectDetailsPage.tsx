@@ -428,13 +428,13 @@ export function StudentProjectDetailsPage() {
                   <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
                     Project leader
                   </p>
-                  <div className="mt-2 flex items-center gap-3">
+                  <div className="mt-2 flex items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50/60 px-3 py-2 sm:border-0 sm:bg-transparent sm:px-0 sm:py-0">
                     <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-600">
                       {project.leader
                         ? leaderDisplayName(project.leader).charAt(0).toUpperCase()
                         : '?'}
                     </div>
-                    <p className="font-semibold text-slate-700">
+                    <p className="min-w-0 truncate font-semibold text-slate-700">
                       {project.leader ? leaderDisplayName(project.leader) : 'No leader assigned'}
                     </p>
                   </div>
