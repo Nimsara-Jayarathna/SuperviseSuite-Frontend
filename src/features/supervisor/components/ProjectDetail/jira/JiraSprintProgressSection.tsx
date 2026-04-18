@@ -679,9 +679,9 @@ export function JiraSprintProgressSection({ fetcher, projectId }: JiraSprintProg
 
           {sprintVelocitySeries.length > 0 ? (
             <div className="mt-3 min-w-0">
-              <div className="h-36 w-full min-w-0 rounded-lg border border-slate-200 bg-white px-2 py-2">
+              <div className="h-44 w-full min-w-0 rounded-lg border border-slate-200 bg-white px-2 py-2 sm:h-36">
                 {/* Numeric height avoids Recharts measuring 100% before layout (-1 x -1 warning). */}
-                <ResponsiveContainer width="100%" height={144}>
+                <ResponsiveContainer width="100%" height="100%">
                   <BarChart
                     data={sprintVelocitySeries}
                     margin={{ top: 12, right: 12, left: 4, bottom: 4 }}
@@ -759,7 +759,9 @@ export function JiraSprintProgressSection({ fetcher, projectId }: JiraSprintProg
                 </ResponsiveContainer>
               </div>
 
-              <p className="mt-2 text-xs text-slate-600">{velocityDivergenceInsight}</p>
+              <p className="mt-2 break-words text-xs leading-relaxed text-slate-600">
+                {velocityDivergenceInsight}
+              </p>
             </div>
           ) : (
             <div className="mt-3 rounded-lg border border-dashed border-slate-200 bg-white px-3 py-4 text-sm text-slate-600">
