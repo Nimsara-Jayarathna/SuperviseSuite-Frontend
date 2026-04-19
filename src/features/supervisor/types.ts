@@ -43,6 +43,15 @@ export type SupervisorProjectDetailMilestone = {
   dueDate: string;
   status: 'PLANNED' | 'IN_PROGRESS' | 'COMPLETED' | 'MISSED' | 'CANCELLED';
   sequenceNo: number;
+  isOverdue?: boolean;
+  daysOverdue?: number;
+  isChronologyViolation?: boolean;
+};
+
+export type SupervisorProjectMilestoneInsights = {
+  overdueOpenMilestones: number;
+  dueSoonCount: number;
+  timelineRiskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | string;
 };
 
 export type SupervisorProjectDetail = {
@@ -69,6 +78,7 @@ export type SupervisorProjectDetail = {
   leader: SupervisorProjectLeader | null;
   members: SupervisorProjectDetailMember[];
   milestones: SupervisorProjectDetailMilestone[];
+  milestoneInsights?: SupervisorProjectMilestoneInsights | null;
   files: {
     items: ProjectFile[];
     config: ProjectFileConfig;

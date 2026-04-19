@@ -8,6 +8,10 @@ import {
   toApiError,
   toNullableTrimmed,
 } from '../projectDetails.shared';
+import {
+  validateMilestoneAddPolicy,
+  validateMilestoneUpdatePolicy,
+} from '../milestonePolicy';
 import type {
   MilestoneForm,
   MilestoneStatus,
@@ -240,6 +244,10 @@ export function useProjectDetailsPageState({
     setRequestModal({ isOpen: true, status: 'error', title, message, retryAction });
   }
 
+  function showValidationModal(title: string, message: string) {
+    setRequestModal({ isOpen: true, status: 'error', title, message, retryAction: null });
+  }
+
   function retryLastRequest() {
     if (requestModal.retryAction) void requestModal.retryAction();
   }
@@ -353,7 +361,20 @@ export function useProjectDetailsPageState({
     milestone: SupervisorProjectDetailMilestone,
     nextStatus: MilestoneStatus,
   ) {
-    if (!projectId) return;
+    if (!projectId || !project) return;
+    const validationError = validateMilestoneUpdatePolicy({
+      milestones: project.milestones,
+      targetMilestoneId: milestone.id,
+      currentStatus: milestone.status,
+      nextStatus,
+      currentDueDate: milestone.dueDate,
+      nextDueDate: milestone.dueDate,
+    });
+    if (validationError) {
+      showValidationModal('Status update blocked', validationError);
+      return;
+    }
+
     setQuickStatusUpdatingId(milestone.id);
     try {
       const updatedProject = await supervisorApi.updateProjectMilestone(projectId, milestone.id, {
@@ -438,7 +459,13 @@ export function useProjectDetailsPageState({
   }
 
   async function submitMilestoneCreate() {
-    if (!projectId) return;
+    if (!projectId || !project) return;
+    const validationError = validateMilestoneAddPolicy(project.milestones, newMilestoneForm.dueDate);
+    if (validationError) {
+      showValidationModal('Unable to add milestone', validationError);
+      return;
+    }
+
     setIsSavingMilestone(true);
     showLoadingModal('Adding milestone', 'Creating a new milestone for this project.');
     try {
@@ -482,7 +509,29 @@ export function useProjectDetailsPageState({
   }
 
   async function submitMilestoneUpdate() {
-    if (!projectId || !editingMilestoneId || !editMilestoneForm || !isEditMilestoneDirty) return;
+    if (!projectId || !editingMilestoneId || !editMilestoneForm || !isEditMilestoneDirty || !project) {
+      return;
+    }
+    const currentMilestone = project.milestones.find(
+      (milestone) => milestone.id === editingMilestoneId,
+    );
+    if (!currentMilestone) {
+      return;
+    }
+
+    const validationError = validateMilestoneUpdatePolicy({
+      milestones: project.milestones,
+      targetMilestoneId: editingMilestoneId,
+      currentStatus: currentMilestone.status,
+      nextStatus: editMilestoneForm.status,
+      currentDueDate: currentMilestone.dueDate,
+      nextDueDate: editMilestoneForm.dueDate,
+    });
+    if (validationError) {
+      showValidationModal('Unable to update milestone', validationError);
+      return;
+    }
+
     setIsSavingMilestone(true);
     showLoadingModal('Saving milestone', 'Updating milestone details and current status.');
     try {

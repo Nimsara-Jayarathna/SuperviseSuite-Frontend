@@ -11,6 +11,7 @@ import {
   earliestMilestone,
   isMilestoneComplete,
 } from '../createProject.shared';
+import { validateCreateMilestonesPolicy } from '../milestonePolicy';
 import type {
   CreateProjectStepId,
   DraftState,
@@ -52,7 +53,10 @@ export function useCreateProjectPageState({ onSuccessNavigate }: UseCreateProjec
 
   const step1Valid = draft.title.trim().length > 0 && draft.summary.trim().length > 0;
   const step2Valid = selectedStudents.length > 0;
-  const step3Valid = milestones.every(isMilestoneComplete);
+  const milestonePolicyError = milestones.every(isMilestoneComplete)
+    ? validateCreateMilestonesPolicy(milestones)
+    : null;
+  const step3Valid = milestones.every(isMilestoneComplete) && !milestonePolicyError;
   const incompleteMilestoneCount = milestones.filter(
     (milestone) => !isMilestoneComplete(milestone),
   ).length;
@@ -170,6 +174,7 @@ export function useCreateProjectPageState({ onSuccessNavigate }: UseCreateProjec
 
     if (!step3Valid) {
       setShowIncompleteHint(true);
+      setSubmitError(null);
       return;
     }
 
@@ -255,6 +260,7 @@ export function useCreateProjectPageState({ onSuccessNavigate }: UseCreateProjec
     step1Valid,
     step2Valid,
     step3Valid,
+    milestonePolicyError,
     incompleteMilestoneCount,
     shouldShowSearchPanel,
     primaryCreatedMilestone,

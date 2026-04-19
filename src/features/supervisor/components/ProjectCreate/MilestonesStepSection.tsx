@@ -9,6 +9,7 @@ import {
   milestoneSummaryDescription,
   milestoneSummaryTitle,
 } from '../../createProject.shared';
+import { getTodayLocalDateString } from '../../milestonePolicy';
 import type { MilestoneDraft } from '../../createProject.shared';
 
 type MilestonesStepSectionProps = {
@@ -19,6 +20,7 @@ type MilestonesStepSectionProps = {
   submitError: string | null;
   showIncompleteHint: boolean;
   step3Valid: boolean;
+  milestonePolicyError: string | null;
   incompleteMilestoneCount: number;
   onUpdateMilestone: <F extends keyof MilestoneDraft>(
     index: number,
@@ -48,6 +50,7 @@ export function MilestonesStepSection({
   submitError,
   showIncompleteHint,
   step3Valid,
+  milestonePolicyError,
   incompleteMilestoneCount,
   onUpdateMilestone,
   onToggleMilestone,
@@ -56,6 +59,8 @@ export function MilestonesStepSection({
   onBack,
   onShowIncompleteHint,
 }: MilestonesStepSectionProps) {
+  const today = getTodayLocalDateString();
+
   return (
     <section className="space-y-6 rounded-3xl border border-border bg-white p-6 shadow-sm">
       <div className="flex items-center justify-between gap-3">
@@ -169,6 +174,7 @@ export function MilestonesStepSection({
                         <input
                           required
                           type="date"
+                          min={today}
                           value={milestone.dueDate}
                           onChange={(e) => onUpdateMilestone(index, 'dueDate', e.target.value)}
                           className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm outline-none transition-colors focus:border-slate-400"
@@ -287,6 +293,11 @@ export function MilestonesStepSection({
           {submitError}
         </div>
       )}
+      {milestonePolicyError && !submitError && (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          {milestonePolicyError}
+        </div>
+      )}
 
       <div className="flex flex-wrap items-end justify-between gap-3">
         <Button
@@ -301,8 +312,9 @@ export function MilestonesStepSection({
         <div className="flex flex-col items-end gap-2">
           {showIncompleteHint && !step3Valid && (
             <p className="text-xs text-amber-700">
-              Complete {incompleteMilestoneCount} milestone
-              {incompleteMilestoneCount === 1 ? '' : 's'} before creating the project.
+              {incompleteMilestoneCount > 0
+                ? `Complete ${incompleteMilestoneCount} milestone${incompleteMilestoneCount === 1 ? '' : 's'} before creating the project.`
+                : milestonePolicyError ?? 'Milestone rules must be fixed before creating the project.'}
             </p>
           )}
           <div className="flex gap-3">

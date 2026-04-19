@@ -15,6 +15,7 @@ import { Select } from '@/components/ui/Select';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { calculateDropdownLayout } from '@/lib/dropdownSizing';
 import { FIELD_LIMITS, MILESTONE_STATUS_OPTIONS, dateFormatter } from '../../projectDetails.shared';
+import { canSelectMilestoneStatus, getTodayLocalDateString } from '../../milestonePolicy';
 import type { MilestonesState } from '../../hooks/useProjectDetailsPageState';
 import type { MilestoneStatus } from '../../projectDetails.shared';
 import type { SupervisorProjectDetail } from '../../types';
@@ -61,6 +62,7 @@ function getStatusIcon(status: MilestoneStatus, className?: string) {
 }
 
 export function MilestonesTabSection({ project, milestones }: MilestonesTabSectionProps) {
+  const today = getTodayLocalDateString();
   const quickStatusMenuRef = useRef<HTMLUListElement>(null);
   const quickStatusAnchorRef = useRef<HTMLButtonElement | null>(null);
   const [quickStatusMenu, setQuickStatusMenu] = useState<{
@@ -125,6 +127,19 @@ export function MilestonesTabSection({ project, milestones }: MilestonesTabSecti
           <p className="text-xs font-medium text-slate-400">
             Total {project.milestones.length} milestones defined
           </p>
+          {project.milestoneInsights ? (
+            <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] font-semibold">
+              <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-slate-700">
+                Risk: {project.milestoneInsights.timelineRiskLevel}
+              </span>
+              <span className="rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1 text-rose-700">
+                Overdue open: {project.milestoneInsights.overdueOpenMilestones}
+              </span>
+              <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-amber-700">
+                Due soon (7d): {project.milestoneInsights.dueSoonCount}
+              </span>
+            </div>
+          ) : null}
         </div>
         {!milestones.isAddingMilestone && (
           <button
@@ -177,6 +192,7 @@ export function MilestonesTabSection({ project, milestones }: MilestonesTabSecti
                 <input
                   required
                   type="date"
+                  min={today}
                   value={milestones.newMilestoneForm.dueDate}
                   onChange={(e) => milestones.setNewMilestoneField('dueDate', e.target.value)}
                   className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium outline-none transition-all focus:border-indigo-400 focus:ring-4 focus:ring-indigo-50"
@@ -287,7 +303,18 @@ export function MilestonesTabSection({ project, milestones }: MilestonesTabSecti
                         className="h-10 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-bold outline-none cursor-pointer transition-all focus:border-amber-400"
                       >
                         {MILESTONE_STATUS_OPTIONS.map((status) => (
-                          <option key={status} value={status}>
+                          <option
+                            key={status}
+                            value={status}
+                            disabled={
+                              !canSelectMilestoneStatus({
+                                currentStatus: milestone.status,
+                                nextStatus: status,
+                                dueDate: milestones.editMilestoneForm?.dueDate ?? milestone.dueDate,
+                                today,
+                              })
+                            }
+                          >
                             {status.replace('_', ' ')}
                           </option>
                         ))}
@@ -352,6 +379,18 @@ export function MilestonesTabSection({ project, milestones }: MilestonesTabSecti
                           <div className="mt-1 flex items-center gap-2 text-xs font-bold text-slate-400">
                             <CalendarDays className="h-3.5 w-3.5" />
                             <span>Due {dateFormatter.format(new Date(milestone.dueDate))}</span>
+                            {milestone.isOverdue ? (
+                              <span className="rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-[10px] uppercase tracking-wide text-rose-700">
+                                {milestone.daysOverdue && milestone.daysOverdue > 0
+                                  ? `${milestone.daysOverdue}d overdue`
+                                  : 'Overdue'}
+                              </span>
+                            ) : null}
+                            {milestone.isChronologyViolation ? (
+                              <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] uppercase tracking-wide text-amber-700">
+                                Chronology issue
+                              </span>
+                            ) : null}
                           </div>
                         </div>
 
@@ -458,6 +497,12 @@ export function MilestonesTabSection({ project, milestones }: MilestonesTabSecti
               if (!targetMilestone) return null;
               return MILESTONE_STATUS_OPTIONS.map((status) => {
                 const isSelected = targetMilestone.status === status;
+                const isAllowed = canSelectMilestoneStatus({
+                  currentStatus: targetMilestone.status,
+                  nextStatus: status,
+                  dueDate: targetMilestone.dueDate,
+                  today,
+                });
                 return (
                   <li key={status}>
                     <button
@@ -467,8 +512,10 @@ export function MilestonesTabSection({ project, milestones }: MilestonesTabSecti
                           ? 'bg-slate-50 font-semibold text-foreground'
                           : 'font-medium text-foreground hover:bg-slate-50'
                       }`}
+                      disabled={!isAllowed}
                       onMouseDown={(event) => event.preventDefault()}
                       onClick={() => {
+                        if (!isAllowed) return;
                         setQuickStatusMenu(null);
                         void milestones.submitQuickMilestoneStatus(targetMilestone, status);
                       }}

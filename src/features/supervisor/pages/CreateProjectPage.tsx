@@ -80,6 +80,7 @@ export function CreateProjectPage() {
             submitError={state.submitError}
             showIncompleteHint={state.showIncompleteHint}
             step3Valid={state.step3Valid}
+            milestonePolicyError={state.milestonePolicyError}
             incompleteMilestoneCount={state.incompleteMilestoneCount}
             onUpdateMilestone={state.updateMilestone}
             onToggleMilestone={state.toggleMilestone}
