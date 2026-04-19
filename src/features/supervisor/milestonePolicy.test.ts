@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { SupervisorProjectDetailMilestone } from './types';
 import {
   canSelectMilestoneStatus,
+  getVisibleMilestoneStatuses,
   getTodayLocalDateString,
   validateCreateMilestonesPolicy,
   validateMilestoneAddPolicy,
@@ -66,6 +67,34 @@ describe('milestonePolicy', () => {
         today: '2026-04-19',
       }),
     ).toBe(false);
+  });
+
+  it('hides open statuses for terminal milestones', () => {
+    const visibleForMissed = getVisibleMilestoneStatuses({
+      currentStatus: 'MISSED',
+      dueDate: '2026-04-10',
+      today: '2026-04-19',
+    });
+    const visibleForCancelled = getVisibleMilestoneStatuses({
+      currentStatus: 'CANCELLED',
+      dueDate: '2026-04-10',
+      today: '2026-04-19',
+    });
+
+    expect(visibleForMissed).not.toContain('PLANNED');
+    expect(visibleForMissed).not.toContain('IN_PROGRESS');
+    expect(visibleForCancelled).not.toContain('PLANNED');
+    expect(visibleForCancelled).not.toContain('IN_PROGRESS');
+  });
+
+  it('shows only completed for completed milestones', () => {
+    expect(
+      getVisibleMilestoneStatuses({
+        currentStatus: 'COMPLETED',
+        dueDate: '2026-04-10',
+        today: '2026-04-19',
+      }),
+    ).toEqual(['COMPLETED']);
   });
 
   it('allows legacy-open milestone to keep same status', () => {

@@ -9,6 +9,7 @@ import {
   toNullableTrimmed,
 } from '../projectDetails.shared';
 import {
+  isTerminalMilestoneStatus,
   validateMilestoneAddPolicy,
   validateMilestoneUpdatePolicy,
 } from '../milestonePolicy';
@@ -491,6 +492,9 @@ export function useProjectDetailsPageState({
   }
 
   function startEditMilestone(milestone: SupervisorProjectDetailMilestone) {
+    if (isTerminalMilestoneStatus(milestone.status)) {
+      return;
+    }
     const nextForm = buildMilestoneForm(milestone);
     setIsAddingMilestone(false);
     setEditingMilestoneId(milestone.id);

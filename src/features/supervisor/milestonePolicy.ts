@@ -3,6 +3,13 @@ import type { SupervisorProjectDetailMilestone } from './types';
 
 export type MilestoneStatus = SupervisorProjectDetailMilestone['status'];
 
+const ALL_STATUSES: readonly MilestoneStatus[] = [
+  'PLANNED',
+  'IN_PROGRESS',
+  'COMPLETED',
+  'MISSED',
+  'CANCELLED',
+];
 const OPEN_STATUSES: readonly MilestoneStatus[] = ['PLANNED', 'IN_PROGRESS'];
 const TERMINAL_STATUSES: readonly MilestoneStatus[] = ['COMPLETED', 'MISSED', 'CANCELLED'];
 
@@ -99,6 +106,23 @@ export function canSelectMilestoneStatus(params: {
     return false;
   }
   return true;
+}
+
+export function getVisibleMilestoneStatuses(params: {
+  currentStatus: MilestoneStatus;
+  dueDate: string;
+  today?: string;
+}): MilestoneStatus[] {
+  const { currentStatus, dueDate } = params;
+  const today = params.today ?? getTodayLocalDateString();
+  return ALL_STATUSES.filter((nextStatus) =>
+    canSelectMilestoneStatus({
+      currentStatus,
+      nextStatus,
+      dueDate,
+      today,
+    }),
+  );
 }
 
 export function validateMilestoneUpdatePolicy(params: {

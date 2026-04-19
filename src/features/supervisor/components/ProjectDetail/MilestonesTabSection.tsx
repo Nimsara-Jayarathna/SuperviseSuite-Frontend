@@ -14,8 +14,12 @@ import { buttonStyles } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { calculateDropdownLayout } from '@/lib/dropdownSizing';
-import { FIELD_LIMITS, MILESTONE_STATUS_OPTIONS, dateFormatter } from '../../projectDetails.shared';
-import { canSelectMilestoneStatus, getTodayLocalDateString } from '../../milestonePolicy';
+import { FIELD_LIMITS, dateFormatter } from '../../projectDetails.shared';
+import {
+  getTodayLocalDateString,
+  getVisibleMilestoneStatuses,
+  isTerminalMilestoneStatus,
+} from '../../milestonePolicy';
 import type { MilestonesState } from '../../hooks/useProjectDetailsPageState';
 import type { MilestoneStatus } from '../../projectDetails.shared';
 import type { SupervisorProjectDetail } from '../../types';
@@ -89,9 +93,17 @@ export function MilestonesTabSection({ project, milestones }: MilestonesTabSecti
     const onResize = () => {
       if (!quickStatusMenu || !quickStatusAnchorRef.current) return;
       const rect = quickStatusAnchorRef.current.getBoundingClientRect();
+      const targetMilestone = project.milestones.find((m) => m.id === quickStatusMenu.milestoneId);
+      const visibleStatuses = targetMilestone
+        ? getVisibleMilestoneStatuses({
+            currentStatus: targetMilestone.status,
+            dueDate: targetMilestone.dueDate,
+            today,
+          })
+        : [];
       const nextLayout = calculateDropdownLayout({
         triggerRect: rect,
-        labels: MILESTONE_STATUS_OPTIONS.map((status) => status.replace('_', ' ')),
+        labels: visibleStatuses.map((status) => status.replace('_', ' ')),
         fontSourceEl: quickStatusAnchorRef.current,
       });
       setQuickStatusMenu((current) =>
@@ -117,7 +129,7 @@ export function MilestonesTabSection({ project, milestones }: MilestonesTabSecti
       window.removeEventListener('resize', onResize);
       window.removeEventListener('scroll', closeMenu, true);
     };
-  }, [quickStatusMenu]);
+  }, [project.milestones, quickStatusMenu, today]);
 
   return (
     <section className="rounded-3xl border border-border bg-white p-6 shadow-sm transition-all hover:shadow-md">
@@ -244,6 +256,15 @@ export function MilestonesTabSection({ project, milestones }: MilestonesTabSecti
       {project.milestones.length > 0 ? (
         <div className="mt-6 space-y-4">
           {project.milestones.map((milestone, index) => (
+            (() => {
+              const isTerminalMilestone = isTerminalMilestoneStatus(milestone.status);
+              const quickStatusOptions = getVisibleMilestoneStatuses({
+                currentStatus: milestone.status,
+                dueDate: milestone.dueDate,
+                today,
+              });
+              const canOpenQuickStatus = quickStatusOptions.length > 1;
+              return (
             <div
               key={milestone.id}
               className={`relative overflow-hidden rounded-3xl border border-slate-100 bg-white p-5 transition-all hover:shadow-lg group ${milestones.editingMilestoneId === milestone.id ? 'ring-2 ring-indigo-400' : ''}`}
@@ -292,6 +313,15 @@ export function MilestonesTabSection({ project, milestones }: MilestonesTabSecti
                       <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 ml-1">
                         Status
                       </span>
+                      {(() => {
+                        const visibleStatusOptions = getVisibleMilestoneStatuses({
+                          currentStatus: milestone.status,
+                          dueDate: milestones.editMilestoneForm?.dueDate ?? milestone.dueDate,
+                          today,
+                        });
+                        const isStatusSelectDisabled =
+                          visibleStatusOptions.length <= 1 || isTerminalMilestone;
+                        return (
                       <Select
                         value={milestones.editMilestoneForm.status}
                         onChange={(e) =>
@@ -300,25 +330,20 @@ export function MilestonesTabSection({ project, milestones }: MilestonesTabSecti
                             e.target.value as MilestoneStatus,
                           )
                         }
-                        className="h-10 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-bold outline-none cursor-pointer transition-all focus:border-amber-400"
+                        disabled={isStatusSelectDisabled}
+                        className={`h-10 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-bold outline-none transition-all focus:border-amber-400 ${isStatusSelectDisabled ? 'cursor-not-allowed text-slate-400' : 'cursor-pointer'}`}
                       >
-                        {MILESTONE_STATUS_OPTIONS.map((status) => (
+                        {visibleStatusOptions.map((status) => (
                           <option
                             key={status}
                             value={status}
-                            disabled={
-                              !canSelectMilestoneStatus({
-                                currentStatus: milestone.status,
-                                nextStatus: status,
-                                dueDate: milestones.editMilestoneForm?.dueDate ?? milestone.dueDate,
-                                today,
-                              })
-                            }
                           >
                             {status.replace('_', ' ')}
                           </option>
                         ))}
                       </Select>
+                        );
+                      })()}
                     </label>
                     <label className="space-y-1.5 sm:col-span-2">
                       <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 ml-1">
@@ -398,8 +423,18 @@ export function MilestonesTabSection({ project, milestones }: MilestonesTabSecti
                           <button
                             type="button"
                             aria-label="Change milestone status"
+                            title={
+                              canOpenQuickStatus
+                                ? 'Change milestone status'
+                                : 'No alternative status available for this milestone.'
+                            }
                             onClick={(event) => {
-                              if (milestones.quickStatusUpdatingId === milestone.id) return;
+                              if (
+                                milestones.quickStatusUpdatingId === milestone.id ||
+                                !canOpenQuickStatus
+                              ) {
+                                return;
+                              }
                               quickStatusAnchorRef.current = event.currentTarget;
                               const rect = event.currentTarget.getBoundingClientRect();
                               setQuickStatusMenu((current) =>
@@ -409,7 +444,7 @@ export function MilestonesTabSection({ project, milestones }: MilestonesTabSecti
                                       milestoneId: milestone.id,
                                       ...calculateDropdownLayout({
                                         triggerRect: rect,
-                                        labels: MILESTONE_STATUS_OPTIONS.map((status) =>
+                                        labels: quickStatusOptions.map((status) =>
                                           status.replace('_', ' '),
                                         ),
                                         fontSourceEl: event.currentTarget,
@@ -417,8 +452,10 @@ export function MilestonesTabSection({ project, milestones }: MilestonesTabSecti
                                     },
                               );
                             }}
-                            disabled={milestones.quickStatusUpdatingId === milestone.id}
-                            className={`relative inline-flex cursor-pointer items-center overflow-hidden rounded-2xl bg-slate-100 transition-all hover:ring-2 hover:ring-indigo-100 ${milestones.quickStatusUpdatingId === milestone.id ? 'opacity-50' : ''}`}
+                            disabled={
+                              milestones.quickStatusUpdatingId === milestone.id || !canOpenQuickStatus
+                            }
+                            className={`relative inline-flex items-center overflow-hidden rounded-2xl bg-slate-100 transition-all ${canOpenQuickStatus ? 'cursor-pointer hover:ring-2 hover:ring-indigo-100' : 'cursor-not-allowed opacity-60'} ${milestones.quickStatusUpdatingId === milestone.id ? 'opacity-50' : ''}`}
                           >
                             <div className="flex items-center gap-2 px-3 py-1.5">
                               {getStatusIcon(milestone.status, 'h-3.5 w-3.5')}
@@ -446,8 +483,18 @@ export function MilestonesTabSection({ project, milestones }: MilestonesTabSecti
 
                           <button
                             type="button"
-                            onClick={() => milestones.startEditMilestone(milestone)}
-                            className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-100 bg-white text-slate-400 shadow-sm transition-all hover:border-amber-200 hover:text-amber-600 hover:shadow-md"
+                            title={
+                              isTerminalMilestone
+                                ? 'Terminal milestones cannot be edited.'
+                                : 'Edit milestone'
+                            }
+                            onClick={() => {
+                              if (!isTerminalMilestone) {
+                                milestones.startEditMilestone(milestone);
+                              }
+                            }}
+                            disabled={isTerminalMilestone}
+                            className={`flex h-9 w-9 items-center justify-center rounded-xl border bg-white shadow-sm transition-all ${isTerminalMilestone ? 'cursor-not-allowed border-slate-100 text-slate-300 opacity-60' : 'border-slate-100 text-slate-400 hover:border-amber-200 hover:text-amber-600 hover:shadow-md'}`}
                           >
                             <Edit2 className="h-4 w-4" />
                           </button>
@@ -467,6 +514,8 @@ export function MilestonesTabSection({ project, milestones }: MilestonesTabSecti
                 </>
               )}
             </div>
+              );
+            })()
           ))}
         </div>
       ) : (
@@ -495,14 +544,13 @@ export function MilestonesTabSection({ project, milestones }: MilestonesTabSecti
                 (m) => m.id === quickStatusMenu.milestoneId,
               );
               if (!targetMilestone) return null;
-              return MILESTONE_STATUS_OPTIONS.map((status) => {
+              const visibleStatuses = getVisibleMilestoneStatuses({
+                currentStatus: targetMilestone.status,
+                dueDate: targetMilestone.dueDate,
+                today,
+              });
+              return visibleStatuses.map((status) => {
                 const isSelected = targetMilestone.status === status;
-                const isAllowed = canSelectMilestoneStatus({
-                  currentStatus: targetMilestone.status,
-                  nextStatus: status,
-                  dueDate: targetMilestone.dueDate,
-                  today,
-                });
                 return (
                   <li key={status}>
                     <button
@@ -512,10 +560,8 @@ export function MilestonesTabSection({ project, milestones }: MilestonesTabSecti
                           ? 'bg-slate-50 font-semibold text-foreground'
                           : 'font-medium text-foreground hover:bg-slate-50'
                       }`}
-                      disabled={!isAllowed}
                       onMouseDown={(event) => event.preventDefault()}
                       onClick={() => {
-                        if (!isAllowed) return;
                         setQuickStatusMenu(null);
                         void milestones.submitQuickMilestoneStatus(targetMilestone, status);
                       }}
