@@ -3,17 +3,8 @@ import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 import { TopBar } from './TopBar';
 
-const { useIsMobileLayoutMock } = vi.hoisted(() => ({
-  useIsMobileLayoutMock: vi.fn(() => false),
-}));
-
-vi.mock('@/components/ui/useIsMobileLayout', () => ({
-  useIsMobileLayout: useIsMobileLayoutMock,
-}));
-
 describe('TopBar', () => {
   it('keeps desktop private layout contract and account action', () => {
-    useIsMobileLayoutMock.mockReturnValue(false);
     const onOpenAccount = vi.fn();
 
     const { container } = render(
@@ -31,7 +22,10 @@ describe('TopBar', () => {
       </MemoryRouter>,
     );
 
-    const shell = container.querySelector('header > div');
+    const desktopHeader = container.querySelector('header.hidden.md\\:block') as HTMLElement | null;
+    expect(desktopHeader).not.toBeNull();
+
+    const shell = desktopHeader?.querySelector(':scope > div');
     expect(shell?.className).toContain('px-4');
     expect(shell?.className).toContain('lg:flex-row');
     expect(screen.getByAltText('SuperviseSuite')).toHaveAttribute('height', '38');
@@ -48,7 +42,6 @@ describe('TopBar', () => {
   });
 
   it('toggles mobile navigation without affecting desktop branch classes', () => {
-    useIsMobileLayoutMock.mockReturnValue(true);
     const onOpenAccount = vi.fn();
     const { container } = render(
       <MemoryRouter>
@@ -80,12 +73,14 @@ describe('TopBar', () => {
     );
     expect(navWrapper.className).toContain('block');
 
-    const shell = container.querySelector('header > div');
+    const mobileHeader = container.querySelector('header.md\\:hidden') as HTMLElement | null;
+    expect(mobileHeader).not.toBeNull();
+
+    const shell = mobileHeader?.querySelector(':scope > div');
     expect(shell?.className).toContain('px-3');
   });
 
   it('renders public action buttons', () => {
-    useIsMobileLayoutMock.mockReturnValue(false);
     const onLogin = vi.fn();
     const onRegister = vi.fn();
 

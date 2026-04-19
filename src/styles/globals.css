@@ -23,6 +23,17 @@
   --primary-foreground: 0 0% 100%;
 }
 
+html {
+  /* Prevent layout shifts when some routes overflow vertically and others don't. */
+  scrollbar-gutter: stable;
+}
+
+@supports not (scrollbar-gutter: stable) {
+  html {
+    overflow-y: scroll;
+  }
+}
+
 body {
   margin: 0;
   background-color: hsl(var(--background));
