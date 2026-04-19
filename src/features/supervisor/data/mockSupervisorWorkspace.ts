@@ -25,8 +25,6 @@ export function createSupervisorProjects(user: StoredUser | null): SupervisorPro
       milestoneDate: '2026-03-21',
       lastActivityAt: '2026-03-02T16:30:00.000Z',
       progress: 74,
-      healthNote:
-        'On track, but the low-light detection backlog still needs attention before the next review.',
       communicationUrl: 'https://teams.microsoft.com/',
       repositoryUrl: 'https://github.com/example/smart-attendance-tracker',
       jiraBoardUrl: 'https://jira.example.com/projects/SAT/board',
@@ -156,8 +154,6 @@ export function createSupervisorProjects(user: StoredUser | null): SupervisorPro
       milestoneDate: '2026-03-28',
       lastActivityAt: '2026-03-01T10:15:00.000Z',
       progress: 32,
-      healthNote:
-        'Scope is clear, but technical decomposition still needs more explicit ownership.',
       communicationUrl: 'https://discord.com/',
       repositoryUrl: 'https://github.com/example/mentorlink-portal',
       members: [
@@ -251,8 +247,6 @@ export function createSupervisorProjects(user: StoredUser | null): SupervisorPro
       milestoneDate: '2026-03-14',
       lastActivityAt: '2026-02-29T18:40:00.000Z',
       progress: 58,
-      healthNote:
-        'Offline conflict resolution is still unstable and affects the next milestone confidence.',
       communicationUrl: 'https://meet.google.com/',
       jiraBoardUrl: 'https://jira.example.com/projects/FAM/board',
       members: [
@@ -346,7 +340,6 @@ export function createSupervisorProjects(user: StoredUser | null): SupervisorPro
       milestoneDate: '2026-03-11',
       lastActivityAt: '2026-02-27T17:25:00.000Z',
       progress: 41,
-      healthNote: 'Test evidence is incomplete and milestone timing is under pressure.',
       repositoryUrl: 'https://github.com/example/insight-qa-hub',
       members: [
         { id: 'sup-1', name: supervisorName, role: 'Supervisor' },

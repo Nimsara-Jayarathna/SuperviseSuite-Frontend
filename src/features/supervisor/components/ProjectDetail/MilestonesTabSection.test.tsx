@@ -1,6 +1,5 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import type { FormEvent } from 'react';
 import type { MilestonesState } from '../../hooks/useProjectDetailsPageState';
 import type { MilestoneStatus } from '../../projectDetails.shared';
 import type { SupervisorProjectDetail, SupervisorProjectDetailMilestone } from '../../types';
@@ -31,7 +30,6 @@ function buildProject(milestones: SupervisorProjectDetailMilestone[]): Superviso
     semester: null,
     milestoneDate: null,
     progressPercent: 0,
-    healthNote: null,
     lastActivityAt: null,
     repositoryUrl: null,
     github: {
@@ -70,10 +68,10 @@ function createMilestonesState(overrides: Partial<MilestonesState> = {}): Milest
     isEditMilestoneDirty: false,
     startAddMilestone: () => {},
     cancelAddMilestone: () => {},
-    createMilestone: async (_event: FormEvent<HTMLFormElement>) => {},
+    createMilestone: async () => {},
     startEditMilestone: () => {},
     cancelEditMilestone: () => {},
-    saveMilestone: async (_event: FormEvent<HTMLFormElement>) => {},
+    saveMilestone: async () => {},
     setNewMilestoneField: () => {},
     setEditMilestoneField: () => {},
     submitQuickMilestoneStatus: async () => {},

@@ -56,7 +56,6 @@ export type StudentProjectDetail = {
   milestoneDate: string | null;
   lastActivityAt: string | null;
   progressPercent: number | null;
-  healthNote: string | null;
   repositoryUrl?: string | null;
   github: ProjectGitHubPreview;
   githubRepositories?: ProjectGitHubRepositories | null;

@@ -153,8 +153,7 @@ export function useProjectDetailsPageState({
       overviewForm.summary !== initialOverviewForm.summary ||
       overviewForm.batch !== initialOverviewForm.batch ||
       overviewForm.semester !== initialOverviewForm.semester ||
-      overviewForm.lifecycleStatus !== initialOverviewForm.lifecycleStatus ||
-      overviewForm.healthNote !== initialOverviewForm.healthNote);
+      overviewForm.lifecycleStatus !== initialOverviewForm.lifecycleStatus);
 
   const isEditMilestoneDirty = useMemo(() => {
     if (!editMilestoneForm || !initialEditMilestoneForm) return false;
@@ -279,7 +278,6 @@ export function useProjectDetailsPageState({
         batch: overviewForm.batch.trim(),
         semester: overviewForm.semester.trim(),
         lifecycleStatus: overviewForm.lifecycleStatus,
-        healthNote: toNullableTrimmed(overviewForm.healthNote),
         leaderStudentId: project.leader?.id ?? null,
       });
       setProject(updatedProject);
@@ -345,7 +343,6 @@ export function useProjectDetailsPageState({
         batch: project.batch ?? '',
         semester: project.semester ?? '',
         lifecycleStatus: project.lifecycleStatus,
-        healthNote: project.healthNote ?? null,
         leaderStudentId: leaderDraftId,
       });
       setProject(updatedProject);

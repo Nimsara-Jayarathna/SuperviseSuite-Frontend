@@ -11,6 +11,11 @@ import { isBlockingError } from '@/utils/errorSeverity';
 import { useSupervisorDashboard } from '../hooks/useSupervisorDashboard';
 import type { SupervisorDashboardProjectItem } from '../types';
 
+const DAY_IN_MS = 24 * 60 * 60 * 1000;
+const UPCOMING_WINDOW_DAYS = 14;
+const ATTENTION_LIST_LIMIT = 4;
+const UPCOMING_LIST_LIMIT = 5;
+
 const dateFormatter = new Intl.DateTimeFormat('en', {
   month: 'short',
   day: 'numeric',
@@ -37,11 +42,94 @@ function jiraIndicatorLabel(indicator: string | null) {
   if (indicator === 'BEHIND') return 'Behind';
   if (indicator === 'HEALTHY') return 'Healthy';
   if (indicator === 'NOT_CONNECTED') return 'Not linked';
-  return '—';
+  return '-';
 }
 
 function formatMilestoneDate(value: string | null) {
   return value ? dateFormatter.format(new Date(value)) : 'Not set';
+}
+
+function parseLocalDate(value: string): Date {
+  const [year, month, day] = value.split('-').map((part) => Number(part));
+  return new Date(year, month - 1, day);
+}
+
+function startOfDay(date: Date): Date {
+  const copy = new Date(date);
+  copy.setHours(0, 0, 0, 0);
+  return copy;
+}
+
+function milestoneDeltaDays(value: string | null, today: Date): number | null {
+  if (!value) return null;
+  const parsed = parseLocalDate(value);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return Math.round((parsed.getTime() - today.getTime()) / DAY_IN_MS);
+}
+
+function staleDays(value: string | null, now: Date): number | null {
+  if (!value) return null;
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return Math.max(0, Math.floor((now.getTime() - parsed.getTime()) / DAY_IN_MS));
+}
+
+function upcomingWindowLabel(daysUntil: number): string {
+  if (daysUntil < 0) {
+    const overdue = Math.abs(daysUntil);
+    return overdue === 1 ? '1 day overdue' : `${overdue} days overdue`;
+  }
+  if (daysUntil === 0) return 'Due today';
+  if (daysUntil === 1) return 'Due tomorrow';
+  return `Due in ${daysUntil} days`;
+}
+
+function upcomingWindowClasses(daysUntil: number): string {
+  if (daysUntil < 0) return 'border-rose-200 bg-rose-50 text-rose-700';
+  if (daysUntil <= 3) return 'border-amber-200 bg-amber-50 text-amber-700';
+  if (daysUntil <= UPCOMING_WINDOW_DAYS) return 'border-sky-200 bg-sky-50 text-sky-700';
+  return 'border-slate-200 bg-slate-50 text-slate-600';
+}
+
+type AttentionItem = {
+  project: SupervisorDashboardProjectItem;
+  score: number;
+  reasons: string[];
+  summaryText: string;
+  severity: 'critical' | 'warning';
+  daysUntilMilestone: number | null;
+  inactivityDays: number | null;
+};
+
+function attentionSummaryText(
+  project: SupervisorDashboardProjectItem,
+  daysUntilMilestone: number | null,
+): string {
+  if (daysUntilMilestone !== null && daysUntilMilestone < 0) {
+    const overdueDays = Math.abs(daysUntilMilestone);
+    return overdueDays === 1
+      ? 'Primary milestone is overdue by 1 day and requires recovery.'
+      : `Primary milestone is overdue by ${overdueDays} days and requires recovery.`;
+  }
+
+  if (project.lifecycleStatus === 'BEHIND') {
+    return 'Lifecycle is behind. Prioritize blocker removal and milestone recovery.';
+  }
+  if (project.lifecycleStatus === 'AT_RISK') {
+    return 'Lifecycle is at risk. Confirm owners and protect near-term scope.';
+  }
+
+  if (daysUntilMilestone !== null && daysUntilMilestone <= 7) {
+    if (daysUntilMilestone === 0) {
+      return 'Primary milestone is due today. Run a readiness check now.';
+    }
+    if (daysUntilMilestone === 1) {
+      return 'Primary milestone is due tomorrow. Validate readiness today.';
+    }
+    return `Primary milestone is due in ${daysUntilMilestone} days. Validate readiness this week.`;
+  }
+
+  return 'Execution signals indicate this project should be reviewed this cycle.';
 }
 
 function DashboardStatsSkeleton() {
@@ -160,17 +248,121 @@ export function SupervisorDashboardPage() {
     setCurrentPage(1);
   }, [normalizedQuery]);
 
-  const attentionProjects = projects.filter(
-    (project) => project.lifecycleStatus === 'AT_RISK' || project.lifecycleStatus === 'BEHIND',
-  );
-  const upcomingProjects = [...projects]
-    .filter((project) => Boolean(project.milestoneDate))
-    .sort((a, b) => {
-      const left = a.milestoneDate ?? '';
-      const right = b.milestoneDate ?? '';
-      return left.localeCompare(right);
+  const now = new Date();
+  const today = startOfDay(now);
+
+  const attentionProjects: AttentionItem[] = projects
+    .map((project) => {
+      const reasons: string[] = [];
+      let score = 0;
+
+      const daysUntilMilestone = milestoneDeltaDays(project.milestoneDate, today);
+      const inactivityDays = staleDays(project.lastActivityAt, now);
+
+      if (project.lifecycleStatus === 'BEHIND') {
+        score += 90;
+        reasons.push('Lifecycle is marked behind.');
+      } else if (project.lifecycleStatus === 'AT_RISK') {
+        score += 70;
+        reasons.push('Lifecycle is marked at risk.');
+      }
+
+      if (project.jiraHealthIndicator === 'BEHIND') {
+        score += 50;
+        reasons.push('Jira execution trend is behind.');
+      } else if (project.jiraHealthIndicator === 'AT_RISK') {
+        score += 35;
+        reasons.push('Jira execution trend is at risk.');
+      }
+
+      if (daysUntilMilestone !== null) {
+        if (daysUntilMilestone < 0) {
+          score += 45 + Math.min(Math.abs(daysUntilMilestone), 20);
+          reasons.push(`Milestone is ${Math.abs(daysUntilMilestone)} day(s) overdue.`);
+        } else if (daysUntilMilestone <= 3) {
+          score += 25;
+          reasons.push('Milestone due within 3 days.');
+        } else if (daysUntilMilestone <= UPCOMING_WINDOW_DAYS) {
+          score += 12;
+          reasons.push(`Milestone due within ${UPCOMING_WINDOW_DAYS} days.`);
+        }
+      }
+
+      if (inactivityDays !== null) {
+        if (inactivityDays >= 14) {
+          score += 25;
+          reasons.push(`No recent activity for ${inactivityDays} days.`);
+        } else if (inactivityDays >= 7) {
+          score += 12;
+          reasons.push(`Limited activity in the last ${inactivityDays} days.`);
+        }
+      }
+
+      if (
+        daysUntilMilestone !== null &&
+        daysUntilMilestone <= 7 &&
+        (project.progressPercent ?? 0) < 40
+      ) {
+        score += 15;
+        reasons.push('Progress is low for a near-term milestone.');
+      }
+
+      const severity: AttentionItem['severity'] =
+        score >= 95 ||
+        project.lifecycleStatus === 'BEHIND' ||
+        project.jiraHealthIndicator === 'BEHIND' ||
+        (daysUntilMilestone !== null && daysUntilMilestone < 0)
+          ? 'critical'
+          : 'warning';
+
+      return {
+        project,
+        score,
+        reasons: reasons.slice(0, 3),
+        summaryText: attentionSummaryText(project, daysUntilMilestone),
+        severity,
+        daysUntilMilestone,
+        inactivityDays,
+      };
     })
-    .slice(0, 4);
+    .filter((item) => item.score >= 45)
+    .sort((left, right) => {
+      if (left.severity !== right.severity) {
+        return left.severity === 'critical' ? -1 : 1;
+      }
+      if (left.score !== right.score) {
+        return right.score - left.score;
+      }
+      const leftDays = left.daysUntilMilestone ?? Number.POSITIVE_INFINITY;
+      const rightDays = right.daysUntilMilestone ?? Number.POSITIVE_INFINITY;
+      if (leftDays !== rightDays) {
+        return leftDays - rightDays;
+      }
+      return (right.inactivityDays ?? -1) - (left.inactivityDays ?? -1);
+    })
+    .slice(0, ATTENTION_LIST_LIMIT);
+
+  const upcomingProjects = projects
+    .filter(
+      (project) => Boolean(project.milestoneDate) && project.lifecycleStatus !== 'COMPLETED',
+    )
+    .map((project) => ({
+      project,
+      daysUntilMilestone: milestoneDeltaDays(project.milestoneDate, today),
+    }))
+    .filter(
+      (
+        item,
+      ): item is {
+        project: SupervisorDashboardProjectItem;
+        daysUntilMilestone: number;
+      } =>
+        item.daysUntilMilestone !== null &&
+        item.daysUntilMilestone >= -UPCOMING_WINDOW_DAYS &&
+        item.daysUntilMilestone <= UPCOMING_WINDOW_DAYS,
+    )
+    .sort((left, right) => left.daysUntilMilestone - right.daysUntilMilestone)
+    .slice(0, UPCOMING_LIST_LIMIT);
 
   useEffect(() => {
     if (error && isBlockingError(error)) {
@@ -393,6 +585,9 @@ export function SupervisorDashboardPage() {
       <section className="grid gap-5 xl:grid-cols-2">
         <div className="rounded-3xl border border-border bg-white p-4 shadow-sm sm:p-6">
           <h2 className="text-lg font-semibold text-foreground">Projects needing attention</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Ranked by lifecycle risk, Jira signal, milestone pressure, and recent activity.
+          </p>
           {isLoading ? (
             <div className="mt-5 space-y-4 animate-pulse">
               {Array.from({ length: 3 }).map((_, index) => (
@@ -404,22 +599,64 @@ export function SupervisorDashboardPage() {
             </div>
           ) : attentionProjects.length > 0 ? (
             <div className="mt-5 space-y-4">
-              {attentionProjects.map((project: SupervisorDashboardProjectItem) => (
-                <div
-                  key={project.id}
-                  className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="font-medium text-foreground">{project.title}</p>
-                      <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                        {project.healthNote ?? 'No health note recorded yet.'}
-                      </p>
+              {attentionProjects.map((item) => {
+                const toneClasses =
+                  item.severity === 'critical'
+                    ? 'border-rose-200 bg-rose-50/60'
+                    : 'border-amber-200 bg-amber-50/60';
+                const iconClasses =
+                  item.severity === 'critical' ? 'text-rose-600' : 'text-amber-600';
+                const signalPillClasses =
+                  item.severity === 'critical'
+                    ? 'border-rose-200 bg-rose-100 text-rose-700'
+                    : 'border-amber-200 bg-amber-100 text-amber-700';
+                return (
+                  <div key={item.project.id} className={`rounded-2xl border p-4 ${toneClasses}`}>
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="min-w-0">
+                        <p className="truncate font-semibold text-foreground">{item.project.title}</p>
+                        <p className="mt-1 text-sm text-slate-600">{item.summaryText}</p>
+                      </div>
+                      <AlertTriangle className={`mt-1 h-5 w-5 shrink-0 ${iconClasses}`} />
                     </div>
-                    <AlertTriangle className="mt-1 h-5 w-5 text-amber-600" />
+
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <span className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold ${signalPillClasses}`}>
+                        {item.severity === 'critical' ? 'Critical' : 'Needs review'}
+                      </span>
+                      <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600">
+                        {item.project.lifecycleStatus.replace('_', ' ')}
+                      </span>
+                      <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600">
+                        Jira {jiraIndicatorLabel(item.project.jiraHealthIndicator)}
+                      </span>
+                      {item.daysUntilMilestone !== null ? (
+                        <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600">
+                          {upcomingWindowLabel(item.daysUntilMilestone)}
+                        </span>
+                      ) : null}
+                      {item.inactivityDays !== null ? (
+                        <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600">
+                          {item.inactivityDays}d inactivity
+                        </span>
+                      ) : null}
+                    </div>
+
+                    {item.reasons.length > 0 ? (
+                      <p className="mt-3 text-sm text-slate-600">{item.reasons.join(' ')}</p>
+                    ) : null}
+
+                    <div className="mt-3">
+                      <Link
+                        to={`/supervisor/projects/${item.project.id}`}
+                        className={buttonStyles({ variant: 'ghost', size: 'sm' })}
+                      >
+                        Open project
+                      </Link>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <p className="mt-5 text-sm text-muted-foreground">
@@ -430,6 +667,9 @@ export function SupervisorDashboardPage() {
 
         <div className="rounded-3xl border border-border bg-white p-4 shadow-sm sm:p-6">
           <h2 className="text-lg font-semibold text-foreground">Upcoming milestones</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Showing overdue items and milestones due within the next {UPCOMING_WINDOW_DAYS} days.
+          </p>
           {isLoading ? (
             <div className="mt-5 space-y-4 animate-pulse">
               {Array.from({ length: 3 }).map((_, index) => (
@@ -438,36 +678,47 @@ export function SupervisorDashboardPage() {
             </div>
           ) : upcomingProjects.length > 0 ? (
             <div className="mt-5 space-y-4">
-              {upcomingProjects.map((project) => (
-                <div
-                  key={project.id}
-                  className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:flex-row sm:items-center"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate text-[15px] font-semibold text-foreground sm:text-base">
-                      {project.title}
-                    </p>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      {formatMilestoneDate(project.milestoneDate)}
-                    </p>
+              {upcomingProjects.map((item) => (
+                <div key={item.project.id} className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-[15px] font-semibold text-foreground sm:text-base">
+                        {item.project.title}
+                      </p>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        {formatMilestoneDate(item.project.milestoneDate)}
+                      </p>
+                    </div>
+                    <span
+                      className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold ${upcomingWindowClasses(item.daysUntilMilestone)}`}
+                    >
+                      {upcomingWindowLabel(item.daysUntilMilestone)}
+                    </span>
                   </div>
-                  <Link
-                    to={`/supervisor/projects/${project.id}`}
-                    className={buttonStyles({
-                      variant: 'ghost',
-                      size: 'sm',
-                      className:
-                        'h-auto shrink-0 rounded-none px-0 py-0 text-xs font-semibold text-slate-500 hover:bg-transparent hover:text-slate-800 sm:h-9 sm:rounded-2xl sm:px-3 sm:py-2 sm:text-sm sm:font-medium sm:text-muted-foreground',
-                    })}
-                  >
-                    Review
-                  </Link>
+
+                  <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px]">
+                    <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 font-semibold text-slate-600">
+                      {item.project.lifecycleStatus.replace('_', ' ')}
+                    </span>
+                    <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 font-semibold text-slate-600">
+                      Jira {jiraIndicatorLabel(item.project.jiraHealthIndicator)}
+                    </span>
+                    <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 font-semibold text-slate-600">
+                      {item.project.progressPercent ?? 0}% progress
+                    </span>
+                  </div>
+
+                  <div className="mt-3">
+                    <Link to={`/supervisor/projects/${item.project.id}`} className={buttonStyles({ variant: 'ghost', size: 'sm' })}>
+                      Review milestone
+                    </Link>
+                  </div>
                 </div>
               ))}
             </div>
           ) : (
             <p className="mt-5 text-sm text-muted-foreground">
-              No upcoming milestones in the current window.
+              No overdue or near-term milestones in the current window.
             </p>
           )}
         </div>

@@ -13,7 +13,6 @@ export type SupervisorProjectSummary = {
   semester: string | null;
   milestoneDate: string | null;
   progressPercent: number | null;
-  healthNote: string | null;
   memberCount: number;
 };
 
@@ -63,7 +62,6 @@ export type SupervisorProjectDetail = {
   semester: string | null;
   milestoneDate: string | null;
   progressPercent: number | null;
-  healthNote: string | null;
   lastActivityAt: string | null;
   repositoryUrl?: string | null;
   github: ProjectGitHubPreview;
@@ -348,7 +346,6 @@ export type SupervisorProject = {
   milestoneDate: string;
   lastActivityAt: string;
   progress: number;
-  healthNote: string;
   communicationUrl?: string;
   repositoryUrl?: string | null;
   jiraBoardUrl?: string;
@@ -380,7 +377,6 @@ export type SupervisorDashboardProjectItem = {
   milestoneDate: string | null;
   lastActivityAt: string | null;
   progressPercent: number | null;
-  healthNote: string | null;
   jiraHealthIndicator: 'AT_RISK' | 'BEHIND' | 'HEALTHY' | 'NOT_CONNECTED' | null;
 };
 
@@ -447,7 +443,6 @@ export type UpdateSupervisorProjectRequest = {
   batch: string;
   semester: string;
   lifecycleStatus: SupervisorProjectLifecycle;
-  healthNote: string | null;
   leaderStudentId?: string | null;
 };
 
