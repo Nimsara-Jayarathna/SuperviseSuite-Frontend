@@ -134,19 +134,16 @@ export function validateMilestoneUpdatePolicy(params: {
   nextDueDate: string;
   today?: string;
 }): string | null {
-  const {
-    milestones,
-    targetMilestoneId,
-    currentStatus,
-    nextStatus,
-    currentDueDate,
-    nextDueDate,
-  } = params;
+  const { milestones, targetMilestoneId, currentStatus, nextStatus, currentDueDate, nextDueDate } =
+    params;
   const today = params.today ?? getTodayLocalDateString();
   const statusChanged = currentStatus !== nextStatus;
   const dueDateChanged = currentDueDate !== nextDueDate;
 
-  if (statusChanged && !canSelectMilestoneStatus({ currentStatus, nextStatus, dueDate: nextDueDate, today })) {
+  if (
+    statusChanged &&
+    !canSelectMilestoneStatus({ currentStatus, nextStatus, dueDate: nextDueDate, today })
+  ) {
     if (currentStatus === 'COMPLETED') {
       return 'Completed milestones cannot be moved to another status.';
     }

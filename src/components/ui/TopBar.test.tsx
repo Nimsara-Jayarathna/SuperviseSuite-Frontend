@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 import { TopBar } from './TopBar';
@@ -28,16 +28,26 @@ describe('TopBar', () => {
     const shell = desktopHeader?.querySelector(':scope > div');
     expect(shell?.className).toContain('px-4');
     expect(shell?.className).toContain('lg:flex-row');
-    expect(screen.getByAltText('SuperviseSuite')).toHaveAttribute('height', '38');
-
-    expect(screen.getByRole('link', { name: 'Projects' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Archive' })).toBeInTheDocument();
-
-    expect(screen.getByRole('button', { name: 'Open account menu' }).className).toContain(
-      'sm:self-auto',
+    expect(within(desktopHeader as HTMLElement).getByAltText('SuperviseSuite')).toHaveAttribute(
+      'height',
+      '38',
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open account menu' }));
+    expect(
+      within(desktopHeader as HTMLElement).getByRole('link', { name: 'Projects' }),
+    ).toBeInTheDocument();
+    expect(
+      within(desktopHeader as HTMLElement).getByRole('link', { name: 'Archive' }),
+    ).toBeInTheDocument();
+
+    expect(
+      within(desktopHeader as HTMLElement).getByRole('button', { name: 'Open account menu' })
+        .className,
+    ).toContain('sm:self-auto');
+
+    fireEvent.click(
+      within(desktopHeader as HTMLElement).getByRole('button', { name: 'Open account menu' }),
+    );
     expect(onOpenAccount).toHaveBeenCalledTimes(1);
   });
 
@@ -55,13 +65,22 @@ describe('TopBar', () => {
       </MemoryRouter>,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open account menu' }));
+    const mobileHeader = container.querySelector('header.md\\:hidden') as HTMLElement | null;
+    expect(mobileHeader).not.toBeNull();
+
+    fireEvent.click(
+      within(mobileHeader as HTMLElement).getByRole('button', { name: 'Open account menu' }),
+    );
     expect(onOpenAccount).toHaveBeenCalledTimes(1);
 
-    const mobileToggle = screen.getByRole('button', { name: 'Open navigation menu' });
+    const mobileToggle = within(mobileHeader as HTMLElement).getByRole('button', {
+      name: 'Open navigation menu',
+    });
     expect(mobileToggle).toHaveAttribute('aria-expanded', 'false');
 
-    const projectsLink = screen.getByRole('link', { name: 'Projects' });
+    const projectsLink = within(mobileHeader as HTMLElement).getByRole('link', {
+      name: 'Projects',
+    });
     const navWrapper = projectsLink.closest('nav')?.parentElement as HTMLElement;
     expect(navWrapper.className).toContain('hidden');
 
@@ -73,9 +92,6 @@ describe('TopBar', () => {
     );
     expect(navWrapper.className).toContain('block');
 
-    const mobileHeader = container.querySelector('header.md\\:hidden') as HTMLElement | null;
-    expect(mobileHeader).not.toBeNull();
-
     const shell = mobileHeader?.querySelector(':scope > div');
     expect(shell?.className).toContain('px-3');
   });
@@ -84,7 +100,7 @@ describe('TopBar', () => {
     const onLogin = vi.fn();
     const onRegister = vi.fn();
 
-    render(
+    const { container } = render(
       <MemoryRouter>
         <TopBar
           mode="public"
@@ -97,8 +113,11 @@ describe('TopBar', () => {
       </MemoryRouter>,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Log in' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Register' }));
+    const desktopHeader = container.querySelector('header.hidden.md\\:block') as HTMLElement | null;
+    expect(desktopHeader).not.toBeNull();
+
+    fireEvent.click(within(desktopHeader as HTMLElement).getByRole('button', { name: 'Log in' }));
+    fireEvent.click(within(desktopHeader as HTMLElement).getByRole('button', { name: 'Register' }));
     expect(onLogin).toHaveBeenCalledTimes(1);
     expect(onRegister).toHaveBeenCalledTimes(1);
   });

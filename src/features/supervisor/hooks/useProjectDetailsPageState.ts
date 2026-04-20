@@ -458,7 +458,10 @@ export function useProjectDetailsPageState({
 
   async function submitMilestoneCreate() {
     if (!projectId || !project) return;
-    const validationError = validateMilestoneAddPolicy(project.milestones, newMilestoneForm.dueDate);
+    const validationError = validateMilestoneAddPolicy(
+      project.milestones,
+      newMilestoneForm.dueDate,
+    );
     if (validationError) {
       showValidationModal('Unable to add milestone', validationError);
       return;
@@ -510,7 +513,13 @@ export function useProjectDetailsPageState({
   }
 
   async function submitMilestoneUpdate() {
-    if (!projectId || !editingMilestoneId || !editMilestoneForm || !isEditMilestoneDirty || !project) {
+    if (
+      !projectId ||
+      !editingMilestoneId ||
+      !editMilestoneForm ||
+      !isEditMilestoneDirty ||
+      !project
+    ) {
       return;
     }
     const currentMilestone = project.milestones.find(

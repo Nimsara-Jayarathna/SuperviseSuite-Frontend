@@ -398,7 +398,11 @@ export function StudentProjectDetailsPage() {
       />
 
       {activeTab === 'overview' ? (
-        <ProjectOverviewContent project={project} role="student" meetingAnalytics={meetingAnalytics} />
+        <ProjectOverviewContent
+          project={project}
+          role="student"
+          meetingAnalytics={meetingAnalytics}
+        />
       ) : null}
 
       {activeTab === 'team' ? (

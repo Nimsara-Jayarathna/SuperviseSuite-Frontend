@@ -314,7 +314,8 @@ export function MilestonesStepSection({
             <p className="text-xs text-amber-700">
               {incompleteMilestoneCount > 0
                 ? `Complete ${incompleteMilestoneCount} milestone${incompleteMilestoneCount === 1 ? '' : 's'} before creating the project.`
-                : milestonePolicyError ?? 'Milestone rules must be fixed before creating the project.'}
+                : (milestonePolicyError ??
+                  'Milestone rules must be fixed before creating the project.')}
             </p>
           )}
           <div className="flex gap-3">

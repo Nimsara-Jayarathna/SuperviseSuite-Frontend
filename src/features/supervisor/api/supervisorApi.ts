@@ -1,16 +1,7 @@
 import { apiClient } from '@/services/apiClient';
-import {
-  buildPagedUrl,
-  fallbackSlicePage,
-  normalizePaginatedPayload,
-  shouldFallbackToDashboard,
-} from '@/features/projects/api/githubPagination';
 import { registerSessionCacheClearer } from '@/services/sessionCache';
-import type {
-  PaginatedListResult,
-  ProjectGitHubContributor,
-  ProjectGitHubRecentCommit,
-} from '@/features/projects/types';
+import { createRoleProjectApi } from '@/features/shared/api/createRoleProjectApi';
+import { clearRecord } from '@/services/apiCacheUtils';
 import type {
   AddSupervisorProjectMembersRequest,
   AddSupervisorProjectMilestoneRequest,
@@ -29,13 +20,9 @@ import type {
   CreateSupervisorProjectRequest,
   CreateSupervisorProjectResponse,
   LinkProjectGitHubRepositoryRequest,
-  ProjectGitHubActivity,
   ProjectGitHubRepositoryLink,
   JiraAuthUrl,
   JiraHealth,
-  JiraHierarchy,
-  JiraSprintProgress,
-  JiraWorkload,
   JiraOAuthCompletePayload,
   JiraOAuthCompleteResult,
   SupervisorDashboard,
@@ -47,53 +34,18 @@ import type {
   UpdateSupervisorProjectRequest,
   UpdateSupervisorProjectStatusRequest,
 } from '../types';
-import type {
-  MeetingChannel,
-  MeetingChannelUpsertPayload,
-  MeetingRecord,
-  MeetingRecordUpsertPayload,
-} from '@/features/meetings/types';
-import { sortMeetingChannels } from '@/features/meetings/lib/sortMeetingChannels';
-import { sortMeetingRecords } from '@/features/meetings/lib/sortMeetingRecords';
 import { normalizeGitHubRepositoryUrl } from '../utils/githubRepositoryUrl';
 
 const cachedProjectsById: Partial<Record<string, SupervisorProjectDetail>> = {};
 const inFlightProjectRequests: Partial<Record<string, Promise<SupervisorProjectDetail>>> = {};
-const cachedProjectGitHubByKey: Partial<Record<string, ProjectGitHubActivity>> = {};
-const inFlightProjectGitHubRequestsByKey: Partial<Record<string, Promise<ProjectGitHubActivity>>> =
-  {};
-type JiraCache = {
-  health?: JiraHealth;
-  sprintProgress?: JiraSprintProgress;
-  workload?: JiraWorkload;
-  hierarchy?: JiraHierarchy;
-};
-const cachedJiraByProjectId: Partial<Record<string, JiraCache>> = {};
-const cachedMeetingChannelsByProjectId: Partial<Record<string, MeetingChannel[]>> = {};
-const inFlightMeetingChannelsByProjectId: Partial<Record<string, Promise<MeetingChannel[]>>> = {};
-const cachedMeetingRecordsByProjectId: Partial<Record<string, MeetingRecord[]>> = {};
-const inFlightMeetingRecordsByProjectId: Partial<Record<string, Promise<MeetingRecord[]>>> = {};
-
-function clearRecord(record: Partial<Record<string, unknown>>) {
-  for (const key of Object.keys(record)) {
-    delete record[key];
-  }
-}
+const { clearCache: clearRoleProjectCache, ...roleProjectApi } = createRoleProjectApi({
+  roleBasePath: '/api/supervisor',
+});
 
 function clearSupervisorApiCache() {
   clearRecord(cachedProjectsById);
   clearRecord(inFlightProjectRequests);
-  clearRecord(cachedProjectGitHubByKey);
-  clearRecord(inFlightProjectGitHubRequestsByKey);
-  clearRecord(cachedJiraByProjectId);
-  clearRecord(cachedMeetingChannelsByProjectId);
-  clearRecord(inFlightMeetingChannelsByProjectId);
-  clearRecord(cachedMeetingRecordsByProjectId);
-  clearRecord(inFlightMeetingRecordsByProjectId);
-}
-
-function invalidateJiraCache(projectId: string) {
-  delete cachedJiraByProjectId[projectId];
+  clearRoleProjectCache();
 }
 
 function invalidateProjectCaches(projectId: string | null | undefined) {
@@ -102,29 +54,14 @@ function invalidateProjectCaches(projectId: string | null | undefined) {
   }
   delete cachedProjectsById[projectId];
   delete inFlightProjectRequests[projectId];
-  for (const key of Object.keys(cachedProjectGitHubByKey)) {
-    if (key.startsWith(`${projectId}:`)) {
-      delete cachedProjectGitHubByKey[key];
-    }
-  }
-  for (const key of Object.keys(inFlightProjectGitHubRequestsByKey)) {
-    if (key.startsWith(`${projectId}:`)) {
-      delete inFlightProjectGitHubRequestsByKey[key];
-    }
-  }
-}
-
-function appendQuery(url: string, params: URLSearchParams): string {
-  const query = params.toString();
-  if (!query) {
-    return url;
-  }
-  return `${url}${url.includes('?') ? '&' : '?'}${query}`;
+  roleProjectApi.invalidateProjectGitHubCaches(projectId);
 }
 
 registerSessionCacheClearer(clearSupervisorApiCache);
 
 export const supervisorApi = {
+  ...roleProjectApi,
+
   clearCache(): void {
     clearSupervisorApiCache();
   },
@@ -152,148 +89,14 @@ export const supervisorApi = {
     );
   },
 
-  async getJiraHealth(projectId: string): Promise<JiraHealth> {
-    const hit = cachedJiraByProjectId[projectId]?.health;
-    if (hit) return hit;
-    const data = await apiClient.get<JiraHealth>(
-      `/api/supervisor/projects/${projectId}/jira/health`,
-    );
-    cachedJiraByProjectId[projectId] = { ...cachedJiraByProjectId[projectId], health: data };
-    return data;
-  },
-
-  async getJiraSprintProgress(projectId: string): Promise<JiraSprintProgress> {
-    const hit = cachedJiraByProjectId[projectId]?.sprintProgress;
-    if (hit) return hit;
-    const data = await apiClient.get<JiraSprintProgress>(
-      `/api/supervisor/projects/${projectId}/jira/sprint-progress`,
-    );
-    cachedJiraByProjectId[projectId] = {
-      ...cachedJiraByProjectId[projectId],
-      sprintProgress: data,
-    };
-    return data;
-  },
-
-  async getJiraWorkload(projectId: string): Promise<JiraWorkload> {
-    const hit = cachedJiraByProjectId[projectId]?.workload;
-    if (hit) return hit;
-    const data = await apiClient.get<JiraWorkload>(
-      `/api/supervisor/projects/${projectId}/jira/workload`,
-    );
-    cachedJiraByProjectId[projectId] = { ...cachedJiraByProjectId[projectId], workload: data };
-    return data;
-  },
-
-  async getProjectJiraHierarchy(projectId: string): Promise<JiraHierarchy> {
-    const hit = cachedJiraByProjectId[projectId]?.hierarchy;
-    if (hit) return hit;
-    const data = await apiClient.get<JiraHierarchy>(
-      `/api/supervisor/projects/${projectId}/jira/hierarchy`,
-    );
-    cachedJiraByProjectId[projectId] = { ...cachedJiraByProjectId[projectId], hierarchy: data };
-    return data;
-  },
-
   async refreshProjectJira(projectId: string): Promise<JiraHealth> {
     const fresh = await apiClient.post<JiraHealth>(
       `/api/supervisor/projects/${projectId}/jira/refresh`,
       {},
     );
-    invalidateJiraCache(projectId);
-    cachedJiraByProjectId[projectId] = { health: fresh };
+    roleProjectApi.invalidateJiraCache(projectId);
+    roleProjectApi.primeJiraHealth(projectId, fresh);
     return fresh;
-  },
-
-  async getProjectGitHubDashboard(
-    projectId: string,
-    forceRefresh = false,
-    linkedRepositoryId?: string | null,
-  ): Promise<ProjectGitHubActivity> {
-    const key = `${projectId}:${linkedRepositoryId ?? ''}`;
-
-    if (!forceRefresh && cachedProjectGitHubByKey[key]) {
-      return cachedProjectGitHubByKey[key];
-    }
-
-    if (!forceRefresh && inFlightProjectGitHubRequestsByKey[key]) {
-      return inFlightProjectGitHubRequestsByKey[key];
-    }
-
-    const params = new URLSearchParams();
-    if (linkedRepositoryId) {
-      params.set('linkedRepositoryId', linkedRepositoryId);
-    }
-    const suffix = params.toString() ? `?${params.toString()}` : '';
-    const request = apiClient.get<ProjectGitHubActivity>(
-      `/api/supervisor/projects/${projectId}/github${suffix}`,
-    );
-    inFlightProjectGitHubRequestsByKey[key] = request;
-
-    try {
-      const dashboard = await request;
-      cachedProjectGitHubByKey[key] = dashboard;
-      return dashboard;
-    } finally {
-      delete inFlightProjectGitHubRequestsByKey[key];
-    }
-  },
-
-  async getProjectGitHubActivityPage(
-    projectId: string,
-    page: number,
-    linkedRepositoryId?: string | null,
-  ): Promise<PaginatedListResult<ProjectGitHubRecentCommit>> {
-    const params = new URLSearchParams();
-    if (linkedRepositoryId) {
-      params.set('linkedRepositoryId', linkedRepositoryId);
-    }
-    try {
-      const payload = await apiClient.get<unknown>(
-        appendQuery(
-          buildPagedUrl(`/api/supervisor/projects/${projectId}/github/activity`, page),
-          params,
-        ),
-      );
-      return normalizePaginatedPayload<ProjectGitHubRecentCommit>(payload, page);
-    } catch (error) {
-      if (!shouldFallbackToDashboard(error)) {
-        throw error;
-      }
-
-      const dashboard = await this.getProjectGitHubDashboard(projectId, false, linkedRepositoryId);
-      return fallbackSlicePage<ProjectGitHubRecentCommit>(
-        dashboard.recentCommitsPreview ?? [],
-        page,
-      );
-    }
-  },
-
-  async getProjectGitHubContributorsPage(
-    projectId: string,
-    page: number,
-    linkedRepositoryId?: string | null,
-  ): Promise<PaginatedListResult<ProjectGitHubContributor>> {
-    const params = new URLSearchParams();
-    if (linkedRepositoryId) {
-      params.set('linkedRepositoryId', linkedRepositoryId);
-    }
-    try {
-      const payload = await apiClient.get<unknown>(
-        appendQuery(
-          buildPagedUrl(`/api/supervisor/projects/${projectId}/github/contributors`, page),
-          params,
-        ),
-      );
-      return normalizePaginatedPayload<ProjectGitHubContributor>(payload, page);
-    } catch (error) {
-      if (!shouldFallbackToDashboard(error)) {
-        throw error;
-      }
-
-      const dashboard = await this.getProjectGitHubDashboard(projectId, false, linkedRepositoryId);
-      return fallbackSlicePage<ProjectGitHubContributor>(dashboard.contributorsPreview ?? [], page);
-    }
   },
 
   refreshProjectGitHub(projectId: string): Promise<void> {
@@ -530,11 +333,7 @@ export const supervisorApi = {
       body,
     );
     delete cachedProjectsById[projectId];
-    for (const key of Object.keys(cachedProjectGitHubByKey)) {
-      if (key.startsWith(`${projectId}:`)) {
-        delete cachedProjectGitHubByKey[key];
-      }
-    }
+    roleProjectApi.invalidateProjectGitHubCaches(projectId);
     return linked;
   },
 
@@ -546,11 +345,7 @@ export const supervisorApi = {
       {},
     );
     cachedProjectsById[projectId] = updated;
-    for (const key of Object.keys(cachedProjectGitHubByKey)) {
-      if (key.startsWith(`${projectId}:`)) {
-        delete cachedProjectGitHubByKey[key];
-      }
-    }
+    roleProjectApi.invalidateProjectGitHubCaches(projectId);
     return updated;
   },
 
@@ -664,196 +459,5 @@ export const supervisorApi = {
     );
     cachedProjectsById[projectId] = updated;
     return updated;
-  },
-
-  async getProjectMeetingChannels(
-    projectId: string,
-    forceRefresh = false,
-  ): Promise<MeetingChannel[]> {
-    if (!forceRefresh && cachedMeetingChannelsByProjectId[projectId]) {
-      return cachedMeetingChannelsByProjectId[projectId] as MeetingChannel[];
-    }
-
-    if (!forceRefresh && inFlightMeetingChannelsByProjectId[projectId]) {
-      return inFlightMeetingChannelsByProjectId[projectId] as Promise<MeetingChannel[]>;
-    }
-
-    if (forceRefresh) {
-      delete cachedMeetingChannelsByProjectId[projectId];
-    }
-
-    const request = apiClient.get<MeetingChannel[]>(
-      `/api/supervisor/projects/${projectId}/meeting-channels`,
-    );
-    inFlightMeetingChannelsByProjectId[projectId] = request;
-
-    try {
-      const channels = await request;
-      cachedMeetingChannelsByProjectId[projectId] = channels;
-      return channels;
-    } finally {
-      delete inFlightMeetingChannelsByProjectId[projectId];
-    }
-  },
-
-  async createProjectMeetingChannel(
-    projectId: string,
-    payload: MeetingChannelUpsertPayload,
-  ): Promise<MeetingChannel> {
-    const created = await apiClient.post<MeetingChannel>(
-      `/api/supervisor/projects/${projectId}/meeting-channels`,
-      payload,
-    );
-    delete inFlightMeetingChannelsByProjectId[projectId];
-    const existing = cachedMeetingChannelsByProjectId[projectId];
-    if (existing) {
-      cachedMeetingChannelsByProjectId[projectId] = sortMeetingChannels([
-        created,
-        ...existing.filter((item) => item.id !== created.id),
-      ]);
-    }
-    return created;
-  },
-
-  async updateProjectMeetingChannel(
-    projectId: string,
-    channelId: string,
-    payload: MeetingChannelUpsertPayload,
-  ): Promise<MeetingChannel> {
-    const updated = await apiClient.patch<MeetingChannel>(
-      `/api/supervisor/projects/${projectId}/meeting-channels/${channelId}`,
-      payload,
-    );
-    delete inFlightMeetingChannelsByProjectId[projectId];
-    const existing = cachedMeetingChannelsByProjectId[projectId];
-    if (existing) {
-      cachedMeetingChannelsByProjectId[projectId] = sortMeetingChannels(
-        existing.map((item) => (item.id === updated.id ? updated : item)),
-      );
-    }
-    return updated;
-  },
-
-  async deleteProjectMeetingChannel(projectId: string, channelId: string): Promise<void> {
-    await apiClient.del<void>(
-      `/api/supervisor/projects/${projectId}/meeting-channels/${channelId}`,
-    );
-    delete inFlightMeetingChannelsByProjectId[projectId];
-    const existing = cachedMeetingChannelsByProjectId[projectId];
-    if (existing) {
-      cachedMeetingChannelsByProjectId[projectId] = existing.filter(
-        (item) => item.id !== channelId,
-      );
-    }
-  },
-
-  async approveProjectMeetingChannel(
-    projectId: string,
-    channelId: string,
-  ): Promise<MeetingChannel> {
-    const approved = await apiClient.post<MeetingChannel>(
-      `/api/supervisor/projects/${projectId}/meeting-channels/${channelId}/approve`,
-      {},
-    );
-    delete inFlightMeetingChannelsByProjectId[projectId];
-    const existing = cachedMeetingChannelsByProjectId[projectId];
-    if (existing) {
-      cachedMeetingChannelsByProjectId[projectId] = sortMeetingChannels(
-        existing.map((item) => (item.id === approved.id ? approved : item)),
-      );
-    }
-    return approved;
-  },
-
-  async getProjectMeetingRecords(
-    projectId: string,
-    forceRefresh = false,
-  ): Promise<MeetingRecord[]> {
-    if (!forceRefresh && cachedMeetingRecordsByProjectId[projectId]) {
-      return cachedMeetingRecordsByProjectId[projectId] as MeetingRecord[];
-    }
-
-    if (!forceRefresh && inFlightMeetingRecordsByProjectId[projectId]) {
-      return inFlightMeetingRecordsByProjectId[projectId] as Promise<MeetingRecord[]>;
-    }
-
-    if (forceRefresh) {
-      delete cachedMeetingRecordsByProjectId[projectId];
-    }
-
-    const request = apiClient.get<MeetingRecord[]>(
-      `/api/supervisor/projects/${projectId}/meeting-records`,
-    );
-    inFlightMeetingRecordsByProjectId[projectId] = request;
-
-    try {
-      const records = sortMeetingRecords(await request);
-      cachedMeetingRecordsByProjectId[projectId] = records;
-      return records;
-    } finally {
-      delete inFlightMeetingRecordsByProjectId[projectId];
-    }
-  },
-
-  async createProjectMeetingRecord(
-    projectId: string,
-    payload: MeetingRecordUpsertPayload,
-  ): Promise<MeetingRecord> {
-    const created = await apiClient.post<MeetingRecord>(
-      `/api/supervisor/projects/${projectId}/meeting-records`,
-      payload,
-    );
-    delete inFlightMeetingRecordsByProjectId[projectId];
-    const existing = cachedMeetingRecordsByProjectId[projectId];
-    if (existing) {
-      cachedMeetingRecordsByProjectId[projectId] = sortMeetingRecords([
-        created,
-        ...existing.filter((item) => item.id !== created.id),
-      ]);
-    }
-    return created;
-  },
-
-  async updateProjectMeetingRecord(
-    projectId: string,
-    recordId: string,
-    payload: MeetingRecordUpsertPayload,
-  ): Promise<MeetingRecord> {
-    const updated = await apiClient.patch<MeetingRecord>(
-      `/api/supervisor/projects/${projectId}/meeting-records/${recordId}`,
-      payload,
-    );
-    delete inFlightMeetingRecordsByProjectId[projectId];
-    const existing = cachedMeetingRecordsByProjectId[projectId];
-    if (existing) {
-      cachedMeetingRecordsByProjectId[projectId] = sortMeetingRecords(
-        existing.map((item) => (item.id === updated.id ? updated : item)),
-      );
-    }
-    return updated;
-  },
-
-  async deleteProjectMeetingRecord(projectId: string, recordId: string): Promise<void> {
-    await apiClient.del<void>(`/api/supervisor/projects/${projectId}/meeting-records/${recordId}`);
-    delete inFlightMeetingRecordsByProjectId[projectId];
-    const existing = cachedMeetingRecordsByProjectId[projectId];
-    if (existing) {
-      cachedMeetingRecordsByProjectId[projectId] = existing.filter((item) => item.id !== recordId);
-    }
-  },
-
-  async approveProjectMeetingRecord(projectId: string, recordId: string): Promise<MeetingRecord> {
-    const approved = await apiClient.post<MeetingRecord>(
-      `/api/supervisor/projects/${projectId}/meeting-records/${recordId}/approve`,
-      {},
-    );
-    delete inFlightMeetingRecordsByProjectId[projectId];
-    const existing = cachedMeetingRecordsByProjectId[projectId];
-    if (existing) {
-      cachedMeetingRecordsByProjectId[projectId] = sortMeetingRecords(
-        existing.map((item) => (item.id === approved.id ? approved : item)),
-      );
-    }
-    return approved;
   },
 };

@@ -343,9 +343,7 @@ export function SupervisorDashboardPage() {
     .slice(0, ATTENTION_LIST_LIMIT);
 
   const upcomingProjects = projects
-    .filter(
-      (project) => Boolean(project.milestoneDate) && project.lifecycleStatus !== 'COMPLETED',
-    )
+    .filter((project) => Boolean(project.milestoneDate) && project.lifecycleStatus !== 'COMPLETED')
     .map((project) => ({
       project,
       daysUntilMilestone: milestoneDeltaDays(project.milestoneDate, today),
@@ -614,14 +612,18 @@ export function SupervisorDashboardPage() {
                   <div key={item.project.id} className={`rounded-2xl border p-4 ${toneClasses}`}>
                     <div className="flex items-start justify-between gap-4">
                       <div className="min-w-0">
-                        <p className="truncate font-semibold text-foreground">{item.project.title}</p>
+                        <p className="truncate font-semibold text-foreground">
+                          {item.project.title}
+                        </p>
                         <p className="mt-1 text-sm text-slate-600">{item.summaryText}</p>
                       </div>
                       <AlertTriangle className={`mt-1 h-5 w-5 shrink-0 ${iconClasses}`} />
                     </div>
 
                     <div className="mt-3 flex flex-wrap gap-2">
-                      <span className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold ${signalPillClasses}`}>
+                      <span
+                        className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold ${signalPillClasses}`}
+                      >
                         {item.severity === 'critical' ? 'Critical' : 'Needs review'}
                       </span>
                       <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600">
@@ -679,7 +681,10 @@ export function SupervisorDashboardPage() {
           ) : upcomingProjects.length > 0 ? (
             <div className="mt-5 space-y-4">
               {upcomingProjects.map((item) => (
-                <div key={item.project.id} className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+                <div
+                  key={item.project.id}
+                  className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4"
+                >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="truncate text-[15px] font-semibold text-foreground sm:text-base">
@@ -709,7 +714,10 @@ export function SupervisorDashboardPage() {
                   </div>
 
                   <div className="mt-3">
-                    <Link to={`/supervisor/projects/${item.project.id}`} className={buttonStyles({ variant: 'ghost', size: 'sm' })}>
+                    <Link
+                      to={`/supervisor/projects/${item.project.id}`}
+                      className={buttonStyles({ variant: 'ghost', size: 'sm' })}
+                    >
                       Review milestone
                     </Link>
                   </div>

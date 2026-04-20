@@ -48,10 +48,7 @@ export function useMeetingAnalytics(
     let active = true;
     setAnalytics((current) => ({ ...current, loading: true }));
 
-    Promise.all([
-      getMeetingChannels(projectId),
-      getMeetingRecords(projectId),
-    ])
+    Promise.all([getMeetingChannels(projectId), getMeetingRecords(projectId)])
       .then(([channels, records]) => {
         if (!active) {
           return;
