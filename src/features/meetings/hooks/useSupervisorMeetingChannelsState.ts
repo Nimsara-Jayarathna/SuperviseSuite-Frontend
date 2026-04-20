@@ -2,8 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ApiError } from '@/types';
 import { supervisorApi } from '@/features/supervisor/api/supervisorApi';
 import type { MeetingChannel, MeetingChannelUpsertPayload } from '../types';
-import { toApiError, type RequestModalState } from './requestModal';
+import { toApiError } from './requestModal';
 import { sortMeetingChannels } from '../lib/sortMeetingChannels';
+import { useRequestModalControls } from './useRequestModalControls';
 
 type SupervisorMeetingChannelsState = {
   channels: MeetingChannel[];
@@ -14,7 +15,7 @@ type SupervisorMeetingChannelsState = {
   formMode: 'add' | 'edit';
   editingChannel: MeetingChannel | null;
   pendingDelete: MeetingChannel | null;
-  requestModal: RequestModalState;
+  requestModal: ReturnType<typeof useRequestModalControls>['requestModal'];
   load: (options?: {
     forceRefresh?: boolean;
   }) => Promise<{ ok: true } | { ok: false; error: ApiError }>;
@@ -31,14 +32,6 @@ type SupervisorMeetingChannelsState = {
   closeRequestModal: () => void;
 };
 
-const INITIAL_REQUEST_MODAL: RequestModalState = {
-  isOpen: false,
-  status: 'loading',
-  title: '',
-  message: '',
-  retryAction: null,
-};
-
 export function useSupervisorMeetingChannelsState(
   projectId: string,
   enabled = true,
@@ -51,33 +44,10 @@ export function useSupervisorMeetingChannelsState(
   const [formMode, setFormMode] = useState<'add' | 'edit'>('add');
   const [editingChannel, setEditingChannel] = useState<MeetingChannel | null>(null);
   const [pendingDelete, setPendingDelete] = useState<MeetingChannel | null>(null);
-  const [requestModal, setRequestModal] = useState<RequestModalState>(INITIAL_REQUEST_MODAL);
   const loadInFlightRef = useRef(false);
 
-  const closeRequestModal = useCallback(() => {
-    setRequestModal((current) => ({ ...current, isOpen: false, retryAction: null }));
-  }, []);
-
-  const openLoadingModal = useCallback((title: string, message: string) => {
-    setRequestModal({ isOpen: true, status: 'loading', title, message, retryAction: null });
-  }, []);
-
-  const openSuccessModal = useCallback((title: string, message: string) => {
-    setRequestModal({ isOpen: true, status: 'success', title, message, retryAction: null });
-  }, []);
-
-  const openErrorModal = useCallback(
-    (title: string, apiError: ApiError, retryAction: () => void) => {
-      setRequestModal({
-        isOpen: true,
-        status: 'error',
-        title,
-        message: apiError.message,
-        retryAction,
-      });
-    },
-    [],
-  );
+  const { requestModal, closeRequestModal, openLoadingModal, openSuccessModal, openErrorModal } =
+    useRequestModalControls();
 
   const load = useCallback(
     async (options?: {
@@ -138,7 +108,6 @@ export function useSupervisorMeetingChannelsState(
     setFormMode('add');
     setEditingChannel(null);
     setPendingDelete(null);
-    setRequestModal(INITIAL_REQUEST_MODAL);
     loadInFlightRef.current = false;
   }, [projectId]);
 

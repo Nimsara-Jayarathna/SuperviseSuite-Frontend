@@ -2,8 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ApiError } from '@/types';
 import { studentApi } from '@/features/student/api/studentApi';
 import type { MeetingChannel, MeetingChannelUpsertPayload } from '../types';
-import { toApiError, type RequestModalState } from './requestModal';
+import { toApiError } from './requestModal';
 import { sortMeetingChannels } from '../lib/sortMeetingChannels';
+import { useRequestModalControls } from './useRequestModalControls';
 
 type StudentMeetingChannelsState = {
   channels: MeetingChannel[];
@@ -11,7 +12,7 @@ type StudentMeetingChannelsState = {
   error: ApiError | null;
   hasLoaded: boolean;
   isFormOpen: boolean;
-  requestModal: RequestModalState;
+  requestModal: ReturnType<typeof useRequestModalControls>['requestModal'];
   load: (options?: {
     forceRefresh?: boolean;
   }) => Promise<{ ok: true } | { ok: false; error: ApiError }>;
@@ -23,14 +24,6 @@ type StudentMeetingChannelsState = {
   closeRequestModal: () => void;
 };
 
-const INITIAL_REQUEST_MODAL: RequestModalState = {
-  isOpen: false,
-  status: 'loading',
-  title: '',
-  message: '',
-  retryAction: null,
-};
-
 export function useStudentMeetingChannelsState(
   projectId: string,
   enabled = true,
@@ -40,33 +33,9 @@ export function useStudentMeetingChannelsState(
   const [hasLoaded, setHasLoaded] = useState(false);
   const [error, setError] = useState<ApiError | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [requestModal, setRequestModal] = useState<RequestModalState>(INITIAL_REQUEST_MODAL);
   const loadInFlightRef = useRef(false);
-
-  const closeRequestModal = useCallback(() => {
-    setRequestModal((current) => ({ ...current, isOpen: false, retryAction: null }));
-  }, []);
-
-  const openLoadingModal = useCallback((title: string, message: string) => {
-    setRequestModal({ isOpen: true, status: 'loading', title, message, retryAction: null });
-  }, []);
-
-  const openSuccessModal = useCallback((title: string, message: string) => {
-    setRequestModal({ isOpen: true, status: 'success', title, message, retryAction: null });
-  }, []);
-
-  const openErrorModal = useCallback(
-    (title: string, apiError: ApiError, retryAction: () => void) => {
-      setRequestModal({
-        isOpen: true,
-        status: 'error',
-        title,
-        message: apiError.message,
-        retryAction,
-      });
-    },
-    [],
-  );
+  const { requestModal, closeRequestModal, openLoadingModal, openSuccessModal, openErrorModal } =
+    useRequestModalControls();
 
   const load = useCallback(
     async (options?: {
@@ -123,7 +92,6 @@ export function useStudentMeetingChannelsState(
     setHasLoaded(false);
     setError(null);
     setIsFormOpen(false);
-    setRequestModal(INITIAL_REQUEST_MODAL);
     loadInFlightRef.current = false;
   }, [projectId]);
 

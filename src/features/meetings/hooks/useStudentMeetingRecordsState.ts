@@ -2,8 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ApiError } from '@/types';
 import { studentApi } from '@/features/student/api/studentApi';
 import type { MeetingChannel, MeetingRecord, MeetingRecordUpsertPayload } from '../types';
-import { toApiError, type RequestModalState } from './requestModal';
+import { toApiError } from './requestModal';
 import { sortMeetingRecords } from '../lib/sortMeetingRecords';
+import { useRequestModalControls } from './useRequestModalControls';
 
 type StudentMeetingRecordsState = {
   records: MeetingRecord[];
@@ -13,7 +14,7 @@ type StudentMeetingRecordsState = {
   hasLoaded: boolean;
   isFormOpen: boolean;
   viewingRecord: MeetingRecord | null;
-  requestModal: RequestModalState;
+  requestModal: ReturnType<typeof useRequestModalControls>['requestModal'];
   load: (options?: {
     forceRefresh?: boolean;
   }) => Promise<{ ok: true } | { ok: false; error: ApiError }>;
@@ -24,14 +25,6 @@ type StudentMeetingRecordsState = {
   openView: (record: MeetingRecord) => void;
   closeView: () => void;
   closeRequestModal: () => void;
-};
-
-const INITIAL_REQUEST_MODAL: RequestModalState = {
-  isOpen: false,
-  status: 'loading',
-  title: '',
-  message: '',
-  retryAction: null,
 };
 
 export function useStudentMeetingRecordsState(
@@ -45,33 +38,9 @@ export function useStudentMeetingRecordsState(
   const [error, setError] = useState<ApiError | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [viewingRecord, setViewingRecord] = useState<MeetingRecord | null>(null);
-  const [requestModal, setRequestModal] = useState<RequestModalState>(INITIAL_REQUEST_MODAL);
   const loadInFlightRef = useRef(false);
-
-  const closeRequestModal = useCallback(() => {
-    setRequestModal((current) => ({ ...current, isOpen: false, retryAction: null }));
-  }, []);
-
-  const openLoadingModal = useCallback((title: string, message: string) => {
-    setRequestModal({ isOpen: true, status: 'loading', title, message, retryAction: null });
-  }, []);
-
-  const openSuccessModal = useCallback((title: string, message: string) => {
-    setRequestModal({ isOpen: true, status: 'success', title, message, retryAction: null });
-  }, []);
-
-  const openErrorModal = useCallback(
-    (title: string, apiError: ApiError, retryAction: () => void) => {
-      setRequestModal({
-        isOpen: true,
-        status: 'error',
-        title,
-        message: apiError.message,
-        retryAction,
-      });
-    },
-    [],
-  );
+  const { requestModal, closeRequestModal, openLoadingModal, openSuccessModal, openErrorModal } =
+    useRequestModalControls();
 
   const load = useCallback(
     async (options?: {
@@ -129,7 +98,6 @@ export function useStudentMeetingRecordsState(
     setError(null);
     setIsFormOpen(false);
     setViewingRecord(null);
-    setRequestModal(INITIAL_REQUEST_MODAL);
     loadInFlightRef.current = false;
   }, [projectId]);
 
