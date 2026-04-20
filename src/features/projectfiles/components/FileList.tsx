@@ -4,6 +4,8 @@ import { Download, Trash2 } from 'lucide-react';
 import type { ProjectFile } from '../types';
 import { getFileTypeDisplay } from '../fileTypeDisplay';
 import { FileListItem } from './FileListItem';
+import { EmptyStateCard } from '@/components/ui/EmptyStateCard';
+import { DataTable } from '@/components/ui/DataTable';
 
 type FileListProps = {
   files: ProjectFile[];
@@ -17,9 +19,7 @@ export function FileList({ files, canDelete, onDownload, onDelete }: FileListPro
 
   if (files.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/60 p-8 text-center">
-        <p className="text-sm font-semibold text-slate-500">No files uploaded yet.</p>
-      </div>
+      <EmptyStateCard message="No files uploaded yet." />
     );
   }
 
@@ -98,53 +98,36 @@ export function FileList({ files, canDelete, onDownload, onDelete }: FileListPro
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-      <div className="overflow-x-auto">
-        <table className="min-w-full table-fixed">
-          <colgroup>
-            <col className="w-[280px] max-w-[280px]" />
-            <col className="w-[120px]" />
-            <col className="w-[120px]" />
-            <col className="w-[260px]" />
-            <col className="w-[190px]" />
-            <col className="w-[90px]" />
-          </colgroup>
-          <thead className="bg-slate-50">
-            <tr>
-              <th className="whitespace-nowrap px-4 py-3 text-left text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">
-                File
-              </th>
-              <th className="whitespace-nowrap px-4 py-3 text-left text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">
-                Type
-              </th>
-              <th className="whitespace-nowrap px-4 py-3 text-left text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">
-                Size
-              </th>
-              <th className="whitespace-nowrap px-4 py-3 text-left text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">
-                Uploaded By
-              </th>
-              <th className="whitespace-nowrap px-4 py-3 text-left text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">
-                Uploaded
-              </th>
-              <th className="whitespace-nowrap px-4 py-3 text-right text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {files.map((file) => (
-              <FileListItem
-                key={file.id}
-                file={file}
-                canDelete={canDelete}
-                onDownload={onDownload}
-                onDelete={onDelete}
-              />
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
+    <DataTable
+      colGroup={
+        <colgroup>
+          <col className="w-[280px] max-w-[280px]" />
+          <col className="w-[120px]" />
+          <col className="w-[120px]" />
+          <col className="w-[260px]" />
+          <col className="w-[190px]" />
+          <col className="w-[90px]" />
+        </colgroup>
+      }
+      columns={[
+        { key: 'file', header: 'File', className: 'whitespace-nowrap' },
+        { key: 'type', header: 'Type', className: 'whitespace-nowrap' },
+        { key: 'size', header: 'Size', className: 'whitespace-nowrap' },
+        { key: 'uploadedBy', header: 'Uploaded By', className: 'whitespace-nowrap' },
+        { key: 'uploaded', header: 'Uploaded', className: 'whitespace-nowrap' },
+        { key: 'actions', header: 'Actions', align: 'right', className: 'whitespace-nowrap' },
+      ]}
+    >
+      {files.map((file) => (
+        <FileListItem
+          key={file.id}
+          file={file}
+          canDelete={canDelete}
+          onDownload={onDownload}
+          onDelete={onDelete}
+        />
+      ))}
+    </DataTable>
   );
 }
 

@@ -1,11 +1,13 @@
 import { ErrorState } from '@/components/feedback/ErrorState';
-import { Button, buttonStyles } from '@/components/ui/Button';
+import { Button } from '@/components/ui/Button';
 import { RequestStateModal } from '@/components/ui/RequestStateModal';
 import { RefreshCw, Plus } from 'lucide-react';
 import { MeetingChannelDeleteConfirmModal } from './MeetingChannelDeleteConfirmModal';
 import { MeetingChannelFormModal } from './MeetingChannelFormModal';
 import { MeetingChannelsTable } from './MeetingChannelsTable';
 import { useSupervisorMeetingChannelsState } from '../hooks/useSupervisorMeetingChannelsState';
+import { SectionCard } from '@/components/ui/SectionCard';
+import { IconActionButton } from '@/components/ui/IconActionButton';
 
 type SupervisorMeetingChannelsSectionProps = {
   projectId: string;
@@ -19,38 +21,30 @@ export function SupervisorMeetingChannelsSection({
   const state = useSupervisorMeetingChannelsState(projectId, enabled);
 
   return (
-    <section className="rounded-3xl border border-border bg-white p-6 shadow-sm transition-all hover:shadow-md">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-bold tracking-tight text-slate-800">Meeting Channels</h2>
-          <p className="text-xs font-medium text-slate-400">
-            Store meeting links, rooms, and group references for this project.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            className={buttonStyles({ variant: 'secondary', size: 'sm' })}
-            onClick={() => void state.refresh()}
-            disabled={state.isLoading}
-            title="Refresh channels"
-            aria-label="Refresh channels"
-          >
-            <RefreshCw className={`h-4 w-4 ${state.isLoading ? 'animate-spin' : ''}`} />
-          </button>
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={state.openAdd}
-            leftIcon={<Plus className="h-4 w-4" />}
-          >
-            Add channel
-          </Button>
-        </div>
-      </div>
-
-      <div className="mt-6">
+    <>
+      <SectionCard
+        title="Meeting Channels"
+        subtitle="Store meeting links, rooms, and group references for this project."
+        actions={
+          <>
+            <IconActionButton
+              label="Refresh channels"
+              title="Refresh channels"
+              onClick={() => void state.refresh()}
+              disabled={state.isLoading}
+              icon={<RefreshCw className={`h-4 w-4 ${state.isLoading ? 'animate-spin' : ''}`} />}
+            />
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={state.openAdd}
+              leftIcon={<Plus className="h-4 w-4" />}
+            >
+              Add channel
+            </Button>
+          </>
+        }
+      >
         {state.isLoading ? (
           <div className="rounded-2xl border border-slate-100 bg-slate-50 p-8 text-center text-sm text-slate-500">
             Loading channels...
@@ -69,7 +63,7 @@ export function SupervisorMeetingChannelsSection({
             onCopy={state.copyToClipboard}
           />
         ) : null}
-      </div>
+      </SectionCard>
 
       <MeetingChannelFormModal
         isOpen={state.isFormOpen}
@@ -98,6 +92,6 @@ export function SupervisorMeetingChannelsSection({
             : undefined
         }
       />
-    </section>
+    </>
   );
 }

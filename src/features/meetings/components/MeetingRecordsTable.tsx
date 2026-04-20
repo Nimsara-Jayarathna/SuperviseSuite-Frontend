@@ -5,6 +5,8 @@ import { cn } from '@/lib/cn';
 import { CheckCircle2, Eye, Pencil, Trash2 } from 'lucide-react';
 import type { MeetingChannel, MeetingRecord } from '../types';
 import { getMeetingPlatformDisplay } from '../lib/platformDisplay';
+import { EmptyStateCard } from '@/components/ui/EmptyStateCard';
+import { DataTable } from '@/components/ui/DataTable';
 
 const dateFormatter = new Intl.DateTimeFormat('en', {
   month: 'short',
@@ -68,11 +70,7 @@ export function MeetingRecordsTable({
   const isMobileLayout = useIsMobileLayout();
 
   if (records.length === 0) {
-    return (
-      <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/60 p-8 text-center">
-        <p className="text-sm font-semibold text-slate-500">No meeting records added yet.</p>
-      </div>
-    );
+    return <EmptyStateCard message="No meeting records added yet." />;
   }
 
   if (isMobileLayout) {
@@ -221,45 +219,29 @@ export function MeetingRecordsTable({
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-      <div className="overflow-x-auto">
-        <table className="min-w-full table-fixed">
-          <colgroup>
-            <col className="w-[130px]" />
-            <col className="w-[120px]" />
-            <col className="w-[520px]" />
-            <col className="w-[220px]" />
-            <col className="w-[220px]" />
-            <col className="w-[140px]" />
-            {canManage ? <col className="w-[170px]" /> : <col className="w-[90px]" />}
-          </colgroup>
-          <thead className="bg-slate-50">
-            <tr>
-              <th className="whitespace-nowrap px-4 py-3 align-middle text-left text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">
-                Date
-              </th>
-              <th className="whitespace-nowrap px-4 py-3 align-middle text-left text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">
-                Duration
-              </th>
-              <th className="px-4 py-3 align-middle text-left text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">
-                Discussion Summary
-              </th>
-              <th className="px-4 py-3 align-middle text-left text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">
-                Channel
-              </th>
-              <th className="whitespace-nowrap px-4 py-3 align-middle text-center text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">
-                Added By
-              </th>
-              <th className="whitespace-nowrap px-4 py-3 align-middle text-center text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">
-                Status
-              </th>
-              <th className="whitespace-nowrap px-4 py-3 align-middle text-center text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {records.map((record) => {
+    <DataTable
+      colGroup={
+        <colgroup>
+          <col className="w-[130px]" />
+          <col className="w-[120px]" />
+          <col className="w-[520px]" />
+          <col className="w-[220px]" />
+          <col className="w-[220px]" />
+          <col className="w-[140px]" />
+          {canManage ? <col className="w-[170px]" /> : <col className="w-[90px]" />}
+        </colgroup>
+      }
+      columns={[
+        { key: 'date', header: 'Date', className: 'whitespace-nowrap' },
+        { key: 'duration', header: 'Duration', className: 'whitespace-nowrap' },
+        { key: 'summary', header: 'Discussion Summary' },
+        { key: 'channel', header: 'Channel' },
+        { key: 'addedBy', header: 'Added By', align: 'center', className: 'whitespace-nowrap' },
+        { key: 'status', header: 'Status', align: 'center', className: 'whitespace-nowrap' },
+        { key: 'actions', header: 'Actions', align: 'center', className: 'whitespace-nowrap' },
+      ]}
+    >
+      {records.map((record) => {
               const linkedChannel =
                 record.channelId && channelsById[record.channelId]
                   ? channelsById[record.channelId]
@@ -406,9 +388,6 @@ export function MeetingRecordsTable({
                 </tr>
               );
             })}
-          </tbody>
-        </table>
-      </div>
-    </div>
+    </DataTable>
   );
 }

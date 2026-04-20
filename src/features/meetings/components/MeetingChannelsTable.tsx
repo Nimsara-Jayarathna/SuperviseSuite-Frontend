@@ -6,6 +6,8 @@ import { Check, CheckCircle2, Copy, Pencil, Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import type { MeetingChannel } from '../types';
 import { getMeetingPlatformDisplay } from '../lib/platformDisplay';
+import { EmptyStateCard } from '@/components/ui/EmptyStateCard';
+import { DataTable } from '@/components/ui/DataTable';
 
 const dateTimeFormatter = new Intl.DateTimeFormat('en', {
   month: 'short',
@@ -72,11 +74,7 @@ export function MeetingChannelsTable({
   }, []);
 
   if (channels.length === 0) {
-    return (
-      <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/60 p-8 text-center">
-        <p className="text-sm font-semibold text-slate-500">No meeting channels added yet.</p>
-      </div>
-    );
+    return <EmptyStateCard message="No meeting channels added yet." />;
   }
 
   if (isMobileLayout) {
@@ -219,48 +217,41 @@ export function MeetingChannelsTable({
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-      <div className="overflow-x-auto">
-        <table className="min-w-full table-fixed">
-          <colgroup>
-            <col className="w-[140px]" />
-            <col className="w-[200px]" />
-            <col className="w-[420px]" />
-            <col className="w-[220px]" />
-            <col className="w-[140px]" />
-            {canManage ? <col className="w-[140px]" /> : null}
-          </colgroup>
-          <thead className="bg-slate-50">
-            <tr>
-              <th className="whitespace-nowrap px-4 py-3 align-middle text-left text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">
-                Platform
-              </th>
-              <th className="whitespace-nowrap px-4 py-3 align-middle text-left text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">
-                Channel Name
-              </th>
-              <th className="whitespace-nowrap px-4 py-3 align-middle text-left text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">
-                Link / Identifier
-              </th>
-              <th className="whitespace-nowrap px-4 py-3 align-middle text-center text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">
-                Added By
-              </th>
-              <th className="whitespace-nowrap px-4 py-3 align-middle text-center text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">
-                Status
-              </th>
-              {canManage ? (
-                <th className="whitespace-nowrap px-4 py-3 align-middle text-center text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">
-                  Actions
-                </th>
-              ) : null}
-            </tr>
-          </thead>
-          <tbody>
-            {channels.map((channel) => {
-              const isCopied = copiedChannelId === channel.id;
-              const displayChannelName =
-                channel.channelName.length > MAX_CHANNEL_NAME_CHARS
-                  ? `${channel.channelName.slice(0, MAX_CHANNEL_NAME_CHARS - 3).trimEnd()}...`
-                  : channel.channelName;
+    <DataTable
+      colGroup={
+        <colgroup>
+          <col className="w-[140px]" />
+          <col className="w-[200px]" />
+          <col className="w-[420px]" />
+          <col className="w-[220px]" />
+          <col className="w-[140px]" />
+          {canManage ? <col className="w-[140px]" /> : null}
+        </colgroup>
+      }
+      columns={[
+        { key: 'platform', header: 'Platform', className: 'whitespace-nowrap' },
+        { key: 'channelName', header: 'Channel Name', className: 'whitespace-nowrap' },
+        { key: 'link', header: 'Link / Identifier', className: 'whitespace-nowrap' },
+        { key: 'addedBy', header: 'Added By', align: 'center', className: 'whitespace-nowrap' },
+        { key: 'status', header: 'Status', align: 'center', className: 'whitespace-nowrap' },
+        ...(canManage
+          ? ([
+              {
+                key: 'actions',
+                header: 'Actions',
+                align: 'center' as const,
+                className: 'whitespace-nowrap',
+              },
+            ] as const)
+          : []),
+      ]}
+    >
+      {channels.map((channel) => {
+               const isCopied = copiedChannelId === channel.id;
+               const displayChannelName =
+                 channel.channelName.length > MAX_CHANNEL_NAME_CHARS
+                   ? `${channel.channelName.slice(0, MAX_CHANNEL_NAME_CHARS - 3).trimEnd()}...`
+                   : channel.channelName;
 
               return (
                 <tr
@@ -402,9 +393,6 @@ export function MeetingChannelsTable({
                 </tr>
               );
             })}
-          </tbody>
-        </table>
-      </div>
-    </div>
+    </DataTable>
   );
 }
