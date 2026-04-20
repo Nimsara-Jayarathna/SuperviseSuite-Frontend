@@ -10,6 +10,7 @@ import { Step4ProfileDetails } from './Step4ProfileDetails';
 import { useRegistrationFlow } from '../../hooks/useRegistrationFlow';
 import { getBlockingErrorTitle, isBlockingError } from '@/utils/errorSeverity';
 import { ModalShell } from '@/components/ui/ModalShell';
+import { AuthDialogCard } from '../shell/AuthDialogCard';
 
 type RegistrationPanelProps = {
   config?: RegisterConfig;
@@ -136,23 +137,11 @@ export function RegistrationPanel({
         >
           <div className="pointer-events-none absolute -left-32 -top-32 h-96 w-96 rounded-full bg-pink-200/50 blur-3xl" />
           <div className="pointer-events-none absolute -right-32 -top-32 h-96 w-96 rounded-full bg-primary/20 blur-3xl" />
-          <div className="relative mx-auto w-full max-w-md rounded-2xl border border-border bg-background p-6 shadow-xl">
-            {!flow.isSuccess && (
-              <div className="mb-4 flex items-center justify-between gap-3">
-                <h2 className="text-base font-semibold text-foreground">{stepTitle}</h2>
-                <Button
-                  type="button"
-                  onClick={handleDismissRequest}
-                  aria-label="Close"
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 w-7 rounded-full p-0"
-                >
-                  ✕
-                </Button>
-              </div>
-            )}
-
+          <AuthDialogCard
+            headerVariant="modal"
+            title={flow.isSuccess ? undefined : stepTitle}
+            onClose={flow.isSuccess ? undefined : handleDismissRequest}
+          >
             <div
               key={flow.step}
               className={
@@ -165,26 +154,14 @@ export function RegistrationPanel({
             >
               {stepContent}
             </div>
-          </div>
+          </AuthDialogCard>
         </ModalShell>
       ) : (
-        <div className="relative mx-auto w-full max-w-md rounded-2xl border border-border bg-background p-6 shadow-xl">
-          {!flow.isSuccess && (
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <h2 className="text-base font-semibold text-foreground">{stepTitle}</h2>
-              <Button
-                type="button"
-                onClick={handleDismissRequest}
-                aria-label="Close"
-                variant="ghost"
-                size="sm"
-                className="h-7 w-7 rounded-full p-0"
-              >
-                ✕
-              </Button>
-            </div>
-          )}
-
+        <AuthDialogCard
+          headerVariant="modal"
+          title={flow.isSuccess ? undefined : stepTitle}
+          onClose={flow.isSuccess ? undefined : handleDismissRequest}
+        >
           <div
             key={flow.step}
             className={
@@ -197,7 +174,7 @@ export function RegistrationPanel({
           >
             {stepContent}
           </div>
-        </div>
+        </AuthDialogCard>
       )}
 
       <RequestStateModal

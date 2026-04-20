@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/cn';
 import { useAuth } from '../hooks/useAuth';
 import { LoginForm } from './LoginForm';
@@ -9,6 +8,7 @@ import { getBlockingErrorTitle } from '@/utils/errorSeverity';
 import { useNavigate } from 'react-router-dom';
 import { ModalShell } from '@/components/ui/ModalShell';
 import { useRegisterConfig } from '../hooks/useRegisterConfig';
+import { AuthDialogCard } from './shell/AuthDialogCard';
 
 type AuthTab = 'login' | 'register';
 
@@ -31,7 +31,7 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
     autoLoad: false,
     fallbackMessage: 'Unable to prepare registration right now. Please try again.',
   });
-  const dialogRef = useRef<HTMLDivElement>(null);
+  const dialogRef = useRef<HTMLElement>(null);
   const {
     login,
     isLoading: loginLoading,
@@ -78,22 +78,14 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
         autoFocus
         initialFocusRef={dialogRef}
       >
-        <div
+        <AuthDialogCard
           ref={dialogRef}
           tabIndex={-1}
-          className="relative z-10 w-full max-w-md rounded-2xl border border-border bg-background p-6 shadow-xl focus:outline-none"
+          className="focus:outline-none"
+          onClose={onClose}
+          closeAriaLabel="Close"
+          headerVariant="modal"
         >
-          <Button
-            type="button"
-            onClick={onClose}
-            aria-label="Close"
-            variant="ghost"
-            size="sm"
-            className="absolute right-4 top-4 h-7 w-7 rounded-full p-0"
-          >
-            ✕
-          </Button>
-
           <div className="mb-6 flex rounded-lg bg-muted p-1">
             {(['login', 'register'] as AuthTab[]).map((tab) => (
               <button
@@ -137,7 +129,7 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login' }: AuthModalPr
           {activeTab === 'register' && registerConfigLoading && (
             <p className="text-sm text-muted-foreground">Preparing registration...</p>
           )}
-        </div>
+        </AuthDialogCard>
       </ModalShell>
 
       <RequestStateModal

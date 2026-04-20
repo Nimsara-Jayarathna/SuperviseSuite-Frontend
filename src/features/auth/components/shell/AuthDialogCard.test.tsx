@@ -15,6 +15,17 @@ describe('AuthDialogCard', () => {
     expect(screen.getByText('Content')).toBeInTheDocument();
   });
 
+  it('renders modal header variant', () => {
+    render(
+      <AuthDialogCard headerVariant="modal" title="Modal title" subtitle="Modal subtitle">
+        <div>Content</div>
+      </AuthDialogCard>,
+    );
+
+    expect(screen.getByRole('heading', { name: 'Modal title' })).toBeInTheDocument();
+    expect(screen.getByText('Modal subtitle')).toBeInTheDocument();
+  });
+
   it('renders close button only when onClose is provided', async () => {
     const user = userEvent.setup();
     const onClose = vi.fn();
@@ -37,4 +48,3 @@ describe('AuthDialogCard', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 });
-
