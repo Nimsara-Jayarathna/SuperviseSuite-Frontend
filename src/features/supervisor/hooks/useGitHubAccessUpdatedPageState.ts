@@ -1,11 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { isApiException } from '@/services/apiClient';
+import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supervisorApi } from '../api/supervisorApi';
-import type { GitHubAccessUpdatedSummary } from '../types';
-
-const INVALID_LINK_MESSAGE =
-  'This access request link is invalid or has expired. Please create a new access request from the project.';
+import { useGitHubAccessUpdatedQuery } from './githubAccessUpdated/useGitHubAccessUpdatedQuery';
+import { useGitHubAccessUpdatedSummaryState } from './githubAccessUpdated/useGitHubAccessUpdatedSummaryState';
 
 function toScopeLabel(scope: string | null | undefined, count: number | null | undefined): string {
   if (scope === 'SINGLE_REPOSITORY') {
@@ -21,69 +18,21 @@ function toScopeLabel(scope: string | null | undefined, count: number | null | u
 }
 
 export function useGitHubAccessUpdatedPageState() {
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  const token = useMemo(() => searchParams.get('token')?.trim() ?? '', [searchParams]);
-  const projectId = useMemo(() => searchParams.get('projectId')?.trim() ?? '', [searchParams]);
-  const sourceId = useMemo(() => searchParams.get('sourceId')?.trim() ?? '', [searchParams]);
-  const flowType = useMemo(() => searchParams.get('flowType')?.trim() ?? '', [searchParams]);
-  const setupStatus = useMemo(() => searchParams.get('status')?.trim() ?? '', [searchParams]);
-
-  const [summary, setSummary] = useState<GitHubAccessUpdatedSummary | null>(null);
-  const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
-  const [title, setTitle] = useState('Finalizing GitHub access update');
-  const [message, setMessage] = useState(
-    'Verifying callback state and loading updated repository access summary.',
-  );
+  const { token, projectId, sourceId, flowType, setupStatus } = useGitHubAccessUpdatedQuery();
   const [isAcknowledging, setIsAcknowledging] = useState(false);
 
   const showFailedStatus = setupStatus.toLowerCase() === 'failed';
-
-  const loadSummary = useCallback(async () => {
-    if (!token && !projectId) {
-      setSummary(null);
-      setStatus('error');
-      setTitle('GitHub access update failed');
-      setMessage(INVALID_LINK_MESSAGE);
-      return;
-    }
-
-    setStatus('loading');
-    setTitle('Finalizing GitHub access update');
-    setMessage('Verifying callback state and loading updated repository access summary.');
-
-    try {
-      const data = token
-        ? await supervisorApi.getPublicGitHubAccessUpdatedSummary(token)
-        : await supervisorApi.getProjectGitHubAccessUpdatedSummary(projectId);
-      setSummary(data);
-      setStatus('success');
-      setTitle('GitHub access updated successfully');
-      setMessage(
-        token
-          ? 'Your available repositories have been refreshed. You can remove repository access anytime from GitHub App settings.'
-          : `GitHub access for project "${data.projectTitle}" has been refreshed. Please confirm the details below.`,
-      );
-    } catch (error) {
-      const nextMessage = isApiException(error) ? error.apiError.message : INVALID_LINK_MESSAGE;
-      setSummary(null);
-      setStatus('error');
-      setTitle('GitHub access update failed');
-      setMessage(nextMessage || INVALID_LINK_MESSAGE);
-    }
-  }, [projectId, token]);
-
-  useEffect(() => {
-    if (showFailedStatus && !token && !projectId) {
-      setSummary(null);
-      setStatus('error');
-      setTitle('GitHub access update failed');
-      setMessage('GitHub authorization did not complete. Please create a new access request.');
-      return;
-    }
-    void loadSummary();
-  }, [showFailedStatus, token, projectId, loadSummary]);
+  const { summary, status, title, message, loadSummary } = useGitHubAccessUpdatedSummaryState({
+    token,
+    projectId,
+    showFailedStatus,
+    api: {
+      getPublicGitHubAccessUpdatedSummary: supervisorApi.getPublicGitHubAccessUpdatedSummary,
+      getProjectGitHubAccessUpdatedSummary: supervisorApi.getProjectGitHubAccessUpdatedSummary,
+    },
+  });
 
   const onClose =
     status === 'loading'
