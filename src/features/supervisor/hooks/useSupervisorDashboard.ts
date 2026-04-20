@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { isApiException } from '@/services/apiClient';
 import type { ApiError } from '@/types';
+import { registerSessionCacheClearer } from '@/services/sessionCache';
 import { supervisorApi } from '../api/supervisorApi';
 import type { SupervisorDashboard } from '../types';
 
@@ -10,18 +11,51 @@ type SupervisorDashboardState = {
   error: ApiError | null;
 };
 
+let cachedDashboard: SupervisorDashboard | null = null;
+let inFlightDashboardRequest: Promise<SupervisorDashboard> | null = null;
+
+export function invalidateSupervisorDashboardCache() {
+  cachedDashboard = null;
+  inFlightDashboardRequest = null;
+}
+
+registerSessionCacheClearer(invalidateSupervisorDashboardCache);
+
 export function useSupervisorDashboard() {
   const [state, setState] = useState<SupervisorDashboardState>({
-    dashboard: null,
-    isLoading: true,
+    dashboard: cachedDashboard,
+    isLoading: cachedDashboard ? false : true,
     error: null,
   });
 
-  async function loadDashboard() {
+  async function loadDashboard(forceRefresh = false) {
+    if (!forceRefresh && cachedDashboard) {
+      setState({
+        dashboard: cachedDashboard,
+        isLoading: false,
+        error: null,
+      });
+      return;
+    }
+
+    if (!forceRefresh && inFlightDashboardRequest) {
+      setState((current) => ({ ...current, isLoading: true, error: null }));
+      const dashboard = await inFlightDashboardRequest;
+      setState({
+        dashboard,
+        isLoading: false,
+        error: null,
+      });
+      return;
+    }
+
     setState((current) => ({ ...current, isLoading: true, error: null }));
 
     try {
-      const dashboard = await supervisorApi.getDashboard();
+      inFlightDashboardRequest = supervisorApi.getDashboard();
+      const dashboard = await inFlightDashboardRequest;
+      cachedDashboard = dashboard;
+      inFlightDashboardRequest = null;
 
       setState({
         dashboard,
@@ -29,6 +63,7 @@ export function useSupervisorDashboard() {
         error: null,
       });
     } catch (error) {
+      inFlightDashboardRequest = null;
       setState({
         dashboard: null,
         isLoading: false,
@@ -56,6 +91,6 @@ export function useSupervisorDashboard() {
     dashboard: state.dashboard,
     isLoading: state.isLoading,
     error: state.error,
-    reload: () => loadDashboard(),
+    reload: () => loadDashboard(true),
   };
 }
