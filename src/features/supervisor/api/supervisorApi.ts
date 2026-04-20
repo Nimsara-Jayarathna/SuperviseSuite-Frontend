@@ -13,6 +13,7 @@ import { createSupervisorStudentsApi } from './supervisorStudentsApi';
 const cachedProjectsById: Partial<Record<string, SupervisorProjectDetail>> = {};
 const inFlightProjectRequests: Partial<Record<string, Promise<SupervisorProjectDetail>>> = {};
 const { clearCache: clearRoleProjectCache, ...roleProjectApi } = createRoleProjectApi({
+  apiClient,
   roleBasePath: '/api/supervisor',
 });
 const supervisorMeApi = createSupervisorMeApi({ apiClient });

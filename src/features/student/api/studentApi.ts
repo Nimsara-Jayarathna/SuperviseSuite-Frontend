@@ -9,6 +9,7 @@ import { createStudentProjectsApi } from './studentProjectsApi';
 const cachedProjectsById: Partial<Record<string, StudentProjectDetail>> = {};
 const inFlightProjectRequests: Partial<Record<string, Promise<StudentProjectDetail>>> = {};
 const { clearCache: clearRoleProjectCache, ...roleProjectApi } = createRoleProjectApi({
+  apiClient,
   roleBasePath: '/api/student',
 });
 const studentMeApi = createStudentMeApi({ apiClient });

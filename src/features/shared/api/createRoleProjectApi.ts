@@ -1,4 +1,4 @@
-import { apiClient } from '@/services/apiClient';
+type ApiClient = typeof import('@/services/apiClient').apiClient;
 import { appendQuery, clearRecord, deleteKeysWithPrefix } from '@/services/apiCacheUtils';
 import {
   buildPagedUrl,
@@ -9,6 +9,7 @@ import {
 import type {
   PaginatedListResult,
   ProjectGitHubContributor,
+  ProjectGitHubPreview,
   ProjectGitHubRecentCommit,
 } from '@/features/projects/types';
 import type {
@@ -16,8 +17,7 @@ import type {
   JiraHierarchy,
   JiraSprintProgress,
   JiraWorkload,
-  ProjectGitHubActivity,
-} from '@/features/supervisor/types';
+} from '@/features/shared/types/jira.types';
 import type {
   MeetingChannel,
   MeetingChannelUpsertPayload,
@@ -29,6 +29,8 @@ import { sortMeetingRecords } from '@/features/meetings/lib/sortMeetingRecords';
 
 type RoleBasePath = '/api/student' | '/api/supervisor';
 
+type ProjectGitHubActivity = ProjectGitHubPreview;
+
 type JiraCache = {
   health?: JiraHealth;
   sprintProgress?: JiraSprintProgress;
@@ -37,10 +39,11 @@ type JiraCache = {
 };
 
 type CreateRoleProjectApiOptions = {
+  apiClient: ApiClient;
   roleBasePath: RoleBasePath;
 };
 
-export function createRoleProjectApi({ roleBasePath }: CreateRoleProjectApiOptions) {
+export function createRoleProjectApi({ apiClient, roleBasePath }: CreateRoleProjectApiOptions) {
   const cachedProjectGitHubByKey: Partial<Record<string, ProjectGitHubActivity>> = {};
   const inFlightProjectGitHubRequestsByKey: Partial<
     Record<string, Promise<ProjectGitHubActivity>>
