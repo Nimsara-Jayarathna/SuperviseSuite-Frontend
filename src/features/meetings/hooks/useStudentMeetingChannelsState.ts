@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { ApiError } from '@/types';
 import { studentApi } from '@/features/student/api/studentApi';
 import type { MeetingChannel, MeetingChannelUpsertPayload } from '../types';
 import { toApiError } from './requestModal';
-import { sortMeetingChannels } from '../lib/sortMeetingChannels';
 import { useRequestModalControls } from './useRequestModalControls';
+import { useMeetingChannelsData } from './shared/useMeetingChannelsData';
+import { useCopyToClipboard } from './shared/useCopyToClipboard';
 
 type StudentMeetingChannelsState = {
   channels: MeetingChannel[];
@@ -28,46 +29,14 @@ export function useStudentMeetingChannelsState(
   projectId: string,
   enabled = true,
 ): StudentMeetingChannelsState {
-  const [channels, setChannels] = useState<MeetingChannel[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [hasLoaded, setHasLoaded] = useState(false);
-  const [error, setError] = useState<ApiError | null>(null);
+  const { channels, isLoading, error, hasLoaded, load, createChannel } = useMeetingChannelsData({
+    projectId,
+    enabled,
+    api: studentApi,
+  });
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const loadInFlightRef = useRef(false);
   const { requestModal, closeRequestModal, openLoadingModal, openSuccessModal, openErrorModal } =
     useRequestModalControls();
-
-  const load = useCallback(
-    async (options?: {
-      forceRefresh?: boolean;
-    }): Promise<{ ok: true } | { ok: false; error: ApiError }> => {
-      if (loadInFlightRef.current) {
-        return { ok: false, error: toApiError(null, 'Unable to load meeting channels right now.') };
-      }
-      loadInFlightRef.current = true;
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        const data = await studentApi.getProjectMeetingChannels(
-          projectId,
-          options?.forceRefresh ?? false,
-        );
-        setChannels(sortMeetingChannels(data));
-        setHasLoaded(true);
-        return { ok: true };
-      } catch (caught) {
-        const apiError = toApiError(caught, 'Unable to load meeting channels right now.');
-        setChannels([]);
-        setError(apiError);
-        return { ok: false, error: apiError };
-      } finally {
-        loadInFlightRef.current = false;
-        setIsLoading(false);
-      }
-    },
-    [projectId],
-  );
 
   const refresh = useCallback(async () => {
     openLoadingModal(
@@ -87,12 +56,7 @@ export function useStudentMeetingChannelsState(
   }, [load, openErrorModal, openLoadingModal, openSuccessModal]);
 
   useEffect(() => {
-    setChannels([]);
-    setIsLoading(false);
-    setHasLoaded(false);
-    setError(null);
     setIsFormOpen(false);
-    loadInFlightRef.current = false;
   }, [projectId]);
 
   const openAdd = useCallback(() => {
@@ -111,10 +75,7 @@ export function useStudentMeetingChannelsState(
       );
 
       try {
-        const created = await studentApi.createProjectMeetingChannel(projectId, payload);
-        setChannels((current) =>
-          sortMeetingChannels([created, ...current.filter((item) => item.id !== created.id)]),
-        );
+        await createChannel(payload);
         openSuccessModal(
           'Meeting channel submitted',
           'Meeting channel was submitted for approval.',
@@ -129,36 +90,21 @@ export function useStudentMeetingChannelsState(
         );
       }
     },
-    [closeForm, openErrorModal, openLoadingModal, openSuccessModal, projectId],
+    [closeForm, createChannel, openErrorModal, openLoadingModal, openSuccessModal],
   );
 
-  const copyToClipboard = useCallback(
-    async (value: string) => {
-      try {
-        await navigator.clipboard.writeText(value);
-        return true;
-      } catch {
+  const copyToClipboard = useCopyToClipboard(
+    useCallback(
+      (retryAction) => {
         openErrorModal(
           'Copy failed',
           toApiError(null, 'Unable to copy value automatically.'),
-          () => void copyToClipboard(value),
+          retryAction,
         );
-        return false;
-      }
-    },
-    [openErrorModal],
+      },
+      [openErrorModal],
+    ),
   );
-
-  const canLoad = useMemo(
-    () => enabled && !hasLoaded && !isLoading,
-    [enabled, hasLoaded, isLoading],
-  );
-
-  useEffect(() => {
-    if (canLoad) {
-      void load();
-    }
-  }, [canLoad, load]);
 
   return {
     channels,

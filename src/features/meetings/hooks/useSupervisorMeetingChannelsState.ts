@@ -1,10 +1,12 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect } from 'react';
 import type { ApiError } from '@/types';
 import { supervisorApi } from '@/features/supervisor/api/supervisorApi';
 import type { MeetingChannel, MeetingChannelUpsertPayload } from '../types';
 import { toApiError } from './requestModal';
-import { sortMeetingChannels } from '../lib/sortMeetingChannels';
 import { useRequestModalControls } from './useRequestModalControls';
+import { useMeetingChannelsData } from './shared/useMeetingChannelsData';
+import { useCopyToClipboard } from './shared/useCopyToClipboard';
+import { useMeetingChannelFormState } from './supervisor/useMeetingChannelFormState';
 
 type SupervisorMeetingChannelsState = {
   channels: MeetingChannel[];
@@ -36,51 +38,13 @@ export function useSupervisorMeetingChannelsState(
   projectId: string,
   enabled = true,
 ): SupervisorMeetingChannelsState {
-  const [channels, setChannels] = useState<MeetingChannel[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [hasLoaded, setHasLoaded] = useState(false);
-  const [error, setError] = useState<ApiError | null>(null);
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [formMode, setFormMode] = useState<'add' | 'edit'>('add');
-  const [editingChannel, setEditingChannel] = useState<MeetingChannel | null>(null);
-  const [pendingDelete, setPendingDelete] = useState<MeetingChannel | null>(null);
-  const loadInFlightRef = useRef(false);
+  const { channels, isLoading, error, hasLoaded, load, createChannel, updateChannel, deleteChannel, approveChannel } =
+    useMeetingChannelsData({ projectId, enabled, api: supervisorApi });
+  const { isFormOpen, formMode, editingChannel, pendingDelete, openAdd, openEdit, closeForm, openDelete, closeDelete } =
+    useMeetingChannelFormState();
 
   const { requestModal, closeRequestModal, openLoadingModal, openSuccessModal, openErrorModal } =
     useRequestModalControls();
-
-  const load = useCallback(
-    async (options?: {
-      forceRefresh?: boolean;
-    }): Promise<{ ok: true } | { ok: false; error: ApiError }> => {
-      if (loadInFlightRef.current) {
-        return { ok: false, error: toApiError(null, 'Unable to load meeting channels right now.') };
-      }
-      loadInFlightRef.current = true;
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        const data = await supervisorApi.getProjectMeetingChannels(
-          projectId,
-          options?.forceRefresh ?? false,
-        );
-        const next = sortMeetingChannels(data);
-        setChannels(next);
-        setHasLoaded(true);
-        return { ok: true };
-      } catch (caught) {
-        const apiError = toApiError(caught, 'Unable to load meeting channels right now.');
-        setChannels([]);
-        setError(apiError);
-        return { ok: false, error: apiError };
-      } finally {
-        loadInFlightRef.current = false;
-        setIsLoading(false);
-      }
-    },
-    [projectId],
-  );
 
   const refresh = useCallback(async () => {
     openLoadingModal(
@@ -100,42 +64,9 @@ export function useSupervisorMeetingChannelsState(
   }, [load, openErrorModal, openLoadingModal, openSuccessModal]);
 
   useEffect(() => {
-    setChannels([]);
-    setIsLoading(false);
-    setHasLoaded(false);
-    setError(null);
-    setIsFormOpen(false);
-    setFormMode('add');
-    setEditingChannel(null);
-    setPendingDelete(null);
-    loadInFlightRef.current = false;
-  }, [projectId]);
-
-  const openAdd = useCallback(() => {
-    setFormMode('add');
-    setEditingChannel(null);
-    setIsFormOpen(true);
-  }, []);
-
-  const openEdit = useCallback((channel: MeetingChannel) => {
-    setFormMode('edit');
-    setEditingChannel(channel);
-    setIsFormOpen(true);
-  }, []);
-
-  const closeForm = useCallback(() => {
-    setIsFormOpen(false);
-    setEditingChannel(null);
-    setFormMode('add');
-  }, []);
-
-  const openDelete = useCallback((channel: MeetingChannel) => {
-    setPendingDelete(channel);
-  }, []);
-
-  const closeDelete = useCallback(() => {
-    setPendingDelete(null);
-  }, []);
+    closeForm();
+    closeDelete();
+  }, [closeDelete, closeForm, projectId]);
 
   const submitForm = useCallback(
     async (payload: MeetingChannelUpsertPayload) => {
@@ -157,20 +88,10 @@ export function useSupervisorMeetingChannelsState(
 
       try {
         if (formMode === 'add') {
-          const created = await supervisorApi.createProjectMeetingChannel(projectId, payload);
-          setChannels((current) =>
-            sortMeetingChannels([created, ...current.filter((item) => item.id !== created.id)]),
-          );
+          await createChannel(payload);
           openSuccessModal('Meeting channel added', 'Meeting channel was added successfully.');
         } else {
-          const updated = await supervisorApi.updateProjectMeetingChannel(
-            projectId,
-            editingChannel!.id,
-            payload,
-          );
-          setChannels((current) =>
-            sortMeetingChannels(current.map((item) => (item.id === updated.id ? updated : item))),
-          );
+          await updateChannel(editingChannel!.id, payload);
           openSuccessModal('Meeting channel updated', 'Meeting channel was updated successfully.');
         }
         closeForm();
@@ -195,7 +116,8 @@ export function useSupervisorMeetingChannelsState(
       openErrorModal,
       openLoadingModal,
       openSuccessModal,
-      projectId,
+      createChannel,
+      updateChannel,
     ],
   );
 
@@ -207,60 +129,41 @@ export function useSupervisorMeetingChannelsState(
     const channelId = pendingDelete.id;
     openLoadingModal('Deleting meeting channel', 'Removing meeting channel from this project.');
     try {
-      await supervisorApi.deleteProjectMeetingChannel(projectId, channelId);
-      setChannels((current) => current.filter((item) => item.id !== channelId));
+      await deleteChannel(channelId);
       closeDelete();
       openSuccessModal('Meeting channel deleted', 'Meeting channel was removed successfully.');
     } catch (caught) {
       const apiError = toApiError(caught, 'Unable to delete meeting channel right now.');
       openErrorModal('Unable to delete meeting channel', apiError, () => void confirmDelete());
     }
-  }, [closeDelete, openErrorModal, openLoadingModal, openSuccessModal, pendingDelete, projectId]);
+  }, [closeDelete, deleteChannel, openErrorModal, openLoadingModal, openSuccessModal, pendingDelete]);
 
   const approve = useCallback(
     async (channel: MeetingChannel) => {
       openLoadingModal('Approving meeting channel', 'Approving the selected meeting channel.');
       try {
-        const approved = await supervisorApi.approveProjectMeetingChannel(projectId, channel.id);
-        setChannels((current) =>
-          sortMeetingChannels(current.map((item) => (item.id === approved.id ? approved : item))),
-        );
+        await approveChannel(channel.id);
         openSuccessModal('Meeting channel approved', 'Meeting channel was approved successfully.');
       } catch (caught) {
         const apiError = toApiError(caught, 'Unable to approve meeting channel right now.');
         openErrorModal('Unable to approve meeting channel', apiError, () => void approve(channel));
       }
     },
-    [openErrorModal, openLoadingModal, openSuccessModal, projectId],
+    [approveChannel, openErrorModal, openLoadingModal, openSuccessModal],
   );
 
-  const copyToClipboard = useCallback(
-    async (value: string) => {
-      try {
-        await navigator.clipboard.writeText(value);
-        return true;
-      } catch {
+  const copyToClipboard = useCopyToClipboard(
+    useCallback(
+      (retryAction) => {
         openErrorModal(
           'Copy failed',
           toApiError(null, 'Unable to copy value automatically.'),
-          () => void copyToClipboard(value),
+          retryAction,
         );
-        return false;
-      }
-    },
-    [openErrorModal],
+      },
+      [openErrorModal],
+    ),
   );
-
-  const canLoad = useMemo(
-    () => enabled && !hasLoaded && !isLoading,
-    [enabled, hasLoaded, isLoading],
-  );
-
-  useEffect(() => {
-    if (canLoad) {
-      void load();
-    }
-  }, [canLoad, load]);
 
   return {
     channels,

@@ -1,10 +1,12 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect } from 'react';
 import type { ApiError } from '@/types';
 import { supervisorApi } from '@/features/supervisor/api/supervisorApi';
 import type { MeetingChannel, MeetingRecord, MeetingRecordUpsertPayload } from '../types';
 import { toApiError } from './requestModal';
-import { sortMeetingRecords } from '../lib/sortMeetingRecords';
 import { useRequestModalControls } from './useRequestModalControls';
+import { useMeetingRecordsData } from './shared/useMeetingRecordsData';
+import { useMeetingRecordFormState } from './supervisor/useMeetingRecordFormState';
+import { useMeetingRecordOverlayState } from './supervisor/useMeetingRecordOverlayState';
 
 type SupervisorMeetingRecordsState = {
   records: MeetingRecord[];
@@ -39,53 +41,25 @@ export function useSupervisorMeetingRecordsState(
   projectId: string,
   enabled = true,
 ): SupervisorMeetingRecordsState {
-  const [records, setRecords] = useState<MeetingRecord[]>([]);
-  const [channels, setChannels] = useState<MeetingChannel[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [hasLoaded, setHasLoaded] = useState(false);
-  const [error, setError] = useState<ApiError | null>(null);
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [formMode, setFormMode] = useState<'add' | 'edit'>('add');
-  const [editingRecord, setEditingRecord] = useState<MeetingRecord | null>(null);
-  const [viewingRecord, setViewingRecord] = useState<MeetingRecord | null>(null);
-  const [pendingDelete, setPendingDelete] = useState<MeetingRecord | null>(null);
-  const loadInFlightRef = useRef(false);
+  const {
+    records,
+    channels,
+    isLoading,
+    error,
+    hasLoaded,
+    load,
+    createRecord,
+    updateRecord,
+    deleteRecord,
+    approveRecord,
+  } = useMeetingRecordsData({ projectId, enabled, api: supervisorApi });
+  const { isFormOpen, formMode, editingRecord, openAdd, openEdit, closeForm } =
+    useMeetingRecordFormState();
+  const { viewingRecord, pendingDelete, openView, closeView, openDelete, closeDelete } =
+    useMeetingRecordOverlayState();
+
   const { requestModal, closeRequestModal, openLoadingModal, openSuccessModal, openErrorModal } =
     useRequestModalControls();
-
-  const load = useCallback(
-    async (options?: {
-      forceRefresh?: boolean;
-    }): Promise<{ ok: true } | { ok: false; error: ApiError }> => {
-      if (loadInFlightRef.current) {
-        return { ok: false, error: toApiError(null, 'Unable to load meeting records right now.') };
-      }
-      loadInFlightRef.current = true;
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        const [loadedRecords, loadedChannels] = await Promise.all([
-          supervisorApi.getProjectMeetingRecords(projectId, options?.forceRefresh ?? false),
-          supervisorApi.getProjectMeetingChannels(projectId, options?.forceRefresh ?? false),
-        ]);
-        setRecords(sortMeetingRecords(loadedRecords));
-        setChannels(loadedChannels);
-        setHasLoaded(true);
-        return { ok: true };
-      } catch (caught) {
-        const apiError = toApiError(caught, 'Unable to load meeting records right now.');
-        setRecords([]);
-        setChannels([]);
-        setError(apiError);
-        return { ok: false, error: apiError };
-      } finally {
-        loadInFlightRef.current = false;
-        setIsLoading(false);
-      }
-    },
-    [projectId],
-  );
 
   const refresh = useCallback(async () => {
     openLoadingModal(
@@ -102,36 +76,10 @@ export function useSupervisorMeetingRecordsState(
   }, [load, openErrorModal, openLoadingModal, openSuccessModal]);
 
   useEffect(() => {
-    setRecords([]);
-    setChannels([]);
-    setIsLoading(false);
-    setHasLoaded(false);
-    setError(null);
-    setIsFormOpen(false);
-    setFormMode('add');
-    setEditingRecord(null);
-    setViewingRecord(null);
-    setPendingDelete(null);
-    loadInFlightRef.current = false;
-  }, [projectId]);
-
-  const openAdd = useCallback(() => {
-    setFormMode('add');
-    setEditingRecord(null);
-    setIsFormOpen(true);
-  }, []);
-
-  const openEdit = useCallback((record: MeetingRecord) => {
-    setFormMode('edit');
-    setEditingRecord(record);
-    setIsFormOpen(true);
-  }, []);
-
-  const closeForm = useCallback(() => {
-    setIsFormOpen(false);
-    setEditingRecord(null);
-    setFormMode('add');
-  }, []);
+    closeForm();
+    closeView();
+    closeDelete();
+  }, [closeDelete, closeForm, closeView, projectId]);
 
   const submitForm = useCallback(
     async (payload: MeetingRecordUpsertPayload) => {
@@ -153,20 +101,10 @@ export function useSupervisorMeetingRecordsState(
 
       try {
         if (formMode === 'add') {
-          const created = await supervisorApi.createProjectMeetingRecord(projectId, payload);
-          setRecords((current) =>
-            sortMeetingRecords([created, ...current.filter((item) => item.id !== created.id)]),
-          );
+          await createRecord(payload);
           openSuccessModal('Meeting record added', 'Meeting record was added successfully.');
         } else {
-          const updated = await supervisorApi.updateProjectMeetingRecord(
-            projectId,
-            editingRecord!.id,
-            payload,
-          );
-          setRecords((current) =>
-            sortMeetingRecords(current.map((item) => (item.id === updated.id ? updated : item))),
-          );
+          await updateRecord(editingRecord!.id, payload);
           openSuccessModal('Meeting record updated', 'Meeting record was updated successfully.');
         }
         closeForm();
@@ -191,17 +129,10 @@ export function useSupervisorMeetingRecordsState(
       openErrorModal,
       openLoadingModal,
       openSuccessModal,
-      projectId,
+      createRecord,
+      updateRecord,
     ],
   );
-
-  const openDelete = useCallback((record: MeetingRecord) => {
-    setPendingDelete(record);
-  }, []);
-
-  const closeDelete = useCallback(() => {
-    setPendingDelete(null);
-  }, []);
 
   const confirmDelete = useCallback(async () => {
     if (!pendingDelete) {
@@ -211,51 +142,28 @@ export function useSupervisorMeetingRecordsState(
     const recordId = pendingDelete.id;
     openLoadingModal('Deleting meeting record', 'Removing meeting record from this project.');
     try {
-      await supervisorApi.deleteProjectMeetingRecord(projectId, recordId);
-      setRecords((current) => current.filter((item) => item.id !== recordId));
+      await deleteRecord(recordId);
       closeDelete();
       openSuccessModal('Meeting record deleted', 'Meeting record was removed successfully.');
     } catch (caught) {
       const apiError = toApiError(caught, 'Unable to delete meeting record right now.');
       openErrorModal('Unable to delete meeting record', apiError, () => void confirmDelete());
     }
-  }, [closeDelete, openErrorModal, openLoadingModal, openSuccessModal, pendingDelete, projectId]);
+  }, [closeDelete, deleteRecord, openErrorModal, openLoadingModal, openSuccessModal, pendingDelete]);
 
   const approve = useCallback(
     async (record: MeetingRecord) => {
       openLoadingModal('Approving meeting record', 'Approving the selected meeting record.');
       try {
-        const approved = await supervisorApi.approveProjectMeetingRecord(projectId, record.id);
-        setRecords((current) =>
-          sortMeetingRecords(current.map((item) => (item.id === approved.id ? approved : item))),
-        );
+        await approveRecord(record.id);
         openSuccessModal('Meeting record approved', 'Meeting record was approved successfully.');
       } catch (caught) {
         const apiError = toApiError(caught, 'Unable to approve meeting record right now.');
         openErrorModal('Unable to approve meeting record', apiError, () => void approve(record));
       }
     },
-    [openErrorModal, openLoadingModal, openSuccessModal, projectId],
+    [approveRecord, openErrorModal, openLoadingModal, openSuccessModal],
   );
-
-  const openView = useCallback((record: MeetingRecord) => {
-    setViewingRecord(record);
-  }, []);
-
-  const closeView = useCallback(() => {
-    setViewingRecord(null);
-  }, []);
-
-  const canLoad = useMemo(
-    () => enabled && !hasLoaded && !isLoading,
-    [enabled, hasLoaded, isLoading],
-  );
-
-  useEffect(() => {
-    if (canLoad) {
-      void load();
-    }
-  }, [canLoad, load]);
 
   return {
     records,
