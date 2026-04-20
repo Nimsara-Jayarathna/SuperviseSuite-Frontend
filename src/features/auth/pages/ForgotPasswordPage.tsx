@@ -10,6 +10,7 @@ import { ForgotPasswordForm } from '../components/ForgotPasswordForm';
 import { useRegisterConfig } from '../hooks/useRegisterConfig';
 import { AuthPageShell } from '../components/shell/AuthPageShell';
 import { AuthDialogCard } from '../components/shell/AuthDialogCard';
+import { toRequestStateModalView } from '../utils/requestStateModalView';
 
 type RequestStatus = 'idle' | 'loading' | 'success' | 'error';
 
@@ -62,6 +63,30 @@ export function ForgotPasswordPage() {
     setStatus('idle');
   }
 
+  const requestStateModal = toRequestStateModalView({
+    kind: status,
+    copy: {
+      loading: { title: 'Sending reset link', message: 'Sending reset link... Please wait.' },
+      success: { title: 'Request received', message: GENERIC_SUCCESS_MESSAGE },
+      error: {
+        title: 'Request failed',
+        message: error?.message || 'Something went wrong. Please try again.',
+      },
+    },
+    onClose: handleRequestStateClose,
+    footer: {
+      success: (
+        <div className="flex justify-center">
+          <Button type="button" variant="secondary" size="md" onClick={handleRequestStateClose}>
+            Continue
+          </Button>
+        </div>
+      ),
+    },
+    autoCloseOnSuccess: false,
+    disableCloseWhileLoading: false,
+  });
+
   return (
     <>
       <AuthPageShell>
@@ -110,33 +135,13 @@ export function ForgotPasswordPage() {
         }
       />
       <RequestStateModal
-        isOpen={status !== 'idle'}
-        status={status === 'loading' ? 'loading' : status === 'success' ? 'success' : 'error'}
-        title={
-          status === 'loading'
-            ? 'Sending reset link'
-            : status === 'success'
-              ? 'Request received'
-              : 'Request failed'
-        }
-        message={
-          status === 'loading'
-            ? 'Sending reset link... Please wait.'
-            : status === 'success'
-              ? GENERIC_SUCCESS_MESSAGE
-              : error?.message || 'Something went wrong. Please try again.'
-        }
-        autoCloseOnSuccess={false}
-        onClose={handleRequestStateClose}
-        footer={
-          status === 'success' ? (
-            <div className="flex justify-center">
-              <Button type="button" variant="secondary" size="md" onClick={handleRequestStateClose}>
-                Continue
-              </Button>
-            </div>
-          ) : undefined
-        }
+        isOpen={requestStateModal.isOpen}
+        status={requestStateModal.status}
+        title={requestStateModal.title}
+        message={requestStateModal.message}
+        autoCloseOnSuccess={requestStateModal.autoCloseOnSuccess}
+        onClose={requestStateModal.onClose}
+        footer={requestStateModal.footer}
       />
     </>
   );

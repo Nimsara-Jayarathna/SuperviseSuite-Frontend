@@ -11,6 +11,7 @@ import { ResetPasswordForm } from '../components/ResetPasswordForm';
 import { getBlockingErrorTitle, isBlockingError } from '@/utils/errorSeverity';
 import { AuthPageShell } from '../components/shell/AuthPageShell';
 import { AuthDialogCard } from '../components/shell/AuthDialogCard';
+import { toRequestStateModalView } from '../utils/requestStateModalView';
 
 type ValidationStatus = 'loading' | 'valid' | 'invalid' | 'error';
 type SubmitStatus = 'idle' | 'loading' | 'success' | 'error';
@@ -93,6 +94,31 @@ export function ResetPasswordPage() {
     }
   }
 
+  const submitStateModal = toRequestStateModalView({
+    kind: submitStatus,
+    copy: {
+      loading: { title: 'Updating password', message: 'Updating your password...' },
+      success: {
+        title: 'Password updated',
+        message: 'Your password has been changed. You can now sign in with your new password.',
+      },
+      error: { title: 'Reset failed', message: submitErrorMessage || 'Something went wrong. Please try again.' },
+    },
+    onClose: submitStatus === 'success' ? undefined : () => setSubmitStatus('idle'),
+    onRetry: submitStatus === 'error' ? () => setSubmitStatus('idle') : undefined,
+    footer: {
+      success: (
+        <div className="flex justify-center">
+          <Button type="button" variant="primary" size="md" onClick={() => navigate('/login')}>
+            Sign in
+          </Button>
+        </div>
+      ),
+    },
+    autoCloseOnSuccess: false,
+    disableCloseWhileLoading: true,
+  });
+
   return (
     <>
       <AuthPageShell>
@@ -160,36 +186,14 @@ export function ResetPasswordPage() {
       />
 
       <RequestStateModal
-        isOpen={submitStatus !== 'idle'}
-        status={
-          submitStatus === 'loading' ? 'loading' : submitStatus === 'success' ? 'success' : 'error'
-        }
-        title={
-          submitStatus === 'loading'
-            ? 'Updating password'
-            : submitStatus === 'success'
-              ? 'Password updated'
-              : 'Reset failed'
-        }
-        message={
-          submitStatus === 'loading'
-            ? 'Updating your password...'
-            : submitStatus === 'success'
-              ? 'Your password has been changed. You can now sign in with your new password.'
-              : submitErrorMessage || 'Something went wrong. Please try again.'
-        }
-        autoCloseOnSuccess={false}
-        onClose={submitStatus === 'success' ? undefined : () => setSubmitStatus('idle')}
-        onRetry={submitStatus === 'error' ? () => setSubmitStatus('idle') : undefined}
-        footer={
-          submitStatus === 'success' ? (
-            <div className="flex justify-center">
-              <Button type="button" variant="primary" size="md" onClick={() => navigate('/login')}>
-                Sign in
-              </Button>
-            </div>
-          ) : undefined
-        }
+        isOpen={submitStateModal.isOpen}
+        status={submitStateModal.status}
+        title={submitStateModal.title}
+        message={submitStateModal.message}
+        autoCloseOnSuccess={submitStateModal.autoCloseOnSuccess}
+        onClose={submitStateModal.onClose}
+        onRetry={submitStateModal.onRetry}
+        footer={submitStateModal.footer}
       />
     </>
   );

@@ -8,6 +8,7 @@ import { PasswordRequirementsPanel } from './PasswordRequirementsPanel';
 import { getPasswordChecks, isPasswordPolicyPassed } from '../utils/passwordRules';
 import { PasswordField } from './PasswordField';
 import { PASSWORD_MAX_LENGTH } from '../utils/passwordRules';
+import { toRequestStateModalView } from '../utils/requestStateModalView';
 
 type RequestStatus =
   | { kind: 'idle' }
@@ -113,6 +114,27 @@ export function ChangePasswordModal({ isOpen, onClose, onSubmit }: ChangePasswor
     setRequestStatus({ kind: 'idle' });
   }
 
+  const requestStateModal = toRequestStateModalView({
+    kind: requestStatus.kind,
+    copy: {
+      loading: {
+        title: 'Updating password',
+        message: 'Please wait while we secure your account.',
+      },
+      success: {
+        title: 'Password updated',
+        message: requestStatus.kind === 'success' ? requestStatus.message : '',
+      },
+      error: {
+        title: 'Unable to update password',
+        message: requestStatus.kind === 'error' ? requestStatus.message : '',
+      },
+    },
+    onClose: closeRequestState,
+    onRetry: retrySubmit,
+    autoCloseOnSuccess: true,
+  });
+
   return (
     <>
       <ModalShell
@@ -201,33 +223,13 @@ export function ChangePasswordModal({ isOpen, onClose, onSubmit }: ChangePasswor
       </ModalShell>
 
       <RequestStateModal
-        isOpen={requestStatus.kind !== 'idle'}
-        status={
-          requestStatus.kind === 'loading'
-            ? 'loading'
-            : requestStatus.kind === 'success'
-              ? 'success'
-              : 'error'
-        }
-        title={
-          requestStatus.kind === 'loading'
-            ? 'Updating password'
-            : requestStatus.kind === 'success'
-              ? 'Password updated'
-              : 'Unable to update password'
-        }
-        message={
-          requestStatus.kind === 'loading'
-            ? 'Please wait while we secure your account.'
-            : requestStatus.kind === 'success'
-              ? requestStatus.message
-              : requestStatus.kind === 'error'
-                ? requestStatus.message
-                : ''
-        }
-        onClose={requestStatus.kind === 'loading' ? undefined : closeRequestState}
-        onRetry={requestStatus.kind === 'error' ? retrySubmit : undefined}
-        autoCloseOnSuccess
+        isOpen={requestStateModal.isOpen}
+        status={requestStateModal.status}
+        title={requestStateModal.title}
+        message={requestStateModal.message}
+        onClose={requestStateModal.onClose}
+        onRetry={requestStateModal.onRetry}
+        autoCloseOnSuccess={requestStateModal.autoCloseOnSuccess}
       />
     </>
   );
