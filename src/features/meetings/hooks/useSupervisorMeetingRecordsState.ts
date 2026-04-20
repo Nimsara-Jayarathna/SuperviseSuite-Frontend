@@ -149,7 +149,14 @@ export function useSupervisorMeetingRecordsState(
       const apiError = toApiError(caught, 'Unable to delete meeting record right now.');
       openErrorModal('Unable to delete meeting record', apiError, () => void confirmDelete());
     }
-  }, [closeDelete, deleteRecord, openErrorModal, openLoadingModal, openSuccessModal, pendingDelete]);
+  }, [
+    closeDelete,
+    deleteRecord,
+    openErrorModal,
+    openLoadingModal,
+    openSuccessModal,
+    pendingDelete,
+  ]);
 
   const approve = useCallback(
     async (record: MeetingRecord) => {

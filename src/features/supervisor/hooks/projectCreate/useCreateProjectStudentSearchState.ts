@@ -9,7 +9,7 @@ type UseCreateProjectStudentSearchStateParams = {
   setSelectedStudents: Dispatch<SetStateAction<SupervisorStudentSearchResult[]>>;
   selectedLeaderId: string | null;
   setSelectedLeaderId: Dispatch<SetStateAction<string | null>>;
-  api: { searchStudents: (query: string) => Promise<SupervisorStudentSearchResult[]> };
+  searchStudents: (query: string) => Promise<SupervisorStudentSearchResult[]>;
   isApiException: (error: unknown) => error is { apiError: { message: string } };
 };
 
@@ -18,7 +18,7 @@ export function useCreateProjectStudentSearchState({
   setSelectedStudents,
   selectedLeaderId,
   setSelectedLeaderId,
-  api,
+  searchStudents,
   isApiException,
 }: UseCreateProjectStudentSearchStateParams) {
   const [studentQuery, setStudentQuery] = useState('');
@@ -32,19 +32,19 @@ export function useCreateProjectStudentSearchState({
   useEffect(() => {
     const normalizedQuery = studentQuery.trim();
     if (normalizedQuery.length < 3) {
-      setSearchResults([]);
-      setSearchState('idle');
-      setSearchError(null);
+      setSearchResults((current) => (current.length > 0 ? [] : current));
+      setSearchState((current) => (current !== 'idle' ? 'idle' : current));
+      setSearchError((current) => (current !== null ? null : current));
       return;
     }
 
     let isCancelled = false;
     setSearchState('loading');
-    setSearchError(null);
+    setSearchError((current) => (current !== null ? null : current));
 
     const timeoutId = window.setTimeout(async () => {
       try {
-        const results = await api.searchStudents(normalizedQuery);
+        const results = await searchStudents(normalizedQuery);
         if (isCancelled) return;
         const visible = results.filter(
           (student) => !selectedStudents.some((selected) => selected.id === student.id),
@@ -53,7 +53,7 @@ export function useCreateProjectStudentSearchState({
         setSearchState(visible.length > 0 ? 'results' : 'empty');
       } catch (error) {
         if (isCancelled) return;
-        setSearchResults([]);
+        setSearchResults((current) => (current.length > 0 ? [] : current));
         setSearchState('error');
         setSearchError(
           isApiException(error)
@@ -67,7 +67,7 @@ export function useCreateProjectStudentSearchState({
       isCancelled = true;
       window.clearTimeout(timeoutId);
     };
-  }, [api, isApiException, selectedStudents, studentQuery]);
+  }, [isApiException, searchStudents, selectedStudents, studentQuery]);
 
   function selectStudent(student: SupervisorStudentSearchResult) {
     setSelectedStudents((prev) =>

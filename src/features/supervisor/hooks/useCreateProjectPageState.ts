@@ -40,7 +40,7 @@ export function useCreateProjectPageState({ onSuccessNavigate }: UseCreateProjec
     setSelectedStudents,
     selectedLeaderId,
     setSelectedLeaderId,
-    api: { searchStudents: supervisorApi.searchStudents },
+    searchStudents: supervisorApi.searchStudents,
     isApiException,
   });
 

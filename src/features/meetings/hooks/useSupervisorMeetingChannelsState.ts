@@ -38,10 +38,28 @@ export function useSupervisorMeetingChannelsState(
   projectId: string,
   enabled = true,
 ): SupervisorMeetingChannelsState {
-  const { channels, isLoading, error, hasLoaded, load, createChannel, updateChannel, deleteChannel, approveChannel } =
-    useMeetingChannelsData({ projectId, enabled, api: supervisorApi });
-  const { isFormOpen, formMode, editingChannel, pendingDelete, openAdd, openEdit, closeForm, openDelete, closeDelete } =
-    useMeetingChannelFormState();
+  const {
+    channels,
+    isLoading,
+    error,
+    hasLoaded,
+    load,
+    createChannel,
+    updateChannel,
+    deleteChannel,
+    approveChannel,
+  } = useMeetingChannelsData({ projectId, enabled, api: supervisorApi });
+  const {
+    isFormOpen,
+    formMode,
+    editingChannel,
+    pendingDelete,
+    openAdd,
+    openEdit,
+    closeForm,
+    openDelete,
+    closeDelete,
+  } = useMeetingChannelFormState();
 
   const { requestModal, closeRequestModal, openLoadingModal, openSuccessModal, openErrorModal } =
     useRequestModalControls();
@@ -136,7 +154,14 @@ export function useSupervisorMeetingChannelsState(
       const apiError = toApiError(caught, 'Unable to delete meeting channel right now.');
       openErrorModal('Unable to delete meeting channel', apiError, () => void confirmDelete());
     }
-  }, [closeDelete, deleteChannel, openErrorModal, openLoadingModal, openSuccessModal, pendingDelete]);
+  }, [
+    closeDelete,
+    deleteChannel,
+    openErrorModal,
+    openLoadingModal,
+    openSuccessModal,
+    pendingDelete,
+  ]);
 
   const approve = useCallback(
     async (channel: MeetingChannel) => {

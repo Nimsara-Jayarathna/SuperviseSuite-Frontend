@@ -36,7 +36,10 @@ type MeetingChannelsData = {
   hasLoaded: boolean;
   load: (options?: { forceRefresh?: boolean }) => Promise<MeetingLoadResult>;
   createChannel: (payload: MeetingChannelUpsertPayload) => Promise<MeetingChannel>;
-  updateChannel: (channelId: string, payload: MeetingChannelUpsertPayload) => Promise<MeetingChannel>;
+  updateChannel: (
+    channelId: string,
+    payload: MeetingChannelUpsertPayload,
+  ) => Promise<MeetingChannel>;
   deleteChannel: (channelId: string) => Promise<void>;
   approveChannel: (channelId: string) => Promise<MeetingChannel>;
 };

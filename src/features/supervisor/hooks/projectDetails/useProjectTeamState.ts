@@ -61,6 +61,7 @@ export function useProjectTeamState({
   showErrorModal,
   api,
 }: UseProjectTeamStateDeps): TeamState {
+  const { searchStudents } = api;
   const [isManagingStudents, setIsManagingStudents] = useState(false);
   const [studentQuery, setStudentQuery] = useState('');
   const [studentSearchState, setStudentSearchState] = useState<SearchState>('idle');
@@ -87,19 +88,19 @@ export function useProjectTeamState({
   useEffect(() => {
     const normalizedQuery = studentQuery.trim();
     if (!project || !isManagingStudents || normalizedQuery.length < 3) {
-      setStudentSearchResults([]);
-      setStudentSearchState('idle');
-      setStudentSearchError(null);
+      setStudentSearchResults((current) => (current.length > 0 ? [] : current));
+      setStudentSearchState((current) => (current !== 'idle' ? 'idle' : current));
+      setStudentSearchError((current) => (current !== null ? null : current));
       return;
     }
 
     let isCancelled = false;
     setStudentSearchState('loading');
-    setStudentSearchError(null);
+    setStudentSearchError((current) => (current !== null ? null : current));
 
     const timeoutId = window.setTimeout(async () => {
       try {
-        const results = await api.searchStudents(normalizedQuery);
+        const results = await searchStudents(normalizedQuery);
         if (isCancelled) return;
         const excludedIds = new Set([
           ...project.members.filter((m) => m.memberRole === 'STUDENT').map((m) => m.id),
@@ -110,7 +111,7 @@ export function useProjectTeamState({
         setStudentSearchState(visibleResults.length > 0 ? 'results' : 'empty');
       } catch (searchException) {
         if (isCancelled) return;
-        setStudentSearchResults([]);
+        setStudentSearchResults((current) => (current.length > 0 ? [] : current));
         setStudentSearchState('error');
         setStudentSearchError(toApiError(searchException, 'Unable to search students right now.'));
       }
@@ -120,7 +121,7 @@ export function useProjectTeamState({
       isCancelled = true;
       window.clearTimeout(timeoutId);
     };
-  }, [api, isManagingStudents, project, selectedStudentsToAdd, studentQuery]);
+  }, [isManagingStudents, project, searchStudents, selectedStudentsToAdd, studentQuery]);
 
   function startManagement() {
     setIsManagingStudents(true);
