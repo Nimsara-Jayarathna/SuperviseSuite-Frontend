@@ -1,5 +1,5 @@
 import type { ProjectGitHubPreview } from '@/features/projects/types';
-import type { ProjectGitHubRepositories } from '@/features/supervisor/types';
+import type { ProjectGitHubRepositories } from '@/features/shared/types/github.types';
 import type { UserRole } from '@/types/roles';
 import type { ProjectFile, ProjectFileConfig } from '@/features/projectfiles/types';
 

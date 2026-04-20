@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { isApiException } from '@/services/apiClient';
 import type { ApiError } from '@/types';
-import type { JiraHierarchy } from '@/features/supervisor/types';
+import type { JiraHierarchy } from '@/features/shared/types/jira.types';
 import { studentApi } from '../api/studentApi';
 
 type HierarchyState = {
