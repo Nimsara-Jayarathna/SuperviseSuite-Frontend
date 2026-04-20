@@ -1,7 +1,6 @@
 import { Button } from '@/components/ui/Button';
 import { RequestStateModal } from '@/components/ui/RequestStateModal';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import type { RegisterConfig } from '../../types';
 import { Step1EmailInput } from './Step1EmailInput';
@@ -10,6 +9,7 @@ import { Step3RoleSelect } from './Step3RoleSelect';
 import { Step4ProfileDetails } from './Step4ProfileDetails';
 import { useRegistrationFlow } from '../../hooks/useRegistrationFlow';
 import { getBlockingErrorTitle, isBlockingError } from '@/utils/errorSeverity';
+import { ModalShell } from '@/components/ui/ModalShell';
 
 type RegistrationPanelProps = {
   config?: RegisterConfig;
@@ -126,23 +126,48 @@ export function RegistrationPanel({
 
   const panelContent = (
     <>
-      {!inModal && (
-        <div
-          className="fixed inset-0 z-50 bg-foreground/40 backdrop-blur-sm"
-          onClick={handleDismissRequest}
-          aria-hidden="true"
-        />
-      )}
+      {!inModal ? (
+        <ModalShell
+          isOpen
+          containerClassName="fixed inset-0 z-50 flex items-center justify-center p-4"
+          backdropClassName="absolute inset-0 bg-foreground/40 backdrop-blur-sm"
+          onBackdropClick={handleDismissRequest}
+          closeOnEscape
+        >
+          <div className="pointer-events-none absolute -left-32 -top-32 h-96 w-96 rounded-full bg-pink-200/50 blur-3xl" />
+          <div className="pointer-events-none absolute -right-32 -top-32 h-96 w-96 rounded-full bg-primary/20 blur-3xl" />
+          <div className="relative mx-auto w-full max-w-md rounded-2xl border border-border bg-background p-6 shadow-xl">
+            {!flow.isSuccess && (
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <h2 className="text-base font-semibold text-foreground">{stepTitle}</h2>
+                <Button
+                  type="button"
+                  onClick={handleDismissRequest}
+                  aria-label="Close"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 w-7 rounded-full p-0"
+                >
+                  ✕
+                </Button>
+              </div>
+            )}
 
-      <div
-        className={`${inModal ? '' : 'fixed inset-0 z-50 flex items-center justify-center p-4'}`}
-      >
-        {!inModal && (
-          <>
-            <div className="pointer-events-none absolute -left-32 -top-32 h-96 w-96 rounded-full bg-pink-200/50 blur-3xl" />
-            <div className="pointer-events-none absolute -right-32 -top-32 h-96 w-96 rounded-full bg-primary/20 blur-3xl" />
-          </>
-        )}
+            <div
+              key={flow.step}
+              className={
+                flow.isSuccess
+                  ? ''
+                  : direction === 'right'
+                    ? 'motion-safe:animate-[slideInFromRight_220ms_ease-out]'
+                    : 'motion-safe:animate-[slideInFromLeft_220ms_ease-out]'
+              }
+            >
+              {stepContent}
+            </div>
+          </div>
+        </ModalShell>
+      ) : (
         <div className="relative mx-auto w-full max-w-md rounded-2xl border border-border bg-background p-6 shadow-xl">
           {!flow.isSuccess && (
             <div className="mb-4 flex items-center justify-between gap-3">
@@ -173,7 +198,7 @@ export function RegistrationPanel({
             {stepContent}
           </div>
         </div>
-      </div>
+      )}
 
       <RequestStateModal
         isOpen={showCloseConfirm}
@@ -239,10 +264,6 @@ export function RegistrationPanel({
       `}</style>
     </>
   );
-
-  if (!inModal && typeof document !== 'undefined') {
-    return createPortal(panelContent, document.body);
-  }
 
   return panelContent;
 }
