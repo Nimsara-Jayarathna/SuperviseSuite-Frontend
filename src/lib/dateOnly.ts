@@ -22,7 +22,11 @@ function parseDateOnlyParts(value: string): DateOnlyParts | null {
     return null;
   }
 
-  if (parsed.getFullYear() !== year || parsed.getMonth() !== monthIndex || parsed.getDate() !== day) {
+  if (
+    parsed.getFullYear() !== year ||
+    parsed.getMonth() !== monthIndex ||
+    parsed.getDate() !== day
+  ) {
     return null;
   }
 
@@ -46,10 +50,7 @@ export function parseLocalDateOnly(value: string | null | undefined): Date | nul
  * Returns the calendar day difference (date-only) between a YYYY-MM-DD value and a reference date.
  * Uses UTC midnights to avoid DST 23/25-hour day drift.
  */
-export function diffDaysDateOnly(
-  value: string | null | undefined,
-  reference: Date,
-): number | null {
+export function diffDaysDateOnly(value: string | null | undefined, reference: Date): number | null {
   if (value === null || value === undefined) {
     return null;
   }

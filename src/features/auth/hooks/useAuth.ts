@@ -1,12 +1,21 @@
 import { useNavigate } from 'react-router-dom';
 import { isApiException } from '@/services/apiClient';
 import { tokenStorage } from '@/services/tokenStorage';
-import { beginSessionTransition, isCurrentSession, resetSessionState } from '@/services/sessionState';
+import {
+  beginSessionTransition,
+  isCurrentSession,
+  resetSessionState,
+} from '@/services/sessionState';
 import type { ApiError } from '@/types';
 import { ROLE_HOME } from '@/app/routes/roleHome';
 import { authApi } from '../api/authApi';
 import type { AuthUser, LoginRequest, LoginResponse } from '../types';
-import { setAuthenticatedUser, setAuthError, setAuthLoading, useAuthStateValue } from '../state/authState';
+import {
+  setAuthenticatedUser,
+  setAuthError,
+  setAuthLoading,
+  useAuthStateValue,
+} from '../state/authState';
 
 export function useAuth() {
   const navigate = useNavigate();
@@ -91,4 +100,3 @@ export function useAuth() {
     clearError,
   };
 }
-
