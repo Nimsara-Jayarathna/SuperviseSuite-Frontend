@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import { vi } from 'vitest';
 import { ModalShell } from './ModalShell';
 
 describe('ModalShell', () => {

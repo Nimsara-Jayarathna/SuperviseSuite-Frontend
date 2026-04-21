@@ -1,4 +1,4 @@
-import { JiraHealthOverview } from '@/features/supervisor/components/ProjectDetail/jira/JiraHealthOverview';
+import { JiraHealthOverview } from '@/features/shared/jira/JiraHealthOverview';
 import { studentApi } from '../../api/studentApi';
 import type { StudentProjectDetail } from '../../types';
 

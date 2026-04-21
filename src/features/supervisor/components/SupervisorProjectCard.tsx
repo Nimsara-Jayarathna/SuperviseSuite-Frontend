@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { StatusBadge } from '@/components/ui/StatusBadge';
-import { parseLocalDateOnly } from '@/lib/dateOnly';
+import { diffDaysDateOnly } from '@/lib/dateOnly';
 import type { SupervisorProjectSummary } from '../types';
 
 type SupervisorProjectCardProps = {
@@ -12,15 +12,12 @@ function deriveSignalSummary(project: SupervisorProjectSummary): string {
   today.setHours(0, 0, 0, 0);
 
   if (project.milestoneDate) {
-    const dueDate = parseLocalDateOnly(project.milestoneDate);
-    if (dueDate) {
-      const daysUntil = Math.round((dueDate.getTime() - today.getTime()) / (24 * 60 * 60 * 1000));
-      if (daysUntil < 0) {
-        const overdueDays = Math.abs(daysUntil);
-        return overdueDays === 1
-          ? 'Primary milestone is overdue by 1 day and needs recovery action.'
-          : `Primary milestone is overdue by ${overdueDays} days and needs recovery action.`;
-      }
+    const daysUntil = diffDaysDateOnly(project.milestoneDate, today);
+    if (daysUntil !== null && daysUntil < 0) {
+      const overdueDays = Math.abs(daysUntil);
+      return overdueDays === 1
+        ? 'Primary milestone is overdue by 1 day and needs recovery action.'
+        : `Primary milestone is overdue by ${overdueDays} days and needs recovery action.`;
     }
   }
 
@@ -32,12 +29,9 @@ function deriveSignalSummary(project: SupervisorProjectSummary): string {
   }
 
   if (project.milestoneDate) {
-    const dueDate = parseLocalDateOnly(project.milestoneDate);
-    if (dueDate) {
-      const daysUntil = Math.round((dueDate.getTime() - today.getTime()) / (24 * 60 * 60 * 1000));
-      if (daysUntil <= 7) {
-        return `Milestone due in ${daysUntil} day${daysUntil === 1 ? '' : 's'}. Validate readiness this week.`;
-      }
+    const daysUntil = diffDaysDateOnly(project.milestoneDate, today);
+    if (daysUntil !== null && daysUntil <= 7) {
+      return `Milestone due in ${daysUntil} day${daysUntil === 1 ? '' : 's'}. Validate readiness this week.`;
     }
   }
 

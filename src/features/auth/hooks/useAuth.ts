@@ -1,21 +1,12 @@
 import { useNavigate } from 'react-router-dom';
 import { isApiException } from '@/services/apiClient';
 import { tokenStorage } from '@/services/tokenStorage';
-import {
-  beginSessionTransition,
-  isCurrentSession,
-  resetSessionState,
-} from '@/services/sessionState';
+import { beginSessionTransition, isCurrentSession, resetSessionState } from '@/services/sessionState';
 import type { ApiError } from '@/types';
-import { authApi } from '../api/authApi';
-import type { AuthUser, LoginResponse, LoginRequest } from '../types';
 import { ROLE_HOME } from '@/app/routes/roleHome';
-import {
-  setAuthenticatedUser,
-  setAuthError,
-  setAuthLoading,
-  useAuthStateValue,
-} from '../state/authState';
+import { authApi } from '../api/authApi';
+import type { AuthUser, LoginRequest, LoginResponse } from '../types';
+import { setAuthenticatedUser, setAuthError, setAuthLoading, useAuthStateValue } from '../state/authState';
 
 export function useAuth() {
   const navigate = useNavigate();
@@ -70,20 +61,20 @@ export function useAuth() {
 
   async function logout(): Promise<void> {
     const sessionAtStart = beginSessionTransition('logout');
-    setAuthLoading(true);
 
-    try {
-      await authApi.logout();
-    } catch {
-      // Swallow errors — even if the server call fails we still wipe local state.
-    }
+    // Local-first logout: always clear local auth/caches immediately so UI and guards
+    // cannot remain authenticated or stuck loading if the server call fails.
+    resetSessionState();
+    navigate('/');
+
+    // Best-effort server logout. Fire-and-forget so local logout is never blocked.
+    void authApi.logout().catch(() => {
+      // Swallow errors — local logout is authoritative.
+    });
 
     if (!isCurrentSession(sessionAtStart)) {
       return;
     }
-
-    resetSessionState();
-    navigate('/');
   }
 
   function clearError(): void {
@@ -100,3 +91,4 @@ export function useAuth() {
     clearError,
   };
 }
+

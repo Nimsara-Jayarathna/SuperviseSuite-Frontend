@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseLocalDateOnly } from './dateOnly';
+import { diffDaysDateOnly, parseLocalDateOnly } from './dateOnly';
 
 describe('parseLocalDateOnly', () => {
   it('returns null for nullish and malformed values', () => {
@@ -25,5 +25,12 @@ describe('parseLocalDateOnly', () => {
     expect(parseLocalDateOnly('2026-00-10')).toBeNull();
     expect(parseLocalDateOnly('2026-02-30')).toBeNull();
     expect(parseLocalDateOnly('2026-04-31')).toBeNull();
+  });
+
+  it('computes day differences using calendar days (DST-safe)', () => {
+    const reference = new Date(2026, 2, 8, 23, 59, 0, 0);
+    expect(diffDaysDateOnly('2026-03-08', reference)).toBe(0);
+    expect(diffDaysDateOnly('2026-03-09', reference)).toBe(1);
+    expect(diffDaysDateOnly('2026-03-07', reference)).toBe(-1);
   });
 });

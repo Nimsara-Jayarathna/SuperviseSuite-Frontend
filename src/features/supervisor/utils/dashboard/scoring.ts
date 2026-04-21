@@ -5,7 +5,7 @@ import {
   UPCOMING_LIST_LIMIT,
   UPCOMING_WINDOW_DAYS,
 } from './constants';
-import { parseLocalDateOnly } from '@/lib/dateOnly';
+import { diffDaysDateOnly } from '@/lib/dateOnly';
 
 export function startOfDay(date: Date): Date {
   const copy = new Date(date);
@@ -15,9 +15,7 @@ export function startOfDay(date: Date): Date {
 
 export function milestoneDeltaDays(value: string | null, today: Date): number | null {
   if (!value) return null;
-  const parsed = parseLocalDateOnly(value);
-  if (!parsed) return null;
-  return Math.round((parsed.getTime() - today.getTime()) / DAY_IN_MS);
+  return diffDaysDateOnly(value, today);
 }
 
 export function staleDays(value: string | null, now: Date): number | null {
