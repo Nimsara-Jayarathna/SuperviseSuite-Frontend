@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/Button';
 import { getRoleLabel, type UserRole } from '@/types/roles';
 import { X } from 'lucide-react';
-import { createPortal } from 'react-dom';
+import { ModalShell } from '@/components/ui/ModalShell';
 
 type AccountModalProps = {
   isOpen: boolean;
@@ -30,9 +30,14 @@ export function AccountModal({
 
   const initial = name.trim().charAt(0).toUpperCase() || 'U';
 
-  return createPortal(
-    <div className="fixed inset-0 z-[95] flex items-center justify-center bg-slate-950/45 px-4 backdrop-blur-sm">
-      <div className="absolute inset-0" onClick={onClose} aria-hidden="true" />
+  return (
+    <ModalShell
+      isOpen={isOpen}
+      containerClassName="fixed inset-0 z-[95] flex items-center justify-center bg-slate-950/45 px-4 backdrop-blur-sm"
+      backdropClassName="absolute inset-0"
+      onBackdropClick={onClose}
+      closeOnEscape={false}
+    >
       <div className="relative w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl">
         <button
           type="button"
@@ -86,7 +91,6 @@ export function AccountModal({
           </Button>
         </div>
       </div>
-    </div>,
-    document.body,
+    </ModalShell>
   );
 }

@@ -1,12 +1,14 @@
 import { ErrorState } from '@/components/feedback/ErrorState';
-import { Button, buttonStyles } from '@/components/ui/Button';
+import { Button } from '@/components/ui/Button';
 import { RequestStateModal } from '@/components/ui/RequestStateModal';
 import { RefreshCw, Plus } from 'lucide-react';
-import { useMemo } from 'react';
+import { useChannelsById } from '../hooks/shared/useChannelsById';
 import { MeetingRecordsTable } from './MeetingRecordsTable';
 import { MeetingRecordFormModal } from './MeetingRecordFormModal';
 import { MeetingRecordDetailsModal } from './MeetingRecordDetailsModal';
 import { useStudentMeetingRecordsState } from '../hooks/useStudentMeetingRecordsState';
+import { SectionCard } from '@/components/ui/SectionCard';
+import { IconActionButton } from '@/components/ui/IconActionButton';
 
 type StudentMeetingRecordsSectionProps = {
   projectId: string;
@@ -18,44 +20,33 @@ export function StudentMeetingRecordsSection({
   enabled = true,
 }: StudentMeetingRecordsSectionProps) {
   const state = useStudentMeetingRecordsState(projectId, enabled);
-
-  const channelsById = useMemo(() => {
-    return Object.fromEntries(state.channels.map((channel) => [channel.id, channel]));
-  }, [state.channels]);
+  const channelsById = useChannelsById(state.channels);
 
   return (
-    <section className="rounded-3xl border border-border bg-white p-6 shadow-sm transition-all hover:shadow-md">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-bold tracking-tight text-slate-800">Meeting Records</h2>
-          <p className="text-xs font-medium text-slate-400">
-            Log meetings quickly and request supervisor approval when needed.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            className={buttonStyles({ variant: 'secondary', size: 'sm' })}
-            onClick={() => void state.refresh()}
-            disabled={state.isLoading}
-            title="Refresh records"
-            aria-label="Refresh records"
-          >
-            <RefreshCw className={`h-4 w-4 ${state.isLoading ? 'animate-spin' : ''}`} />
-          </button>
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={state.openAdd}
-            leftIcon={<Plus className="h-4 w-4" />}
-          >
-            Add record
-          </Button>
-        </div>
-      </div>
-
-      <div className="mt-6">
+    <>
+      <SectionCard
+        title="Meeting Records"
+        subtitle="Log meetings quickly and request supervisor approval when needed."
+        actions={
+          <>
+            <IconActionButton
+              label="Refresh records"
+              title="Refresh records"
+              onClick={() => void state.refresh()}
+              disabled={state.isLoading}
+              icon={<RefreshCw className={`h-4 w-4 ${state.isLoading ? 'animate-spin' : ''}`} />}
+            />
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={state.openAdd}
+              leftIcon={<Plus className="h-4 w-4" />}
+            >
+              Add record
+            </Button>
+          </>
+        }
+      >
         {state.isLoading ? (
           <div className="rounded-2xl border border-slate-100 bg-slate-50 p-8 text-center text-sm text-slate-500">
             Loading records...
@@ -72,7 +63,7 @@ export function StudentMeetingRecordsSection({
             onView={(record) => state.openView(record)}
           />
         ) : null}
-      </div>
+      </SectionCard>
 
       <MeetingRecordFormModal
         isOpen={state.isFormOpen}
@@ -102,6 +93,6 @@ export function StudentMeetingRecordsSection({
             : undefined
         }
       />
-    </section>
+    </>
   );
 }

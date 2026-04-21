@@ -2,13 +2,15 @@ import { useEffect, useState } from 'react';
 import { RefreshCw, Upload } from 'lucide-react';
 import { ErrorState } from '@/components/feedback/ErrorState';
 import { RequestStateModal } from '@/components/ui/RequestStateModal';
-import { buttonStyles } from '@/components/ui/Button';
+import { Button } from '@/components/ui/Button';
 import { studentFilesApi } from '@/features/projectfiles/api/studentFilesApi';
 import { FileList } from '@/features/projectfiles/components/FileList';
 import { UploadFileModal } from '@/features/projectfiles/components/UploadFileModal';
 import { useStudentProjectFiles } from '@/features/projectfiles/hooks/useStudentProjectFiles';
 import type { ProjectFile, ProjectFileConfig } from '@/features/projectfiles/types';
 import type { ApiError } from '@/types';
+import { SectionCard } from '@/components/ui/SectionCard';
+import { IconActionButton } from '@/components/ui/IconActionButton';
 
 type StudentFilesTabSectionProps = {
   projectId: string;
@@ -84,37 +86,31 @@ export function StudentFilesTabSection({
   }
 
   return (
-    <section className="rounded-3xl border border-border bg-white p-6 shadow-sm transition-all hover:shadow-md">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-bold tracking-tight text-slate-800">Project Files</h2>
-          <p className="text-xs font-medium text-slate-400">
-            Upload and download project documents.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            className={buttonStyles({ variant: 'secondary', size: 'sm' })}
-            onClick={() => void refreshFiles()}
-            disabled={isLoading}
-            title="Refresh files"
-            aria-label="Refresh files"
-          >
-            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-          </button>
-          <button
-            type="button"
-            className={buttonStyles({ variant: 'primary', size: 'sm' })}
-            onClick={() => setIsUploadOpen(true)}
-          >
-            <Upload className="h-4 w-4" />
-            Upload file
-          </button>
-        </div>
-      </div>
-
-      <div className="mt-6">
+    <>
+      <SectionCard
+        title="Project Files"
+        subtitle="Upload and download project documents."
+        actions={
+          <>
+            <IconActionButton
+              label="Refresh files"
+              title="Refresh files"
+              onClick={() => void refreshFiles()}
+              disabled={isLoading}
+              icon={<RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />}
+            />
+            <Button
+              type="button"
+              variant="primary"
+              size="sm"
+              onClick={() => setIsUploadOpen(true)}
+              leftIcon={<Upload className="h-4 w-4" />}
+            >
+              Upload file
+            </Button>
+          </>
+        }
+      >
         {isLoading ? (
           <div className="rounded-2xl border border-slate-100 bg-slate-50 p-8 text-center text-sm text-slate-500">
             Loading files...
@@ -133,7 +129,7 @@ export function StudentFilesTabSection({
             }}
           />
         ) : null}
-      </div>
+      </SectionCard>
 
       <UploadFileModal
         isOpen={isUploadOpen}
@@ -154,6 +150,6 @@ export function StudentFilesTabSection({
         onClose={() => setRequestModal((current) => ({ ...current, isOpen: false }))}
         onRetry={requestModal.retryAction ?? undefined}
       />
-    </section>
+    </>
   );
 }

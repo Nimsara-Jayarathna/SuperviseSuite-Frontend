@@ -98,4 +98,17 @@ describe('StudentProjectsPage error routing', () => {
     expect(showBlockingErrorMock).not.toHaveBeenCalled();
     expect(screen.getByText('inline-error:Bad input')).toBeInTheDocument();
   });
+
+  it('does not render supervisor New Project CTA', () => {
+    useStudentProjectsMock.mockReturnValue({
+      projects: [],
+      isLoading: false,
+      error: null,
+      reload: vi.fn(),
+    });
+
+    render(<StudentProjectsPage />);
+
+    expect(screen.queryByRole('link', { name: /new project/i })).not.toBeInTheDocument();
+  });
 });

@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/Button';
 import { RequestStateModal } from '@/components/ui/RequestStateModal';
+import { ModalShell } from '@/components/ui/ModalShell';
 import { isApiException } from '@/services/apiClient';
 import { X } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
@@ -7,6 +8,7 @@ import { PasswordRequirementsPanel } from './PasswordRequirementsPanel';
 import { getPasswordChecks, isPasswordPolicyPassed } from '../utils/passwordRules';
 import { PasswordField } from './PasswordField';
 import { PASSWORD_MAX_LENGTH } from '../utils/passwordRules';
+import { toRequestStateModalView } from '../utils/requestStateModalView';
 
 type RequestStatus =
   | { kind: 'idle' }
@@ -112,10 +114,38 @@ export function ChangePasswordModal({ isOpen, onClose, onSubmit }: ChangePasswor
     setRequestStatus({ kind: 'idle' });
   }
 
+  const requestStateModal = toRequestStateModalView({
+    kind: requestStatus.kind,
+    copy: {
+      loading: {
+        title: 'Updating password',
+        message: 'Please wait while we secure your account.',
+      },
+      success: {
+        title: 'Password updated',
+        message: requestStatus.kind === 'success' ? requestStatus.message : '',
+      },
+      error: {
+        title: 'Unable to update password',
+        message: requestStatus.kind === 'error' ? requestStatus.message : '',
+      },
+    },
+    onClose: closeRequestState,
+    onRetry: retrySubmit,
+    autoCloseOnSuccess: true,
+  });
+
   return (
     <>
-      <div className="fixed inset-0 z-[95] flex items-center justify-center bg-slate-950/45 px-4 backdrop-blur-sm">
-        <div className="absolute inset-0" onClick={handleClose} aria-hidden="true" />
+      <ModalShell
+        isOpen={isOpen}
+        containerClassName="fixed inset-0 z-[95] flex items-center justify-center bg-slate-950/45 px-4 backdrop-blur-sm"
+        backdropClassName="absolute inset-0"
+        onBackdropClick={handleClose}
+        closeOnEscape={false}
+        lockBodyScroll={false}
+        autoFocus={false}
+      >
         <form
           className="relative w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl"
           onSubmit={(event) => void handleSubmit(event)}
@@ -190,36 +220,16 @@ export function ChangePasswordModal({ isOpen, onClose, onSubmit }: ChangePasswor
             </Button>
           </div>
         </form>
-      </div>
+      </ModalShell>
 
       <RequestStateModal
-        isOpen={requestStatus.kind !== 'idle'}
-        status={
-          requestStatus.kind === 'loading'
-            ? 'loading'
-            : requestStatus.kind === 'success'
-              ? 'success'
-              : 'error'
-        }
-        title={
-          requestStatus.kind === 'loading'
-            ? 'Updating password'
-            : requestStatus.kind === 'success'
-              ? 'Password updated'
-              : 'Unable to update password'
-        }
-        message={
-          requestStatus.kind === 'loading'
-            ? 'Please wait while we secure your account.'
-            : requestStatus.kind === 'success'
-              ? requestStatus.message
-              : requestStatus.kind === 'error'
-                ? requestStatus.message
-                : ''
-        }
-        onClose={requestStatus.kind === 'loading' ? undefined : closeRequestState}
-        onRetry={requestStatus.kind === 'error' ? retrySubmit : undefined}
-        autoCloseOnSuccess
+        isOpen={requestStateModal.isOpen}
+        status={requestStateModal.status}
+        title={requestStateModal.title}
+        message={requestStateModal.message}
+        onClose={requestStateModal.onClose}
+        onRetry={requestStateModal.onRetry}
+        autoCloseOnSuccess={requestStateModal.autoCloseOnSuccess}
       />
     </>
   );

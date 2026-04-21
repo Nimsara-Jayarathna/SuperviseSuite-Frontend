@@ -16,12 +16,17 @@ export function registerSessionCacheClearer(clearer: SessionCacheClearer): () =>
 /**
  * Clears all registered session-scoped in-memory caches.
  */
-export function clearSessionCaches(): void {
+export function clearSessionCaches(): number {
+  let clearedCount = 0;
+
   for (const clearCache of sessionCacheClearers) {
     try {
       clearCache();
+      clearedCount += 1;
     } catch {
       // Best-effort cleanup only; never block auth flow on cache clear failure.
     }
   }
+
+  return clearedCount;
 }

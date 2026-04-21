@@ -1,15 +1,16 @@
 import { Button } from '@/components/ui/Button';
 import { RequestStateModal } from '@/components/ui/RequestStateModal';
-import { LandingPage } from '@/features/landing';
 import { isApiException } from '@/services/apiClient';
-import { clearSessionCaches } from '@/services/sessionCache';
-import { tokenStorage } from '@/services/tokenStorage';
+import { beginSessionTransition, resetSessionState } from '@/services/sessionState';
 import type { ApiError } from '@/types';
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { authApi } from '../api/authApi';
 import { ResetPasswordForm } from '../components/ResetPasswordForm';
 import { getBlockingErrorTitle, isBlockingError } from '@/utils/errorSeverity';
+import { AuthPageShell } from '../components/shell/AuthPageShell';
+import { AuthDialogCard } from '../components/shell/AuthDialogCard';
+import { toRequestStateModalView } from '../utils/requestStateModalView';
 
 type ValidationStatus = 'loading' | 'valid' | 'invalid' | 'error';
 type SubmitStatus = 'idle' | 'loading' | 'success' | 'error';
@@ -31,8 +32,8 @@ export function ResetPasswordPage() {
   useEffect(() => {
     // Reset-password flow must run as a guest flow.
     // Clear local auth state immediately, then ask backend to revoke cookies.
-    clearSessionCaches();
-    tokenStorage.clearAll();
+    beginSessionTransition('logout');
+    resetSessionState();
     void authApi.logout().catch(() => undefined);
   }, []);
 
@@ -92,22 +93,42 @@ export function ResetPasswordPage() {
     }
   }
 
+  const submitStateModal = toRequestStateModalView({
+    kind: submitStatus,
+    copy: {
+      loading: { title: 'Updating password', message: 'Updating your password...' },
+      success: {
+        title: 'Password updated',
+        message: 'Your password has been changed. You can now sign in with your new password.',
+      },
+      error: {
+        title: 'Reset failed',
+        message: submitErrorMessage || 'Something went wrong. Please try again.',
+      },
+    },
+    onClose: submitStatus === 'success' ? undefined : () => setSubmitStatus('idle'),
+    onRetry: submitStatus === 'error' ? () => setSubmitStatus('idle') : undefined,
+    footer: {
+      success: (
+        <div className="flex justify-center">
+          <Button type="button" variant="primary" size="md" onClick={() => navigate('/login')}>
+            Sign in
+          </Button>
+        </div>
+      ),
+    },
+    autoCloseOnSuccess: false,
+    disableCloseWhileLoading: true,
+  });
+
   return (
     <>
-      <LandingPage />
-      <div className="fixed inset-0 z-50 bg-foreground/40 backdrop-blur-sm" aria-hidden="true" />
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className="pointer-events-none absolute -left-32 -top-32 h-96 w-96 rounded-full bg-pink-200/50 blur-3xl" />
-        <div className="pointer-events-none absolute -right-32 -top-32 h-96 w-96 rounded-full bg-primary/20 blur-3xl" />
-        {validationStatus === 'valid' && (
-          <section className="relative z-10 w-full max-w-md rounded-2xl border border-border bg-background p-6 shadow-xl">
-            <div className="mb-6 flex flex-col items-center gap-2">
-              <h1 className="text-xl font-bold text-foreground">Set a new password</h1>
-              <p className="text-center text-sm text-muted-foreground">
-                Create a strong password you have not used before.
-              </p>
-            </div>
-
+      <AuthPageShell>
+        {validationStatus === 'valid' ? (
+          <AuthDialogCard
+            title="Set a new password"
+            subtitle="Create a strong password you have not used before."
+          >
             <ResetPasswordForm
               onSubmit={handleSubmit}
               isLoading={submitStatus === 'loading'}
@@ -118,9 +139,9 @@ export function ResetPasswordPage() {
                 }
               }}
             />
-          </section>
-        )}
-      </div>
+          </AuthDialogCard>
+        ) : null}
+      </AuthPageShell>
 
       <RequestStateModal
         isOpen={validationStatus !== 'valid'}
@@ -167,36 +188,14 @@ export function ResetPasswordPage() {
       />
 
       <RequestStateModal
-        isOpen={submitStatus !== 'idle'}
-        status={
-          submitStatus === 'loading' ? 'loading' : submitStatus === 'success' ? 'success' : 'error'
-        }
-        title={
-          submitStatus === 'loading'
-            ? 'Updating password'
-            : submitStatus === 'success'
-              ? 'Password updated'
-              : 'Reset failed'
-        }
-        message={
-          submitStatus === 'loading'
-            ? 'Updating your password...'
-            : submitStatus === 'success'
-              ? 'Your password has been changed. You can now sign in with your new password.'
-              : submitErrorMessage || 'Something went wrong. Please try again.'
-        }
-        autoCloseOnSuccess={false}
-        onClose={submitStatus === 'success' ? undefined : () => setSubmitStatus('idle')}
-        onRetry={submitStatus === 'error' ? () => setSubmitStatus('idle') : undefined}
-        footer={
-          submitStatus === 'success' ? (
-            <div className="flex justify-center">
-              <Button type="button" variant="primary" size="md" onClick={() => navigate('/login')}>
-                Sign in
-              </Button>
-            </div>
-          ) : undefined
-        }
+        isOpen={submitStateModal.isOpen}
+        status={submitStateModal.status}
+        title={submitStateModal.title}
+        message={submitStateModal.message}
+        autoCloseOnSuccess={submitStateModal.autoCloseOnSuccess}
+        onClose={submitStateModal.onClose}
+        onRetry={submitStateModal.onRetry}
+        footer={submitStateModal.footer}
       />
     </>
   );

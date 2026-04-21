@@ -1,6 +1,7 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { tokenStorage } from '@/services/tokenStorage';
 import { ROLE_HOME } from './roleHome';
+import { useAuthStateValue } from '@/features/auth/state/authState';
 
 // UI-only preview mode: allow authenticated users to inspect either role's shell locally.
 // Enabled only in dev builds (import.meta.env.DEV = true during `vite dev`, false after `vite build`).
@@ -18,13 +19,21 @@ function buildLoginRedirectPath(pathname: string, search: string, hash: string):
   }
 }
 
+function useResolvedGuardUser() {
+  const authState = useAuthStateValue();
+  if (authState.status === 'bootstrapping') {
+    return tokenStorage.getUser();
+  }
+  return authState.user;
+}
+
 /**
  * Blocks unauthenticated users — redirects to /login.
  * Use for any route that requires a valid session.
  */
 export function RequireAuth() {
   const location = useLocation();
-  const user = tokenStorage.getUser();
+  const user = useResolvedGuardUser();
   if (!user) {
     return (
       <Navigate
@@ -43,7 +52,7 @@ export function RequireAuth() {
  */
 export function RequireRole({ role }: { role: string }) {
   const location = useLocation();
-  const user = tokenStorage.getUser();
+  const user = useResolvedGuardUser();
   if (!user) {
     return (
       <Navigate
@@ -62,7 +71,7 @@ export function RequireRole({ role }: { role: string }) {
  * Redirects them to their role home instead.
  */
 export function RequireGuest() {
-  const user = tokenStorage.getUser();
+  const user = useResolvedGuardUser();
   if (!user) return <Outlet />;
   return <Navigate to={ROLE_HOME[user.role] ?? '/'} replace />;
 }

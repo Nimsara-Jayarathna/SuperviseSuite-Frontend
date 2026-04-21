@@ -1,10 +1,42 @@
 import { Link } from 'react-router-dom';
 import { StatusBadge } from '@/components/ui/StatusBadge';
+import { diffDaysDateOnly } from '@/lib/dateOnly';
 import type { SupervisorProjectSummary } from '../types';
 
 type SupervisorProjectCardProps = {
   project: SupervisorProjectSummary;
 };
+
+function deriveSignalSummary(project: SupervisorProjectSummary): string {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  if (project.milestoneDate) {
+    const daysUntil = diffDaysDateOnly(project.milestoneDate, today);
+    if (daysUntil !== null && daysUntil < 0) {
+      const overdueDays = Math.abs(daysUntil);
+      return overdueDays === 1
+        ? 'Primary milestone is overdue by 1 day and needs recovery action.'
+        : `Primary milestone is overdue by ${overdueDays} days and needs recovery action.`;
+    }
+  }
+
+  if (project.lifecycleStatus === 'BEHIND') {
+    return 'Lifecycle is behind. Prioritize blocker removal and milestone recovery.';
+  }
+  if (project.lifecycleStatus === 'AT_RISK') {
+    return 'Lifecycle is at risk. Tighten near-term scope and confirm milestone owners.';
+  }
+
+  if (project.milestoneDate) {
+    const daysUntil = diffDaysDateOnly(project.milestoneDate, today);
+    if (daysUntil !== null && daysUntil <= 7) {
+      return `Milestone due in ${daysUntil} day${daysUntil === 1 ? '' : 's'}. Validate readiness this week.`;
+    }
+  }
+
+  return 'Delivery signals are stable. Keep milestones and execution updates current.';
+}
 
 function lifecycleTone(project: SupervisorProjectSummary) {
   if (project.lifecycleStatus === 'ACTIVE') return 'success';
@@ -18,7 +50,7 @@ export function SupervisorProjectCard({ project }: SupervisorProjectCardProps) {
   const title = project.title;
   const summary = project.summary ?? 'No summary provided yet.';
   const batch = project.batch ?? 'Not set';
-  const healthNote = project.healthNote ?? 'No health note recorded yet.';
+  const signalSummary = deriveSignalSummary(project);
 
   return (
     <Link
@@ -84,7 +116,7 @@ export function SupervisorProjectCard({ project }: SupervisorProjectCardProps) {
 
       <div className="mt-2.5 min-h-10 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
         <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
-          Health note
+          Delivery signal
         </p>
         <p
           className="mt-1 overflow-hidden text-xs leading-5 text-muted-foreground"
@@ -93,9 +125,9 @@ export function SupervisorProjectCard({ project }: SupervisorProjectCardProps) {
             WebkitLineClamp: 2,
             WebkitBoxOrient: 'vertical',
           }}
-          title={healthNote}
+          title={signalSummary}
         >
-          {healthNote}
+          {signalSummary}
         </p>
       </div>
     </Link>

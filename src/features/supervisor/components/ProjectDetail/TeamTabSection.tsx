@@ -49,18 +49,18 @@ export function TeamTabSection({ project, team }: TeamTabSectionProps) {
         )}
       </div>
 
-      <div className="mt-6 flex items-center justify-between gap-4 rounded-2xl border border-slate-100 bg-slate-50/50 px-5 py-4">
+      <div className="mt-6 flex flex-col gap-4 rounded-2xl border border-slate-100 bg-slate-50/50 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-5">
         <div className="flex items-center gap-3">
           <Crown className="h-4 w-4 text-slate-400" />
           <span className="text-sm font-bold text-slate-500">Project leader</span>
         </div>
 
         {project.leader ? (
-          <div className="flex min-w-0 flex-1 items-center justify-end gap-3">
+          <div className="flex w-full min-w-0 flex-col gap-3 sm:flex-1 sm:flex-row sm:items-center sm:justify-end">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 text-xs font-black text-emerald-600 shadow-inner">
               {memberDisplayName(project.leader).charAt(0).toUpperCase()}
             </div>
-            <div className="min-w-0">
+            <div className="min-w-0 sm:max-w-[220px]">
               <p className="truncate text-sm font-black tracking-tight text-slate-800">
                 {memberDisplayName(project.leader)}
               </p>
@@ -73,7 +73,7 @@ export function TeamTabSection({ project, team }: TeamTabSectionProps) {
             </div>
 
             {team.studentMembers.length > 0 ? (
-              <div className="flex shrink-0 items-center gap-2">
+              <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
                 <Select
                   value={team.leaderDraftId}
                   onChange={(e) => team.setLeaderDraftId(e.target.value)}
@@ -95,7 +95,7 @@ export function TeamTabSection({ project, team }: TeamTabSectionProps) {
                     variant: 'primary',
                     size: 'sm',
                     className:
-                      'rounded-xl h-10 bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-100',
+                      'h-10 w-full rounded-xl bg-emerald-600 shadow-lg shadow-emerald-100 hover:bg-emerald-700 sm:w-auto',
                   })}
                 >
                   {team.isUpdatingLeader ? 'Saving...' : 'Change'}
@@ -104,12 +104,12 @@ export function TeamTabSection({ project, team }: TeamTabSectionProps) {
             ) : null}
           </div>
         ) : team.studentMembers.length > 0 ? (
-          <div className="flex flex-wrap items-center justify-end gap-3">
+          <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center sm:justify-end">
             <Select
               value={team.leaderDraftId}
               onChange={(e) => team.setLeaderDraftId(e.target.value)}
               disabled={team.isUpdatingLeader}
-              className="h-11 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 outline-none transition-all focus:border-indigo-400 focus:ring-4 focus:ring-indigo-50"
+              className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 outline-none transition-all focus:border-indigo-400 focus:ring-4 focus:ring-indigo-50 sm:w-auto"
               aria-label="Select leader to assign"
             >
               <option value="">Pick a student...</option>
@@ -126,7 +126,7 @@ export function TeamTabSection({ project, team }: TeamTabSectionProps) {
               className={buttonStyles({
                 variant: 'primary',
                 size: 'md',
-                className: 'rounded-2xl shadow-lg shadow-indigo-100',
+                className: 'w-full rounded-2xl shadow-lg shadow-indigo-100 sm:w-auto',
               })}
             >
               {team.isUpdatingLeader ? 'Assigning...' : 'Assign leader'}

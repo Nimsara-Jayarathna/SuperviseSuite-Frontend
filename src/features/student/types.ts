@@ -1,5 +1,5 @@
 import type { ProjectGitHubPreview } from '@/features/projects/types';
-import type { ProjectGitHubRepositories } from '@/features/supervisor/types';
+import type { ProjectGitHubRepositories } from '@/features/shared/types/github.types';
 import type { UserRole } from '@/types/roles';
 import type { ProjectFile, ProjectFileConfig } from '@/features/projectfiles/types';
 
@@ -56,7 +56,6 @@ export type StudentProjectDetail = {
   milestoneDate: string | null;
   lastActivityAt: string | null;
   progressPercent: number | null;
-  healthNote: string | null;
   repositoryUrl?: string | null;
   github: ProjectGitHubPreview;
   githubRepositories?: ProjectGitHubRepositories | null;
