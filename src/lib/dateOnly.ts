@@ -20,10 +20,13 @@ export function parseLocalDateOnly(value: string | null | undefined): Date | nul
     return null;
   }
 
-  if (parsed.getFullYear() !== year || parsed.getMonth() !== month - 1 || parsed.getDate() !== day) {
+  if (
+    parsed.getFullYear() !== year ||
+    parsed.getMonth() !== month - 1 ||
+    parsed.getDate() !== day
+  ) {
     return null;
   }
 
   return parsed;
 }
-

@@ -22,4 +22,3 @@ describe('resolveUploadContentType', () => {
     expect(resolveUploadContentType(file)).toBe('application/octet-stream');
   });
 });
-

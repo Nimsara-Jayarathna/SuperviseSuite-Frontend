@@ -292,7 +292,10 @@ function buildMilestoneSummary(project: ProjectOverviewProject): MilestoneSummar
 
     if (isOverdue) {
       overdueOpen += 1;
-      if (highestRiskMilestone === null || dueDateTime(highestRiskMilestone.dueDate) > dueDateTime(milestone.dueDate)) {
+      if (
+        highestRiskMilestone === null ||
+        dueDateTime(highestRiskMilestone.dueDate) > dueDateTime(milestone.dueDate)
+      ) {
         highestRiskMilestone = milestone;
       }
     }

@@ -46,4 +46,3 @@ describe('ProjectsPageView', () => {
     expect(screen.getByLabelText('Search projects')).toBeInTheDocument();
   });
 });
-

@@ -20,7 +20,10 @@ vi.mock('../api/supervisorApi', () => ({
 }));
 
 import { supervisorApi } from '../api/supervisorApi';
-import { invalidateSupervisorDashboardCache, useSupervisorDashboard } from './useSupervisorDashboard';
+import {
+  invalidateSupervisorDashboardCache,
+  useSupervisorDashboard,
+} from './useSupervisorDashboard';
 
 function deferred<T>() {
   let resolve!: (value: T) => void;
@@ -143,7 +146,9 @@ describe('useSupervisorDashboard', () => {
     expect(hookA.result.current.error).toEqual(dummyError);
     expect(hookB.result.current.error).toEqual(dummyError);
 
-    (supervisorApi.getDashboard as Mock).mockResolvedValueOnce(buildDashboard({ totalProjects: 9 }));
+    (supervisorApi.getDashboard as Mock).mockResolvedValueOnce(
+      buildDashboard({ totalProjects: 9 }),
+    );
 
     await act(async () => {
       await hookA.result.current.reload();
@@ -161,7 +166,9 @@ describe('useSupervisorDashboard', () => {
     const gateA = deferred<SupervisorDashboard>();
     const gateB = deferred<SupervisorDashboard>();
 
-    (supervisorApi.getDashboard as Mock).mockReturnValueOnce(gateA.promise).mockReturnValueOnce(gateB.promise);
+    (supervisorApi.getDashboard as Mock)
+      .mockReturnValueOnce(gateA.promise)
+      .mockReturnValueOnce(gateB.promise);
 
     const { result } = renderHook(() => useSupervisorDashboard());
 

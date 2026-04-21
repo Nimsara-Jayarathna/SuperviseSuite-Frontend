@@ -21,20 +21,18 @@ export function useSupervisorWorkspace() {
     overdueActions: projects.reduce(
       (count, project) =>
         count +
-        project.actionItems.filter(
-          (item) => {
-            if (item.status === 'Done') {
-              return false;
-            }
+        project.actionItems.filter((item) => {
+          if (item.status === 'Done') {
+            return false;
+          }
 
-            const dueDate = parseLocalDateOnly(item.dueDate);
-            if (!dueDate || !comparisonDate) {
-              return false;
-            }
+          const dueDate = parseLocalDateOnly(item.dueDate);
+          if (!dueDate || !comparisonDate) {
+            return false;
+          }
 
-            return dueDate < comparisonDate;
-          },
-        ).length,
+          return dueDate < comparisonDate;
+        }).length,
       0,
     ),
   };

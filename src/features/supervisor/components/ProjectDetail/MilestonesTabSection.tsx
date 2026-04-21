@@ -410,7 +410,8 @@ export function MilestonesTabSection({ project, milestones }: MilestonesTabSecti
                                   const dueDate = parseLocalDateOnly(milestone.dueDate);
                                   return (
                                     <span>
-                                      Due {dueDate ? dateFormatter.format(dueDate) : milestone.dueDate}
+                                      Due{' '}
+                                      {dueDate ? dateFormatter.format(dueDate) : milestone.dueDate}
                                     </span>
                                   );
                                 })()}

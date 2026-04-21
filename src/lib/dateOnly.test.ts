@@ -27,4 +27,3 @@ describe('parseLocalDateOnly', () => {
     expect(parseLocalDateOnly('2026-04-31')).toBeNull();
   });
 });
-
