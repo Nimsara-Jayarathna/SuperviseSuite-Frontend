@@ -2,9 +2,9 @@ name: Frontend CI/CD
 
 on:
   pull_request:
-    branches: ["main", "feat/system-mobile-responsiveness"]
+    branches: ["main", "dev"]
   push:
-    branches: ["main", "feat/system-mobile-responsiveness"]
+    branches: ["main", "dev"]
 
 concurrency:
   group: fe-ci-${{ github.workflow }}-${{ github.ref }}
@@ -46,7 +46,7 @@ jobs:
 
   build:
     name: Build Image
-    if: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feat/system-mobile-responsiveness') }}
+    if: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev') }}
     needs: test
     runs-on: ubuntu-latest
     environment: ${{ github.ref == 'refs/heads/main' && 'prod' || 'stg' }}
@@ -92,7 +92,7 @@ jobs:
 
   deploy:
     name: Deploy
-    if: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feat/system-mobile-responsiveness') }}
+    if: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev') }}
     needs: build
     runs-on: ubuntu-latest
     environment: ${{ github.ref == 'refs/heads/main' && 'prod' || 'stg' }}
