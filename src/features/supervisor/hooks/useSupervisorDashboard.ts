@@ -4,6 +4,7 @@ import type { ApiError } from '@/types';
 import { registerSessionCacheClearer } from '@/services/sessionCache';
 import { supervisorApi } from '../api/supervisorApi';
 import type { SupervisorDashboard } from '../types';
+import { getSessionVersion, isCurrentSession } from '@/services/sessionState';
 
 type SupervisorDashboardState = {
   dashboard: SupervisorDashboard | null;
@@ -29,7 +30,13 @@ export function useSupervisorDashboard() {
   });
 
   async function loadDashboard(forceRefresh = false) {
+    const requestSessionVersion = getSessionVersion();
+
     if (!forceRefresh && cachedDashboard) {
+      if (!isCurrentSession(requestSessionVersion)) {
+        return;
+      }
+
       setState({
         dashboard: cachedDashboard,
         isLoading: false,
@@ -41,6 +48,14 @@ export function useSupervisorDashboard() {
     if (!forceRefresh && inFlightDashboardRequest) {
       setState((current) => ({ ...current, isLoading: true, error: null }));
       const dashboard = await inFlightDashboardRequest;
+      if (!isCurrentSession(requestSessionVersion)) {
+        if (import.meta.env.DEV) {
+          // eslint-disable-next-line no-console
+          console.info('[useSupervisorDashboard] discarded stale in-flight response');
+        }
+        return;
+      }
+
       setState({
         dashboard,
         isLoading: false,
@@ -57,6 +72,14 @@ export function useSupervisorDashboard() {
       cachedDashboard = dashboard;
       inFlightDashboardRequest = null;
 
+      if (!isCurrentSession(requestSessionVersion)) {
+        if (import.meta.env.DEV) {
+          // eslint-disable-next-line no-console
+          console.info('[useSupervisorDashboard] discarded stale response');
+        }
+        return;
+      }
+
       setState({
         dashboard,
         isLoading: false,
@@ -64,6 +87,14 @@ export function useSupervisorDashboard() {
       });
     } catch (error) {
       inFlightDashboardRequest = null;
+      if (!isCurrentSession(requestSessionVersion)) {
+        if (import.meta.env.DEV) {
+          // eslint-disable-next-line no-console
+          console.info('[useSupervisorDashboard] discarded stale error');
+        }
+        return;
+      }
+
       setState({
         dashboard: null,
         isLoading: false,

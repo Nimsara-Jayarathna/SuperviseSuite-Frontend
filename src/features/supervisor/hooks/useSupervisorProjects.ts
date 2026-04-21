@@ -3,6 +3,8 @@ import { isApiException } from '@/services/apiClient';
 import type { ApiError } from '@/types';
 import { supervisorApi } from '../api/supervisorApi';
 import type { SupervisorProjectSummary } from '../types';
+import { getSessionVersion, isCurrentSession } from '@/services/sessionState';
+import { registerSessionCacheClearer } from '@/services/sessionCache';
 
 type SupervisorProjectsState = {
   projects: SupervisorProjectSummary[];
@@ -18,6 +20,8 @@ export function invalidateSupervisorProjectsCache() {
   inFlightProjectsRequest = null;
 }
 
+registerSessionCacheClearer(invalidateSupervisorProjectsCache);
+
 export function useSupervisorProjects() {
   const [state, setState] = useState<SupervisorProjectsState>({
     projects: [],
@@ -27,9 +31,14 @@ export function useSupervisorProjects() {
 
   async function loadProjects(forceRefresh = false) {
     setState((current) => ({ ...current, isLoading: true, error: null }));
+    const requestSessionVersion = getSessionVersion();
 
     try {
       if (!forceRefresh && cachedProjects) {
+        if (!isCurrentSession(requestSessionVersion)) {
+          return;
+        }
+
         setState({
           projects: cachedProjects,
           isLoading: false,
@@ -40,6 +49,14 @@ export function useSupervisorProjects() {
 
       if (!forceRefresh && inFlightProjectsRequest) {
         const projects = await inFlightProjectsRequest;
+        if (!isCurrentSession(requestSessionVersion)) {
+          if (import.meta.env.DEV) {
+            // eslint-disable-next-line no-console
+            console.info('[useSupervisorProjects] discarded stale in-flight response');
+          }
+          return;
+        }
+
         setState({
           projects,
           isLoading: false,
@@ -53,6 +70,14 @@ export function useSupervisorProjects() {
       cachedProjects = projects;
       inFlightProjectsRequest = null;
 
+      if (!isCurrentSession(requestSessionVersion)) {
+        if (import.meta.env.DEV) {
+          // eslint-disable-next-line no-console
+          console.info('[useSupervisorProjects] discarded stale response');
+        }
+        return;
+      }
+
       setState({
         projects,
         isLoading: false,
@@ -60,6 +85,14 @@ export function useSupervisorProjects() {
       });
     } catch (error) {
       inFlightProjectsRequest = null;
+      if (!isCurrentSession(requestSessionVersion)) {
+        if (import.meta.env.DEV) {
+          // eslint-disable-next-line no-console
+          console.info('[useSupervisorProjects] discarded stale error');
+        }
+        return;
+      }
+
       setState({
         projects: [],
         isLoading: false,

@@ -18,9 +18,18 @@ import { tokenStorage } from '@/services/tokenStorage';
 import { Navigate, Route, Routes, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { RequireGuest, RequireRole } from './route-guards';
 import { ROLE_HOME } from './roleHome';
+import { useAuthStateValue } from '@/features/auth/state/authState';
+
+function useResolvedUser() {
+  const authState = useAuthStateValue();
+  if (authState.status === 'bootstrapping') {
+    return tokenStorage.getUser();
+  }
+  return authState.user;
+}
 
 function RootRoute() {
-  const user = tokenStorage.getUser();
+  const user = useResolvedUser();
 
   if (!user) {
     return <LandingPage />;
@@ -64,7 +73,7 @@ function RegisterRoute() {
 }
 
 function LegacyDashboardRedirect() {
-  const user = tokenStorage.getUser();
+  const user = useResolvedUser();
 
   if (!user) {
     return <Navigate to="/login" replace />;
@@ -74,7 +83,7 @@ function LegacyDashboardRedirect() {
 }
 
 function LegacyProjectListRedirect() {
-  const user = tokenStorage.getUser();
+  const user = useResolvedUser();
 
   if (!user) {
     return <Navigate to="/login" replace />;
@@ -89,7 +98,7 @@ function LegacyProjectListRedirect() {
 }
 
 function LegacyProjectCreateRedirect() {
-  const user = tokenStorage.getUser();
+  const user = useResolvedUser();
 
   if (!user) {
     return <Navigate to="/login" replace />;
@@ -105,7 +114,7 @@ function LegacyProjectCreateRedirect() {
 
 function LegacyProjectDetailsRedirect() {
   const { projectId } = useParams();
-  const user = tokenStorage.getUser();
+  const user = useResolvedUser();
 
   if (!user) {
     return <Navigate to="/login" replace />;

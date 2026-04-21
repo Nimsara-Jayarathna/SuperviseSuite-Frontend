@@ -1,8 +1,9 @@
 import { env } from '@/app/config/env';
 import type { ApiError, ApiErrorBody, ApiMeta, ApiResponse } from '@/types';
-import { clearSessionCaches } from './sessionCache';
 import { tokenStorage } from './tokenStorage';
 import type { StoredUser } from './tokenStorage';
+import { beginSessionTransition, resetSessionState } from './sessionState';
+import { createManagedAbortSignal } from './requestRegistry';
 
 /** Thrown by `apiClient` on non-2xx responses and network failures. Carries the typed `ApiError`. */
 export class ApiException extends Error {
@@ -218,15 +219,30 @@ async function request<T>(path: string, init: RequestInit = {}, isRetry = false)
   const headers = new Headers(init.headers);
   headers.set('Content-Type', 'application/json');
 
+  const managed = createManagedAbortSignal();
   let response: Response;
 
   try {
     response = await fetch(`${env.apiBaseUrl}${path}`, {
       ...init,
+      signal: managed.signal,
       headers,
       credentials: 'include', // send httpOnly cookies on every request
     });
-  } catch {
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      throw new ApiException({
+        timestamp: new Date().toISOString(),
+        status: 499,
+        error: 'Client Closed Request',
+        code: 'INTERNAL_ERROR',
+        message: 'Request was cancelled.',
+        path,
+        traceId: null,
+        details: [],
+      });
+    }
+
     // Network failure (offline, DNS error, timeout, etc.)
     throw new ApiException({
       timestamp: new Date().toISOString(),
@@ -238,6 +254,8 @@ async function request<T>(path: string, init: RequestInit = {}, isRetry = false)
       traceId: null,
       details: [],
     });
+  } finally {
+    managed.release();
   }
 
   // 401 interceptor: attempt one silent refresh only for protected endpoints.
@@ -249,8 +267,8 @@ async function request<T>(path: string, init: RequestInit = {}, isRetry = false)
       return request<T>(path, init, true);
     }
     // Refresh also failed — session is fully expired.
-    clearSessionCaches();
-    tokenStorage.clearAll();
+    beginSessionTransition('session-expired');
+    resetSessionState();
     window.location.href = '/login';
     throw new ApiException({
       timestamp: new Date().toISOString(),

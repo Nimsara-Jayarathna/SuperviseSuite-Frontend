@@ -1,8 +1,7 @@
 import { Button } from '@/components/ui/Button';
 import { RequestStateModal } from '@/components/ui/RequestStateModal';
 import { isApiException } from '@/services/apiClient';
-import { clearSessionCaches } from '@/services/sessionCache';
-import { tokenStorage } from '@/services/tokenStorage';
+import { beginSessionTransition, resetSessionState } from '@/services/sessionState';
 import type { ApiError } from '@/types';
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -33,8 +32,8 @@ export function ResetPasswordPage() {
   useEffect(() => {
     // Reset-password flow must run as a guest flow.
     // Clear local auth state immediately, then ask backend to revoke cookies.
-    clearSessionCaches();
-    tokenStorage.clearAll();
+    beginSessionTransition('logout');
+    resetSessionState();
     void authApi.logout().catch(() => undefined);
   }, []);
 
