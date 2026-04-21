@@ -32,7 +32,7 @@ export function useSupervisorDashboardViewModel(dashboard: SupervisorDashboard |
   const normalizedQuery = deferredQuery.trim().toLowerCase();
   const pageSize = PAGE_SIZE;
 
-  const projects = dashboard?.projects ?? [];
+  const projects = useMemo(() => dashboard?.projects ?? [], [dashboard?.projects]);
 
   const visibleProjects = useMemo(() => {
     return projects.filter((project) =>
@@ -58,9 +58,9 @@ export function useSupervisorDashboardViewModel(dashboard: SupervisorDashboard |
     setCurrentPage(1);
   }, [normalizedQuery]);
 
-  const now = new Date();
-  const attentionProjects = computeAttentionProjects(projects, now);
-  const upcomingProjects = computeUpcomingProjects(projects, now);
+  const now = useMemo(() => new Date(), []);
+  const attentionProjects = useMemo(() => computeAttentionProjects(projects, now), [now, projects]);
+  const upcomingProjects = useMemo(() => computeUpcomingProjects(projects, now), [now, projects]);
 
   const viewModel: SupervisorDashboardViewModel = {
     query,
