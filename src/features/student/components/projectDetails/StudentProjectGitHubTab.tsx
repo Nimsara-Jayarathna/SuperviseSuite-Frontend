@@ -155,9 +155,7 @@ export function StudentProjectGitHubTab({
                                 {repo.fullName}
                               </span>
                             </div>
-                            {isSelected && (
-                              <Check className="h-4 w-4 shrink-0 text-indigo-500" />
-                            )}
+                            {isSelected && <Check className="h-4 w-4 shrink-0 text-indigo-500" />}
                           </button>
                         );
                       })}
@@ -182,4 +180,3 @@ export function StudentProjectGitHubTab({
     </div>
   );
 }
-

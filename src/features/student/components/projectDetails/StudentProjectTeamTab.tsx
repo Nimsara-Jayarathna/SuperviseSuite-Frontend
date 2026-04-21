@@ -14,7 +14,9 @@ export function StudentProjectTeamTab({ members, leaderId }: StudentProjectTeamT
     <section className="rounded-3xl border border-border bg-white p-6 shadow-sm transition-all hover:shadow-md">
       <div className="flex flex-col">
         <h2 className="text-lg font-bold tracking-tight text-slate-800">Project Team</h2>
-        <p className="text-xs font-medium text-slate-400">Total {members.length} members assigned</p>
+        <p className="text-xs font-medium text-slate-400">
+          Total {members.length} members assigned
+        </p>
       </div>
 
       <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -84,4 +86,3 @@ export function StudentProjectTeamTab({ members, leaderId }: StudentProjectTeamT
     </section>
   );
 }
-

@@ -102,7 +102,10 @@ export function ResetPasswordPage() {
         title: 'Password updated',
         message: 'Your password has been changed. You can now sign in with your new password.',
       },
-      error: { title: 'Reset failed', message: submitErrorMessage || 'Something went wrong. Please try again.' },
+      error: {
+        title: 'Reset failed',
+        message: submitErrorMessage || 'Something went wrong. Please try again.',
+      },
     },
     onClose: submitStatus === 'success' ? undefined : () => setSubmitStatus('idle'),
     onRetry: submitStatus === 'error' ? () => setSubmitStatus('idle') : undefined,

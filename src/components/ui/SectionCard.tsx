@@ -29,4 +29,3 @@ export function SectionCard({ title, subtitle, actions, children, className }: S
     </section>
   );
 }
-

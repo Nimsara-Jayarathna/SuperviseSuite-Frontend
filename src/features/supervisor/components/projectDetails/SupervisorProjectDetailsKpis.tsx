@@ -27,7 +27,10 @@ export function SupervisorProjectDetailsKpis({
           small: true,
         },
       ].map(({ label, value, small }) => (
-        <div key={label} className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
+        <div
+          key={label}
+          className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm"
+        >
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
             {label}
           </p>
@@ -39,4 +42,3 @@ export function SupervisorProjectDetailsKpis({
     </section>
   );
 }
-

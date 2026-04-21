@@ -23,4 +23,3 @@ export function useStudentProjectDetailsBlockingError({
     clearBlockingError();
   }, [error, showBlockingError, clearBlockingError, onRetry]);
 }
-

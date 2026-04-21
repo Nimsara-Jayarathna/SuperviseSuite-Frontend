@@ -88,4 +88,3 @@ describe('useRegisterConfig', () => {
     expect(result.current.error?.path).toBe('/api/auth/register/config');
   });
 });
-

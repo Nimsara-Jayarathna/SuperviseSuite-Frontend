@@ -18,9 +18,7 @@ export function FileList({ files, canDelete, onDownload, onDelete }: FileListPro
   const isMobileLayout = useIsMobileLayout();
 
   if (files.length === 0) {
-    return (
-      <EmptyStateCard message="No files uploaded yet." />
-    );
+    return <EmptyStateCard message="No files uploaded yet." />;
   }
 
   if (isMobileLayout) {

@@ -152,4 +152,3 @@ describe('dashboard scoring helpers', () => {
     expect(items.some((item) => item.project.id === 'p4')).toBe(false);
   });
 });
-

@@ -31,4 +31,3 @@ export function StudentProjectJiraTab({ projectId, jira }: StudentProjectJiraTab
     </section>
   );
 }
-

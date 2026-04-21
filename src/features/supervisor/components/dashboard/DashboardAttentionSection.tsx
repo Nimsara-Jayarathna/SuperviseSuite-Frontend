@@ -88,7 +88,9 @@ export function DashboardAttentionSection({
           })}
         </div>
       ) : (
-        <p className="mt-5 text-sm text-muted-foreground">No projects currently need urgent attention.</p>
+        <p className="mt-5 text-sm text-muted-foreground">
+          No projects currently need urgent attention.
+        </p>
       )}
     </div>
   );

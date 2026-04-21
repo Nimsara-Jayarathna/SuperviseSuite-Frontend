@@ -6,4 +6,3 @@ export function useChannelsById(channels: MeetingChannel[]) {
     return Object.fromEntries(channels.map((channel) => [channel.id, channel]));
   }, [channels]);
 }
-

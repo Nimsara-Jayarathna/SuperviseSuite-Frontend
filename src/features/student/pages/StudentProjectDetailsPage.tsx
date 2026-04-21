@@ -122,10 +122,7 @@ export function StudentProjectDetailsPage() {
       ) : null}
 
       {activeTab === 'team' ? (
-        <StudentProjectTeamTab
-          members={project.members}
-          leaderId={project.leader?.id ?? null}
-        />
+        <StudentProjectTeamTab members={project.members} leaderId={project.leader?.id ?? null} />
       ) : null}
 
       {activeTab === 'milestones' ? (
@@ -146,9 +143,7 @@ export function StudentProjectDetailsPage() {
         />
       ) : null}
 
-      {activeTab === 'jira' ? (
-        <StudentProjectJiraTab projectId={projectId} jira={jira} />
-      ) : null}
+      {activeTab === 'jira' ? <StudentProjectJiraTab projectId={projectId} jira={jira} /> : null}
 
       {activeTab === 'meetings' && projectId ? (
         <StudentMeetingsTabSection projectId={projectId} />

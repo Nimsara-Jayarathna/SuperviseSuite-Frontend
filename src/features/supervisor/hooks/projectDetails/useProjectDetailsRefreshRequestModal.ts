@@ -26,27 +26,33 @@ export function useProjectDetailsRefreshRequestModal({
     message: '',
   });
 
-  const showLoading = useCallback((payload: { title: string; message: string; retryAction?: () => void }) => {
-    setState({
-      isOpen: true,
-      status: 'loading',
-      title: payload.title,
-      message: payload.message,
-      retryAction: payload.retryAction,
-      redirectToJiraOnClose: false,
-    });
-  }, []);
+  const showLoading = useCallback(
+    (payload: { title: string; message: string; retryAction?: () => void }) => {
+      setState({
+        isOpen: true,
+        status: 'loading',
+        title: payload.title,
+        message: payload.message,
+        retryAction: payload.retryAction,
+        redirectToJiraOnClose: false,
+      });
+    },
+    [],
+  );
 
-  const showError = useCallback((payload: { title: string; message: string; retryAction?: () => void }) => {
-    setState({
-      isOpen: true,
-      status: 'error',
-      title: payload.title,
-      message: payload.message,
-      retryAction: payload.retryAction,
-      redirectToJiraOnClose: false,
-    });
-  }, []);
+  const showError = useCallback(
+    (payload: { title: string; message: string; retryAction?: () => void }) => {
+      setState({
+        isOpen: true,
+        status: 'error',
+        title: payload.title,
+        message: payload.message,
+        retryAction: payload.retryAction,
+        redirectToJiraOnClose: false,
+      });
+    },
+    [],
+  );
 
   const showSuccess = useCallback(
     (payload: { title: string; message: string; redirectToJiraOnClose?: boolean }) => {

@@ -18,4 +18,3 @@ export function DashboardSearchInput({ query, onChange }: DashboardSearchInputPr
     </label>
   );
 }
-

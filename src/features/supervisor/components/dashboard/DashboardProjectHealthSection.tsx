@@ -123,7 +123,10 @@ export function DashboardProjectHealthSection({
       {isLoading ? (
         <div className="mt-5 space-y-3 animate-pulse">
           {Array.from({ length: 4 }).map((_, index) => (
-            <div key={`dashboard-row-skeleton-${index}`} className="h-16 rounded-2xl bg-slate-100" />
+            <div
+              key={`dashboard-row-skeleton-${index}`}
+              className="h-16 rounded-2xl bg-slate-100"
+            />
           ))}
         </div>
       ) : visibleProjects.length > 0 ? (
@@ -227,4 +230,3 @@ export function DashboardProjectHealthSection({
     </section>
   );
 }
-

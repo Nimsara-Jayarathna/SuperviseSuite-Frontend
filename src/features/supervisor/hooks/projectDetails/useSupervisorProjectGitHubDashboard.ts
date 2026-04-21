@@ -13,7 +13,11 @@ import { isApiException } from '@/services/apiClient';
 
 type RefreshModalControls = {
   showLoading: (payload: { title: string; message: string; retryAction?: () => void }) => void;
-  showSuccess: (payload: { title: string; message: string; redirectToJiraOnClose?: boolean }) => void;
+  showSuccess: (payload: {
+    title: string;
+    message: string;
+    redirectToJiraOnClose?: boolean;
+  }) => void;
   showError: (payload: { title: string; message: string; retryAction?: () => void }) => void;
 };
 

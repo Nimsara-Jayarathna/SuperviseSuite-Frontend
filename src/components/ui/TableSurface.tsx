@@ -11,4 +11,3 @@ export function TableSurface({ children }: TableSurfaceProps) {
     </div>
   );
 }
-

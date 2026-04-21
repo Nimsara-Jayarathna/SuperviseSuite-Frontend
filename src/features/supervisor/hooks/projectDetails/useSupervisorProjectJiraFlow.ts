@@ -9,7 +9,11 @@ const JIRA_RESULT_KEY_PREFIX = 'jira-oauth:';
 
 type RefreshModalControls = {
   showLoading: (payload: { title: string; message: string; retryAction?: () => void }) => void;
-  showSuccess: (payload: { title: string; message: string; redirectToJiraOnClose?: boolean }) => void;
+  showSuccess: (payload: {
+    title: string;
+    message: string;
+    redirectToJiraOnClose?: boolean;
+  }) => void;
   showError: (payload: { title: string; message: string; retryAction?: () => void }) => void;
   hide: () => void;
 };
@@ -209,16 +213,19 @@ export function useSupervisorProjectJiraFlow({
     })();
   }, [reloadProject, refreshModal, searchParams, setSearchParams]);
 
-  const hydrateJiraAfterConnect = useCallback(async (connectedProjectId: string | null | undefined) => {
-    if (!connectedProjectId) {
-      return;
-    }
-    try {
-      await supervisorApi.refreshProjectJira(connectedProjectId);
-    } catch {
-      // Keep connect success UX even if immediate refresh fails; Jira tab retry still works.
-    }
-  }, []);
+  const hydrateJiraAfterConnect = useCallback(
+    async (connectedProjectId: string | null | undefined) => {
+      if (!connectedProjectId) {
+        return;
+      }
+      try {
+        await supervisorApi.refreshProjectJira(connectedProjectId);
+      } catch {
+        // Keep connect success UX even if immediate refresh fails; Jira tab retry still works.
+      }
+    },
+    [],
+  );
 
   const confirmJiraWorkspaceSelection = useCallback(async () => {
     if (!jiraWorkspaceSelection.selectionToken || !jiraWorkspaceSelection.selectedCloudId) {
@@ -372,4 +379,3 @@ export function useSupervisorProjectJiraFlow({
     confirmDisconnectJira,
   };
 }
-

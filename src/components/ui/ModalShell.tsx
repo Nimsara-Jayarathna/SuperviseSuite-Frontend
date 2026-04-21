@@ -92,11 +92,7 @@ export function ModalShell({
       aria-describedby={ariaDescribedBy}
     >
       {showBackdrop ? (
-        <div
-          className={backdropClassName}
-          onClick={onBackdropClick}
-          aria-hidden="true"
-        />
+        <div className={backdropClassName} onClick={onBackdropClick} aria-hidden="true" />
       ) : null}
       {children}
     </div>
@@ -108,4 +104,3 @@ export function ModalShell({
 
   return createPortal(content, document.body);
 }
-

@@ -21,7 +21,9 @@ export function jiraIndicatorClasses(indicator: string | null) {
   return 'border-slate-200 bg-slate-100 text-slate-400';
 }
 
-export function jiraIndicatorLabel(indicator: SupervisorDashboardProjectItem['jiraHealthIndicator']) {
+export function jiraIndicatorLabel(
+  indicator: SupervisorDashboardProjectItem['jiraHealthIndicator'],
+) {
   if (indicator === 'AT_RISK') return 'At Risk';
   if (indicator === 'BEHIND') return 'Behind';
   if (indicator === 'HEALTHY') return 'Healthy';
@@ -32,4 +34,3 @@ export function jiraIndicatorLabel(indicator: SupervisorDashboardProjectItem['ji
 export function formatMilestoneDate(value: string | null) {
   return value ? dateFormatter.format(new Date(value)) : 'Not set';
 }
-

@@ -23,4 +23,3 @@ export function useSupervisorDashboardBlockingError({
     clearBlockingError();
   }, [error, showBlockingError, clearBlockingError, onRetry]);
 }
-

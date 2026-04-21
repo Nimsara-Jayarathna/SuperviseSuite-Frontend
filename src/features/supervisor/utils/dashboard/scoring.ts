@@ -204,12 +204,12 @@ export function computeUpcomingProjects(
       project,
       daysUntilMilestone: milestoneDeltaDays(project.milestoneDate, today),
     }))
-    .filter((item): item is { project: SupervisorDashboardProjectItem; daysUntilMilestone: number } =>
-      item.daysUntilMilestone !== null &&
-      item.daysUntilMilestone >= -UPCOMING_WINDOW_DAYS &&
-      item.daysUntilMilestone <= UPCOMING_WINDOW_DAYS,
+    .filter(
+      (item): item is { project: SupervisorDashboardProjectItem; daysUntilMilestone: number } =>
+        item.daysUntilMilestone !== null &&
+        item.daysUntilMilestone >= -UPCOMING_WINDOW_DAYS &&
+        item.daysUntilMilestone <= UPCOMING_WINDOW_DAYS,
     )
     .sort((left, right) => left.daysUntilMilestone - right.daysUntilMilestone)
     .slice(0, UPCOMING_LIST_LIMIT);
 }
-

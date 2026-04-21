@@ -46,7 +46,6 @@ export function LoginPanel({ onClose, returnTo, inModal = false }: LoginPanelPro
             closeAriaLabel="Close"
             className="mx-auto focus:outline-none"
           >
-
             <LoginForm
               onSubmit={(values) => login(values, returnTo)}
               isLoading={isLoading}
@@ -70,18 +69,18 @@ export function LoginPanel({ onClose, returnTo, inModal = false }: LoginPanelPro
           closeAriaLabel="Close"
           className="mx-auto focus:outline-none"
         >
-            <LoginForm
-              onSubmit={(values) => login(values, returnTo)}
-              isLoading={isLoading}
-              error={inlineError}
-              onClearError={clearError}
-              onSuccess={onClose}
-              feedbackMode="inline"
-              onForgotPassword={() => {
-                onClose();
-                navigate('/forgot-password');
-              }}
-            />
+          <LoginForm
+            onSubmit={(values) => login(values, returnTo)}
+            isLoading={isLoading}
+            error={inlineError}
+            onClearError={clearError}
+            onSuccess={onClose}
+            feedbackMode="inline"
+            onForgotPassword={() => {
+              onClose();
+              navigate('/forgot-password');
+            }}
+          />
         </AuthDialogCard>
       )}
       <RequestStateModal

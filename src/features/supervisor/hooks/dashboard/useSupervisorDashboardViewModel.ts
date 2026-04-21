@@ -51,10 +51,7 @@ export function useSupervisorDashboardViewModel(dashboard: SupervisorDashboard |
   }, [currentPage, totalPages]);
 
   const pagedProjects = useMemo(() => {
-    return visibleProjects.slice(
-      (safeCurrentPage - 1) * pageSize,
-      safeCurrentPage * pageSize,
-    );
+    return visibleProjects.slice((safeCurrentPage - 1) * pageSize, safeCurrentPage * pageSize);
   }, [pageSize, safeCurrentPage, visibleProjects]);
 
   useEffect(() => {

@@ -40,4 +40,3 @@ export function useSupervisorProjectDetailsTabs(
 
   return { tabs, activeTab, setActiveTab };
 }
-

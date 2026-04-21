@@ -29,12 +29,7 @@ describe('ModalShell', () => {
     const onClose = vi.fn();
 
     render(
-      <ModalShell
-        isOpen
-        containerClassName="fixed"
-        onBackdropClick={onClose}
-        closeOnEscape={false}
-      >
+      <ModalShell isOpen containerClassName="fixed" onBackdropClick={onClose} closeOnEscape={false}>
         <div>Content</div>
       </ModalShell>,
     );
@@ -57,4 +52,3 @@ describe('ModalShell', () => {
     expect(document.body.style.overflow).toBe('scroll');
   });
 });
-

@@ -247,152 +247,149 @@ export function MeetingChannelsTable({
       ]}
     >
       {channels.map((channel) => {
-               const isCopied = copiedChannelId === channel.id;
-               const displayChannelName =
-                 channel.channelName.length > MAX_CHANNEL_NAME_CHARS
-                   ? `${channel.channelName.slice(0, MAX_CHANNEL_NAME_CHARS - 3).trimEnd()}...`
-                   : channel.channelName;
+        const isCopied = copiedChannelId === channel.id;
+        const displayChannelName =
+          channel.channelName.length > MAX_CHANNEL_NAME_CHARS
+            ? `${channel.channelName.slice(0, MAX_CHANNEL_NAME_CHARS - 3).trimEnd()}...`
+            : channel.channelName;
 
-              return (
-                <tr
-                  key={channel.id}
-                  className="border-t border-slate-100 transition-colors hover:bg-slate-50/60"
-                >
-                  <td className="px-4 py-3 whitespace-nowrap align-middle">
-                    {(() => {
-                      const display = getMeetingPlatformDisplay(channel.platform);
+        return (
+          <tr
+            key={channel.id}
+            className="border-t border-slate-100 transition-colors hover:bg-slate-50/60"
+          >
+            <td className="px-4 py-3 whitespace-nowrap align-middle">
+              {(() => {
+                const display = getMeetingPlatformDisplay(channel.platform);
 
-                      return (
-                        <span
-                          className="inline-flex h-8 w-10 items-center justify-center rounded-full border border-slate-200 bg-slate-50/60"
-                          title={display.label}
-                          aria-label={display.label}
-                        >
-                          {display.kind === 'simple-icon' ? (
-                            <svg
-                              aria-hidden
-                              viewBox="0 0 24 24"
-                              className="h-4 w-4"
-                              style={{ color: `#${display.hex}` }}
-                            >
-                              <path d={display.path} fill="currentColor" />
-                            </svg>
-                          ) : (
-                            <display.Icon
-                              aria-hidden
-                              className="h-4 w-4 text-slate-700"
-                              style={display.hex ? { color: `#${display.hex}` } : undefined}
-                              strokeWidth={2.25}
-                            />
-                          )}
-                          <span className="sr-only">{display.label}</span>
-                        </span>
-                      );
-                    })()}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap align-middle">
-                    <span
-                      className="block truncate text-sm font-semibold text-slate-900 cursor-help transition-colors hover:text-slate-950 hover:underline"
-                      title={channel.channelName}
-                      aria-label={channel.channelName}
-                    >
-                      {displayChannelName}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap align-middle">
-                    <div className="flex min-w-0 items-center gap-2">
-                      <div className="min-w-0 flex-1">
-                        <a
-                          href={channel.linkOrIdentifier}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="block truncate text-sm font-semibold text-sky-700 hover:underline"
-                          title={channel.linkOrIdentifier}
-                        >
-                          {channel.linkOrIdentifier}
-                        </a>
-                      </div>
-
-                      <button
-                        type="button"
-                        className={cn(
-                          'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border transition-colors',
-                          isCopied
-                            ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                            : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-700',
-                        )}
-                        aria-label="Copy value"
-                        title="Copy"
-                        onClick={async () => {
-                          const ok = (await onCopy?.(channel.linkOrIdentifier)) ?? false;
-                          if (!ok) return;
-
-                          resetCopiedTimer();
-                          setCopiedChannelId(channel.id);
-                          copiedResetTimeoutRef.current = window.setTimeout(() => {
-                            setCopiedChannelId(null);
-                            copiedResetTimeoutRef.current = null;
-                          }, 1000);
-                        }}
+                return (
+                  <span
+                    className="inline-flex h-8 w-10 items-center justify-center rounded-full border border-slate-200 bg-slate-50/60"
+                    title={display.label}
+                    aria-label={display.label}
+                  >
+                    {display.kind === 'simple-icon' ? (
+                      <svg
+                        aria-hidden
+                        viewBox="0 0 24 24"
+                        className="h-4 w-4"
+                        style={{ color: `#${display.hex}` }}
                       >
-                        {isCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                      </button>
-                    </div>
-                  </td>
-                  <td className="max-w-0 px-4 py-3 w-[220px] whitespace-nowrap align-middle text-center text-xs text-slate-500">
-                    <div className="flex justify-center cursor-help" title={channel.addedByName}>
-                      <RoleBadge
-                        role={channel.addedByRole}
-                        className="min-w-[110px] justify-center px-2 py-0.5 text-[10px]"
+                        <path d={display.path} fill="currentColor" />
+                      </svg>
+                    ) : (
+                      <display.Icon
+                        aria-hidden
+                        className="h-4 w-4 text-slate-700"
+                        style={display.hex ? { color: `#${display.hex}` } : undefined}
+                        strokeWidth={2.25}
                       />
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap align-middle text-center">
-                    <div
-                      className="flex justify-center cursor-help"
-                      title={buildStatusTitle(channel)}
+                    )}
+                    <span className="sr-only">{display.label}</span>
+                  </span>
+                );
+              })()}
+            </td>
+            <td className="px-4 py-3 whitespace-nowrap align-middle">
+              <span
+                className="block truncate text-sm font-semibold text-slate-900 cursor-help transition-colors hover:text-slate-950 hover:underline"
+                title={channel.channelName}
+                aria-label={channel.channelName}
+              >
+                {displayChannelName}
+              </span>
+            </td>
+            <td className="px-4 py-3 whitespace-nowrap align-middle">
+              <div className="flex min-w-0 items-center gap-2">
+                <div className="min-w-0 flex-1">
+                  <a
+                    href={channel.linkOrIdentifier}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="block truncate text-sm font-semibold text-sky-700 hover:underline"
+                    title={channel.linkOrIdentifier}
+                  >
+                    {channel.linkOrIdentifier}
+                  </a>
+                </div>
+
+                <button
+                  type="button"
+                  className={cn(
+                    'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border transition-colors',
+                    isCopied
+                      ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                      : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-700',
+                  )}
+                  aria-label="Copy value"
+                  title="Copy"
+                  onClick={async () => {
+                    const ok = (await onCopy?.(channel.linkOrIdentifier)) ?? false;
+                    if (!ok) return;
+
+                    resetCopiedTimer();
+                    setCopiedChannelId(channel.id);
+                    copiedResetTimeoutRef.current = window.setTimeout(() => {
+                      setCopiedChannelId(null);
+                      copiedResetTimeoutRef.current = null;
+                    }, 1000);
+                  }}
+                >
+                  {isCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                </button>
+              </div>
+            </td>
+            <td className="max-w-0 px-4 py-3 w-[220px] whitespace-nowrap align-middle text-center text-xs text-slate-500">
+              <div className="flex justify-center cursor-help" title={channel.addedByName}>
+                <RoleBadge
+                  role={channel.addedByRole}
+                  className="min-w-[110px] justify-center px-2 py-0.5 text-[10px]"
+                />
+              </div>
+            </td>
+            <td className="px-4 py-3 whitespace-nowrap align-middle text-center">
+              <div className="flex justify-center cursor-help" title={buildStatusTitle(channel)}>
+                <StatusBadge tone={statusTone(channel.status)}>{channel.status}</StatusBadge>
+              </div>
+            </td>
+            {canManage ? (
+              <td className="px-4 py-3 whitespace-nowrap align-middle text-center">
+                <div className="flex items-center justify-center gap-2.5">
+                  {channel.status === 'PENDING' ? (
+                    <button
+                      type="button"
+                      onClick={() => onApprove?.(channel)}
+                      title="Approve channel"
+                      aria-label="Approve channel"
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 transition-colors hover:bg-emerald-100"
                     >
-                      <StatusBadge tone={statusTone(channel.status)}>{channel.status}</StatusBadge>
-                    </div>
-                  </td>
-                  {canManage ? (
-                    <td className="px-4 py-3 whitespace-nowrap align-middle text-center">
-                      <div className="flex items-center justify-center gap-2.5">
-                        {channel.status === 'PENDING' ? (
-                          <button
-                            type="button"
-                            onClick={() => onApprove?.(channel)}
-                            title="Approve channel"
-                            aria-label="Approve channel"
-                            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 transition-colors hover:bg-emerald-100"
-                          >
-                            <CheckCircle2 className="h-3.5 w-3.5" />
-                          </button>
-                        ) : null}
-                        <button
-                          type="button"
-                          onClick={() => onEdit?.(channel)}
-                          title="Edit channel"
-                          aria-label="Edit channel"
-                          className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 transition-colors hover:bg-slate-50"
-                        >
-                          <Pencil className="h-3.5 w-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => onDelete?.(channel)}
-                          title="Delete channel"
-                          aria-label="Delete channel"
-                          className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-rose-200 bg-rose-50 text-rose-700 transition-colors hover:bg-rose-100"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    </td>
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                    </button>
                   ) : null}
-                </tr>
-              );
-            })}
+                  <button
+                    type="button"
+                    onClick={() => onEdit?.(channel)}
+                    title="Edit channel"
+                    aria-label="Edit channel"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 transition-colors hover:bg-slate-50"
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onDelete?.(channel)}
+                    title="Delete channel"
+                    aria-label="Delete channel"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-rose-200 bg-rose-50 text-rose-700 transition-colors hover:bg-rose-100"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </td>
+            ) : null}
+          </tr>
+        );
+      })}
     </DataTable>
   );
 }

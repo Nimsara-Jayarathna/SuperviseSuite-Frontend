@@ -1,10 +1,4 @@
-import {
-  AlertCircle,
-  CheckCircle2,
-  Circle,
-  Clock,
-  XCircle,
-} from 'lucide-react';
+import { AlertCircle, CheckCircle2, Circle, Clock, XCircle } from 'lucide-react';
 import type { ComponentProps, ReactNode } from 'react';
 import type {
   StudentProjectDetailMember,

@@ -30,10 +30,11 @@ export function ProjectDetailsPage() {
   const { projectId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const { tabs: allowedTabs, activeTab, setActiveTab } = useSupervisorProjectDetailsTabs(
-    searchParams,
-    setSearchParams,
-  );
+  const {
+    tabs: allowedTabs,
+    activeTab,
+    setActiveTab,
+  } = useSupervisorProjectDetailsTabs(searchParams, setSearchParams);
 
   const refreshRequestModal = useProjectDetailsRefreshRequestModal({
     searchParams,
@@ -152,7 +153,12 @@ export function ProjectDetailsPage() {
             >
               Cancel
             </Button>
-            <Button type="button" variant="danger" size="md" onClick={() => void jiraFlow.confirmDisconnectJira()}>
+            <Button
+              type="button"
+              variant="danger"
+              size="md"
+              onClick={() => void jiraFlow.confirmDisconnectJira()}
+            >
               Disconnect
             </Button>
           </div>
@@ -189,7 +195,9 @@ export function ProjectDetailsPage() {
                     {option.workspaceName}
                   </span>
                   {option.workspaceUrl ? (
-                    <span className="block truncate text-xs text-slate-600">{option.workspaceUrl}</span>
+                    <span className="block truncate text-xs text-slate-600">
+                      {option.workspaceUrl}
+                    </span>
                   ) : null}
                 </span>
               </label>
@@ -198,10 +206,20 @@ export function ProjectDetailsPage() {
         }
         footer={
           <div className="flex flex-wrap justify-center gap-3">
-            <Button type="button" variant="secondary" size="md" onClick={jiraFlow.cancelJiraWorkspaceSelection}>
+            <Button
+              type="button"
+              variant="secondary"
+              size="md"
+              onClick={jiraFlow.cancelJiraWorkspaceSelection}
+            >
               Cancel
             </Button>
-            <Button type="button" variant="primary" size="md" onClick={() => void jiraFlow.confirmJiraWorkspaceSelection()}>
+            <Button
+              type="button"
+              variant="primary"
+              size="md"
+              onClick={() => void jiraFlow.confirmJiraWorkspaceSelection()}
+            >
               Connect selected workspace
             </Button>
           </div>
@@ -216,7 +234,9 @@ export function ProjectDetailsPage() {
         progressPercent={project.progressPercent}
         quickLifecycleStatus={actions.quickLifecycleStatus}
         isUpdatingStatus={actions.isUpdatingStatus}
-        onQuickStatusChange={(status) => actions.handleQuickStatusChange(status as SupervisorProjectLifecycle)}
+        onQuickStatusChange={(status) =>
+          actions.handleQuickStatusChange(status as SupervisorProjectLifecycle)
+        }
       />
 
       <SupervisorProjectDetailsKpis
@@ -233,7 +253,9 @@ export function ProjectDetailsPage() {
         tone="supervisor"
       />
 
-      {activeTab === 'overview' ? <OverviewTabSection project={project} overview={overview} /> : null}
+      {activeTab === 'overview' ? (
+        <OverviewTabSection project={project} overview={overview} />
+      ) : null}
 
       {activeTab === 'team' ? <TeamTabSection project={project} team={team} /> : null}
 
@@ -241,7 +263,9 @@ export function ProjectDetailsPage() {
         <MilestonesTabSection project={project} milestones={milestones} />
       ) : null}
 
-      {activeTab === 'files' ? <FilesTabSection projectId={project.id} initialFiles={project.files} /> : null}
+      {activeTab === 'files' ? (
+        <FilesTabSection projectId={project.id} initialFiles={project.files} />
+      ) : null}
 
       {activeTab === 'meetings' ? <MeetingsTabSection projectId={project.id} /> : null}
 

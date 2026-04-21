@@ -80,4 +80,3 @@ export function StudentProjectMilestonesTab({ milestones }: StudentProjectMilest
     </section>
   );
 }
-

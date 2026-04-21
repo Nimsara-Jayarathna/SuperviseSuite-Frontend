@@ -77,4 +77,3 @@ export function DashboardStatsSection({ dashboard, isLoading }: DashboardStatsSe
     </section>
   );
 }
-

@@ -32,9 +32,7 @@ export function SupervisorDashboardPage() {
       <PageHeader
         title="Supervisor Dashboard"
         subtitle="Monitor delivery health across every supervised project."
-        actions={
-          <DashboardSearchInput query={viewModel.query} onChange={viewModel.setQuery} />
-        }
+        actions={<DashboardSearchInput query={viewModel.query} onChange={viewModel.setQuery} />}
       />
 
       <DashboardStatsSection dashboard={dashboard} isLoading={isLoading} />
@@ -50,8 +48,14 @@ export function SupervisorDashboardPage() {
       />
 
       <section className="grid gap-5 xl:grid-cols-2">
-        <DashboardAttentionSection isLoading={isLoading} attentionProjects={viewModel.attentionProjects} />
-        <DashboardUpcomingMilestonesSection isLoading={isLoading} upcomingProjects={viewModel.upcomingProjects} />
+        <DashboardAttentionSection
+          isLoading={isLoading}
+          attentionProjects={viewModel.attentionProjects}
+        />
+        <DashboardUpcomingMilestonesSection
+          isLoading={isLoading}
+          upcomingProjects={viewModel.upcomingProjects}
+        />
       </section>
     </div>
   );

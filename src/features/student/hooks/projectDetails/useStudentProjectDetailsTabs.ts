@@ -48,4 +48,3 @@ export function useStudentProjectDetailsTabs(
 
   return { tabs, activeTab, setActiveTab };
 }
-

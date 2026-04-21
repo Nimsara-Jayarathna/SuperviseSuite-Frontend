@@ -13,4 +13,3 @@ export function EmptyStateCard({ message, action }: EmptyStateCardProps) {
     </div>
   );
 }
-

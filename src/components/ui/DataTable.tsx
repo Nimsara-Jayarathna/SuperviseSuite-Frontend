@@ -47,4 +47,3 @@ export function DataTable({ columns, colGroup, children }: DataTableProps) {
     </TableSurface>
   );
 }
-

@@ -50,11 +50,7 @@ export function toRequestStateModalView(args: {
   }
 
   const resolved =
-    kind === 'loading'
-      ? copy.loading
-      : kind === 'success'
-        ? copy.success
-        : copy.error;
+    kind === 'loading' ? copy.loading : kind === 'success' ? copy.success : copy.error;
 
   const resolveCopyValue = (value: CopyValue) =>
     typeof value === 'function' ? value(kind) : value;
