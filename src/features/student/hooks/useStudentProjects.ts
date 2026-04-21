@@ -1,10 +1,21 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { isApiException } from '@/services/apiClient';
 import type { ApiError } from '@/types';
 import { studentApi } from '../api/studentApi';
 import type { StudentProjectSummary } from '../types';
 import { getSessionVersion, isCurrentSession } from '@/services/sessionState';
 import { registerSessionCacheClearer } from '@/services/sessionCache';
+
+const UNKNOWN_ERROR_BASE: ApiError = {
+  code: 'INTERNAL_ERROR',
+  message: 'Unable to load projects right now.',
+  details: [],
+  timestamp: new Date().toISOString(),
+  status: 0,
+  error: 'Unexpected Error',
+  path: '',
+  traceId: null,
+};
 
 export function invalidateStudentProjectsCache() {
   cachedProjects = null;
@@ -24,93 +35,101 @@ export function useStudentProjects() {
     error: null,
   });
 
-  async function loadProjects(forceRefresh = false) {
-    setState((current) => ({ ...current, isLoading: true, error: null }));
+  const latestRequestId = useRef(0);
+
+  const loadProjects = useCallback(async (forceRefresh = false) => {
     const requestSessionVersion = getSessionVersion();
+    const requestId = (latestRequestId.current += 1);
+    let request: Promise<StudentProjectSummary[]> | null = null;
+
+    const normalizeProjectsError = (error: unknown): ApiError => {
+      if (isApiException(error)) {
+        return error.apiError;
+      }
+
+      return {
+        ...UNKNOWN_ERROR_BASE,
+        timestamp: new Date().toISOString(),
+      };
+    };
+
+    const applyProjectsSuccess = (projects: StudentProjectSummary[]) => {
+      setState({
+        projects,
+        isLoading: false,
+        error: null,
+      });
+    };
+
+    const applyProjectsError = (error: unknown) => {
+      setState({
+        projects: [],
+        isLoading: false,
+        error: normalizeProjectsError(error),
+      });
+    };
 
     try {
       if (!forceRefresh && cachedProjects) {
         if (!isCurrentSession(requestSessionVersion)) {
           return;
         }
-
-        setState({
-          projects: cachedProjects,
-          isLoading: false,
-          error: null,
-        });
+        applyProjectsSuccess(cachedProjects);
         return;
       }
 
-      if (!forceRefresh && inFlightProjectsRequest) {
-        const projects = await inFlightProjectsRequest;
-        if (!isCurrentSession(requestSessionVersion)) {
-          if (import.meta.env.DEV) {
-            // eslint-disable-next-line no-console
-            console.info('[useStudentProjects] discarded stale in-flight response');
-          }
-          return;
-        }
+      request =
+        !forceRefresh && inFlightProjectsRequest
+          ? inFlightProjectsRequest
+          : (inFlightProjectsRequest = studentApi.getProjects());
 
-        setState({
-          projects,
-          isLoading: false,
-          error: null,
-        });
-        return;
+      setState((current) => ({ ...current, isLoading: true, error: null }));
+
+      const projects = await request;
+      const shouldCommitCache = inFlightProjectsRequest === request;
+      if (shouldCommitCache) {
+        cachedProjects = projects;
       }
-
-      inFlightProjectsRequest = studentApi.getProjects();
-      const projects = await inFlightProjectsRequest;
-      cachedProjects = projects;
-      inFlightProjectsRequest = null;
 
       if (!isCurrentSession(requestSessionVersion)) {
         if (import.meta.env.DEV) {
           // eslint-disable-next-line no-console
           console.info('[useStudentProjects] discarded stale response');
         }
+        if (latestRequestId.current === requestId) {
+          setState((current) => ({ ...current, isLoading: false }));
+        }
         return;
       }
 
-      setState({
-        projects,
-        isLoading: false,
-        error: null,
-      });
+      if (latestRequestId.current === requestId) {
+        applyProjectsSuccess(projects);
+      }
     } catch (error) {
-      inFlightProjectsRequest = null;
-
       if (!isCurrentSession(requestSessionVersion)) {
         if (import.meta.env.DEV) {
           // eslint-disable-next-line no-console
           console.info('[useStudentProjects] discarded stale error');
         }
+        if (latestRequestId.current === requestId) {
+          setState((current) => ({ ...current, isLoading: false }));
+        }
         return;
       }
 
-      setState({
-        projects: [],
-        isLoading: false,
-        error: isApiException(error)
-          ? error.apiError
-          : {
-              code: 'INTERNAL_ERROR',
-              message: 'Unable to load projects right now.',
-              details: [],
-              timestamp: new Date().toISOString(),
-              status: 0,
-              error: 'Unexpected Error',
-              path: '',
-              traceId: null,
-            },
-      });
+      if (latestRequestId.current === requestId) {
+        applyProjectsError(error);
+      }
+    } finally {
+      if (request && inFlightProjectsRequest === request) {
+        inFlightProjectsRequest = null;
+      }
     }
-  }
+  }, []);
 
   useEffect(() => {
     void loadProjects();
-  }, []);
+  }, [loadProjects]);
 
   return {
     projects: state.projects,

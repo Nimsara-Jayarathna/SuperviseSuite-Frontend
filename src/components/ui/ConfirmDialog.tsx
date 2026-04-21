@@ -28,13 +28,17 @@ export function ConfirmDialog({
   }
 
   return createPortal(
-    <div
-      className="fixed inset-0 z-[80] flex items-center justify-center p-4"
-      role="dialog"
-      aria-modal
-    >
-      <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-md" onClick={onCancel} />
-      <div className="relative z-10 w-full max-w-sm rounded-3xl border border-white/25 bg-white p-6 shadow-[0_28px_72px_rgba(15,23,42,0.24)]">
+    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
+      <div
+        className="absolute inset-0 bg-slate-950/60 backdrop-blur-md"
+        onClick={onCancel}
+        aria-hidden="true"
+      />
+      <div
+        className="relative z-10 w-full max-w-sm rounded-3xl border border-white/25 bg-white p-6 shadow-[0_28px_72px_rgba(15,23,42,0.24)]"
+        role="dialog"
+        aria-modal
+      >
         <h3 className="text-lg font-bold text-slate-900">{title}</h3>
         <div className="mt-2 text-sm text-slate-600">{description}</div>
         <div className="mt-6 flex justify-end gap-2">

@@ -101,6 +101,9 @@ export function useSupervisorDashboard() {
           // eslint-disable-next-line no-console
           console.info('[useSupervisorDashboard] discarded stale response');
         }
+        if (latestRequestId.current === requestId) {
+          setState((current) => ({ ...current, isLoading: false }));
+        }
         return;
       }
 
@@ -112,6 +115,9 @@ export function useSupervisorDashboard() {
         if (import.meta.env.DEV) {
           // eslint-disable-next-line no-console
           console.info('[useSupervisorDashboard] discarded stale error');
+        }
+        if (latestRequestId.current === requestId) {
+          setState((current) => ({ ...current, isLoading: false }));
         }
         return;
       }

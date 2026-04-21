@@ -32,7 +32,7 @@ describe('useSupervisorProjects', () => {
     const { result } = renderHook(() => useSupervisorProjects());
 
     await waitFor(() => {
-      expect(result.current.isLoading).toBe(true);
+      expect(result.current.isLoading).toBe(false);
     });
 
     expect(result.current.projects).toEqual([]);

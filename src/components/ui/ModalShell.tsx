@@ -83,18 +83,19 @@ export function ModalShell({
   }
 
   const content = (
-    <div
-      className={containerClassName}
-      role={role}
-      aria-modal={ariaModal ? 'true' : undefined}
-      aria-label={ariaLabel}
-      aria-labelledby={ariaLabelledBy}
-      aria-describedby={ariaDescribedBy}
-    >
+    <div className={containerClassName}>
       {showBackdrop ? (
         <div className={backdropClassName} onClick={onBackdropClick} aria-hidden="true" />
       ) : null}
-      {children}
+      <div
+        role={role}
+        aria-modal={ariaModal ? 'true' : undefined}
+        aria-label={ariaLabel}
+        aria-labelledby={ariaLabelledBy}
+        aria-describedby={ariaDescribedBy}
+      >
+        {children}
+      </div>
     </div>
   );
 

@@ -41,12 +41,14 @@ export function useCreateProjectMilestonesState({
   }
 
   function addMilestone() {
-    const newIndex = milestones.length;
-    setMilestones((prev) => [...prev, { ...INITIAL_MILESTONE }]);
-    setExpandedMilestoneIndex(newIndex);
-    setTimeout(() => {
-      milestoneRefs.current[newIndex]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 50);
+    setMilestones((prev) => {
+      const newIndex = prev.length;
+      setExpandedMilestoneIndex(newIndex);
+      setTimeout(() => {
+        milestoneRefs.current[newIndex]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 50);
+      return [...prev, { ...INITIAL_MILESTONE }];
+    });
   }
 
   function removeMilestone(index: number) {

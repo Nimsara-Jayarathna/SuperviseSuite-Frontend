@@ -55,7 +55,8 @@ describe('ConfirmDialog', () => {
       />,
     );
 
-    const backdrop = screen.getByRole('dialog').querySelector('.absolute.inset-0');
+    const dialog = screen.getByRole('dialog');
+    const backdrop = dialog.parentElement?.querySelector('.absolute.inset-0');
     if (!backdrop) {
       throw new Error('Expected ConfirmDialog backdrop to exist.');
     }
