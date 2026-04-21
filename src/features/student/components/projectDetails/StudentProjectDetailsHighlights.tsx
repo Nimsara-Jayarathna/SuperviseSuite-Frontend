@@ -1,4 +1,5 @@
 import { CalendarDays, Clock3, Users } from 'lucide-react';
+import { parseLocalDateOnly } from '@/lib/dateOnly';
 
 const dateFormatter = new Intl.DateTimeFormat('en', {
   month: 'short',
@@ -17,6 +18,8 @@ export function StudentProjectDetailsHighlights({
   membersCount,
   progressPercent,
 }: StudentProjectDetailsHighlightsProps) {
+  const parsedMilestoneDate = milestoneDate ? parseLocalDateOnly(milestoneDate) : null;
+
   return (
     <section className="flex flex-wrap items-center gap-3">
       <div className="flex flex-wrap items-center gap-2">
@@ -29,7 +32,11 @@ export function StudentProjectDetailsHighlights({
               Milestone
             </span>
             <span className="font-semibold text-slate-700">
-              {milestoneDate ? dateFormatter.format(new Date(milestoneDate)) : 'Not set'}
+              {milestoneDate
+                ? parsedMilestoneDate
+                  ? dateFormatter.format(parsedMilestoneDate)
+                  : milestoneDate
+                : 'Not set'}
             </span>
           </div>
         </div>

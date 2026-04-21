@@ -1,5 +1,6 @@
 import type { ProjectStepperStep } from './components/ProjectStepper';
 import type { CreateSupervisorProjectResponse, SupervisorStudentSearchResult } from './types';
+import { parseLocalDateOnly } from '@/lib/dateOnly';
 
 export type DraftState = {
   title: string;
@@ -92,7 +93,8 @@ export function milestoneSummaryDescription(milestone: MilestoneDraft) {
 
 export function milestoneSummaryDate(milestone: MilestoneDraft): string | null {
   if (!milestone.dueDate) return null;
-  return dateFormatter.format(new Date(milestone.dueDate));
+  const parsed = parseLocalDateOnly(milestone.dueDate);
+  return parsed ? dateFormatter.format(parsed) : milestone.dueDate;
 }
 
 export function collapsePreview(text: string, maxChars = 60) {
@@ -104,9 +106,18 @@ export function earliestMilestone(
   milestones: CreateSupervisorProjectResponse['milestones'],
 ): CreateSupervisorProjectResponse['milestones'][number] | null {
   if (milestones.length === 0) return null;
-  return milestones.reduce((earliest, milestone) =>
-    new Date(milestone.dueDate).getTime() < new Date(earliest.dueDate).getTime()
-      ? milestone
-      : earliest,
-  );
+  return milestones.reduce((earliest, milestone) => {
+    const milestoneDate = parseLocalDateOnly(milestone.dueDate);
+    const earliestDate = parseLocalDateOnly(earliest.dueDate);
+
+    if (!milestoneDate) {
+      return earliest;
+    }
+
+    if (!earliestDate) {
+      return milestone;
+    }
+
+    return milestoneDate.getTime() < earliestDate.getTime() ? milestone : earliest;
+  }, milestones[0]);
 }

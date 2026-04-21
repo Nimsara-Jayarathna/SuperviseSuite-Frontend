@@ -1,28 +1,26 @@
 import { Link } from 'react-router-dom';
 import { StatusBadge } from '@/components/ui/StatusBadge';
+import { parseLocalDateOnly } from '@/lib/dateOnly';
 import type { SupervisorProjectSummary } from '../types';
 
 type SupervisorProjectCardProps = {
   project: SupervisorProjectSummary;
 };
 
-function parseLocalDate(value: string): Date {
-  const [year, month, day] = value.split('-').map((part) => Number(part));
-  return new Date(year, month - 1, day);
-}
-
 function deriveSignalSummary(project: SupervisorProjectSummary): string {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
   if (project.milestoneDate) {
-    const dueDate = parseLocalDate(project.milestoneDate);
-    const daysUntil = Math.round((dueDate.getTime() - today.getTime()) / (24 * 60 * 60 * 1000));
-    if (daysUntil < 0) {
-      const overdueDays = Math.abs(daysUntil);
-      return overdueDays === 1
-        ? 'Primary milestone is overdue by 1 day and needs recovery action.'
-        : `Primary milestone is overdue by ${overdueDays} days and needs recovery action.`;
+    const dueDate = parseLocalDateOnly(project.milestoneDate);
+    if (dueDate) {
+      const daysUntil = Math.round((dueDate.getTime() - today.getTime()) / (24 * 60 * 60 * 1000));
+      if (daysUntil < 0) {
+        const overdueDays = Math.abs(daysUntil);
+        return overdueDays === 1
+          ? 'Primary milestone is overdue by 1 day and needs recovery action.'
+          : `Primary milestone is overdue by ${overdueDays} days and needs recovery action.`;
+      }
     }
   }
 
@@ -34,10 +32,12 @@ function deriveSignalSummary(project: SupervisorProjectSummary): string {
   }
 
   if (project.milestoneDate) {
-    const dueDate = parseLocalDate(project.milestoneDate);
-    const daysUntil = Math.round((dueDate.getTime() - today.getTime()) / (24 * 60 * 60 * 1000));
-    if (daysUntil <= 7) {
-      return `Milestone due in ${daysUntil} day${daysUntil === 1 ? '' : 's'}. Validate readiness this week.`;
+    const dueDate = parseLocalDateOnly(project.milestoneDate);
+    if (dueDate) {
+      const daysUntil = Math.round((dueDate.getTime() - today.getTime()) / (24 * 60 * 60 * 1000));
+      if (daysUntil <= 7) {
+        return `Milestone due in ${daysUntil} day${daysUntil === 1 ? '' : 's'}. Validate readiness this week.`;
+      }
     }
   }
 

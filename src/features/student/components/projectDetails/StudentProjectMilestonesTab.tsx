@@ -1,5 +1,6 @@
 import { CalendarDays, Flag } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/StatusBadge';
+import { parseLocalDateOnly } from '@/lib/dateOnly';
 import type { StudentProjectDetailMilestone } from '../../types';
 import { getMilestoneStatusIcon, getMilestoneTone } from '../../utils/projectDetails/presentation';
 
@@ -45,7 +46,14 @@ export function StudentProjectMilestonesTab({ milestones }: StudentProjectMilest
                       </h4>
                       <div className="mt-1 flex items-center gap-2 text-xs font-bold text-slate-400">
                         <CalendarDays className="h-3.5 w-3.5" />
-                        <span>Due {dateFormatter.format(new Date(milestone.dueDate))}</span>
+                        {(() => {
+                          const dueDate = parseLocalDateOnly(milestone.dueDate);
+                          return (
+                            <span>
+                              Due {dueDate ? dateFormatter.format(dueDate) : milestone.dueDate}
+                            </span>
+                          );
+                        })()}
                       </div>
                     </div>
 

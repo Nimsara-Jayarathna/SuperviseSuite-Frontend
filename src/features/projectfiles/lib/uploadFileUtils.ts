@@ -78,7 +78,7 @@ export function resolveUploadContentType(file: File): string {
     return EXTENSION_TO_MIME[extension];
   }
 
-  return mimeType;
+  return 'application/octet-stream';
 }
 
 export async function uploadFileToPresignedUrl(

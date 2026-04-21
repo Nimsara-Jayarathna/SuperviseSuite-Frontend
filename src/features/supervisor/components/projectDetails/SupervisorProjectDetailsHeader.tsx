@@ -1,5 +1,6 @@
 import { CalendarDays, Clock3, Users } from 'lucide-react';
 import { Select } from '@/components/ui/Select';
+import { parseLocalDateOnly } from '@/lib/dateOnly';
 import { dateFormatter, LIFECYCLE_OPTIONS } from '../../projectDetails.shared';
 import type { SupervisorProjectLifecycle } from '../../types';
 
@@ -24,6 +25,8 @@ export function SupervisorProjectDetailsHeader({
   isUpdatingStatus,
   onQuickStatusChange,
 }: SupervisorProjectDetailsHeaderProps) {
+  const parsedMilestoneDate = milestoneDate ? parseLocalDateOnly(milestoneDate) : null;
+
   return (
     <>
       <section className="flex items-start justify-between gap-3">
@@ -77,7 +80,11 @@ export function SupervisorProjectDetailsHeader({
                 Milestone
               </span>
               <span className="font-semibold text-slate-700">
-                {milestoneDate ? dateFormatter.format(new Date(milestoneDate)) : 'Not set'}
+                {milestoneDate
+                  ? parsedMilestoneDate
+                    ? dateFormatter.format(parsedMilestoneDate)
+                    : milestoneDate
+                  : 'Not set'}
               </span>
             </div>
           </div>

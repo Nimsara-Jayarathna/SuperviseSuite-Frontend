@@ -41,6 +41,7 @@ type ProjectsPageViewProps<TItem> = {
   searchValue: string;
   onSearchChange: (nextValue: string) => void;
   searchPlaceholder: string;
+  searchAriaLabel?: string;
   action?: ProjectsPageAction;
   filter?: ProjectsPageFilter;
   isLoading: boolean;
@@ -61,6 +62,7 @@ export function ProjectsPageView<TItem>({
   searchValue,
   onSearchChange,
   searchPlaceholder,
+  searchAriaLabel,
   action,
   filter,
   isLoading,
@@ -107,6 +109,7 @@ export function ProjectsPageView<TItem>({
           value={searchValue}
           onChange={(event) => onSearchChange(event.target.value)}
           placeholder={searchPlaceholder}
+          aria-label={searchAriaLabel ?? searchPlaceholder}
           className="h-10 w-full rounded-2xl border border-border bg-white px-4 text-sm outline-none transition-colors focus:border-amber-300"
         />
         {filter ? (

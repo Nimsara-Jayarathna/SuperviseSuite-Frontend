@@ -15,6 +15,7 @@ import { buttonStyles } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { cn } from '@/lib/cn';
+import { parseLocalDateOnly } from '@/lib/dateOnly';
 import type { MeetingAnalyticsState } from '@/features/projects/hooks/useMeetingAnalytics';
 
 type StatusBadgeTone = 'student' | 'supervisor' | 'success' | 'warning' | 'danger' | 'neutral';
@@ -137,9 +138,9 @@ const RISK_LOW = 'LOW';
 const RISK_MEDIUM = 'MEDIUM';
 const RISK_HIGH = 'HIGH';
 
-function parseLocalDate(value: string): Date {
-  const [year, month, day] = value.split('-').map((part) => Number(part));
-  return new Date(year, month - 1, day);
+function dueDateTime(value: string): number {
+  const parsed = parseLocalDateOnly(value);
+  return parsed ? parsed.getTime() : Number.POSITIVE_INFINITY;
 }
 
 function leaderDisplayName(leader: OverviewLeader) {
@@ -254,7 +255,7 @@ function buildMilestoneSummary(project: ProjectOverviewProject): MilestoneSummar
     if (left.sequenceNo !== right.sequenceNo) {
       return left.sequenceNo - right.sequenceNo;
     }
-    return parseLocalDate(left.dueDate).getTime() - parseLocalDate(right.dueDate).getTime();
+    return dueDateTime(left.dueDate) - dueDateTime(right.dueDate);
   });
 
   const statusCounts: Record<MilestoneStatus, number> = {
@@ -283,32 +284,32 @@ function buildMilestoneSummary(project: ProjectOverviewProject): MilestoneSummar
       chronologyViolations += 1;
     }
 
-    const dueDate = parseLocalDate(milestone.dueDate);
+    const dueDate = parseLocalDateOnly(milestone.dueDate);
     const isOpen = OPEN_STATUSES.has(milestone.status);
-    const isOverdue = isOpen && (milestone.isOverdue === true || dueDate.getTime() < now.getTime());
+    const isOverdue =
+      isOpen &&
+      (milestone.isOverdue === true || (dueDate ? dueDate.getTime() < now.getTime() : false));
 
     if (isOverdue) {
       overdueOpen += 1;
-      if (
-        highestRiskMilestone === null ||
-        parseLocalDate(highestRiskMilestone.dueDate).getTime() > dueDate.getTime()
-      ) {
+      if (highestRiskMilestone === null || dueDateTime(highestRiskMilestone.dueDate) > dueDateTime(milestone.dueDate)) {
         highestRiskMilestone = milestone;
       }
     }
 
     if (
       isOpen &&
+      dueDate !== null &&
       dueDate.getTime() >= now.getTime() &&
       dueDate.getTime() <= dueSoonBoundary.getTime()
     ) {
       dueSoonComputed += 1;
     }
 
-    if (previousDueDate && dueDate.getTime() < previousDueDate.getTime()) {
+    if (previousDueDate && dueDate && dueDate.getTime() < previousDueDate.getTime()) {
       chronologyViolations += 1;
     }
-    previousDueDate = dueDate;
+    previousDueDate = dueDate ?? previousDueDate;
   }
 
   const nextUpcoming =
@@ -316,8 +317,8 @@ function buildMilestoneSummary(project: ProjectOverviewProject): MilestoneSummar
       if (!OPEN_STATUSES.has(milestone.status)) {
         return false;
       }
-      const dueDate = parseLocalDate(milestone.dueDate);
-      return dueDate.getTime() >= now.getTime();
+      const dueDate = parseLocalDateOnly(milestone.dueDate);
+      return dueDate ? dueDate.getTime() >= now.getTime() : false;
     }) ?? null;
 
   const latestCompleted =
@@ -790,7 +791,17 @@ export function ProjectOverviewContent({
                 >
                   <CalendarDays className="h-4 w-4" />
                   <span>
-                    Due {DATE_FORMATTER.format(parseLocalDate(primaryMilestone.milestone.dueDate))}
+                    {(() => {
+                      const dueDate = parseLocalDateOnly(primaryMilestone.milestone.dueDate);
+                      return (
+                        <>
+                          Due{' '}
+                          {dueDate
+                            ? DATE_FORMATTER.format(dueDate)
+                            : primaryMilestone.milestone.dueDate}
+                        </>
+                      );
+                    })()}
                   </span>
                 </div>
                 <p className="mt-4 text-sm leading-relaxed text-slate-500 line-clamp-3">

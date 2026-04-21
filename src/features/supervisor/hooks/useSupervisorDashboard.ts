@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { isApiException } from '@/services/apiClient';
 import type { ApiError } from '@/types';
 import { registerSessionCacheClearer } from '@/services/sessionCache';
@@ -15,6 +15,17 @@ type SupervisorDashboardState = {
 let cachedDashboard: SupervisorDashboard | null = null;
 let inFlightDashboardRequest: Promise<SupervisorDashboard> | null = null;
 
+const UNKNOWN_ERROR_BASE: ApiError = {
+  code: 'INTERNAL_ERROR',
+  message: 'Unable to load dashboard right now.',
+  details: [],
+  timestamp: new Date().toISOString(),
+  status: 0,
+  error: 'Unexpected Error',
+  path: '',
+  traceId: null,
+};
+
 export function invalidateSupervisorDashboardCache() {
   cachedDashboard = null;
   inFlightDashboardRequest = null;
@@ -29,48 +40,61 @@ export function useSupervisorDashboard() {
     error: null,
   });
 
-  async function loadDashboard(forceRefresh = false) {
+  const latestRequestId = useRef(0);
+
+  const loadDashboard = useCallback(async (forceRefresh = false) => {
     const requestSessionVersion = getSessionVersion();
+    const requestId = (latestRequestId.current += 1);
+
+    const normalizeDashboardError = (error: unknown): ApiError => {
+      if (isApiException(error)) {
+        return error.apiError;
+      }
+
+      return {
+        ...UNKNOWN_ERROR_BASE,
+        timestamp: new Date().toISOString(),
+      };
+    };
+
+    const applyDashboardSuccess = (dashboard: SupervisorDashboard) => {
+      setState({
+        dashboard,
+        isLoading: false,
+        error: null,
+      });
+    };
+
+    const applyDashboardError = (error: unknown) => {
+      setState({
+        dashboard: null,
+        isLoading: false,
+        error: normalizeDashboardError(error),
+      });
+    };
 
     if (!forceRefresh && cachedDashboard) {
       if (!isCurrentSession(requestSessionVersion)) {
         return;
       }
 
-      setState({
-        dashboard: cachedDashboard,
-        isLoading: false,
-        error: null,
-      });
+      applyDashboardSuccess(cachedDashboard);
       return;
     }
 
-    if (!forceRefresh && inFlightDashboardRequest) {
-      setState((current) => ({ ...current, isLoading: true, error: null }));
-      const dashboard = await inFlightDashboardRequest;
-      if (!isCurrentSession(requestSessionVersion)) {
-        if (import.meta.env.DEV) {
-          // eslint-disable-next-line no-console
-          console.info('[useSupervisorDashboard] discarded stale in-flight response');
-        }
-        return;
-      }
-
-      setState({
-        dashboard,
-        isLoading: false,
-        error: null,
-      });
-      return;
-    }
+    const request =
+      !forceRefresh && inFlightDashboardRequest
+        ? inFlightDashboardRequest
+        : (inFlightDashboardRequest = supervisorApi.getDashboard());
 
     setState((current) => ({ ...current, isLoading: true, error: null }));
 
     try {
-      inFlightDashboardRequest = supervisorApi.getDashboard();
-      const dashboard = await inFlightDashboardRequest;
-      cachedDashboard = dashboard;
-      inFlightDashboardRequest = null;
+      const dashboard = await request;
+      const shouldCommitCache = inFlightDashboardRequest === request;
+      if (shouldCommitCache) {
+        cachedDashboard = dashboard;
+      }
 
       if (!isCurrentSession(requestSessionVersion)) {
         if (import.meta.env.DEV) {
@@ -80,13 +104,10 @@ export function useSupervisorDashboard() {
         return;
       }
 
-      setState({
-        dashboard,
-        isLoading: false,
-        error: null,
-      });
+      if (latestRequestId.current === requestId) {
+        applyDashboardSuccess(dashboard);
+      }
     } catch (error) {
-      inFlightDashboardRequest = null;
       if (!isCurrentSession(requestSessionVersion)) {
         if (import.meta.env.DEV) {
           // eslint-disable-next-line no-console
@@ -95,28 +116,19 @@ export function useSupervisorDashboard() {
         return;
       }
 
-      setState({
-        dashboard: null,
-        isLoading: false,
-        error: isApiException(error)
-          ? error.apiError
-          : {
-              code: 'INTERNAL_ERROR',
-              message: 'Unable to load dashboard right now.',
-              details: [],
-              timestamp: new Date().toISOString(),
-              status: 0,
-              error: 'Unexpected Error',
-              path: '',
-              traceId: null,
-            },
-      });
+      if (latestRequestId.current === requestId) {
+        applyDashboardError(error);
+      }
+    } finally {
+      if (inFlightDashboardRequest === request) {
+        inFlightDashboardRequest = null;
+      }
     }
-  }
+  }, []);
 
   useEffect(() => {
     void loadDashboard();
-  }, []);
+  }, [loadDashboard]);
 
   return {
     dashboard: state.dashboard,

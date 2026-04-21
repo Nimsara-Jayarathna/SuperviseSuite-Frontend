@@ -5,11 +5,7 @@ import {
   UPCOMING_LIST_LIMIT,
   UPCOMING_WINDOW_DAYS,
 } from './constants';
-
-export function parseLocalDate(value: string): Date {
-  const [year, month, day] = value.split('-').map((part) => Number(part));
-  return new Date(year, month - 1, day);
-}
+import { parseLocalDateOnly } from '@/lib/dateOnly';
 
 export function startOfDay(date: Date): Date {
   const copy = new Date(date);
@@ -19,8 +15,8 @@ export function startOfDay(date: Date): Date {
 
 export function milestoneDeltaDays(value: string | null, today: Date): number | null {
   if (!value) return null;
-  const parsed = parseLocalDate(value);
-  if (Number.isNaN(parsed.getTime())) return null;
+  const parsed = parseLocalDateOnly(value);
+  if (!parsed) return null;
   return Math.round((parsed.getTime() - today.getTime()) / DAY_IN_MS);
 }
 

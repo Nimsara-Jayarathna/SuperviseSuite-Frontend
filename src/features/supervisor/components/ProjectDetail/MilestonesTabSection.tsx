@@ -14,6 +14,7 @@ import { buttonStyles } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { calculateDropdownLayout } from '@/lib/dropdownSizing';
+import { parseLocalDateOnly } from '@/lib/dateOnly';
 import { FIELD_LIMITS, dateFormatter } from '../../projectDetails.shared';
 import {
   getTodayLocalDateString,
@@ -405,7 +406,14 @@ export function MilestonesTabSection({ project, milestones }: MilestonesTabSecti
                               </h4>
                               <div className="mt-1 flex items-center gap-2 text-xs font-bold text-slate-400">
                                 <CalendarDays className="h-3.5 w-3.5" />
-                                <span>Due {dateFormatter.format(new Date(milestone.dueDate))}</span>
+                                {(() => {
+                                  const dueDate = parseLocalDateOnly(milestone.dueDate);
+                                  return (
+                                    <span>
+                                      Due {dueDate ? dateFormatter.format(dueDate) : milestone.dueDate}
+                                    </span>
+                                  );
+                                })()}
                                 {milestone.isOverdue ? (
                                   <span className="rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-[10px] uppercase tracking-wide text-rose-700">
                                     {milestone.daysOverdue && milestone.daysOverdue > 0
