@@ -3,7 +3,11 @@ import { createPortal } from 'react-dom';
 import { RequestStateModal } from '@/components/ui/RequestStateModal';
 import { Button } from '@/components/ui/Button';
 import { AlertCircle, X } from 'lucide-react';
-import { bytesToHumanSize, normalizeAllowedTypes } from '../lib/uploadFileUtils';
+import {
+  bytesToHumanSize,
+  normalizeAllowedTypes,
+  resolveExpectedExtension,
+} from '../lib/uploadFileUtils';
 import type {
   ConfirmUploadRequest,
   ProjectFile,
@@ -54,6 +58,13 @@ export function UploadFileModal({
     maxFileNameLength: resolvedMaxFileNameLength,
     allowedTypesSet,
   });
+  const uiExpectedExtension = useMemo(() => {
+    if (!state.selectedFile) return null;
+    return resolveExpectedExtension(state.selectedFile, allowedTypesSet);
+  }, [allowedTypesSet, state.selectedFile]);
+  const maxNameInputLength = uiExpectedExtension
+    ? Math.max(0, resolvedMaxFileNameLength - (uiExpectedExtension.length + 1))
+    : resolvedMaxFileNameLength;
 
   const isUploadDisabled =
     state.isSubmitting || !state.selectedFile || state.fileNameDraft.trim().length === 0;
@@ -137,14 +148,14 @@ export function UploadFileModal({
                   File name
                 </label>
                 <span className="text-[11px] text-slate-500">
-                  {state.fileNameDraft.length}/{resolvedMaxFileNameLength}
+                  {state.fileNameDraft.length}/{maxNameInputLength}
                 </span>
               </div>
               <input
                 type="text"
                 value={state.fileNameDraft}
                 onChange={(event) => state.onFileNameDraftChange(event.target.value)}
-                maxLength={resolvedMaxFileNameLength}
+                maxLength={maxNameInputLength}
                 disabled={!state.selectedFile || state.isSubmitting}
                 placeholder="Select a file first"
                 className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition-colors focus:border-slate-400"
