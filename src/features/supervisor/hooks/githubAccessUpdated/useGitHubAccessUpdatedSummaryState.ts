@@ -23,10 +23,7 @@ export function useGitHubAccessUpdatedSummaryState({
   showFailedStatus,
   api,
 }: UseGitHubAccessUpdatedSummaryStateParams) {
-  const {
-    getPublicGitHubAccessUpdatedSummary,
-    getProjectGitHubAccessUpdatedSummary,
-  } = api;
+  const { getPublicGitHubAccessUpdatedSummary, getProjectGitHubAccessUpdatedSummary } = api;
   const [summary, setSummary] = useState<GitHubAccessUpdatedSummary | null>(null);
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [title, setTitle] = useState('Finalizing GitHub access update');
