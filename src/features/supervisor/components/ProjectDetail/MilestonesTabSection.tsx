@@ -75,6 +75,7 @@ export function MilestonesTabSection({ project, milestones }: MilestonesTabSecti
     top: number;
     left: number;
     width: number;
+    maxHeight: number;
   } | null>(null);
 
   useEffect(() => {
@@ -114,6 +115,7 @@ export function MilestonesTabSection({ project, milestones }: MilestonesTabSecti
               top: nextLayout.top,
               left: nextLayout.left,
               width: nextLayout.width,
+              maxHeight: nextLayout.maxHeight,
             }
           : current,
       );
@@ -122,13 +124,18 @@ export function MilestonesTabSection({ project, milestones }: MilestonesTabSecti
     document.addEventListener('mousedown', onDocMouseDown);
     document.addEventListener('keydown', onDocKeyDown);
     window.addEventListener('resize', onResize);
-    window.addEventListener('scroll', closeMenu, true);
+    const onAnyScroll = (event: Event) => {
+      const target = event.target as Node | null;
+      if (target && quickStatusMenuRef.current?.contains(target)) return;
+      closeMenu();
+    };
+    window.addEventListener('scroll', onAnyScroll, true);
 
     return () => {
       document.removeEventListener('mousedown', onDocMouseDown);
       document.removeEventListener('keydown', onDocKeyDown);
       window.removeEventListener('resize', onResize);
-      window.removeEventListener('scroll', closeMenu, true);
+      window.removeEventListener('scroll', onAnyScroll, true);
     };
   }, [project.milestones, quickStatusMenu, today]);
 
@@ -541,12 +548,13 @@ export function MilestonesTabSection({ project, milestones }: MilestonesTabSecti
         createPortal(
           <ul
             ref={quickStatusMenuRef}
-            className="overflow-hidden rounded-2xl border border-border bg-white shadow-lg"
+            className="overflow-auto rounded-2xl border border-border bg-white shadow-lg"
             style={{
               position: 'absolute',
               top: quickStatusMenu.top,
               left: quickStatusMenu.left,
               width: quickStatusMenu.width,
+              maxHeight: quickStatusMenu.maxHeight,
               zIndex: 9999,
             }}
             role="listbox"
