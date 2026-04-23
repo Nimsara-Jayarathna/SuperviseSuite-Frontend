@@ -1,12 +1,14 @@
 import type { ReactNode, RefObject } from 'react';
 import { useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { cn } from '@/lib/cn';
 
 type ModalShellProps = {
   isOpen: boolean;
   children: ReactNode;
 
   containerClassName: string;
+  dialogClassName?: string;
 
   showBackdrop?: boolean;
   backdropClassName?: string;
@@ -30,6 +32,7 @@ export function ModalShell({
   isOpen,
   children,
   containerClassName,
+  dialogClassName,
   showBackdrop = true,
   backdropClassName,
   onBackdropClick,
@@ -88,6 +91,7 @@ export function ModalShell({
         <div className={backdropClassName} onClick={onBackdropClick} aria-hidden="true" />
       ) : null}
       <div
+        className={cn('flex w-full justify-center', dialogClassName)}
         role={role}
         aria-modal={ariaModal ? 'true' : undefined}
         aria-label={ariaLabel}
