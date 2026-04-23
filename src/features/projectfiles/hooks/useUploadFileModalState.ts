@@ -6,7 +6,10 @@ import type {
   UploadUrlResponse,
 } from '../types';
 import {
+  baseNameFromFileName,
+  enforceExpectedExtension,
   normalizeFileNameDraft,
+  resolveExpectedExtension,
   resolveUploadContentType,
   uploadFileToPresignedUrl,
   validateSelectedFile,
@@ -43,6 +46,7 @@ export function useUploadFileModalState({
   const hiddenInputRef = useRef<HTMLInputElement | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [fileNameDraft, setFileNameDraft] = useState('');
+  const [expectedExtension, setExpectedExtension] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDragActive, setIsDragActive] = useState(false);
@@ -57,6 +61,7 @@ export function useUploadFileModalState({
   function resetModalState() {
     setSelectedFile(null);
     setFileNameDraft('');
+    setExpectedExtension(null);
     setError(null);
     setIsSubmitting(false);
     setIsDragActive(false);
@@ -86,7 +91,14 @@ export function useUploadFileModalState({
     }
 
     setSelectedFile(file);
-    setFileNameDraft(normalizeFileNameDraft(file.name, maxFileNameLength));
+    const resolvedExpectedExtension = resolveExpectedExtension(file, allowedTypesSet);
+    setExpectedExtension(resolvedExpectedExtension);
+
+    const maxBaseNameLength =
+      resolvedExpectedExtension !== null
+        ? Math.max(0, maxFileNameLength - (resolvedExpectedExtension.length + 1))
+        : maxFileNameLength;
+    setFileNameDraft(normalizeFileNameDraft(baseNameFromFileName(file.name), maxBaseNameLength));
     setError(null);
   }
 
@@ -105,7 +117,11 @@ export function useUploadFileModalState({
       return;
     }
 
-    const finalFileName = fileNameDraft.trim();
+    const baseDraft = fileNameDraft.trim();
+    const finalFileName =
+      expectedExtension !== null
+        ? enforceExpectedExtension(baseDraft, expectedExtension, maxFileNameLength)
+        : baseDraft;
     if (finalFileName.length === 0) {
       setError('File name is required.');
       return;
@@ -187,7 +203,11 @@ export function useUploadFileModalState({
   }
 
   function onFileNameDraftChange(nextValue: string) {
-    setFileNameDraft(normalizeFileNameDraft(nextValue, maxFileNameLength));
+    const maxBaseNameLength =
+      expectedExtension !== null
+        ? Math.max(0, maxFileNameLength - (expectedExtension.length + 1))
+        : maxFileNameLength;
+    setFileNameDraft(normalizeFileNameDraft(nextValue, maxBaseNameLength));
   }
 
   function onFileInputChange(event: React.ChangeEvent<HTMLInputElement>) {
@@ -209,6 +229,7 @@ export function useUploadFileModalState({
     hiddenInputRef,
     selectedFile,
     fileNameDraft,
+    expectedExtension,
     error,
     isSubmitting,
     isDragActive,

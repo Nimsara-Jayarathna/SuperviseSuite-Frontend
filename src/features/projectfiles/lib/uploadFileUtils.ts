@@ -7,12 +7,66 @@ const EXTENSION_TO_MIME: Record<string, string> = {
   zip: 'application/zip',
 };
 
+const MIME_TO_EXTENSION: Record<string, string> = Object.entries(EXTENSION_TO_MIME).reduce(
+  (acc, [extension, mime]) => {
+    acc[mime] = extension;
+    return acc;
+  },
+  {} as Record<string, string>,
+);
+
 export function extensionFromFileName(fileName: string): string | null {
   const dotIndex = fileName.lastIndexOf('.');
   if (dotIndex < 0 || dotIndex === fileName.length - 1) {
     return null;
   }
   return fileName.slice(dotIndex + 1).toLowerCase();
+}
+
+function stripExtension(draft: string): string {
+  const trimmed = draft.trim();
+  if (trimmed.length === 0) return '';
+  if (trimmed.endsWith('.')) return trimmed.slice(0, -1);
+
+  const dotIndex = trimmed.lastIndexOf('.');
+  if (dotIndex < 0) return trimmed;
+  if (dotIndex === 0) return '';
+
+  return trimmed.slice(0, dotIndex);
+}
+
+export function baseNameFromFileName(fileName: string): string {
+  return stripExtension(fileName);
+}
+
+export function resolveExpectedExtension(file: File, allowedTypes: Set<string>): string | null {
+  const byName = extensionFromFileName(file.name);
+  if (byName && allowedTypes.has(byName)) {
+    return byName;
+  }
+
+  const normalizedMimeType = file.type.trim().toLowerCase();
+  const byMime = normalizedMimeType.length > 0 ? MIME_TO_EXTENSION[normalizedMimeType] : undefined;
+  if (byMime && allowedTypes.has(byMime)) {
+    return byMime;
+  }
+
+  return null;
+}
+
+export function enforceExpectedExtension(
+  draft: string,
+  expectedExtension: string,
+  maxFileNameLength: number,
+): string {
+  const ext = expectedExtension.trim().toLowerCase();
+  const suffix = `.${ext}`;
+
+  const baseRaw = stripExtension(draft);
+  const maxBaseLen = Math.max(0, maxFileNameLength - suffix.length);
+  const base = baseRaw.slice(0, maxBaseLen);
+
+  return `${base}${suffix}`;
 }
 
 export function bytesToHumanSize(bytes: number): string {
