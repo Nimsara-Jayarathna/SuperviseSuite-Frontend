@@ -81,6 +81,14 @@ export function useSupervisorProjectGitHubDashboard({
   const activeRepositorySyncStatus = normalizeSyncStatus(activeRepository?.syncStatus);
 
   useEffect(() => {
+    if (enabledRepositories.length === 0) {
+      setSelectedRepoId(null);
+      setGithubView(null);
+      setIsRepoSelectorOpen(false);
+    }
+  }, [enabledRepositories.length]);
+
+  useEffect(() => {
     if (!projectId) return;
     if (activeRepositorySyncStatus !== 'IN_PROGRESS' && activeRepositorySyncStatus !== 'PENDING') {
       return;

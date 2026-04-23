@@ -300,7 +300,10 @@ export function ProjectDetailsPage() {
       {activeTab === 'integrations' ? (
         <IntegrationsTabSection
           project={project}
-          onProjectUpdate={actions.handleProjectUpdate}
+          onProjectUpdate={(updatedProject) => {
+            actions.handleProjectUpdate(updatedProject);
+            void projectRepositoriesState.reload();
+          }}
           onConnectJira={jiraFlow.handleConnectJira}
           onDisconnectJira={jiraFlow.handleDisconnectJira}
           isConnectingJira={jiraFlow.isConnectingJira}
