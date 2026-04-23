@@ -23,6 +23,7 @@ type RefreshModalControls = {
 
 type UseSupervisorProjectGitHubDashboardParams = {
   projectId: string | undefined;
+  isActive: boolean;
   projectGithubView: ProjectGitHubActivity | null;
   githubRepositories: ProjectGitHubRepositories | null | undefined;
   reloadRepositories: () => Promise<ProjectGitHubRepositories | null>;
@@ -48,6 +49,7 @@ type UseSupervisorProjectGitHubDashboardResult = {
 
 export function useSupervisorProjectGitHubDashboard({
   projectId,
+  isActive,
   projectGithubView,
   githubRepositories,
   reloadRepositories,
@@ -90,6 +92,7 @@ export function useSupervisorProjectGitHubDashboard({
 
   useEffect(() => {
     if (!projectId) return;
+    if (!isActive) return;
     if (activeRepositorySyncStatus !== 'IN_PROGRESS' && activeRepositorySyncStatus !== 'PENDING') {
       return;
     }
@@ -101,7 +104,7 @@ export function useSupervisorProjectGitHubDashboard({
     return () => {
       window.clearInterval(intervalId);
     };
-  }, [activeRepositorySyncStatus, projectId, reloadRepositories]);
+  }, [activeRepositorySyncStatus, isActive, projectId, reloadRepositories]);
 
   useEffect(() => {
     setGithubView(projectGithubView ?? null);

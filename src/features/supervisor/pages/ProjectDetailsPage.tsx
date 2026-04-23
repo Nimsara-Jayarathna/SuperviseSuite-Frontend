@@ -60,6 +60,7 @@ export function ProjectDetailsPage() {
 
   const githubDashboard = useSupervisorProjectGitHubDashboard({
     projectId,
+    isActive: activeTab === 'github',
     projectGithubView: project?.github ?? null,
     githubRepositories: projectRepositoriesState.data,
     reloadRepositories: projectRepositoriesState.reload,
