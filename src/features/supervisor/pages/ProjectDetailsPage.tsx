@@ -49,7 +49,7 @@ export function ProjectDetailsPage() {
     },
   );
 
-  const { data: projectRepositories } = useProjectRepositories(projectId);
+  const projectRepositoriesState = useProjectRepositories(projectId);
 
   const githubSetupRedirect = useSupervisorProjectGitHubSetupRedirect({
     projectId,
@@ -61,7 +61,8 @@ export function ProjectDetailsPage() {
   const githubDashboard = useSupervisorProjectGitHubDashboard({
     projectId,
     projectGithubView: project?.github ?? null,
-    githubRepositories: projectRepositories,
+    githubRepositories: projectRepositoriesState.data,
+    reloadRepositories: projectRepositoriesState.reload,
     reloadProject: reload,
     refreshModal: {
       showLoading: refreshRequestModal.showLoading,
