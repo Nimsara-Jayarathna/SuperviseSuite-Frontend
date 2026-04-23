@@ -1,10 +1,19 @@
 const VIEWPORT_HORIZONTAL_PADDING = 8;
+const VIEWPORT_VERTICAL_PADDING = 8;
 const MENU_HORIZONTAL_PADDING = 32; // px-4 on both sides
 const CHECKMARK_SPACE = 24;
 const SAFETY_BUFFER = 12;
+const ESTIMATED_ITEM_HEIGHT = 40;
+const ESTIMATED_MENU_PADDING = 8;
 
-function getContextFont(element: HTMLElement): string {
-  const styles = window.getComputedStyle(element);
+function getContextFont(element: Element | null | undefined): string {
+  const fallback = document.body ?? document.documentElement;
+  const resolvedEl = element instanceof Element ? element : fallback;
+  if (!resolvedEl) {
+    return 'normal normal 400 14px/20px system-ui, sans-serif';
+  }
+
+  const styles = window.getComputedStyle(resolvedEl);
   return [
     styles.fontStyle,
     styles.fontVariant,
@@ -26,7 +35,7 @@ function measureLongestLabelWidth(labels: string[], font: string): number {
 export function calculateDropdownLayout(params: {
   triggerRect: DOMRect;
   labels: string[];
-  fontSourceEl: HTMLElement;
+  fontSourceEl: Element | null | undefined;
 }) {
   const { triggerRect, labels, fontSourceEl } = params;
   const minWidth = triggerRect.width;
@@ -42,7 +51,23 @@ export function calculateDropdownLayout(params: {
   const minLeft = window.scrollX + VIEWPORT_HORIZONTAL_PADDING;
   const maxLeft = window.scrollX + window.innerWidth - VIEWPORT_HORIZONTAL_PADDING - width;
   const left = Math.min(Math.max(triggerRect.left + window.scrollX, minLeft), maxLeft);
-  const top = triggerRect.bottom + window.scrollY;
 
-  return { top, left, width };
+  const estimatedMenuHeight =
+    labels.length * ESTIMATED_ITEM_HEIGHT + ESTIMATED_MENU_PADDING * 2 + SAFETY_BUFFER;
+  const maxHeightBelow = Math.max(
+    0,
+    window.innerHeight - triggerRect.bottom - VIEWPORT_VERTICAL_PADDING,
+  );
+  const maxHeightAbove = Math.max(0, triggerRect.top - VIEWPORT_VERTICAL_PADDING);
+
+  const shouldOpenUp =
+    maxHeightBelow < Math.min(estimatedMenuHeight, 240) && maxHeightAbove > maxHeightBelow;
+  const maxHeight = shouldOpenUp ? maxHeightAbove : maxHeightBelow;
+  const renderedHeight = Math.min(estimatedMenuHeight, maxHeight);
+
+  const top = shouldOpenUp
+    ? triggerRect.top + window.scrollY - renderedHeight
+    : triggerRect.bottom + window.scrollY;
+
+  return { top, left, width, maxHeight };
 }

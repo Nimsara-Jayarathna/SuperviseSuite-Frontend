@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { normalizeSyncStatus } from '@/lib/syncStatus';
 import type { CanonicalSyncStatus } from '@/lib/syncStatus';
 import type {
@@ -23,8 +23,10 @@ type RefreshModalControls = {
 
 type UseSupervisorProjectGitHubDashboardParams = {
   projectId: string | undefined;
+  isActive: boolean;
   projectGithubView: ProjectGitHubActivity | null;
   githubRepositories: ProjectGitHubRepositories | null | undefined;
+  reloadRepositories: () => Promise<ProjectGitHubRepositories | null>;
   reloadProject: () => Promise<void>;
   refreshModal: RefreshModalControls;
 };
@@ -47,8 +49,10 @@ type UseSupervisorProjectGitHubDashboardResult = {
 
 export function useSupervisorProjectGitHubDashboard({
   projectId,
+  isActive,
   projectGithubView,
   githubRepositories,
+  reloadRepositories,
   reloadProject,
   refreshModal,
 }: UseSupervisorProjectGitHubDashboardParams): UseSupervisorProjectGitHubDashboardResult {
@@ -57,6 +61,14 @@ export function useSupervisorProjectGitHubDashboard({
   const [selectedRepoId, setSelectedRepoId] = useState<string | null>(null);
   const [githubView, setGithubView] = useState<ProjectGitHubActivity | null>(projectGithubView);
   const [isRepoSelectorOpen, setIsRepoSelectorOpen] = useState(false);
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   const enabledRepositories = useMemo(
     () => githubRepositories?.repositories?.filter((repository) => repository.enabled) ?? [],
@@ -69,6 +81,30 @@ export function useSupervisorProjectGitHubDashboard({
   );
 
   const activeRepositorySyncStatus = normalizeSyncStatus(activeRepository?.syncStatus);
+
+  useEffect(() => {
+    if (enabledRepositories.length === 0) {
+      setSelectedRepoId(null);
+      setGithubView(null);
+      setIsRepoSelectorOpen(false);
+    }
+  }, [enabledRepositories.length]);
+
+  useEffect(() => {
+    if (!projectId) return;
+    if (!isActive) return;
+    if (activeRepositorySyncStatus !== 'IN_PROGRESS' && activeRepositorySyncStatus !== 'PENDING') {
+      return;
+    }
+
+    const intervalId = window.setInterval(() => {
+      void reloadRepositories();
+    }, 3000);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [activeRepositorySyncStatus, isActive, projectId, reloadRepositories]);
 
   useEffect(() => {
     setGithubView(projectGithubView ?? null);
@@ -139,18 +175,55 @@ export function useSupervisorProjectGitHubDashboard({
 
     try {
       await supervisorApi.refreshProjectGitHub(projectId);
-      await reloadProject();
-      if (selectedRepoId) {
+      await Promise.all([reloadProject(), reloadRepositories()]);
+
+      const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+      const shouldPollStatus = Boolean(selectedRepoId);
+      if (shouldPollStatus && selectedRepoId) {
+        const maxAttempts = 30;
+        let finalStatus: CanonicalSyncStatus = 'UNKNOWN';
+        for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+          const latestRepos = await reloadRepositories();
+          const active =
+            latestRepos?.repositories?.find((repo) => repo.id === selectedRepoId) ?? null;
+          finalStatus = normalizeSyncStatus(active?.syncStatus);
+          if (finalStatus !== 'IN_PROGRESS' && finalStatus !== 'PENDING') {
+            break;
+          }
+          await delay(2000);
+        }
+
         const refreshedView = await supervisorApi.getProjectGitHubDashboard(
           projectId,
           true,
           selectedRepoId,
         );
-        setGithubView(refreshedView);
+        if (isMountedRef.current) {
+          setGithubView(refreshedView);
+        }
+
+        if (finalStatus === 'SUCCESS') {
+          refreshModal.showSuccess({
+            title: 'GitHub data refreshed',
+            message: 'Latest GitHub data was synced and loaded successfully.',
+          });
+        } else if (finalStatus === 'FAILED') {
+          refreshModal.showError({
+            title: 'GitHub sync failed',
+            message: 'GitHub sync failed. Try refreshing again in a moment.',
+          });
+        } else {
+          refreshModal.showSuccess({
+            title: 'GitHub refresh started',
+            message: 'Repository sync is running and this page will update automatically.',
+          });
+        }
+        return;
       }
+
       refreshModal.showSuccess({
-        title: 'GitHub data refreshed',
-        message: 'Latest GitHub data was synced and loaded successfully.',
+        title: 'GitHub refresh started',
+        message: 'Repository sync is running and this page will update automatically.',
       });
     } catch (error) {
       const message = isApiException(error)
@@ -163,7 +236,7 @@ export function useSupervisorProjectGitHubDashboard({
     } finally {
       setIsRefreshingGitHub(false);
     }
-  }, [projectId, refreshModal, reloadProject, selectedRepoId]);
+  }, [projectId, refreshModal, reloadProject, reloadRepositories, selectedRepoId]);
 
   return {
     enabledRepositories,

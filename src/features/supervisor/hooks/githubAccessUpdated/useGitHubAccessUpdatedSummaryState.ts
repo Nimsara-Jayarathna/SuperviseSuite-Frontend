@@ -23,6 +23,7 @@ export function useGitHubAccessUpdatedSummaryState({
   showFailedStatus,
   api,
 }: UseGitHubAccessUpdatedSummaryStateParams) {
+  const { getPublicGitHubAccessUpdatedSummary, getProjectGitHubAccessUpdatedSummary } = api;
   const [summary, setSummary] = useState<GitHubAccessUpdatedSummary | null>(null);
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [title, setTitle] = useState('Finalizing GitHub access update');
@@ -45,8 +46,8 @@ export function useGitHubAccessUpdatedSummaryState({
 
     try {
       const data = token
-        ? await api.getPublicGitHubAccessUpdatedSummary(token)
-        : await api.getProjectGitHubAccessUpdatedSummary(projectId);
+        ? await getPublicGitHubAccessUpdatedSummary(token)
+        : await getProjectGitHubAccessUpdatedSummary(projectId);
       setSummary(data);
       setStatus('success');
       setTitle('GitHub access updated successfully');
@@ -62,7 +63,7 @@ export function useGitHubAccessUpdatedSummaryState({
       setTitle('GitHub access update failed');
       setMessage(nextMessage || INVALID_LINK_MESSAGE);
     }
-  }, [api, projectId, token]);
+  }, [getProjectGitHubAccessUpdatedSummary, getPublicGitHubAccessUpdatedSummary, projectId, token]);
 
   useEffect(() => {
     if (showFailedStatus && !token && !projectId) {

@@ -40,7 +40,7 @@ export function Select(props: SelectProps) {
   const selectRef = useRef<HTMLSelectElement>(null);
   const menuRef = useRef<HTMLUListElement>(null);
   const [isOpen, setIsOpen] = useState(false);
-  const [menuPos, setMenuPos] = useState({ top: 0, left: 0, width: 0 });
+  const [menuPos, setMenuPos] = useState({ top: 0, left: 0, width: 0, maxHeight: 0 });
 
   const options = useMemo<OptionItem[]>(() => {
     return Children.toArray(children)
@@ -141,13 +141,18 @@ export function Select(props: SelectProps) {
     };
 
     window.addEventListener('resize', onResize);
-    window.addEventListener('scroll', closeMenu, true);
+    const onAnyScroll = (event: Event) => {
+      const target = event.target as Node | null;
+      if (target && menuRef.current?.contains(target)) return;
+      closeMenu();
+    };
+    window.addEventListener('scroll', onAnyScroll, true);
     document.addEventListener('mousedown', onDocMouseDown);
     document.addEventListener('keydown', onDocKeyDown);
 
     return () => {
       window.removeEventListener('resize', onResize);
-      window.removeEventListener('scroll', closeMenu, true);
+      window.removeEventListener('scroll', onAnyScroll, true);
       document.removeEventListener('mousedown', onDocMouseDown);
       document.removeEventListener('keydown', onDocKeyDown);
     };
@@ -169,12 +174,13 @@ export function Select(props: SelectProps) {
         createPortal(
           <ul
             ref={menuRef}
-            className="overflow-hidden rounded-2xl border border-border bg-white shadow-lg"
+            className="overflow-auto rounded-2xl border border-border bg-white shadow-lg"
             style={{
               position: 'absolute',
               top: menuPos.top,
               left: menuPos.left,
               width: menuPos.width,
+              maxHeight: menuPos.maxHeight,
               zIndex: 9999,
             }}
             role="listbox"

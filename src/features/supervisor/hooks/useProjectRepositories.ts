@@ -8,7 +8,7 @@ type UseProjectRepositoriesState = {
   data: ProjectGitHubRepositories | null;
   isLoading: boolean;
   error: ApiError | null;
-  reload: () => Promise<void>;
+  reload: () => Promise<ProjectGitHubRepositories | null>;
 };
 
 export function useProjectRepositories(projectId: string | undefined): UseProjectRepositoriesState {
@@ -21,7 +21,7 @@ export function useProjectRepositories(projectId: string | undefined): UseProjec
       setData(null);
       setError(null);
       setIsLoading(false);
-      return;
+      return null;
     }
 
     setIsLoading(true);
@@ -29,7 +29,9 @@ export function useProjectRepositories(projectId: string | undefined): UseProjec
 
     try {
       const project = await supervisorApi.getProjectById(projectId);
-      setData(project.githubRepositories ?? null);
+      const next = project.githubRepositories ?? null;
+      setData(next);
+      return next;
     } catch (loadError) {
       setData(null);
       setError(
@@ -46,6 +48,7 @@ export function useProjectRepositories(projectId: string | undefined): UseProjec
               details: [],
             },
       );
+      return null;
     } finally {
       setIsLoading(false);
     }
