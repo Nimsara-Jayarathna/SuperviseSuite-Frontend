@@ -1,5 +1,6 @@
 import { BlockingState } from '@/components/ui/BlockingState';
 import { Button } from '@/components/ui/Button';
+import { Select } from '@/components/ui/Select';
 import type { SupervisorStudentSearchResult } from '../../types';
 
 type StudentsStepSectionProps = {
@@ -142,7 +143,7 @@ export function StudentsStepSection({
                 <span className="mb-2 block text-sm font-medium text-foreground">
                   Project leader (optional)
                 </span>
-                <select
+                <Select
                   value={selectedLeaderId ?? ''}
                   onChange={(event) => {
                     const nextValue = event.target.value;
@@ -157,7 +158,7 @@ export function StudentsStepSection({
                       {buildStudentLabel(student)} ({student.registrationNumber})
                     </option>
                   ))}
-                </select>
+                </Select>
                 <p className="mt-2 text-xs text-muted-foreground">
                   You can assign or change the leader later from Project Details.
                 </p>

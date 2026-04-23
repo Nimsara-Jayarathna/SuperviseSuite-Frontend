@@ -31,6 +31,14 @@ Student pages currently use:
 - `GET /api/student/projects/{projectId}/jira/sprint-progress`
 - `GET /api/student/projects/{projectId}/jira/workload`
 - `GET /api/student/projects/{projectId}/jira/hierarchy`
+- `GET /api/student/projects/{projectId}/meeting-channels`
+- `POST /api/student/projects/{projectId}/meeting-channels`
+- `GET /api/student/projects/{projectId}/meeting-records`
+- `POST /api/student/projects/{projectId}/meeting-records`
+- `GET /api/student/projects/{projectId}/files`
+- `POST /api/student/projects/{projectId}/files/upload-url`
+- `POST /api/student/projects/{projectId}/files/confirm`
+- `GET /api/student/projects/{projectId}/files/{fileId}/download-url`
 
 ---
 
@@ -45,6 +53,19 @@ Student pages currently use:
 | `src/features/student/components/StudentProjectDetailsSkeleton.tsx` | Detail loading placeholder |
 | `src/features/student/hooks/useStudentProjects.ts` | List hook |
 | `src/features/student/hooks/useStudentProject.ts` | Detail hook |
+| `src/features/student/components/StudentMeetingsTabSection.tsx` | Meetings inner tab shell (`Channels`/`Records`) with Jira-style pill navigation |
+| `src/features/meetings/components/StudentMeetingChannelsSection.tsx` | Student meeting channels panel with add/list flow |
+| `src/features/meetings/hooks/useStudentMeetingChannelsState.ts` | Student meetings state orchestration (load/add/refresh modal lifecycle) |
+| `src/features/meetings/components/MeetingChannelsTable.tsx` | Shared table for channel listing/status display |
+| `src/features/meetings/components/MeetingChannelFormModal.tsx` | Shared meeting channel create/edit modal form |
+| `src/features/meetings/components/StudentMeetingRecordsSection.tsx` | Student meeting records panel with add/list/view flow |
+| `src/features/meetings/hooks/useStudentMeetingRecordsState.ts` | Student meeting records state orchestration (load/add/refresh modal lifecycle) |
+| `src/features/meetings/components/MeetingRecordsTable.tsx` | Shared table for record listing/status display |
+| `src/features/meetings/components/MeetingRecordFormModal.tsx` | Shared meeting record create/edit modal form |
+| `src/features/meetings/components/MeetingRecordDetailsModal.tsx` | Shared meeting record details modal |
+| `src/features/student/components/StudentFilesTabSection.tsx` | Student files tab for upload/list/download (no delete) |
+| `src/features/projectfiles/hooks/useStudentProjectFiles.ts` | Files tab state: lazy load, seed from project detail, upload/download actions |
+| `src/features/projectfiles/components/UploadFileModal.tsx` | Shared upload modal with FE validation + request-state lifecycle |
 | `src/features/student/api/studentApi.ts` | Student API client |
 | `src/features/student/types.ts` | Student list/detail API models |
 
@@ -89,8 +110,10 @@ Student pages currently use:
 - `Overview`
 - `Team`
 - `Milestones`
+- `Files`
 - `GitHub`
 - `Jira`
+- `Meetings`
 
 ### Header chips
 
@@ -117,6 +140,33 @@ Student pages currently use:
   - Fetches data via `GET /api/student/projects/{projectId}/jira/*` endpoints.
   - No manual refresh or connect/disconnect actions are exposed for students.
   - When Jira is not connected, displays a read-only empty state.
+- Meetings:
+  - Inner sub-tabs use Jira-style pill navigation with `role="tablist"`:
+    - `Channels`
+    - `Records`
+  - `Channels` fetches and renders `GET /api/student/projects/{projectId}/meeting-channels`.
+  - Students can submit channels via `POST /api/student/projects/{projectId}/meeting-channels`.
+  - Student-submitted channels are shown as pending until supervisor approval.
+  - No student edit/delete/approve actions are exposed.
+  - `Records` fetches and renders `GET /api/student/projects/{projectId}/meeting-records`.
+  - Students can submit records via `POST /api/student/projects/{projectId}/meeting-records`.
+  - Student-submitted records are shown as pending until supervisor approval.
+  - Student records are view-only after submission (no edit/delete/approve actions are exposed).
+
+### Files (student scope)
+
+- Data source:
+  - Primary seed from `GET /api/student/projects/{projectId}` via embedded `data.files`.
+  - Refresh/list endpoint: `GET /api/student/projects/{projectId}/files`.
+- Upload flow:
+  - `POST /files/upload-url` -> direct S3 PUT -> `POST /files/confirm`.
+  - On success, UI inserts returned file row without immediate list re-fetch.
+- Download flow:
+  - `GET /files/{fileId}/download-url`, then browser opens pre-signed URL.
+- Delete behavior:
+  - No student delete action is available in UI or API.
+- Validation/config:
+  - Uses backend-provided `files.config` (`maxFileSizeBytes`, `maxFileNameLength`, `allowedTypes`, `presignedUrlExpirySeconds`).
 
 ### Jira - Hierarchy tab
 

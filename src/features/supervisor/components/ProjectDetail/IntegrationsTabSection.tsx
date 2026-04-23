@@ -1,5 +1,7 @@
-import { ExternalLink, KanbanSquare, Link2, RefreshCw } from 'lucide-react';
+import { ExternalLink, KanbanSquare, Link2 } from 'lucide-react';
 import { buttonStyles } from '@/components/ui/Button';
+import { LastSyncedBadge } from '@/components/ui/LastSyncedBadge';
+import { normalizeSyncStatus } from '@/lib/syncStatus';
 import { RepositorySection } from './RepositorySection';
 import type { SupervisorProjectDetail } from '../../types';
 
@@ -27,6 +29,7 @@ export function IntegrationsTabSection({
   onPendingGitHubSourceHandled,
 }: IntegrationsTabSectionProps) {
   const jira = project.jira;
+  const jiraSyncing = normalizeSyncStatus(jira?.syncStatus) === 'IN_PROGRESS';
 
   return (
     <div className="space-y-6">
@@ -45,11 +48,21 @@ export function IntegrationsTabSection({
             {jira?.connected ? (
               <button
                 type="button"
-                className={buttonStyles({ variant: 'danger', size: 'sm' })}
-                disabled={isDisconnectingJira}
+                className={buttonStyles({
+                  variant: jiraSyncing ? 'secondary' : 'danger',
+                  size: 'sm',
+                })}
+                disabled={isDisconnectingJira || jiraSyncing}
                 onClick={() => void onDisconnectJira()}
+                title={
+                  jiraSyncing ? 'Cannot disconnect while Jira sync is in progress.' : undefined
+                }
               >
-                {isDisconnectingJira ? 'Disconnecting...' : 'Disconnect'}
+                {isDisconnectingJira
+                  ? 'Disconnecting...'
+                  : jiraSyncing
+                    ? 'Syncing...'
+                    : 'Disconnect'}
               </button>
             ) : (
               <button
@@ -93,8 +106,7 @@ export function IntegrationsTabSection({
                 </span>
               </div>
               <div className="flex min-w-0 items-center gap-1.5 sm:col-span-3 sm:justify-end">
-                <RefreshCw className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
-                <span className="truncate font-medium text-emerald-700">Workspace connected</span>
+                <LastSyncedBadge lastSyncedAt={jira.lastSyncedAt} />
               </div>
             </div>
           </article>

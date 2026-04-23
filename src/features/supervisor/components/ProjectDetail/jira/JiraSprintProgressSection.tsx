@@ -14,6 +14,7 @@ import {
 } from 'recharts';
 import { EmptyState } from '@/components/feedback/EmptyState';
 import { ErrorState } from '@/components/feedback/ErrorState';
+import { Select } from '@/components/ui/Select';
 import { useJiraSprintProgress } from '../../../hooks/useJiraSprintProgress';
 import type { JiraSprintProgress, JiraSprintSummary } from '../../../types';
 
@@ -66,6 +67,7 @@ function ceilDaysBetween(start: Date, end: Date): number {
 
 export function JiraSprintProgressSection({ fetcher, projectId }: JiraSprintProgressSectionProps) {
   const { progress, isLoading, error, reload } = useJiraSprintProgress(fetcher, projectId);
+  const [isVelocityChartReady, setIsVelocityChartReady] = useState(false);
   const activeSprint = progress?.activeSprint ?? null;
   const selectableSprints = useMemo(() => {
     const recentSprints = progress?.recentSprints ?? [];
@@ -82,6 +84,13 @@ export function JiraSprintProgressSection({ fetcher, projectId }: JiraSprintProg
     });
   }, [activeSprint, progress?.recentSprints]);
   const [selectedSprintKey, setSelectedSprintKey] = useState<string>('');
+
+  useEffect(() => {
+    const rafId = window.requestAnimationFrame(() => {
+      setIsVelocityChartReady(true);
+    });
+    return () => window.cancelAnimationFrame(rafId);
+  }, []);
 
   useEffect(() => {
     if (selectableSprints.length === 0) {
@@ -330,7 +339,7 @@ export function JiraSprintProgressSection({ fetcher, projectId }: JiraSprintProg
               >
                 Sprint
               </label>
-              <select
+              <Select
                 id="jira-sprint-selector"
                 className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-800 shadow-sm transition-colors hover:border-slate-300 focus:border-indigo-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100"
                 value={selectedSprintKey}
@@ -347,7 +356,7 @@ export function JiraSprintProgressSection({ fetcher, projectId }: JiraSprintProg
                     </option>
                   );
                 })}
-              </select>
+              </Select>
             </div>
             {selectedSprint ? (
               <>
@@ -678,87 +687,93 @@ export function JiraSprintProgressSection({ fetcher, projectId }: JiraSprintProg
 
           {sprintVelocitySeries.length > 0 ? (
             <div className="mt-3 min-w-0">
-              <div className="h-36 w-full min-w-0 rounded-lg border border-slate-200 bg-white px-2 py-2">
-                {/* Numeric height avoids Recharts measuring 100% before layout (-1 x -1 warning). */}
-                <ResponsiveContainer width="100%" height={144}>
-                  <BarChart
-                    data={sprintVelocitySeries}
-                    margin={{ top: 12, right: 12, left: 4, bottom: 4 }}
-                    barCategoryGap="30%"
-                    barGap={4}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="#D3D1C7" vertical={false} />
-                    <XAxis
-                      dataKey="sprint"
-                      tick={{ fill: '#5F5E5A', fontSize: 12 }}
-                      axisLine={false}
-                      tickLine={false}
-                    />
-                    <YAxis
-                      tick={{ fill: '#5F5E5A', fontSize: 12 }}
-                      axisLine={false}
-                      tickLine={false}
-                    />
-                    <Tooltip
-                      formatter={(value, name) => [
-                        `${Number(value ?? 0).toFixed(1)} SP`,
-                        String(name).toLowerCase() === 'committed' ? 'Committed' : 'Completed',
-                      ]}
-                      contentStyle={{
-                        fontSize: 12,
-                        borderRadius: 8,
-                        border: '0.5px solid #D3D1C7',
-                      }}
-                    />
-                    <Legend
-                      verticalAlign="bottom"
-                      align="center"
-                      iconType="square"
-                      iconSize={10}
-                      wrapperStyle={{ fontSize: 12, paddingTop: 8 }}
-                    />
-                    <ReferenceLine
-                      y={Number(sprintCompletedAverage.toFixed(1))}
-                      stroke="#EF9F27"
-                      strokeDasharray="4 3"
-                      label={{
-                        value: `Avg completed: ${Math.round(sprintCompletedAverage)} SP/sprint`,
-                        position: 'right',
-                        fill: '#5F5E5A',
-                        fontSize: 12,
-                      }}
-                    />
-                    <Bar
-                      dataKey="committed"
-                      name="Committed"
-                      fill="#85B7EB"
-                      stroke="#85B7EB"
-                      radius={[4, 4, 0, 0]}
+              <div className="h-44 w-full min-w-0 rounded-lg border border-slate-200 bg-white px-2 py-2 sm:h-36">
+                {/* Delay one frame so the container has a measurable box (prevents -1 x -1 warning). */}
+                {isVelocityChartReady ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={sprintVelocitySeries}
+                      margin={{ top: 12, right: 12, left: 4, bottom: 4 }}
+                      barCategoryGap="30%"
+                      barGap={4}
                     >
-                      <LabelList
+                      <CartesianGrid strokeDasharray="3 3" stroke="#D3D1C7" vertical={false} />
+                      <XAxis
+                        dataKey="sprint"
+                        tick={{ fill: '#5F5E5A', fontSize: 12 }}
+                        axisLine={false}
+                        tickLine={false}
+                      />
+                      <YAxis
+                        tick={{ fill: '#5F5E5A', fontSize: 12 }}
+                        axisLine={false}
+                        tickLine={false}
+                      />
+                      <Tooltip
+                        formatter={(value, name) => [
+                          `${Number(value ?? 0).toFixed(1)} SP`,
+                          String(name).toLowerCase() === 'committed' ? 'Committed' : 'Completed',
+                        ]}
+                        contentStyle={{
+                          fontSize: 12,
+                          borderRadius: 8,
+                          border: '0.5px solid #D3D1C7',
+                        }}
+                      />
+                      <Legend
+                        verticalAlign="bottom"
+                        align="center"
+                        iconType="square"
+                        iconSize={10}
+                        wrapperStyle={{ fontSize: 12, paddingTop: 8 }}
+                      />
+                      <ReferenceLine
+                        y={Number(sprintCompletedAverage.toFixed(1))}
+                        stroke="#EF9F27"
+                        strokeDasharray="4 3"
+                        label={{
+                          value: `Avg completed: ${Math.round(sprintCompletedAverage)} SP/sprint`,
+                          position: 'right',
+                          fill: '#5F5E5A',
+                          fontSize: 12,
+                        }}
+                      />
+                      <Bar
                         dataKey="committed"
-                        position="top"
-                        style={{ fontWeight: 500, fontSize: 12, fill: '#5F5E5A' }}
-                      />
-                    </Bar>
-                    <Bar
-                      dataKey="completed"
-                      name="Completed"
-                      fill="#185FA5"
-                      stroke="#185FA5"
-                      radius={[4, 4, 0, 0]}
-                    >
-                      <LabelList
+                        name="Committed"
+                        fill="#85B7EB"
+                        stroke="#85B7EB"
+                        radius={[4, 4, 0, 0]}
+                      >
+                        <LabelList
+                          dataKey="committed"
+                          position="top"
+                          style={{ fontWeight: 500, fontSize: 12, fill: '#5F5E5A' }}
+                        />
+                      </Bar>
+                      <Bar
                         dataKey="completed"
-                        position="top"
-                        style={{ fontWeight: 500, fontSize: 12, fill: '#0C447C' }}
-                      />
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
+                        name="Completed"
+                        fill="#185FA5"
+                        stroke="#185FA5"
+                        radius={[4, 4, 0, 0]}
+                      >
+                        <LabelList
+                          dataKey="completed"
+                          position="top"
+                          style={{ fontWeight: 500, fontSize: 12, fill: '#0C447C' }}
+                        />
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-full w-full animate-pulse rounded-md bg-slate-50" />
+                )}
               </div>
 
-              <p className="mt-2 text-xs text-slate-600">{velocityDivergenceInsight}</p>
+              <p className="mt-2 break-words text-xs leading-relaxed text-slate-600">
+                {velocityDivergenceInsight}
+              </p>
             </div>
           ) : (
             <div className="mt-3 rounded-lg border border-dashed border-slate-200 bg-white px-3 py-4 text-sm text-slate-600">

@@ -1,5 +1,4 @@
-/** Matches the `role` constraint in the users table: SUPERVISOR | STUDENT */
-export type UserRole = 'SUPERVISOR' | 'STUDENT';
+import type { UserRole } from '@/types/roles';
 
 /** Authenticated user shape returned by the backend */
 export type AuthUser = {
@@ -52,4 +51,42 @@ export type RegisterResponse = {
  */
 export type LoginResponse = {
   user: AuthUser;
+};
+
+export type RegistrationStep = 'email' | 'otp' | 'role' | 'profile';
+
+export type RegisterInitRequest = { email: string };
+export type RegisterVerifyRequest = { email: string; otp: string };
+export type RegisterVerifyResponse = {
+  registrationToken: string;
+  requiresRoleSelection: boolean;
+  role: string | null;
+};
+export type RegisterCompleteRequest = {
+  registrationToken: string;
+  fname: string;
+  lname: string;
+  password: string;
+  name?: string;
+  role?: string;
+};
+export type RegisterCompleteResponse = { user: AuthUser };
+
+export type RegisterConfig = {
+  domainRestrictionEnabled: boolean;
+  studentDomain: string | null;
+  supervisorDomain: string | null;
+  studentEmailPrefixRestrictionEnabled: boolean;
+  studentEmailPrefixRegex: string | null;
+};
+
+export type ForgotPasswordRequest = { email: string };
+
+export type ResetPasswordRequest = {
+  token: string;
+  newPassword: string;
+};
+
+export type ValidateResetTokenResponse = {
+  valid: boolean;
 };

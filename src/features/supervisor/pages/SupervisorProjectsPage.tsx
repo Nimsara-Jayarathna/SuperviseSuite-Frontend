@@ -1,9 +1,10 @@
-import { useDeferredValue, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { EmptyState } from '@/components/feedback/EmptyState';
-import { ErrorState } from '@/components/feedback/ErrorState';
-import { buttonStyles } from '@/components/ui/Button';
-import { PageHeader } from '@/components/ui/PageHeader';
+import { useCallback, useDeferredValue, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Plus } from 'lucide-react';
+import { useBlockingError } from '@/app/layout/BlockingErrorContext';
+import { ProjectsPageView } from '@/features/projects/components/ProjectsPageView';
+import { isBlockingError } from '@/utils/errorSeverity';
 import { SupervisorProjectCard } from '../components/SupervisorProjectCard';
 import { SupervisorProjectCardSkeleton } from '../components/SupervisorProjectCardSkeleton';
 import { useSupervisorProjects } from '../hooks/useSupervisorProjects';
@@ -23,6 +24,7 @@ const LIFECYCLE_OPTIONS: LifecycleFilter[] = [
 export function SupervisorProjectsPage() {
   const navigate = useNavigate();
   const { projects, isLoading, error, reload } = useSupervisorProjects();
+  const { showBlockingError, clearBlockingError } = useBlockingError();
   const [query, setQuery] = useState('');
   const [lifecycle, setLifecycle] = useState<LifecycleFilter>('ALL');
   // Defer the free-text query so large list filtering does not run on every keystroke.
@@ -46,74 +48,62 @@ export function SupervisorProjectsPage() {
     setLifecycle('ALL');
   };
   const hasActiveFilters = normalizedQuery.length > 0 || lifecycle !== 'ALL';
+  const retryLoad = useCallback(() => {
+    void reload();
+  }, [reload]);
+
+  useEffect(() => {
+    if (error && isBlockingError(error)) {
+      showBlockingError(error, retryLoad);
+      return;
+    }
+    clearBlockingError();
+  }, [error, showBlockingError, clearBlockingError, retryLoad]);
 
   return (
-    <div className="space-y-5">
-      <PageHeader
-        title="Projects"
-        subtitle="Review every supervised project in one place."
-        actions={
-          <Link
-            to="/supervisor/projects/new"
-            className={buttonStyles({ variant: 'primary', size: 'md' })}
-          >
-            New project
-          </Link>
-        }
-      />
-
-      <section className="grid gap-2.5 sm:gap-3 lg:grid-cols-[minmax(0,1fr)_210px] lg:gap-4">
-        <input
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="Search by project title, summary, batch, or semester"
-          className="h-10 rounded-2xl border border-border bg-white px-4 text-sm outline-none transition-colors focus:border-amber-300"
-        />
-        <select
-          value={lifecycle}
-          onChange={(event) => setLifecycle(event.target.value as LifecycleFilter)}
-          className="h-10 rounded-2xl border border-border bg-white px-4 text-sm outline-none transition-colors focus:border-amber-300"
-        >
-          {LIFECYCLE_OPTIONS.map((option) => (
-            <option key={option} value={option}>
-              {option === 'ALL' ? 'All lifecycle states' : option.replace('_', ' ')}
-            </option>
-          ))}
-        </select>
-      </section>
-
-      {isLoading ? (
-        <section className="grid items-stretch gap-2.5 lg:gap-3 xl:grid-cols-2">
-          {Array.from({ length: 4 }).map((_, index) => (
-            <SupervisorProjectCardSkeleton key={`supervisor-project-skeleton-${index}`} />
-          ))}
-        </section>
-      ) : error ? (
-        <ErrorState error={error} onRetry={() => void reload()} />
-      ) : visibleProjects.length > 0 ? (
-        <section className="grid items-stretch gap-2.5 lg:gap-3 xl:grid-cols-2">
-          {visibleProjects.map((project) => (
-            <SupervisorProjectCard key={project.id} project={project} />
-          ))}
-        </section>
-      ) : (
-        <EmptyState
-          title="No projects found"
-          description="No supervised projects match your current filters."
-          primaryAction={{
-            label: 'Create new project',
-            onClick: () => navigate('/supervisor/projects/new'),
-          }}
-          secondaryAction={
-            hasActiveFilters
-              ? {
-                  label: 'Clear filters',
-                  onClick: resetFilters,
-                }
-              : undefined
-          }
-        />
+    <ProjectsPageView
+      title="Projects"
+      subtitle="Review every supervised project in one place."
+      searchValue={query}
+      onSearchChange={setQuery}
+      searchPlaceholder="Search by project title, summary, batch, or semester"
+      action={{
+        to: '/supervisor/projects/new',
+        label: 'New Project',
+        icon: <Plus className="h-4 w-4" aria-hidden />,
+      }}
+      filter={{
+        value: lifecycle,
+        onChange: (nextValue) => setLifecycle(nextValue as LifecycleFilter),
+        options: LIFECYCLE_OPTIONS.map((option) => ({
+          value: option,
+          label: option === 'ALL' ? 'All lifecycle states' : option.replace('_', ' '),
+        })),
+      }}
+      isLoading={isLoading}
+      error={error && !isBlockingError(error) ? error : null}
+      onRetry={() => void reload()}
+      items={visibleProjects}
+      renderSkeleton={(index) => (
+        <SupervisorProjectCardSkeleton key={`supervisor-project-skeleton-${index}`} />
       )}
-    </div>
+      renderItem={(project) => <SupervisorProjectCard key={project.id} project={project} />}
+      listGridClassName="grid items-stretch gap-2.5 lg:gap-3 xl:grid-cols-2 2xl:grid-cols-3"
+      emptyState={{
+        title: 'No projects found',
+        description: 'No supervised projects match your current filters.',
+        primaryAction: {
+          label: 'Create new project',
+          onClick: () => navigate('/supervisor/projects/new'),
+        },
+        secondaryAction: hasActiveFilters
+          ? {
+              label: 'Clear filters',
+              onClick: resetFilters,
+            }
+          : undefined,
+      }}
+      rootClassName="space-y-5"
+    />
   );
 }

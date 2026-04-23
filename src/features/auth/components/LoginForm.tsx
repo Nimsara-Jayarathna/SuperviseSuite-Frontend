@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import type { ApiError } from '@/types';
 import type { LoginRequest } from '../types';
+import { Link } from 'react-router-dom';
 import {
   getLoginGeneralError,
   mapBackendLoginFieldErrors,
@@ -24,6 +25,7 @@ export type LoginFormProps = {
   onClearError: () => void;
   onSuccess?: () => void;
   feedbackMode?: 'inline' | 'modal';
+  onForgotPassword?: () => void;
 };
 
 export function LoginForm({
@@ -33,6 +35,7 @@ export function LoginForm({
   onClearError,
   onSuccess,
   feedbackMode = 'inline',
+  onForgotPassword,
 }: LoginFormProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -64,6 +67,7 @@ export function LoginForm({
 
   const emailError = fieldErrors.email ?? backendFieldErrors?.email;
   const passwordError = fieldErrors.password ?? backendFieldErrors?.password;
+  const isValid = Object.keys(validateLoginForm(email, password)).length === 0;
 
   return (
     <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
@@ -110,12 +114,26 @@ export function LoginForm({
         type="submit"
         variant="primary"
         size="lg"
-        disabled={isLoading}
+        disabled={isLoading || !isValid}
         fullWidth
         className="mt-1"
       >
-        {isLoading && feedbackMode === 'inline' ? 'Signing in…' : 'Sign In'}
+        Sign In
       </Button>
+
+      {onForgotPassword ? (
+        <button
+          type="button"
+          className="mx-auto text-sm text-primary hover:underline"
+          onClick={onForgotPassword}
+        >
+          Forgot your password?
+        </button>
+      ) : (
+        <Link to="/forgot-password" className="mx-auto text-sm text-primary hover:underline">
+          Forgot your password?
+        </Link>
+      )}
     </form>
   );
 }

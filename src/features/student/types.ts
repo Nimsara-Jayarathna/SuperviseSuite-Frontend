@@ -1,5 +1,7 @@
 import type { ProjectGitHubPreview } from '@/features/projects/types';
-import type { ProjectGitHubRepositories } from '@/features/supervisor/types';
+import type { ProjectGitHubRepositories } from '@/features/shared/types/github.types';
+import type { UserRole } from '@/types/roles';
+import type { ProjectFile, ProjectFileConfig } from '@/features/projectfiles/types';
 
 export type StudentProjectLifecycle = 'PLANNING' | 'ACTIVE' | 'AT_RISK' | 'BEHIND' | 'COMPLETED';
 
@@ -24,7 +26,7 @@ export type StudentProjectDetailMember = {
   lastName: string | null;
   email: string;
   registrationNumber: string | null;
-  memberRole: 'SUPERVISOR' | 'STUDENT';
+  memberRole: UserRole;
 };
 
 export type StudentProjectDetailMilestone = {
@@ -54,7 +56,6 @@ export type StudentProjectDetail = {
   milestoneDate: string | null;
   lastActivityAt: string | null;
   progressPercent: number | null;
-  healthNote: string | null;
   repositoryUrl?: string | null;
   github: ProjectGitHubPreview;
   githubRepositories?: ProjectGitHubRepositories | null;
@@ -62,10 +63,23 @@ export type StudentProjectDetail = {
     connected: boolean;
     workspaceName: string | null;
     workspaceUrl?: string | null;
+    lastSyncedAt?: string | null;
+    syncStatus?: string | null;
   } | null;
   leader: StudentProjectDetailLeader | null;
   members: StudentProjectDetailMember[];
   milestones: StudentProjectDetailMilestone[];
+  files: {
+    items: ProjectFile[];
+    config: ProjectFileConfig;
+  } | null;
 };
 
-export type StudentProjectDetailTab = 'overview' | 'team' | 'milestones' | 'github' | 'jira';
+export type StudentProjectDetailTab =
+  | 'overview'
+  | 'team'
+  | 'milestones'
+  | 'files'
+  | 'github'
+  | 'jira'
+  | 'meetings';

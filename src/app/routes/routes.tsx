@@ -1,9 +1,10 @@
 import { SupervisorLayout } from '@/app/layout/SupervisorLayout';
 import { StudentLayout } from '@/app/layout/StudentLayout';
-import { LoginPage, RegisterPage, SupervisorRegisterPage } from '@/features/auth';
 import { LandingPage } from '@/features/landing';
 import { PrivacyPolicyPage, SupportPage, TermsOfServicePage } from '@/features/legal';
 import { StudentProjectDetailsPage, StudentProjectsPage } from '@/features/student';
+import { ForgotPasswordPage } from '@/features/auth/pages/ForgotPasswordPage';
+import { ResetPasswordPage } from '@/features/auth/pages/ResetPasswordPage';
 import {
   CreateProjectPage,
   GitHubAccessUpdatedPage,
@@ -14,22 +15,65 @@ import {
   SupervisorProjectsPage,
 } from '@/features/supervisor';
 import { tokenStorage } from '@/services/tokenStorage';
-import { Navigate, Route, Routes, useParams } from 'react-router-dom';
+import { Navigate, Route, Routes, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { RequireGuest, RequireRole } from './route-guards';
 import { ROLE_HOME } from './roleHome';
+import { useAuthStateValue } from '@/features/auth/state/authState';
+
+function useResolvedUser() {
+  const authState = useAuthStateValue();
+  if (authState.status === 'bootstrapping') {
+    return tokenStorage.getUser();
+  }
+  return authState.user;
+}
 
 function RootRoute() {
-  const user = tokenStorage.getUser();
+  const user = useResolvedUser();
 
   if (!user) {
     return <LandingPage />;
   }
 
-  return <Navigate to={ROLE_HOME[user.role] ?? '/login'} replace />;
+  return <Navigate to={ROLE_HOME[user.role] ?? '/'} replace />;
+}
+
+function LoginRoute() {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const returnToKey = searchParams.get('returnToKey');
+  const returnToFromQuery = searchParams.get('returnTo');
+  const RETURN_TO_KEY_PREFIX = 'login-return:';
+  let returnTo: string | undefined;
+
+  if (returnToKey?.startsWith(RETURN_TO_KEY_PREFIX)) {
+    try {
+      returnTo = sessionStorage.getItem(returnToKey) ?? undefined;
+      sessionStorage.removeItem(returnToKey);
+    } catch {
+      returnTo = undefined;
+    }
+  } else {
+    returnTo = returnToFromQuery ?? undefined;
+  }
+
+  return (
+    <LandingPage
+      initialLoginOpen={true}
+      initialLoginReturnTo={returnTo}
+      onLoginClose={() => navigate('/')}
+    />
+  );
+}
+
+function RegisterRoute() {
+  const navigate = useNavigate();
+
+  return <LandingPage initialRegistrationOpen={true} onRegistrationClose={() => navigate('/')} />;
 }
 
 function LegacyDashboardRedirect() {
-  const user = tokenStorage.getUser();
+  const user = useResolvedUser();
 
   if (!user) {
     return <Navigate to="/login" replace />;
@@ -39,7 +83,7 @@ function LegacyDashboardRedirect() {
 }
 
 function LegacyProjectListRedirect() {
-  const user = tokenStorage.getUser();
+  const user = useResolvedUser();
 
   if (!user) {
     return <Navigate to="/login" replace />;
@@ -54,7 +98,7 @@ function LegacyProjectListRedirect() {
 }
 
 function LegacyProjectCreateRedirect() {
-  const user = tokenStorage.getUser();
+  const user = useResolvedUser();
 
   if (!user) {
     return <Navigate to="/login" replace />;
@@ -70,7 +114,7 @@ function LegacyProjectCreateRedirect() {
 
 function LegacyProjectDetailsRedirect() {
   const { projectId } = useParams();
-  const user = tokenStorage.getUser();
+  const user = useResolvedUser();
 
   if (!user) {
     return <Navigate to="/login" replace />;
@@ -92,14 +136,15 @@ export function AppRoutes() {
       <Route path="/legal/privacy" element={<PrivacyPolicyPage />} />
       <Route path="/legal/terms" element={<TermsOfServicePage />} />
       <Route path="/support" element={<SupportPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/github/request-access" element={<RequestGitHubRepositoryAccessPage />} />
       <Route path="/github/access-updated" element={<GitHubAccessUpdatedPage />} />
 
       {/* Guest-only — redirect authenticated users to their dashboard */}
       <Route element={<RequireGuest />}>
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/register/supervisor" element={<SupervisorRegisterPage />} />
+        <Route path="/login" element={<LoginRoute />} />
+        <Route path="/register" element={<RegisterRoute />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       </Route>
 
       {/* Student-only */}

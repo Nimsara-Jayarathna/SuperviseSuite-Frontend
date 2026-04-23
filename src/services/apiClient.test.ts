@@ -2,7 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const setUser = vi.hoisted(() => vi.fn());
 const clearAll = vi.hoisted(() => vi.fn());
-const clearSessionCaches = vi.hoisted(() => vi.fn());
+const beginSessionTransition = vi.hoisted(() => vi.fn());
+const resetSessionState = vi.hoisted(() => vi.fn());
 
 vi.mock('@/app/config/env', () => ({
   env: { apiBaseUrl: 'http://localhost:8081' },
@@ -17,8 +18,9 @@ vi.mock('@/services/tokenStorage', () => ({
   },
 }));
 
-vi.mock('@/services/sessionCache', () => ({
-  clearSessionCaches,
+vi.mock('@/services/sessionState', () => ({
+  beginSessionTransition,
+  resetSessionState,
 }));
 
 import { ApiException, apiClient } from '@/services/apiClient';
@@ -233,8 +235,9 @@ describe('apiClient response normalization', () => {
     } as ApiException);
 
     expect(fetch).toHaveBeenCalledTimes(2);
-    expect(clearSessionCaches).toHaveBeenCalledOnce();
-    expect(clearAll).toHaveBeenCalledOnce();
+    expect(beginSessionTransition).toHaveBeenCalledWith('session-expired');
+    expect(resetSessionState).toHaveBeenCalledOnce();
+    expect(clearAll).not.toHaveBeenCalled();
   });
 
   it('does not recursively refresh when /api/auth/refresh itself returns 401', async () => {

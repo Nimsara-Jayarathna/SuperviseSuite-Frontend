@@ -1,9 +1,16 @@
 import type {
+  AuthUser,
+  ForgotPasswordRequest,
+  RegisterConfig,
+  RegisterCompleteResponse,
   LoginResponse,
   LoginRequest,
+  ResetPasswordRequest,
   RegisterRequest,
+  RegisterVerifyResponse,
   RegisterResponse,
   SupervisorRegisterRequest,
+  ValidateResetTokenResponse,
 } from '../types';
 import { apiClient } from '@/services/apiClient';
 
@@ -14,6 +21,7 @@ const USE_MOCK = false;
 const MOCK_DELAY = 600; // ms — simulates network latency in dev
 
 const mockDelay = () => new Promise((res) => setTimeout(res, MOCK_DELAY));
+let registerConfigCache: Promise<RegisterConfig> | null = null;
 
 // Dev-only fixture — ignored when USE_MOCK is false.
 const MOCK_RESPONSE: LoginResponse = {
@@ -65,6 +73,37 @@ export const authApi = {
     return apiClient.post<RegisterResponse>('/api/auth/register/supervisor', body);
   },
 
+  async registerInit(body: { email: string }): Promise<{ message: string }> {
+    return apiClient.post<{ message: string }>('/api/auth/register/init', body);
+  },
+
+  async registerVerify(body: { email: string; otp: string }): Promise<RegisterVerifyResponse> {
+    return apiClient.post<RegisterVerifyResponse>('/api/auth/register/verify', body);
+  },
+
+  async registerComplete(body: {
+    registrationToken: string;
+    fname: string;
+    lname: string;
+    password: string;
+    name?: string;
+    role?: string;
+  }): Promise<RegisterCompleteResponse> {
+    return apiClient.post<{ user: AuthUser }>('/api/auth/register/complete', body);
+  },
+
+  getRegisterConfig(): Promise<RegisterConfig> {
+    if (!registerConfigCache) {
+      registerConfigCache = apiClient
+        .get<RegisterConfig>('/api/auth/register/config')
+        .catch((error) => {
+          registerConfigCache = null;
+          throw error;
+        });
+    }
+    return registerConfigCache;
+  },
+
   /**
    * Exchanges the {@code ss_refresh_token} httpOnly cookie for a fresh pair of
    * cookies. The browser sends the cookie automatically; no token handling is
@@ -80,5 +119,19 @@ export const authApi = {
    */
   async logout(): Promise<void> {
     return apiClient.post<void>('/api/auth/logout', {});
+  },
+
+  async forgotPassword(body: ForgotPasswordRequest): Promise<void> {
+    return apiClient.post<void>('/api/auth/forgot-password', body);
+  },
+
+  async validateResetToken(token: string): Promise<ValidateResetTokenResponse> {
+    return apiClient.get<ValidateResetTokenResponse>(
+      `/api/auth/reset-password/validate?token=${encodeURIComponent(token)}`,
+    );
+  },
+
+  async resetPassword(body: ResetPasswordRequest): Promise<void> {
+    return apiClient.post<void>('/api/auth/reset-password', body);
   },
 };

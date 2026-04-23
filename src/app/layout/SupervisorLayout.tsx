@@ -17,6 +17,7 @@ export function SupervisorLayout({ children }: { children?: ReactNode }) {
       homePath="/supervisor"
       userName={userName}
       userEmail={userEmail}
+      userRole="SUPERVISOR"
       onLogout={logout}
       navItems={[
         {

@@ -17,6 +17,7 @@ export function StudentLayout({ children }: { children?: ReactNode }) {
       homePath="/student/projects"
       userName={userName}
       userEmail={userEmail}
+      userRole="STUDENT"
       onLogout={logout}
       navItems={[
         {

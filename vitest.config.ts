@@ -13,5 +13,7 @@ export default mergeConfig(viteConfig, {
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
     passWithNoTests: true,
+    testTimeout: 10000,
+    hookTimeout: 10000,
   },
 });

@@ -115,3 +115,39 @@ Covered scenarios:
 - protected endpoint 401 refresh + retry
 - refresh failure path (clear auth + redirect flow)
 - no recursive refresh for `/api/auth/refresh`
+
+## 8) Blocking Error UX Contract
+
+Blocking UI mode is used for severe availability/throttling cases.
+
+Blocking conditions:
+
+- `error.code === "TOO_MANY_REQUESTS"`
+- `error.code === "SERVICE_UNAVAILABLE"`
+- `error.status === 429`
+- `error.status === 503`
+
+Shared utilities:
+
+- `src/utils/errorSeverity.ts`
+- `src/features/auth/utils/authErrorModel.ts`
+
+Shell-level behavior:
+
+- Student/Supervisor pages route blocking errors to the global `RequestStateModal` in `AppShell`.
+- Retry callback is page-provided and re-triggers data load.
+- While retry is in-flight, modal switches to loading state (`Retrying request`).
+
+## 9) Registration Config Precondition
+
+Registration no longer opens with fallback defaults if `/api/auth/register/config` fails.
+
+- Success: open registration panel with fetched config.
+- Failure: keep registration panel closed and show blocking modal.
+- Retry: reattempt `getRegisterConfig()`.
+
+This behavior is implemented via:
+
+- `src/features/auth/api/authApi.ts`
+- `src/features/landing/pages/LandingPage.tsx`
+- `src/features/auth/components/AuthModal.tsx`

@@ -25,9 +25,11 @@ export const TABS: SupervisorProjectDetailTab[] = [
   'overview',
   'team',
   'milestones',
+  'files',
   'integrations',
   'github',
   'jira',
+  'meetings',
 ];
 
 export const FIELD_LIMITS = {
@@ -35,7 +37,6 @@ export const FIELD_LIMITS = {
   summary: 250,
   batch: 32,
   semester: 32,
-  healthNote: 250,
   milestoneTitle: 40,
   milestoneDescription: 250,
 } as const;
@@ -62,7 +63,6 @@ export type OverviewEditForm = {
   batch: string;
   semester: string;
   lifecycleStatus: SupervisorProjectLifecycle;
-  healthNote: string;
 };
 
 export type SearchState = 'idle' | 'loading' | 'results' | 'empty' | 'error';
@@ -137,7 +137,6 @@ export function buildOverviewEditForm(project: SupervisorProjectDetail): Overvie
     batch: project.batch ?? '',
     semester: project.semester ?? '',
     lifecycleStatus: project.lifecycleStatus,
-    healthNote: project.healthNote ?? '',
   };
 }
 

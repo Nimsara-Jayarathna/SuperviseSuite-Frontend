@@ -1,6 +1,7 @@
 import { CalendarDays, CircleAlert, ListTodo } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { StatusBadge } from '@/components/ui/StatusBadge';
+import { parseLocalDateOnly } from '@/lib/dateOnly';
 import type { StudentProjectSummary } from '../types';
 
 const dateFormatter = new Intl.DateTimeFormat('en', {
@@ -88,7 +89,12 @@ export function StudentProjectCard({ project }: StudentProjectCardProps) {
         <span className="inline-flex items-center gap-2 rounded-2xl bg-slate-50 px-3 py-2">
           <CalendarDays className="h-4 w-4" />
           {project.milestoneDate
-            ? `Milestone ${dateFormatter.format(new Date(project.milestoneDate))}`
+            ? (() => {
+                const milestoneDate = parseLocalDateOnly(project.milestoneDate);
+                return `Milestone ${
+                  milestoneDate ? dateFormatter.format(milestoneDate) : project.milestoneDate
+                }`;
+              })()
             : 'Milestone not set'}
         </span>
         <span className="inline-flex items-center gap-2 rounded-2xl bg-slate-50 px-3 py-2">

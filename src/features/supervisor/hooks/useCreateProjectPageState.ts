@@ -1,23 +1,13 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { isApiException } from '@/services/apiClient';
 import { supervisorApi } from '../api/supervisorApi';
 import { invalidateSupervisorProjectsCache } from './useSupervisorProjects';
 import type { CreateSupervisorProjectResponse, SupervisorStudentSearchResult } from '../types';
-import {
-  INITIAL_DRAFT,
-  INITIAL_MILESTONE,
-  buildStudentLabel,
-  earliestMilestone,
-  isMilestoneComplete,
-} from '../createProject.shared';
-import type {
-  CreateProjectStepId,
-  DraftState,
-  MilestoneDraft,
-  RequestModalState,
-  SearchState,
-} from '../createProject.shared';
+import { INITIAL_DRAFT } from '../createProject.shared';
+import type { CreateProjectStepId, DraftState, RequestModalState } from '../createProject.shared';
+import { useCreateProjectMilestonesState } from './projectCreate/useCreateProjectMilestonesState';
+import { useCreateProjectStudentSearchState } from './projectCreate/useCreateProjectStudentSearchState';
 
 type UseCreateProjectPageStateParams = {
   onSuccessNavigate: () => void;
@@ -26,16 +16,8 @@ type UseCreateProjectPageStateParams = {
 export function useCreateProjectPageState({ onSuccessNavigate }: UseCreateProjectPageStateParams) {
   const [currentStep, setCurrentStep] = useState<CreateProjectStepId>(1);
   const [draft, setDraft] = useState<DraftState>(INITIAL_DRAFT);
-  const [milestones, setMilestones] = useState<MilestoneDraft[]>([{ ...INITIAL_MILESTONE }]);
-  const [expandedMilestoneIndex, setExpandedMilestoneIndex] = useState<number | null>(0);
-  const milestoneRefs = useRef<(HTMLDivElement | null)[]>([]);
-
-  const [studentQuery, setStudentQuery] = useState('');
   const [selectedStudents, setSelectedStudents] = useState<SupervisorStudentSearchResult[]>([]);
   const [selectedLeaderId, setSelectedLeaderId] = useState<string | null>(null);
-  const [searchResults, setSearchResults] = useState<SupervisorStudentSearchResult[]>([]);
-  const [searchState, setSearchState] = useState<SearchState>('idle');
-  const [searchError, setSearchError] = useState<string | null>(null);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -52,113 +34,29 @@ export function useCreateProjectPageState({ onSuccessNavigate }: UseCreateProjec
 
   const step1Valid = draft.title.trim().length > 0 && draft.summary.trim().length > 0;
   const step2Valid = selectedStudents.length > 0;
-  const step3Valid = milestones.every(isMilestoneComplete);
-  const incompleteMilestoneCount = milestones.filter(
-    (milestone) => !isMilestoneComplete(milestone),
-  ).length;
-  const shouldShowSearchPanel =
-    studentQuery.trim().length >= 3 || searchState === 'loading' || searchState === 'error';
-  const primaryCreatedMilestone = createdProject
-    ? earliestMilestone(createdProject.milestones)
-    : null;
+  const milestonesState = useCreateProjectMilestonesState({ createdProject });
+  const studentSearchState = useCreateProjectStudentSearchState({
+    selectedStudents,
+    setSelectedStudents,
+    selectedLeaderId,
+    setSelectedLeaderId,
+    searchStudents: supervisorApi.searchStudents,
+    isApiException,
+  });
 
-  useEffect(() => {
-    const normalizedQuery = studentQuery.trim();
-    if (normalizedQuery.length < 3) {
-      setSearchResults([]);
-      setSearchState('idle');
-      setSearchError(null);
-      return;
-    }
-
-    let isCancelled = false;
-    setSearchState('loading');
-    setSearchError(null);
-
-    const timeoutId = window.setTimeout(async () => {
-      try {
-        const results = await supervisorApi.searchStudents(normalizedQuery);
-        if (isCancelled) return;
-        const visible = results.filter(
-          (student) => !selectedStudents.some((selected) => selected.id === student.id),
-        );
-        setSearchResults(visible);
-        setSearchState(visible.length > 0 ? 'results' : 'empty');
-      } catch (error) {
-        if (isCancelled) return;
-        setSearchResults([]);
-        setSearchState('error');
-        setSearchError(
-          isApiException(error)
-            ? error.apiError.message
-            : 'Unable to search students right now. Please try again.',
-        );
-      }
-    }, 300);
-
-    return () => {
-      isCancelled = true;
-      window.clearTimeout(timeoutId);
-    };
-  }, [studentQuery, selectedStudents]);
+  const { milestones, milestoneRefs, expandedMilestoneIndex } = milestonesState;
+  const { studentQuery, setStudentQuery, searchResults, searchState, searchError } =
+    studentSearchState;
+  const { milestonePolicyError, step3Valid, incompleteMilestoneCount, shouldShowSearchPanel } = {
+    milestonePolicyError: milestonesState.milestonePolicyError,
+    step3Valid: milestonesState.step3Valid,
+    incompleteMilestoneCount: milestonesState.incompleteMilestoneCount,
+    shouldShowSearchPanel: studentSearchState.shouldShowSearchPanel,
+  };
+  const primaryCreatedMilestone = milestonesState.primaryCreatedMilestone;
 
   function updateDraft<F extends keyof DraftState>(field: F, value: DraftState[F]) {
     setDraft((prev) => ({ ...prev, [field]: value }));
-  }
-
-  function selectStudent(student: SupervisorStudentSearchResult) {
-    setSelectedStudents((prev) => {
-      if (prev.some((existing) => existing.id === student.id)) return prev;
-      return [...prev, student];
-    });
-    setStudentQuery('');
-    setSearchResults([]);
-    setSearchState('idle');
-    setSearchError(null);
-  }
-
-  function removeStudent(id: string) {
-    setSelectedStudents((prev) => prev.filter((student) => student.id !== id));
-    setSelectedLeaderId((current) => (current === id ? null : current));
-  }
-
-  function updateMilestone<F extends keyof MilestoneDraft>(
-    index: number,
-    field: F,
-    value: MilestoneDraft[F],
-  ) {
-    setMilestones((prev) =>
-      prev.map((milestone, milestoneIndex) =>
-        milestoneIndex === index ? { ...milestone, [field]: value } : milestone,
-      ),
-    );
-  }
-
-  function addMilestone() {
-    const newIndex = milestones.length;
-    setMilestones((prev) => [...prev, { ...INITIAL_MILESTONE }]);
-    setExpandedMilestoneIndex(newIndex);
-    setTimeout(() => {
-      milestoneRefs.current[newIndex]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 50);
-  }
-
-  function removeMilestone(index: number) {
-    if (milestones.length === 1) return;
-    setMilestones((prev) => prev.filter((_, milestoneIndex) => milestoneIndex !== index));
-    setExpandedMilestoneIndex((current) => {
-      if (current === null) return null;
-      if (current === index) {
-        if (index === milestones.length - 1) return Math.max(0, index - 1);
-        return index;
-      }
-      if (current > index) return current - 1;
-      return current;
-    });
-  }
-
-  function toggleMilestone(index: number) {
-    setExpandedMilestoneIndex((current) => (current === index ? null : index));
   }
 
   function goStep(step: CreateProjectStepId) {
@@ -170,6 +68,7 @@ export function useCreateProjectPageState({ onSuccessNavigate }: UseCreateProjec
 
     if (!step3Valid) {
       setShowIncompleteHint(true);
+      setSubmitError(null);
       return;
     }
 
@@ -202,11 +101,8 @@ export function useCreateProjectPageState({ onSuccessNavigate }: UseCreateProjec
       setCreatedProject(response);
       invalidateSupervisorProjectsCache();
       setDraft(INITIAL_DRAFT);
-      setSelectedStudents([]);
-      setSelectedLeaderId(null);
-      setMilestones([{ ...INITIAL_MILESTONE }]);
-      setExpandedMilestoneIndex(0);
-      setStudentQuery('');
+      studentSearchState.resetStudentSelection();
+      milestonesState.resetMilestones();
       setRequestModal({
         isOpen: true,
         status: 'success',
@@ -255,22 +151,23 @@ export function useCreateProjectPageState({ onSuccessNavigate }: UseCreateProjec
     step1Valid,
     step2Valid,
     step3Valid,
+    milestonePolicyError,
     incompleteMilestoneCount,
     shouldShowSearchPanel,
     primaryCreatedMilestone,
     goStep,
     updateDraft,
     setStudentQuery,
-    selectStudent,
-    removeStudent,
+    selectStudent: studentSearchState.selectStudent,
+    removeStudent: studentSearchState.removeStudent,
     setSelectedLeaderId,
-    updateMilestone,
-    addMilestone,
-    removeMilestone,
-    toggleMilestone,
+    updateMilestone: milestonesState.updateMilestone,
+    addMilestone: milestonesState.addMilestone,
+    removeMilestone: milestonesState.removeMilestone,
+    toggleMilestone: milestonesState.toggleMilestone,
     setShowIncompleteHint,
     handleSubmit,
     closeRequestModal,
-    buildStudentLabel,
+    buildStudentLabel: studentSearchState.buildStudentLabel,
   };
 }
