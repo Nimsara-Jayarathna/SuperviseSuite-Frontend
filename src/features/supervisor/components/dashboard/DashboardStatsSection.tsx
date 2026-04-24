@@ -1,22 +1,50 @@
-import { Card } from '@/components/ui/Card';
 import type { SupervisorDashboard } from '../../types';
+import { DashboardStatCard } from './DashboardStatCard';
 
-function DashboardStatsSkeleton() {
-  return (
-    <section className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-7">
-      {Array.from({ length: 7 }).map((_, index) => (
-        <Card
-          key={`dashboard-stat-skeleton-${index}`}
-          className="animate-pulse rounded-2xl"
-          padding="md"
-        >
-          <div className="h-3 w-24 rounded bg-slate-100" />
-          <div className="mt-3 h-8 w-12 rounded bg-slate-200" />
-        </Card>
-      ))}
-    </section>
-  );
-}
+const DASHBOARD_STATS = [
+  {
+    key: 'totalProjects',
+    label: 'Total projects',
+    tone: 'primary',
+    getValue: (dashboard: SupervisorDashboard) => dashboard.totalProjects,
+  },
+  {
+    key: 'activeProjects',
+    label: 'Active',
+    tone: 'success',
+    getValue: (dashboard: SupervisorDashboard) => dashboard.activeProjects,
+  },
+  {
+    key: 'atRiskProjects',
+    label: 'At risk',
+    tone: 'warning',
+    getValue: (dashboard: SupervisorDashboard) => dashboard.atRiskProjects,
+  },
+  {
+    key: 'behindProjects',
+    label: 'Behind',
+    tone: 'danger',
+    getValue: (dashboard: SupervisorDashboard) => dashboard.behindProjects,
+  },
+  {
+    key: 'upcomingMilestonesCount',
+    label: 'Upcoming milestones',
+    tone: 'info',
+    getValue: (dashboard: SupervisorDashboard) => dashboard.upcomingMilestonesCount,
+  },
+  {
+    key: 'jiraAtRiskCount',
+    label: 'Jira at risk',
+    tone: 'warning',
+    getValue: (dashboard: SupervisorDashboard) => dashboard.jiraAtRiskCount,
+  },
+  {
+    key: 'jiraBehindCount',
+    label: 'Jira behind',
+    tone: 'danger',
+    getValue: (dashboard: SupervisorDashboard) => dashboard.jiraBehindCount,
+  },
+] as const;
 
 type DashboardStatsSectionProps = {
   dashboard: SupervisorDashboard | null;
@@ -24,56 +52,19 @@ type DashboardStatsSectionProps = {
 };
 
 export function DashboardStatsSection({ dashboard, isLoading }: DashboardStatsSectionProps) {
-  if (isLoading || !dashboard) {
-    return <DashboardStatsSkeleton />;
-  }
+  const showSkeleton = isLoading || !dashboard;
 
   return (
-    <section className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-7">
-      <Card className="rounded-2xl" padding="md">
-        <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
-          Total projects
-        </p>
-        <p className="mt-3 text-3xl font-semibold text-foreground">{dashboard.totalProjects}</p>
-      </Card>
-      <Card className="rounded-2xl" padding="md">
-        <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
-          Active
-        </p>
-        <p className="mt-3 text-3xl font-semibold text-foreground">{dashboard.activeProjects}</p>
-      </Card>
-      <Card className="rounded-2xl" padding="md">
-        <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
-          At risk
-        </p>
-        <p className="mt-3 text-3xl font-semibold text-foreground">{dashboard.atRiskProjects}</p>
-      </Card>
-      <Card className="rounded-2xl" padding="md">
-        <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
-          Behind
-        </p>
-        <p className="mt-3 text-3xl font-semibold text-foreground">{dashboard.behindProjects}</p>
-      </Card>
-      <Card className="rounded-2xl" padding="md">
-        <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
-          Upcoming milestones
-        </p>
-        <p className="mt-3 text-3xl font-semibold text-foreground">
-          {dashboard.upcomingMilestonesCount}
-        </p>
-      </Card>
-      <Card className="rounded-2xl border-l-2 border-l-amber-300" padding="md">
-        <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
-          Jira at risk
-        </p>
-        <p className="mt-3 text-3xl font-semibold text-amber-600">{dashboard.jiraAtRiskCount}</p>
-      </Card>
-      <Card className="rounded-2xl border-l-2 border-l-rose-300" padding="md">
-        <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
-          Jira behind
-        </p>
-        <p className="mt-3 text-3xl font-semibold text-rose-600">{dashboard.jiraBehindCount}</p>
-      </Card>
+    <section className="grid grid-cols-2 auto-rows-fr gap-3 sm:gap-4 xl:grid-cols-7">
+      {DASHBOARD_STATS.map((stat) => (
+        <DashboardStatCard
+          key={stat.key}
+          label={stat.label}
+          tone={stat.tone}
+          value={showSkeleton || !dashboard ? undefined : stat.getValue(dashboard)}
+          loading={showSkeleton}
+        />
+      ))}
     </section>
   );
 }
