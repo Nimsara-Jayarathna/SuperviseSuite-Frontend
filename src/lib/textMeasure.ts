@@ -45,4 +45,3 @@ export function measureLongestLabelPx({ labels, fontSourceEl }: MeasureLongestLa
     return fallbackEstimate();
   }
 }
-

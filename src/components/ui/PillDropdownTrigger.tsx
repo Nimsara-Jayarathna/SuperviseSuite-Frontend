@@ -12,9 +12,7 @@ type PillDropdownTriggerProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'c
 export const PillDropdownTrigger = forwardRef<HTMLButtonElement, PillDropdownTriggerProps>(
   ({ icon, label, isOpen, disabled, className, widthPx, style, ...rest }, ref) => {
     const mergedStyle: CSSProperties | undefined =
-      widthPx != null
-        ? { ...style, width: widthPx }
-        : style;
+      widthPx != null ? { ...style, width: widthPx } : style;
 
     return (
       <button

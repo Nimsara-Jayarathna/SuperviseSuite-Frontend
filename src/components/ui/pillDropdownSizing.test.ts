@@ -7,7 +7,9 @@ describe('computePillDropdownWidthPx', () => {
   });
 
   it('clamps to the maximum width', () => {
-    expect(computePillDropdownWidthPx({ labelPx: 1000, minWidthPx: 160, maxWidthPx: 240 })).toBe(240);
+    expect(computePillDropdownWidthPx({ labelPx: 1000, minWidthPx: 160, maxWidthPx: 240 })).toBe(
+      240,
+    );
   });
 
   it('returns a width >= label width + chrome', () => {
@@ -16,4 +18,3 @@ describe('computePillDropdownWidthPx', () => {
     expect(width).toBeLessThanOrEqual(240);
   });
 });
-

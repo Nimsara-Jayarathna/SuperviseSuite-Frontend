@@ -145,11 +145,7 @@ export function Select(props: SelectProps) {
       {isOpen &&
         menuStyle &&
         createPortal(
-          <DropdownSurface
-            ref={menuRef}
-            style={menuStyle}
-            role="listbox"
-          >
+          <DropdownSurface ref={menuRef} style={menuStyle} role="listbox">
             {options.map((option) => {
               const isSelected = option.value === selectedValue;
               return (

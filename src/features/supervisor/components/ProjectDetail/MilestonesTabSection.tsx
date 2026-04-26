@@ -1,8 +1,4 @@
-import {
-  CalendarDays,
-  Plus,
-  Edit2,
-} from 'lucide-react';
+import { CalendarDays, Plus, Edit2 } from 'lucide-react';
 import { useState } from 'react';
 import { buttonStyles } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';

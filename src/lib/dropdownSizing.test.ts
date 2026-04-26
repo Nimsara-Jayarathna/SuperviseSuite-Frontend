@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { calculateDropdownLayout } from './dropdownSizing';
 
-function setViewport(params: { width: number; height: number; scrollX?: number; scrollY?: number }) {
+function setViewport(params: {
+  width: number;
+  height: number;
+  scrollX?: number;
+  scrollY?: number;
+}) {
   const { width, height, scrollX = 0, scrollY = 0 } = params;
   Object.defineProperty(window, 'innerWidth', { value: width, configurable: true });
   Object.defineProperty(window, 'innerHeight', { value: height, configurable: true });

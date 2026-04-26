@@ -1,38 +1,24 @@
-const dateTimeFormatter = new Intl.DateTimeFormat('en', {
-  month: 'short',
-  day: 'numeric',
-  year: 'numeric',
-  hour: 'numeric',
-  minute: '2-digit',
-});
-
 type StudentProjectDetailsKpisProps = {
   batch: string | null;
   semester: string | null;
   milestonesCount: number;
-  lastActivityAt: string | null;
+  progressPercent: number | null;
 };
 
 export function StudentProjectDetailsKpis({
   batch,
   semester,
   milestonesCount,
-  lastActivityAt,
+  progressPercent,
 }: StudentProjectDetailsKpisProps) {
   return (
-    <section className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+    <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
       {[
         { label: 'Batch', value: batch ?? 'Not set' },
         { label: 'Semester', value: semester ?? 'Not set' },
         { label: 'Milestones', value: String(milestonesCount) },
-        {
-          label: 'Last Activity',
-          value: lastActivityAt
-            ? dateTimeFormatter.format(new Date(lastActivityAt))
-            : 'Not recorded',
-          small: true,
-        },
-      ].map(({ label, value, small }) => (
+        { label: 'Progress', value: `${progressPercent ?? 0}%` },
+      ].map(({ label, value }) => (
         <div
           key={label}
           className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm"
@@ -40,9 +26,7 @@ export function StudentProjectDetailsKpis({
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
             {label}
           </p>
-          <p className={`mt-2 font-semibold text-foreground ${small ? 'text-sm' : 'text-2xl'}`}>
-            {value}
-          </p>
+          <p className="mt-2 text-2xl font-semibold text-foreground">{value}</p>
         </div>
       ))}
     </section>

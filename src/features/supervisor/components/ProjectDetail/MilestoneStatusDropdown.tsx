@@ -62,7 +62,13 @@ export function MilestoneStatusDropdown({
     setWidthPx(nextWidth);
   }, [allStatusLabels]);
 
-  const { isOpen: menuIsOpen, open, close, menuRef, menuStyle } = useAnchoredMenu({
+  const {
+    isOpen: menuIsOpen,
+    open,
+    close,
+    menuRef,
+    menuStyle,
+  } = useAnchoredMenu({
     anchorRef: triggerRef,
     labels: visibleLabels,
     align: 'auto',
@@ -88,7 +94,11 @@ export function MilestoneStatusDropdown({
       <PillDropdownTrigger
         ref={triggerRef}
         aria-label="Change milestone status"
-        title={disabled ? 'No alternative status available for this milestone.' : 'Change milestone status'}
+        title={
+          disabled
+            ? 'No alternative status available for this milestone.'
+            : 'Change milestone status'
+        }
         disabled={disabled}
         isOpen={isOpen}
         widthPx={widthPx}
@@ -115,7 +125,9 @@ export function MilestoneStatusDropdown({
                   <button
                     type="button"
                     className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 ${
-                      selected ? 'bg-slate-50 font-semibold text-foreground' : 'text-foreground hover:bg-slate-50'
+                      selected
+                        ? 'bg-slate-50 font-semibold text-foreground'
+                        : 'text-foreground hover:bg-slate-50'
                     }`}
                     onMouseDown={(event) => event.preventDefault()}
                     onClick={() => {
@@ -139,4 +151,3 @@ export function MilestoneStatusDropdown({
     </>
   );
 }
-
