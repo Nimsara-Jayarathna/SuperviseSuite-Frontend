@@ -6,9 +6,9 @@ import { ErrorState } from '@/components/feedback/ErrorState';
 import { buttonStyles } from '@/components/ui/Button';
 import { PageTabs } from '@/components/ui/PageTabs';
 import { StudentProjectDetailsSkeleton } from '../components/StudentProjectDetailsSkeleton';
-import { StudentProjectDetailsHeader } from '../components/projectDetails/StudentProjectDetailsHeader';
-import { StudentProjectDetailsHighlights } from '../components/projectDetails/StudentProjectDetailsHighlights';
 import { StudentProjectDetailsKpis } from '../components/projectDetails/StudentProjectDetailsKpis';
+import { ProjectHeroCard } from '@/components/ui/ProjectHeroCard';
+import { LifecycleStatus } from '@/components/lifecycle';
 import { StudentProjectGitHubTab } from '../components/projectDetails/StudentProjectGitHubTab';
 import { StudentProjectJiraTab } from '../components/projectDetails/StudentProjectJiraTab';
 import { StudentProjectMilestonesTab } from '../components/projectDetails/StudentProjectMilestonesTab';
@@ -84,23 +84,18 @@ export function StudentProjectDetailsPage() {
 
   return (
     <div className="space-y-6">
-      <StudentProjectDetailsHeader
+      <ProjectHeroCard
         title={project.title}
-        summary={project.summary}
-        lifecycleStatus={project.status}
-      />
-
-      <StudentProjectDetailsHighlights
-        milestoneDate={project.milestoneDate}
-        membersCount={project.members.length}
-        progressPercent={project.progressPercent}
-      />
-
-      <StudentProjectDetailsKpis
-        batch={project.batch}
-        semester={project.semester}
-        milestonesCount={project.milestones.length}
-        lastActivityAt={project.lastActivityAt}
+        subtitle={project.summary ?? 'No summary has been recorded for this project yet.'}
+        rightSlot={<LifecycleStatus value={project.status} canEdit={false} />}
+        kpiSlot={
+          <StudentProjectDetailsKpis
+            batch={project.batch}
+            semester={project.semester}
+            milestonesCount={project.milestones.length}
+            progressPercent={project.progressPercent}
+          />
+        }
       />
 
       <PageTabs

@@ -12,8 +12,9 @@ import { OverviewTabSection } from '../components/ProjectDetail/OverviewTabSecti
 import { TeamTabSection } from '../components/ProjectDetail/TeamTabSection';
 import { FilesTabSection } from '../components/ProjectDetail/FilesTabSection';
 import { MeetingsTabSection } from '../components/ProjectDetail/MeetingsTabSection';
-import { SupervisorProjectDetailsHeader } from '../components/projectDetails/SupervisorProjectDetailsHeader';
 import { SupervisorProjectDetailsKpis } from '../components/projectDetails/SupervisorProjectDetailsKpis';
+import { ProjectHeroCard } from '@/components/ui/ProjectHeroCard';
+import { LifecycleStatus } from '@/components/lifecycle';
 import { SupervisorProjectGitHubTab } from '../components/projectDetails/SupervisorProjectGitHubTab';
 import { useProjectRepositories } from '../hooks/useProjectRepositories';
 import { useProjectDetailsPageState } from '../hooks/useProjectDetailsPageState';
@@ -228,24 +229,27 @@ export function ProjectDetailsPage() {
         }
       />
 
-      <SupervisorProjectDetailsHeader
+      <ProjectHeroCard
         title={project.title}
-        summary={project.summary}
-        milestoneDate={project.milestoneDate}
-        membersCount={project.members.length}
-        progressPercent={project.progressPercent}
-        quickLifecycleStatus={actions.quickLifecycleStatus}
-        isUpdatingStatus={actions.isUpdatingStatus}
-        onQuickStatusChange={(status) =>
-          actions.handleQuickStatusChange(status as SupervisorProjectLifecycle)
+        subtitle={project.summary ?? 'No summary has been recorded for this project yet.'}
+        rightSlot={
+          <LifecycleStatus
+            value={actions.quickLifecycleStatus}
+            canEdit
+            disabled={actions.isUpdatingStatus}
+            onChange={(status) =>
+              actions.handleQuickStatusChange(status as SupervisorProjectLifecycle)
+            }
+          />
         }
-      />
-
-      <SupervisorProjectDetailsKpis
-        batch={project.batch}
-        semester={project.semester}
-        milestonesCount={project.milestones.length}
-        lastActivityAt={project.lastActivityAt}
+        kpiSlot={
+          <SupervisorProjectDetailsKpis
+            batch={project.batch}
+            semester={project.semester}
+            milestonesCount={project.milestones.length}
+            progressPercent={project.progressPercent}
+          />
+        }
       />
 
       <PageTabs

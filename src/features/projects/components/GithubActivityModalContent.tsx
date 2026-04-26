@@ -14,6 +14,7 @@ import { TimeAgo } from '@/components/ui/TimeAgo';
 import { isApiException } from '@/services/apiClient';
 import type { ProjectGitHubRecentCommit } from '../types';
 import type { PaginatedListResult } from '../types';
+import { getGeneratedAvatarUrl, getGitHubAvatarUrl } from '../utils/githubIdentity';
 
 type CommitType =
   | 'merge'
@@ -222,7 +223,11 @@ export function GithubActivityModalContent({ isOpen, fetchPage }: GithubActivity
       {items.map((commit, index) => {
         const type = getCommitType(commit.message);
         const shortSha = commit.sha ? commit.sha.slice(0, 7) : null;
-        const authorAvatarUrl = commit.author ? `https://github.com/${commit.author}.png` : null;
+        const authorAvatarUrl = getGitHubAvatarUrl({
+          name: commit.author,
+          githubUsername: commit.githubUsername,
+          avatarUrl: commit.avatarUrl,
+        });
 
         return (
           <article
@@ -230,14 +235,14 @@ export function GithubActivityModalContent({ isOpen, fetchPage }: GithubActivity
             className="group relative flex gap-4 rounded-2xl border border-slate-100 bg-white p-4 transition-all hover:border-amber-200 hover:shadow-md"
           >
             <div className="flex shrink-0 flex-col items-center gap-2 pt-1">
-              <div className="relative h-10 w-10 overflow-hidden rounded-full border border-slate-200 bg-slate-50 transition-transform group-hover:scale-110">
+              <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full border border-slate-200 bg-slate-50 transition-transform group-hover:scale-110">
                 {authorAvatarUrl ? (
                   <img
                     src={authorAvatarUrl}
                     alt={commit.author || 'Author'}
                     className="h-full w-full object-cover"
                     onError={(e) => {
-                      (e.target as HTMLImageElement).style.display = 'none';
+                      (e.target as HTMLImageElement).src = getGeneratedAvatarUrl(commit.author);
                     }}
                   />
                 ) : (
@@ -246,7 +251,7 @@ export function GithubActivityModalContent({ isOpen, fetchPage }: GithubActivity
                   </div>
                 )}
               </div>
-              <div className="h-full w-px bg-slate-100 group-last:hidden" />
+              <div className="min-h-8 flex-1 w-px bg-slate-100 group-last:hidden" />
             </div>
 
             <div className="min-w-0 flex-1">

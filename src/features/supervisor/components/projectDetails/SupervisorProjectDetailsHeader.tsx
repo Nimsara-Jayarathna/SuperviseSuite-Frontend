@@ -1,4 +1,5 @@
 import { CalendarDays, Clock3, Users } from 'lucide-react';
+import { useRef } from 'react';
 import { Select } from '@/components/ui/Select';
 import { parseLocalDateOnly } from '@/lib/dateOnly';
 import { dateFormatter, LIFECYCLE_OPTIONS } from '../../projectDetails.shared';
@@ -26,6 +27,7 @@ export function SupervisorProjectDetailsHeader({
   onQuickStatusChange,
 }: SupervisorProjectDetailsHeaderProps) {
   const parsedMilestoneDate = milestoneDate ? parseLocalDateOnly(milestoneDate) : null;
+  const lifecyclePillRef = useRef<HTMLDivElement>(null);
 
   return (
     <>
@@ -46,7 +48,10 @@ export function SupervisorProjectDetailsHeader({
             {summary ?? 'No summary has been recorded for this project yet.'}
           </p>
         </div>
-        <div className="inline-flex shrink-0 items-center rounded-2xl border border-slate-200 bg-white px-4 py-2 shadow-sm transition-all hover:border-amber-200 hover:shadow-md">
+        <div
+          ref={lifecyclePillRef}
+          className="inline-flex shrink-0 items-center rounded-2xl border border-slate-200 bg-white px-4 py-2 shadow-sm transition-all hover:border-amber-200 hover:shadow-md"
+        >
           <div className="flex flex-col leading-tight">
             <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
               Lifecycle
@@ -56,6 +61,9 @@ export function SupervisorProjectDetailsHeader({
                 value={quickLifecycleStatus}
                 onChange={(e) => onQuickStatusChange(e.target.value as SupervisorProjectLifecycle)}
                 disabled={isUpdatingStatus}
+                menuAnchorRef={lifecyclePillRef}
+                menuAlign="auto"
+                menuMatchTriggerWidth
                 className="bg-transparent text-[13px] font-black uppercase tracking-tight text-foreground outline-none cursor-pointer"
               >
                 {LIFECYCLE_OPTIONS.map((status) => (
