@@ -235,7 +235,7 @@ export function GithubActivityModalContent({ isOpen, fetchPage }: GithubActivity
             className="group relative flex gap-4 rounded-2xl border border-slate-100 bg-white p-4 transition-all hover:border-amber-200 hover:shadow-md"
           >
             <div className="flex shrink-0 flex-col items-center gap-2 pt-1">
-              <div className="relative h-10 w-10 overflow-hidden rounded-full border border-slate-200 bg-slate-50 transition-transform group-hover:scale-110">
+              <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full border border-slate-200 bg-slate-50 transition-transform group-hover:scale-110">
                 {authorAvatarUrl ? (
                   <img
                     src={authorAvatarUrl}
@@ -251,7 +251,7 @@ export function GithubActivityModalContent({ isOpen, fetchPage }: GithubActivity
                   </div>
                 )}
               </div>
-              <div className="h-full w-px bg-slate-100 group-last:hidden" />
+              <div className="min-h-8 flex-1 w-px bg-slate-100 group-last:hidden" />
             </div>
 
             <div className="min-w-0 flex-1">
