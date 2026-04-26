@@ -9,11 +9,12 @@ import {
   Clock,
 } from 'lucide-react';
 import { createPortal } from 'react-dom';
-import { type ComponentProps, useEffect, useRef, useState } from 'react';
+import { type ComponentProps, useEffect, useMemo, useRef, useState } from 'react';
 import { buttonStyles } from '@/components/ui/Button';
+import { DropdownSurface } from '@/components/ui/DropdownSurface';
 import { Select } from '@/components/ui/Select';
 import { StatusBadge } from '@/components/ui/StatusBadge';
-import { calculateDropdownLayout } from '@/lib/dropdownSizing';
+import { useAnchoredMenu } from '@/components/ui/useAnchoredMenu';
 import { parseLocalDateOnly } from '@/lib/dateOnly';
 import { FIELD_LIMITS, dateFormatter } from '../../projectDetails.shared';
 import {
@@ -68,76 +69,49 @@ function getStatusIcon(status: MilestoneStatus, className?: string) {
 
 export function MilestonesTabSection({ project, milestones }: MilestonesTabSectionProps) {
   const today = getTodayLocalDateString();
-  const quickStatusMenuRef = useRef<HTMLUListElement>(null);
-  const quickStatusAnchorRef = useRef<HTMLButtonElement | null>(null);
-  const [quickStatusMenu, setQuickStatusMenu] = useState<{
-    milestoneId: string;
-    top: number;
-    left: number;
-    width: number;
-    maxHeight: number;
-  } | null>(null);
+  const quickStatusAnchorRef = useRef<HTMLElement | null>(null);
+  const [quickStatusMilestoneId, setQuickStatusMilestoneId] = useState<string | null>(null);
+
+  const quickStatusTarget = useMemo(() => {
+    if (!quickStatusMilestoneId) return null;
+    return project.milestones.find((milestone) => milestone.id === quickStatusMilestoneId) ?? null;
+  }, [project.milestones, quickStatusMilestoneId]);
+
+  const quickStatusVisibleStatuses = useMemo(() => {
+    if (!quickStatusTarget) return [];
+    return getVisibleMilestoneStatuses({
+      currentStatus: quickStatusTarget.status,
+      dueDate: quickStatusTarget.dueDate,
+      today,
+    });
+  }, [quickStatusTarget, today]);
+
+  const quickStatusLabels = useMemo(
+    () => quickStatusVisibleStatuses.map((status) => status.replace('_', ' ')),
+    [quickStatusVisibleStatuses],
+  );
+
+  const {
+    isOpen: isQuickStatusMenuOpen,
+    open: openQuickStatusMenu,
+    close: closeQuickStatusMenu,
+    menuRef: quickStatusMenuRef,
+    menuStyle: quickStatusMenuStyle,
+  } = useAnchoredMenu({
+    anchorRef: quickStatusAnchorRef,
+    labels: quickStatusLabels,
+    align: 'auto',
+    offset: 6,
+    matchTriggerWidth: true,
+    getFontSourceEl: () => quickStatusAnchorRef.current,
+  });
 
   useEffect(() => {
-    if (!quickStatusMenu) return;
-
-    const closeMenu = () => setQuickStatusMenu(null);
-    const onDocMouseDown = (event: MouseEvent) => {
-      const target = event.target as Node;
-      if (!quickStatusMenuRef.current?.contains(target)) {
-        closeMenu();
-      }
-    };
-    const onDocKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') closeMenu();
-    };
-
-    const onResize = () => {
-      if (!quickStatusMenu || !quickStatusAnchorRef.current) return;
-      const rect = quickStatusAnchorRef.current.getBoundingClientRect();
-      const targetMilestone = project.milestones.find((m) => m.id === quickStatusMenu.milestoneId);
-      const visibleStatuses = targetMilestone
-        ? getVisibleMilestoneStatuses({
-            currentStatus: targetMilestone.status,
-            dueDate: targetMilestone.dueDate,
-            today,
-          })
-        : [];
-      const nextLayout = calculateDropdownLayout({
-        triggerRect: rect,
-        labels: visibleStatuses.map((status) => status.replace('_', ' ')),
-        fontSourceEl: quickStatusAnchorRef.current,
-      });
-      setQuickStatusMenu((current) =>
-        current
-          ? {
-              ...current,
-              top: nextLayout.top,
-              left: nextLayout.left,
-              width: nextLayout.width,
-              maxHeight: nextLayout.maxHeight,
-            }
-          : current,
-      );
-    };
-
-    document.addEventListener('mousedown', onDocMouseDown);
-    document.addEventListener('keydown', onDocKeyDown);
-    window.addEventListener('resize', onResize);
-    const onAnyScroll = (event: Event) => {
-      const target = event.target as Node | null;
-      if (target && quickStatusMenuRef.current?.contains(target)) return;
-      closeMenu();
-    };
-    window.addEventListener('scroll', onAnyScroll, true);
-
-    return () => {
-      document.removeEventListener('mousedown', onDocMouseDown);
-      document.removeEventListener('keydown', onDocKeyDown);
-      window.removeEventListener('resize', onResize);
-      window.removeEventListener('scroll', onAnyScroll, true);
-    };
-  }, [project.milestones, quickStatusMenu, today]);
+    if (!isQuickStatusMenuOpen) return;
+    if (!quickStatusTarget || !quickStatusAnchorRef.current) {
+      closeQuickStatusMenu();
+    }
+  }, [closeQuickStatusMenu, isQuickStatusMenuOpen, quickStatusTarget]);
 
   return (
     <section className="rounded-3xl border border-border bg-white p-6 shadow-sm transition-all hover:shadow-md">
@@ -454,21 +428,12 @@ export function MilestonesTabSection({ project, milestones }: MilestonesTabSecti
                                     return;
                                   }
                                   quickStatusAnchorRef.current = event.currentTarget;
-                                  const rect = event.currentTarget.getBoundingClientRect();
-                                  setQuickStatusMenu((current) =>
-                                    current?.milestoneId === milestone.id
-                                      ? null
-                                      : {
-                                          milestoneId: milestone.id,
-                                          ...calculateDropdownLayout({
-                                            triggerRect: rect,
-                                            labels: quickStatusOptions.map((status) =>
-                                              status.replace('_', ' '),
-                                            ),
-                                            fontSourceEl: event.currentTarget,
-                                          }),
-                                        },
-                                  );
+                                  setQuickStatusMilestoneId(milestone.id);
+                                  if (isQuickStatusMenuOpen && quickStatusMilestoneId === milestone.id) {
+                                    closeQuickStatusMenu();
+                                    return;
+                                  }
+                                  openQuickStatusMenu();
                                 }}
                                 disabled={
                                   milestones.quickStatusUpdatingId === milestone.id ||
@@ -544,62 +509,39 @@ export function MilestonesTabSection({ project, milestones }: MilestonesTabSecti
           </p>
         </div>
       )}
-      {quickStatusMenu &&
+      {isQuickStatusMenuOpen &&
+        quickStatusMenuStyle &&
+        quickStatusTarget &&
         createPortal(
-          <ul
-            ref={quickStatusMenuRef}
-            className="overflow-auto rounded-2xl border border-border bg-white shadow-lg"
-            style={{
-              position: 'absolute',
-              top: quickStatusMenu.top,
-              left: quickStatusMenu.left,
-              width: quickStatusMenu.width,
-              maxHeight: quickStatusMenu.maxHeight,
-              zIndex: 9999,
-            }}
-            role="listbox"
-          >
-            {(() => {
-              const targetMilestone = project.milestones.find(
-                (m) => m.id === quickStatusMenu.milestoneId,
+          <DropdownSurface ref={quickStatusMenuRef} role="listbox" style={quickStatusMenuStyle}>
+            {quickStatusVisibleStatuses.map((status) => {
+              const isSelected = quickStatusTarget.status === status;
+              return (
+                <li key={status}>
+                  <button
+                    type="button"
+                    className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 ${
+                      isSelected
+                        ? 'bg-slate-50 font-semibold text-foreground'
+                        : 'text-foreground hover:bg-slate-50'
+                    }`}
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => {
+                      closeQuickStatusMenu();
+                      void milestones.submitQuickMilestoneStatus(quickStatusTarget, status);
+                    }}
+                  >
+                    <span className="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap pr-3">
+                      {status.replace('_', ' ')}
+                    </span>
+                    <span className="shrink-0">
+                      <span className={isSelected ? 'text-amber-600' : 'text-transparent'}>✓</span>
+                    </span>
+                  </button>
+                </li>
               );
-              if (!targetMilestone) return null;
-              const visibleStatuses = getVisibleMilestoneStatuses({
-                currentStatus: targetMilestone.status,
-                dueDate: targetMilestone.dueDate,
-                today,
-              });
-              return visibleStatuses.map((status) => {
-                const isSelected = targetMilestone.status === status;
-                return (
-                  <li key={status}>
-                    <button
-                      type="button"
-                      className={`flex w-full items-center justify-between py-2 px-4 text-left text-sm transition-colors ${
-                        isSelected
-                          ? 'bg-slate-50 font-semibold text-foreground'
-                          : 'font-medium text-foreground hover:bg-slate-50'
-                      }`}
-                      onMouseDown={(event) => event.preventDefault()}
-                      onClick={() => {
-                        setQuickStatusMenu(null);
-                        void milestones.submitQuickMilestoneStatus(targetMilestone, status);
-                      }}
-                    >
-                      <span className="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap pr-3">
-                        {status.replace('_', ' ')}
-                      </span>
-                      <span className="shrink-0">
-                        <span className={isSelected ? 'text-amber-600' : 'text-transparent'}>
-                          ✓
-                        </span>
-                      </span>
-                    </button>
-                  </li>
-                );
-              });
-            })()}
-          </ul>,
+            })}
+          </DropdownSurface>,
           document.body,
         )}
     </section>
