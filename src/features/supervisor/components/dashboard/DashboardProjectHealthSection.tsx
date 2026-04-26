@@ -132,47 +132,60 @@ export function DashboardProjectHealthSection({
       ) : visibleProjects.length > 0 ? (
         <div className="mt-5 space-y-3">
           <div className="hidden overflow-x-auto md:block">
-            <table className="min-w-full text-left text-sm">
+            <table className="w-full min-w-[920px] table-fixed text-left text-sm">
+              <colgroup>
+                <col className="w-[44%]" />
+                <col className="w-[12%]" />
+                <col className="w-[12%]" />
+                <col className="w-[10%]" />
+                <col className="w-[12%]" />
+                <col className="w-[10%]" />
+              </colgroup>
               <thead className="border-b border-slate-200 text-xs uppercase tracking-[0.2em] text-muted-foreground">
                 <tr>
                   <th className="px-3 py-3">Project</th>
-                  <th className="px-3 py-3">Status</th>
-                  <th className="px-3 py-3">Milestone</th>
-                  <th className="px-3 py-3">Progress</th>
-                  <th className="px-3 py-3">Jira Health</th>
-                  <th className="px-3 py-3">Quick links</th>
+                  <th className="px-3 py-3 whitespace-nowrap">Status</th>
+                  <th className="px-3 py-3 whitespace-nowrap">Milestone</th>
+                  <th className="px-3 py-3 whitespace-nowrap">Progress</th>
+                  <th className="px-3 py-3 whitespace-nowrap">Jira Health</th>
+                  <th className="px-3 py-3 whitespace-nowrap">Quick links</th>
                 </tr>
               </thead>
               <tbody>
                 {pagedProjects.map((project) => (
                   <tr key={project.id} className="border-b border-slate-100 last:border-0">
-                    <td className="px-3 py-4 align-top">
-                      <p className="font-medium text-foreground">{project.title}</p>
-                      <p className="mt-1 max-w-md text-muted-foreground">
+                    <td className="min-w-0 px-3 py-4 align-top">
+                      <p className="truncate font-medium text-foreground" title={project.title}>
+                        {project.title}
+                      </p>
+                      <p
+                        className="mt-1 truncate text-muted-foreground"
+                        title={project.summary ?? 'No summary provided yet.'}
+                      >
                         {project.summary ?? 'No summary provided yet.'}
                       </p>
                     </td>
-                    <td className="px-3 py-4 align-top">
+                    <td className="px-3 py-4 align-top whitespace-nowrap">
                       <span
                         className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${statusClasses(project.lifecycleStatus)}`}
                       >
                         {project.lifecycleStatus.replace('_', ' ')}
                       </span>
                     </td>
-                    <td className="px-3 py-4 align-top text-muted-foreground">
+                    <td className="px-3 py-4 align-top whitespace-nowrap text-muted-foreground">
                       {formatMilestoneDate(project.milestoneDate)}
                     </td>
-                    <td className="px-3 py-4 align-top text-muted-foreground">
+                    <td className="px-3 py-4 align-top whitespace-nowrap text-muted-foreground">
                       {project.progressPercent ?? 0}%
                     </td>
-                    <td className="px-3 py-4 align-top">
+                    <td className="px-3 py-4 align-top whitespace-nowrap">
                       <span
                         className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${jiraIndicatorClasses(project.jiraHealthIndicator)}`}
                       >
                         {jiraIndicatorLabel(project.jiraHealthIndicator)}
                       </span>
                     </td>
-                    <td className="px-3 py-4 align-top">
+                    <td className="px-3 py-4 align-top whitespace-nowrap">
                       <Link
                         to={`/supervisor/projects/${project.id}`}
                         className={buttonStyles({ variant: 'primary', size: 'sm' })}
