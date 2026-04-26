@@ -31,7 +31,9 @@ export const PillDropdownTrigger = forwardRef<HTMLButtonElement, PillDropdownTri
       >
         <span className="grid w-full grid-cols-[16px_1fr_16px] items-center gap-2 px-3 py-1.5">
           <span className="flex h-4 w-4 items-center justify-center">{icon ?? null}</span>
-          <span className="min-w-0 justify-self-center text-center">{label}</span>
+          <span className="inline-flex min-w-0 items-center justify-center justify-self-center text-center leading-none">
+            {label}
+          </span>
           <span
             aria-hidden
             className={cn(

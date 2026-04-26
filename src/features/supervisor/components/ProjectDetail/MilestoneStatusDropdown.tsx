@@ -104,7 +104,7 @@ export function MilestoneStatusDropdown({
         widthPx={widthPx}
         icon={getStatusIcon(value, 'h-3.5 w-3.5')}
         label={
-          <span className="text-[10px] font-black uppercase tracking-wider text-slate-700">
+          <span className="inline-flex items-center leading-none text-[10px] font-black uppercase tracking-wider text-slate-700">
             {statusLabel(value)}
           </span>
         }

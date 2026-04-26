@@ -14,6 +14,7 @@ import { createPortal } from 'react-dom';
 import type { DropdownAlign } from '@/lib/dropdownSizing';
 import { DropdownSurface } from '@/components/ui/DropdownSurface';
 import { useAnchoredMenu } from '@/components/ui/useAnchoredMenu';
+import { cn } from '@/lib/cn';
 
 type SelectProps = SelectHTMLAttributes<HTMLSelectElement> & {
   children: ReactNode;
@@ -21,6 +22,7 @@ type SelectProps = SelectHTMLAttributes<HTMLSelectElement> & {
   menuOffset?: number;
   menuMatchTriggerWidth?: boolean;
   menuAnchorRef?: RefObject<HTMLElement | null>;
+  triggerVariant?: 'default' | 'pill';
 };
 
 type OptionItem = {
@@ -53,6 +55,7 @@ export function Select(props: SelectProps) {
     menuOffset,
     menuMatchTriggerWidth,
     menuAnchorRef,
+    triggerVariant = 'default',
     ...rest
   } = props;
   const selectRef = useRef<HTMLSelectElement>(null);
@@ -130,18 +133,46 @@ export function Select(props: SelectProps) {
     close();
   };
 
+  const selectControl = (
+    <select
+      {...rest}
+      ref={selectRef}
+      disabled={disabled}
+      className={cn(
+        triggerVariant === 'pill' &&
+          'h-12 w-full appearance-none rounded-2xl border border-slate-200 bg-slate-100 px-5 pr-12 text-base font-bold leading-none text-slate-900 shadow-sm transition-all hover:border-slate-300 hover:bg-slate-50 focus:border-slate-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:opacity-60',
+        className,
+      )}
+      onMouseDown={handleMouseDown}
+      onKeyDown={handleKeyDown}
+    >
+      {children}
+    </select>
+  );
+
   return (
     <>
-      <select
-        {...rest}
-        ref={selectRef}
-        disabled={disabled}
-        className={className}
-        onMouseDown={handleMouseDown}
-        onKeyDown={handleKeyDown}
-      >
-        {children}
-      </select>
+      {triggerVariant === 'pill' ? (
+        <span className="relative block w-full">
+          {selectControl}
+          <svg
+            aria-hidden
+            className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-700"
+            viewBox="0 0 16 16"
+            fill="none"
+          >
+            <path
+              d="M4 6L8 10L12 6"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </span>
+      ) : (
+        selectControl
+      )}
       {isOpen &&
         menuStyle &&
         createPortal(
