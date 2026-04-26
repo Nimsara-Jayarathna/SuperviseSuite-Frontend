@@ -4,6 +4,7 @@ import { buttonStyles } from '@/components/ui/Button';
 import { isApiException } from '@/services/apiClient';
 import type { ProjectGitHubContributor } from '../types';
 import type { PaginatedListResult } from '../types';
+import { getGeneratedAvatarUrl, getGitHubAvatarUrl } from '../utils/githubIdentity';
 
 type GithubContributorsModalContentProps = {
   isOpen: boolean;
@@ -115,7 +116,12 @@ export function GithubContributorsModalContent({
   return (
     <div className="flex flex-col gap-3">
       {items.map((contributor, index) => {
-        const avatarUrl = `https://github.com/${contributor.name}.png`;
+        const avatarUrl =
+          getGitHubAvatarUrl({
+            name: contributor.name,
+            githubUsername: contributor.githubUsername,
+            avatarUrl: contributor.avatarUrl,
+          }) ?? getGeneratedAvatarUrl(contributor.name);
 
         return (
           <article
@@ -129,8 +135,7 @@ export function GithubContributorsModalContent({
                   alt={contributor.name}
                   className="h-full w-full object-cover"
                   onError={(e) => {
-                    (e.target as HTMLImageElement).src =
-                      `https://ui-avatars.com/api/?name=${encodeURIComponent(contributor.name)}&background=f1f5f9&color=94a3b8`;
+                    (e.target as HTMLImageElement).src = getGeneratedAvatarUrl(contributor.name);
                   }}
                 />
               </div>

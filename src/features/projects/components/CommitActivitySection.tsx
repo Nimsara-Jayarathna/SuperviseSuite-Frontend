@@ -25,6 +25,7 @@ import type {
 import { GithubDetailsModal } from './GithubDetailsModal';
 import { GithubActivityModalContent } from './GithubActivityModalContent';
 import { GithubContributorsModalContent } from './GithubContributorsModalContent';
+import { getGeneratedAvatarUrl, getGitHubAvatarUrl } from '../utils/githubIdentity';
 
 type CommitActivitySectionProps = {
   isLoading: boolean;
@@ -180,7 +181,11 @@ function CommitTypeIcon({ type, className }: { type: CommitType | null; classNam
 function renderCommitCard(commit: ProjectGitHubRecentCommit, index: number) {
   const type = getCommitType(commit.message);
   const shortSha = commit.sha ? commit.sha.slice(0, 7) : null;
-  const authorAvatarUrl = commit.author ? `https://github.com/${commit.author}.png` : null;
+  const authorAvatarUrl = getGitHubAvatarUrl({
+    name: commit.author,
+    githubUsername: commit.githubUsername,
+    avatarUrl: commit.avatarUrl,
+  });
 
   return (
     <article
@@ -195,7 +200,7 @@ function renderCommitCard(commit: ProjectGitHubRecentCommit, index: number) {
               alt={commit.author || 'Author'}
               className="h-full w-full object-cover"
               onError={(e) => {
-                (e.target as HTMLImageElement).style.display = 'none';
+                (e.target as HTMLImageElement).src = getGeneratedAvatarUrl(commit.author);
               }}
             />
           ) : (
@@ -255,7 +260,7 @@ type LegacyCommitPayload = {
     defaultBranch?: string;
     lastSyncedAt?: string | null;
   }>;
-  contributorsPreview?: Array<{ name: string; commitCount: number }>;
+  contributorsPreview?: Array<ProjectGitHubContributor>;
   recentCommitsPreview?: ProjectGitHubRecentCommit[];
   activitySummary?: {
     totalCommits?: number;
@@ -267,8 +272,10 @@ type LegacyCommitPayload = {
     message?: string;
     author?: string;
     committedAt?: string | null;
+    githubUsername?: string | null;
+    avatarUrl?: string | null;
   }>;
-  contributors?: Array<{ name: string; commitCount: number }>;
+  contributors?: Array<ProjectGitHubContributor>;
   recentCommits?: ProjectGitHubRecentCommit[];
 };
 
@@ -306,6 +313,8 @@ function normalizeDashboardPayload(
     sha: commit.sha ?? null,
     message: commit.message ?? '',
     author: commit.author ?? 'Unknown',
+    githubUsername: commit.githubUsername ?? null,
+    avatarUrl: commit.avatarUrl ?? null,
     committedAt: commit.committedAt ?? null,
   }));
 
@@ -533,7 +542,12 @@ export function CommitActivitySection({
         {topContributors.length > 0 ? (
           <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {topContributors.map((contributor) => {
-              const avatarUrl = `https://github.com/${contributor.name}.png`;
+              const avatarUrl =
+                getGitHubAvatarUrl({
+                  name: contributor.name,
+                  githubUsername: contributor.githubUsername,
+                  avatarUrl: contributor.avatarUrl,
+                }) ?? getGeneratedAvatarUrl(contributor.name);
               return (
                 <article
                   key={contributor.name}
@@ -545,8 +559,7 @@ export function CommitActivitySection({
                       alt={contributor.name}
                       className="h-full w-full object-cover"
                       onError={(e) => {
-                        (e.target as HTMLImageElement).src =
-                          `https://ui-avatars.com/api/?name=${encodeURIComponent(contributor.name)}&background=f1f5f9&color=94a3b8`;
+                        (e.target as HTMLImageElement).src = getGeneratedAvatarUrl(contributor.name);
                       }}
                     />
                   </div>

@@ -14,6 +14,7 @@ import { TimeAgo } from '@/components/ui/TimeAgo';
 import { isApiException } from '@/services/apiClient';
 import type { ProjectGitHubRecentCommit } from '../types';
 import type { PaginatedListResult } from '../types';
+import { getGeneratedAvatarUrl, getGitHubAvatarUrl } from '../utils/githubIdentity';
 
 type CommitType =
   | 'merge'
@@ -222,7 +223,11 @@ export function GithubActivityModalContent({ isOpen, fetchPage }: GithubActivity
       {items.map((commit, index) => {
         const type = getCommitType(commit.message);
         const shortSha = commit.sha ? commit.sha.slice(0, 7) : null;
-        const authorAvatarUrl = commit.author ? `https://github.com/${commit.author}.png` : null;
+        const authorAvatarUrl = getGitHubAvatarUrl({
+          name: commit.author,
+          githubUsername: commit.githubUsername,
+          avatarUrl: commit.avatarUrl,
+        });
 
         return (
           <article
@@ -237,7 +242,7 @@ export function GithubActivityModalContent({ isOpen, fetchPage }: GithubActivity
                     alt={commit.author || 'Author'}
                     className="h-full w-full object-cover"
                     onError={(e) => {
-                      (e.target as HTMLImageElement).style.display = 'none';
+                      (e.target as HTMLImageElement).src = getGeneratedAvatarUrl(commit.author);
                     }}
                   />
                 ) : (
