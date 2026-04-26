@@ -6,6 +6,13 @@ import type { JiraWorkspaceOption } from '../../types';
 
 const JIRA_COMPLETION_PROCESSING_TTL_MS = 5 * 60 * 1000;
 const JIRA_RESULT_KEY_PREFIX = 'jira-oauth:';
+const JIRA_OAUTH_COMPLETION_PARAM_KEYS = [
+  'jiraResultKey',
+  'jiraCode',
+  'jiraState',
+  'jiraError',
+  'jiraErrorDescription',
+] as const;
 
 type RefreshModalControls = {
   showLoading: (payload: { title: string; message: string; retryAction?: () => void }) => void;
@@ -72,6 +79,14 @@ function isValidJiraAuthUrl(value: string): boolean {
   }
 }
 
+function hasJiraOAuthCompletionParams(searchParams: URLSearchParams): boolean {
+  return JIRA_OAUTH_COMPLETION_PARAM_KEYS.some((key) => searchParams.has(key));
+}
+
+function navigateToWindowLocation(url: string): void {
+  window.location.assign(url);
+}
+
 type JiraWorkspaceSelectionState = {
   isOpen: boolean;
   selectionToken: string | null;
@@ -87,6 +102,7 @@ type UseSupervisorProjectJiraFlowParams = {
   setSearchParams: SetURLSearchParams;
   reloadProject: () => Promise<void>;
   refreshModal: RefreshModalControls;
+  navigateToUrl?: (url: string) => void;
 };
 
 export function useSupervisorProjectJiraFlow({
@@ -95,6 +111,7 @@ export function useSupervisorProjectJiraFlow({
   setSearchParams,
   reloadProject,
   refreshModal,
+  navigateToUrl = navigateToWindowLocation,
 }: UseSupervisorProjectJiraFlowParams) {
   const [isConnectingJira, setIsConnectingJira] = useState(false);
   const [isDisconnectingJira, setIsDisconnectingJira] = useState(false);
@@ -112,6 +129,10 @@ export function useSupervisorProjectJiraFlow({
   const jiraCompletionGuardRef = useRef<string | null>(null);
 
   useEffect(() => {
+    if (!hasJiraOAuthCompletionParams(searchParams)) {
+      return;
+    }
+
     const jiraResultKey = searchParams.get('jiraResultKey');
     const storedPayload = readJiraOAuthResultFromStorage(jiraResultKey);
     const jiraCode = storedPayload?.code ?? searchParams.get('jiraCode');
@@ -125,6 +146,7 @@ export function useSupervisorProjectJiraFlow({
         nextParams.delete('jiraResultKey');
         setSearchParams(nextParams, { replace: true });
       }
+      setIsConnectingJira(false);
       return;
     }
 
@@ -212,6 +234,17 @@ export function useSupervisorProjectJiraFlow({
       }
     })();
   }, [reloadProject, refreshModal, searchParams, setSearchParams]);
+
+  useEffect(() => {
+    function handlePageShow() {
+      if (!hasJiraOAuthCompletionParams(searchParams)) {
+        setIsConnectingJira(false);
+      }
+    }
+
+    window.addEventListener('pageshow', handlePageShow);
+    return () => window.removeEventListener('pageshow', handlePageShow);
+  }, [searchParams]);
 
   const hydrateJiraAfterConnect = useCallback(
     async (connectedProjectId: string | null | undefined) => {
@@ -316,7 +349,7 @@ export function useSupervisorProjectJiraFlow({
         throw new Error('Invalid Jira authorization URL.');
       }
       redirecting = true;
-      window.location.assign(auth.url);
+      navigateToUrl(auth.url);
     } catch (error) {
       const message = isApiException(error)
         ? error.apiError.message
@@ -330,7 +363,7 @@ export function useSupervisorProjectJiraFlow({
         setIsConnectingJira(false);
       }
     }
-  }, [projectId, refreshModal]);
+  }, [navigateToUrl, projectId, refreshModal]);
 
   const handleDisconnectJira = useCallback((): Promise<void> => {
     setIsJiraDisconnectConfirmOpen(true);
