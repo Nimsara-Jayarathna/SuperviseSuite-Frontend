@@ -559,7 +559,9 @@ export function CommitActivitySection({
                       alt={contributor.name}
                       className="h-full w-full object-cover"
                       onError={(e) => {
-                        (e.target as HTMLImageElement).src = getGeneratedAvatarUrl(contributor.name);
+                        (e.target as HTMLImageElement).src = getGeneratedAvatarUrl(
+                          contributor.name,
+                        );
                       }}
                     />
                   </div>
