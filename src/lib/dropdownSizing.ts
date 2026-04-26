@@ -60,6 +60,7 @@ export function calculateDropdownLayout(params: {
   align?: DropdownAlign;
   offset?: number;
   matchTriggerWidth?: boolean;
+  menuHeight?: number;
 }) {
   const {
     triggerRect,
@@ -68,6 +69,7 @@ export function calculateDropdownLayout(params: {
     align = 'auto',
     offset = 6,
     matchTriggerWidth = true,
+    menuHeight,
   } = params;
 
   const minWidth = matchTriggerWidth ? triggerRect.width : 0;
@@ -110,20 +112,32 @@ export function calculateDropdownLayout(params: {
 
   const estimatedMenuHeight =
     labels.length * ESTIMATED_ITEM_HEIGHT + ESTIMATED_MENU_PADDING * 2 + SAFETY_BUFFER;
+  const requiredMenuHeight = menuHeight ?? estimatedMenuHeight;
   const maxHeightBelow = Math.max(
     0,
     window.innerHeight - triggerRect.bottom - VIEWPORT_VERTICAL_PADDING - offset,
   );
   const maxHeightAbove = Math.max(0, triggerRect.top - VIEWPORT_VERTICAL_PADDING - offset);
 
-  const shouldOpenUp =
-    maxHeightBelow < Math.min(estimatedMenuHeight, 240) && maxHeightAbove > maxHeightBelow;
-  const maxHeight = shouldOpenUp ? maxHeightAbove : maxHeightBelow;
-  const renderedHeight = Math.min(estimatedMenuHeight, maxHeight);
+  const fitsBelow = requiredMenuHeight <= maxHeightBelow;
+  const fitsAbove = requiredMenuHeight <= maxHeightAbove;
 
-  const top = shouldOpenUp
-    ? triggerRect.top + window.scrollY - renderedHeight - offset
-    : triggerRect.bottom + window.scrollY + offset;
+  const placement: 'up' | 'down' = (() => {
+    // Prefer opening downward whenever it fully fits.
+    if (fitsBelow) return 'down';
+    // Otherwise, open upward if it fully fits above.
+    if (fitsAbove) return 'up';
+    // If neither side fully fits, pick the side with more space (down on ties).
+    return maxHeightAbove > maxHeightBelow ? 'up' : 'down';
+  })();
 
-  return { top, left, width, maxHeight };
+  const maxHeight = placement === 'up' ? maxHeightAbove : maxHeightBelow;
+  const renderedHeight = Math.min(requiredMenuHeight, maxHeight);
+
+  const top =
+    placement === 'up'
+      ? triggerRect.top + window.scrollY - renderedHeight - offset
+      : triggerRect.bottom + window.scrollY + offset;
+
+  return { top, left, width, maxHeight, placement };
 }

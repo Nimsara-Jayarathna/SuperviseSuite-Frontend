@@ -12,6 +12,7 @@ import { createPortal } from 'react-dom';
 import { type ComponentProps, useEffect, useMemo, useRef, useState } from 'react';
 import { buttonStyles } from '@/components/ui/Button';
 import { DropdownSurface } from '@/components/ui/DropdownSurface';
+import { PillDropdownTrigger } from '@/components/ui/PillDropdownTrigger';
 import { Select } from '@/components/ui/Select';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { useAnchoredMenu } from '@/components/ui/useAnchoredMenu';
@@ -412,13 +413,31 @@ export function MilestonesTabSection({ project, milestones }: MilestonesTabSecti
                             </div>
 
                             <div className="flex w-full items-center justify-between gap-3 sm:w-auto sm:justify-start">
-                              <button
-                                type="button"
+                              <PillDropdownTrigger
                                 aria-label="Change milestone status"
                                 title={
                                   canOpenQuickStatus
                                     ? 'Change milestone status'
                                     : 'No alternative status available for this milestone.'
+                                }
+                                disabled={
+                                  milestones.quickStatusUpdatingId === milestone.id ||
+                                  !canOpenQuickStatus
+                                }
+                                isOpen={
+                                  isQuickStatusMenuOpen && quickStatusMilestoneId === milestone.id
+                                }
+                                icon={getStatusIcon(milestone.status, 'h-3.5 w-3.5')}
+                                label={
+                                  <StatusBadge
+                                    tone={getMilestoneTone(milestone.status)}
+                                    className="border-none bg-transparent p-0 text-[10px] font-black uppercase tracking-wider"
+                                  >
+                                    {milestone.status.replace('_', ' ')}
+                                  </StatusBadge>
+                                }
+                                className={
+                                  milestones.quickStatusUpdatingId === milestone.id ? 'opacity-50' : undefined
                                 }
                                 onClick={(event) => {
                                   if (
@@ -427,43 +446,18 @@ export function MilestonesTabSection({ project, milestones }: MilestonesTabSecti
                                   ) {
                                     return;
                                   }
+
                                   quickStatusAnchorRef.current = event.currentTarget;
+                                  const isThisMenuOpen =
+                                    isQuickStatusMenuOpen && quickStatusMilestoneId === milestone.id;
                                   setQuickStatusMilestoneId(milestone.id);
-                                  if (isQuickStatusMenuOpen && quickStatusMilestoneId === milestone.id) {
+                                  if (isThisMenuOpen) {
                                     closeQuickStatusMenu();
                                     return;
                                   }
                                   openQuickStatusMenu();
                                 }}
-                                disabled={
-                                  milestones.quickStatusUpdatingId === milestone.id ||
-                                  !canOpenQuickStatus
-                                }
-                                className={`relative inline-flex items-center overflow-hidden rounded-2xl bg-slate-100 transition-all ${canOpenQuickStatus ? 'cursor-pointer hover:ring-2 hover:ring-indigo-100' : 'cursor-not-allowed opacity-60'} ${milestones.quickStatusUpdatingId === milestone.id ? 'opacity-50' : ''}`}
-                              >
-                                <div className="flex items-center gap-2 px-3 py-1.5">
-                                  {getStatusIcon(milestone.status, 'h-3.5 w-3.5')}
-                                  <StatusBadge
-                                    tone={getMilestoneTone(milestone.status)}
-                                    className="border-none bg-transparent p-0 text-[10px] font-black uppercase tracking-wider"
-                                  >
-                                    {milestone.status.replace('_', ' ')}
-                                  </StatusBadge>
-                                  <svg
-                                    className="ml-1 h-3 w-3 text-slate-400"
-                                    viewBox="0 0 12 12"
-                                    fill="none"
-                                  >
-                                    <path
-                                      d="M3 4.5L6 7.5L9 4.5"
-                                      stroke="currentColor"
-                                      strokeWidth="1.5"
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                    />
-                                  </svg>
-                                </div>
-                              </button>
+                              />
 
                               <button
                                 type="button"

@@ -76,5 +76,40 @@ describe('calculateDropdownLayout', () => {
 
     expect(top).toBe(16);
   });
-});
 
+  it('uses the real menu height when provided to avoid blank gaps', () => {
+    setViewport({ width: 300, height: 200 });
+    const triggerRect = new DOMRect(20, 170, 80, 20); // top = 170
+    const labels = ['ONE', 'TWO', 'THREE'];
+    const { top, placement } = calculateDropdownLayout({
+      triggerRect,
+      labels,
+      fontSourceEl: document.body,
+      align: 'start',
+      offset: 6,
+      matchTriggerWidth: true,
+      menuHeight: 80,
+    });
+
+    expect(placement).toBe('up');
+    expect(top).toBe(84);
+  });
+
+  it('opens downward when the menu fully fits below', () => {
+    setViewport({ width: 300, height: 200 });
+    const triggerRect = new DOMRect(20, 50, 80, 32); // bottom = 82
+    const labels = ['ONE', 'TWO', 'THREE'];
+    const { placement, top } = calculateDropdownLayout({
+      triggerRect,
+      labels,
+      fontSourceEl: document.body,
+      align: 'start',
+      offset: 6,
+      matchTriggerWidth: true,
+      menuHeight: 80,
+    });
+
+    expect(placement).toBe('down');
+    expect(top).toBe(88);
+  });
+});
