@@ -26,6 +26,7 @@ type UseAnchoredMenuParams = {
   offset?: number;
   matchTriggerWidth?: boolean;
   getFontSourceEl?: () => Element | null | undefined;
+  onRequestClose?: () => void;
 };
 
 export function useAnchoredMenu({
@@ -35,10 +36,12 @@ export function useAnchoredMenu({
   offset = 6,
   matchTriggerWidth = true,
   getFontSourceEl,
+  onRequestClose,
 }: UseAnchoredMenuParams) {
   const menuRef = useRef<HTMLUListElement | null>(null);
   const rafIdRef = useRef<number | null>(null);
   const getFontSourceElRef = useRef(getFontSourceEl);
+  const onRequestCloseRef = useRef(onRequestClose);
   const measuredMenuHeightRef = useRef<number | null>(null);
   const openAdjustmentCountRef = useRef(0);
   const [isOpen, setIsOpen] = useState(false);
@@ -47,6 +50,10 @@ export function useAnchoredMenu({
   useEffect(() => {
     getFontSourceElRef.current = getFontSourceEl;
   }, [getFontSourceEl]);
+
+  useEffect(() => {
+    onRequestCloseRef.current = onRequestClose;
+  }, [onRequestClose]);
 
   const updatePosition = useCallback(() => {
     const anchorEl = anchorRef.current;
@@ -106,56 +113,6 @@ export function useAnchoredMenu({
     scheduleUpdate();
   }, [isOpen, layout, scheduleUpdate]);
 
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const onDocMouseDown = (event: MouseEvent) => {
-      const target = event.target as Node;
-      const anchorEl = anchorRef.current;
-      const menuEl = menuRef.current;
-      const clickedAnchor = Boolean(anchorEl?.contains(target));
-      const clickedMenu = Boolean(menuEl?.contains(target));
-      if (!clickedAnchor && !clickedMenu) {
-        setIsOpen(false);
-      }
-    };
-
-    const onDocKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setIsOpen(false);
-    };
-
-    const onResize = () => scheduleUpdate();
-    const onAnyScroll = (event: Event) => {
-      const target = event.target as Node | null;
-      if (target && menuRef.current?.contains(target)) return;
-      scheduleUpdate();
-    };
-
-    document.addEventListener('mousedown', onDocMouseDown);
-    document.addEventListener('keydown', onDocKeyDown);
-    window.addEventListener('resize', onResize);
-    window.addEventListener('scroll', onAnyScroll, true);
-
-    return () => {
-      document.removeEventListener('mousedown', onDocMouseDown);
-      document.removeEventListener('keydown', onDocKeyDown);
-      window.removeEventListener('resize', onResize);
-      window.removeEventListener('scroll', onAnyScroll, true);
-    };
-  }, [anchorRef, isOpen, scheduleUpdate]);
-
-  const menuStyle = useMemo<AnchoredMenuStyle | null>(() => {
-    if (!layout) return null;
-    return {
-      position: 'absolute',
-      top: layout.top,
-      left: layout.left,
-      width: layout.width,
-      maxHeight: layout.maxHeight,
-      zIndex: 9999,
-    };
-  }, [layout]);
-
   const open = useCallback(() => {
     openAdjustmentCountRef.current = 0;
     measuredMenuHeightRef.current = null;
@@ -176,6 +133,60 @@ export function useAnchoredMenu({
     }
     open();
   }, [close, isOpen, open]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const onDocMouseDown = (event: MouseEvent) => {
+      const target = event.target as Node;
+      const anchorEl = anchorRef.current;
+      const menuEl = menuRef.current;
+      const clickedAnchor = Boolean(anchorEl?.contains(target));
+      const clickedMenu = Boolean(menuEl?.contains(target));
+      if (!clickedAnchor && !clickedMenu) {
+        onRequestCloseRef.current?.();
+        close();
+      }
+    };
+
+    const onDocKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onRequestCloseRef.current?.();
+        close();
+      }
+    };
+
+    const onResize = () => scheduleUpdate();
+    const onAnyScroll = (event: Event) => {
+      const target = event.target as Node | null;
+      if (target && menuRef.current?.contains(target)) return;
+      scheduleUpdate();
+    };
+
+    document.addEventListener('mousedown', onDocMouseDown);
+    document.addEventListener('keydown', onDocKeyDown);
+    window.addEventListener('resize', onResize);
+    window.addEventListener('scroll', onAnyScroll, true);
+
+    return () => {
+      document.removeEventListener('mousedown', onDocMouseDown);
+      document.removeEventListener('keydown', onDocKeyDown);
+      window.removeEventListener('resize', onResize);
+      window.removeEventListener('scroll', onAnyScroll, true);
+    };
+  }, [anchorRef, close, isOpen, scheduleUpdate]);
+
+  const menuStyle = useMemo<AnchoredMenuStyle | null>(() => {
+    if (!layout) return null;
+    return {
+      position: 'absolute',
+      top: layout.top,
+      left: layout.left,
+      width: layout.width,
+      maxHeight: layout.maxHeight,
+      zIndex: 9999,
+    };
+  }, [layout]);
 
   return {
     isOpen,

@@ -2,20 +2,10 @@ import {
   CalendarDays,
   Plus,
   Edit2,
-  CheckCircle2,
-  Circle,
-  AlertCircle,
-  XCircle,
-  Clock,
 } from 'lucide-react';
-import { createPortal } from 'react-dom';
-import { type ComponentProps, useEffect, useMemo, useRef, useState } from 'react';
+import { useState } from 'react';
 import { buttonStyles } from '@/components/ui/Button';
-import { DropdownSurface } from '@/components/ui/DropdownSurface';
-import { PillDropdownTrigger } from '@/components/ui/PillDropdownTrigger';
 import { Select } from '@/components/ui/Select';
-import { StatusBadge } from '@/components/ui/StatusBadge';
-import { useAnchoredMenu } from '@/components/ui/useAnchoredMenu';
 import { parseLocalDateOnly } from '@/lib/dateOnly';
 import { FIELD_LIMITS, dateFormatter } from '../../projectDetails.shared';
 import {
@@ -23,6 +13,7 @@ import {
   getVisibleMilestoneStatuses,
   isTerminalMilestoneStatus,
 } from '../../milestonePolicy';
+import { MilestoneStatusDropdown } from './MilestoneStatusDropdown';
 import type { MilestonesState } from '../../hooks/useProjectDetailsPageState';
 import type { MilestoneStatus } from '../../projectDetails.shared';
 import type { SupervisorProjectDetail } from '../../types';
@@ -32,87 +23,9 @@ type MilestonesTabSectionProps = {
   milestones: MilestonesState;
 };
 
-type StatusBadgeTone = NonNullable<ComponentProps<typeof StatusBadge>['tone']>;
-
-function getMilestoneTone(status: MilestoneStatus): StatusBadgeTone {
-  switch (status) {
-    case 'COMPLETED':
-      return 'success';
-    case 'IN_PROGRESS':
-      return 'student'; // using student for sky/blue feel
-    case 'PLANNED':
-      return 'neutral';
-    case 'MISSED':
-      return 'danger';
-    case 'CANCELLED':
-      return 'neutral';
-    default:
-      return 'neutral';
-  }
-}
-
-function getStatusIcon(status: MilestoneStatus, className?: string) {
-  switch (status) {
-    case 'COMPLETED':
-      return <CheckCircle2 className={className} />;
-    case 'IN_PROGRESS':
-      return <Clock className={className} />;
-    case 'PLANNED':
-      return <Circle className={className} />;
-    case 'MISSED':
-      return <AlertCircle className={className} />;
-    case 'CANCELLED':
-      return <XCircle className={className} />;
-    default:
-      return <Circle className={className} />;
-  }
-}
-
 export function MilestonesTabSection({ project, milestones }: MilestonesTabSectionProps) {
   const today = getTodayLocalDateString();
-  const quickStatusAnchorRef = useRef<HTMLElement | null>(null);
-  const [quickStatusMilestoneId, setQuickStatusMilestoneId] = useState<string | null>(null);
-
-  const quickStatusTarget = useMemo(() => {
-    if (!quickStatusMilestoneId) return null;
-    return project.milestones.find((milestone) => milestone.id === quickStatusMilestoneId) ?? null;
-  }, [project.milestones, quickStatusMilestoneId]);
-
-  const quickStatusVisibleStatuses = useMemo(() => {
-    if (!quickStatusTarget) return [];
-    return getVisibleMilestoneStatuses({
-      currentStatus: quickStatusTarget.status,
-      dueDate: quickStatusTarget.dueDate,
-      today,
-    });
-  }, [quickStatusTarget, today]);
-
-  const quickStatusLabels = useMemo(
-    () => quickStatusVisibleStatuses.map((status) => status.replace('_', ' ')),
-    [quickStatusVisibleStatuses],
-  );
-
-  const {
-    isOpen: isQuickStatusMenuOpen,
-    open: openQuickStatusMenu,
-    close: closeQuickStatusMenu,
-    menuRef: quickStatusMenuRef,
-    menuStyle: quickStatusMenuStyle,
-  } = useAnchoredMenu({
-    anchorRef: quickStatusAnchorRef,
-    labels: quickStatusLabels,
-    align: 'auto',
-    offset: 6,
-    matchTriggerWidth: true,
-    getFontSourceEl: () => quickStatusAnchorRef.current,
-  });
-
-  useEffect(() => {
-    if (!isQuickStatusMenuOpen) return;
-    if (!quickStatusTarget || !quickStatusAnchorRef.current) {
-      closeQuickStatusMenu();
-    }
-  }, [closeQuickStatusMenu, isQuickStatusMenuOpen, quickStatusTarget]);
+  const [openMilestoneId, setOpenMilestoneId] = useState<string | null>(null);
 
   return (
     <section className="rounded-3xl border border-border bg-white p-6 shadow-sm transition-all hover:shadow-md">
@@ -413,49 +326,19 @@ export function MilestonesTabSection({ project, milestones }: MilestonesTabSecti
                             </div>
 
                             <div className="flex w-full items-center justify-between gap-3 sm:w-auto sm:justify-start">
-                              <PillDropdownTrigger
-                                aria-label="Change milestone status"
-                                title={
-                                  canOpenQuickStatus
-                                    ? 'Change milestone status'
-                                    : 'No alternative status available for this milestone.'
-                                }
+                              <MilestoneStatusDropdown
+                                value={milestone.status}
+                                visibleOptions={quickStatusOptions}
                                 disabled={
                                   milestones.quickStatusUpdatingId === milestone.id ||
                                   !canOpenQuickStatus
                                 }
-                                isOpen={
-                                  isQuickStatusMenuOpen && quickStatusMilestoneId === milestone.id
-                                }
-                                icon={getStatusIcon(milestone.status, 'h-3.5 w-3.5')}
-                                label={
-                                  <StatusBadge
-                                    tone={getMilestoneTone(milestone.status)}
-                                    className="border-none bg-transparent p-0 text-[10px] font-black uppercase tracking-wider"
-                                  >
-                                    {milestone.status.replace('_', ' ')}
-                                  </StatusBadge>
-                                }
-                                className={
-                                  milestones.quickStatusUpdatingId === milestone.id ? 'opacity-50' : undefined
-                                }
-                                onClick={(event) => {
-                                  if (
-                                    milestones.quickStatusUpdatingId === milestone.id ||
-                                    !canOpenQuickStatus
-                                  ) {
-                                    return;
-                                  }
-
-                                  quickStatusAnchorRef.current = event.currentTarget;
-                                  const isThisMenuOpen =
-                                    isQuickStatusMenuOpen && quickStatusMilestoneId === milestone.id;
-                                  setQuickStatusMilestoneId(milestone.id);
-                                  if (isThisMenuOpen) {
-                                    closeQuickStatusMenu();
-                                    return;
-                                  }
-                                  openQuickStatusMenu();
+                                isOpen={openMilestoneId === milestone.id}
+                                onOpenChange={(nextOpen) => {
+                                  setOpenMilestoneId(nextOpen ? milestone.id : null);
+                                }}
+                                onSelect={(nextStatus) => {
+                                  void milestones.submitQuickMilestoneStatus(milestone, nextStatus);
                                 }}
                               />
 
@@ -503,41 +386,6 @@ export function MilestonesTabSection({ project, milestones }: MilestonesTabSecti
           </p>
         </div>
       )}
-      {isQuickStatusMenuOpen &&
-        quickStatusMenuStyle &&
-        quickStatusTarget &&
-        createPortal(
-          <DropdownSurface ref={quickStatusMenuRef} role="listbox" style={quickStatusMenuStyle}>
-            {quickStatusVisibleStatuses.map((status) => {
-              const isSelected = quickStatusTarget.status === status;
-              return (
-                <li key={status}>
-                  <button
-                    type="button"
-                    className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 ${
-                      isSelected
-                        ? 'bg-slate-50 font-semibold text-foreground'
-                        : 'text-foreground hover:bg-slate-50'
-                    }`}
-                    onMouseDown={(event) => event.preventDefault()}
-                    onClick={() => {
-                      closeQuickStatusMenu();
-                      void milestones.submitQuickMilestoneStatus(quickStatusTarget, status);
-                    }}
-                  >
-                    <span className="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap pr-3">
-                      {status.replace('_', ' ')}
-                    </span>
-                    <span className="shrink-0">
-                      <span className={isSelected ? 'text-amber-600' : 'text-transparent'}>✓</span>
-                    </span>
-                  </button>
-                </li>
-              );
-            })}
-          </DropdownSurface>,
-          document.body,
-        )}
     </section>
   );
 }
