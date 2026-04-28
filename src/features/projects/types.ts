@@ -17,12 +17,16 @@ export type ProjectGitHubActivitySummary = {
 export type ProjectGitHubContributor = {
   name: string;
   commitCount: number;
+  githubUsername?: string | null;
+  avatarUrl?: string | null;
 };
 
 export type ProjectGitHubRecentCommit = {
   sha: string | null;
   message: string;
   author: string;
+  githubUsername?: string | null;
+  avatarUrl?: string | null;
   committedAt: string | null;
   type?: string | null;
 };

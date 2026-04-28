@@ -341,7 +341,8 @@ export function JiraSprintProgressSection({ fetcher, projectId }: JiraSprintProg
               </label>
               <Select
                 id="jira-sprint-selector"
-                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-800 shadow-sm transition-colors hover:border-slate-300 focus:border-indigo-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                triggerVariant="pill"
+                className="w-full"
                 value={selectedSprintKey}
                 onChange={(event) => setSelectedSprintKey(event.target.value)}
               >

@@ -1,19 +1,7 @@
-import {
-  CalendarDays,
-  Plus,
-  Edit2,
-  CheckCircle2,
-  Circle,
-  AlertCircle,
-  XCircle,
-  Clock,
-} from 'lucide-react';
-import { createPortal } from 'react-dom';
-import { type ComponentProps, useEffect, useRef, useState } from 'react';
+import { CalendarDays, Plus, Edit2 } from 'lucide-react';
+import { useState } from 'react';
 import { buttonStyles } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
-import { StatusBadge } from '@/components/ui/StatusBadge';
-import { calculateDropdownLayout } from '@/lib/dropdownSizing';
 import { parseLocalDateOnly } from '@/lib/dateOnly';
 import { FIELD_LIMITS, dateFormatter } from '../../projectDetails.shared';
 import {
@@ -21,6 +9,7 @@ import {
   getVisibleMilestoneStatuses,
   isTerminalMilestoneStatus,
 } from '../../milestonePolicy';
+import { MilestoneStatusDropdown } from './MilestoneStatusDropdown';
 import type { MilestonesState } from '../../hooks/useProjectDetailsPageState';
 import type { MilestoneStatus } from '../../projectDetails.shared';
 import type { SupervisorProjectDetail } from '../../types';
@@ -30,114 +19,9 @@ type MilestonesTabSectionProps = {
   milestones: MilestonesState;
 };
 
-type StatusBadgeTone = NonNullable<ComponentProps<typeof StatusBadge>['tone']>;
-
-function getMilestoneTone(status: MilestoneStatus): StatusBadgeTone {
-  switch (status) {
-    case 'COMPLETED':
-      return 'success';
-    case 'IN_PROGRESS':
-      return 'student'; // using student for sky/blue feel
-    case 'PLANNED':
-      return 'neutral';
-    case 'MISSED':
-      return 'danger';
-    case 'CANCELLED':
-      return 'neutral';
-    default:
-      return 'neutral';
-  }
-}
-
-function getStatusIcon(status: MilestoneStatus, className?: string) {
-  switch (status) {
-    case 'COMPLETED':
-      return <CheckCircle2 className={className} />;
-    case 'IN_PROGRESS':
-      return <Clock className={className} />;
-    case 'PLANNED':
-      return <Circle className={className} />;
-    case 'MISSED':
-      return <AlertCircle className={className} />;
-    case 'CANCELLED':
-      return <XCircle className={className} />;
-    default:
-      return <Circle className={className} />;
-  }
-}
-
 export function MilestonesTabSection({ project, milestones }: MilestonesTabSectionProps) {
   const today = getTodayLocalDateString();
-  const quickStatusMenuRef = useRef<HTMLUListElement>(null);
-  const quickStatusAnchorRef = useRef<HTMLButtonElement | null>(null);
-  const [quickStatusMenu, setQuickStatusMenu] = useState<{
-    milestoneId: string;
-    top: number;
-    left: number;
-    width: number;
-    maxHeight: number;
-  } | null>(null);
-
-  useEffect(() => {
-    if (!quickStatusMenu) return;
-
-    const closeMenu = () => setQuickStatusMenu(null);
-    const onDocMouseDown = (event: MouseEvent) => {
-      const target = event.target as Node;
-      if (!quickStatusMenuRef.current?.contains(target)) {
-        closeMenu();
-      }
-    };
-    const onDocKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') closeMenu();
-    };
-
-    const onResize = () => {
-      if (!quickStatusMenu || !quickStatusAnchorRef.current) return;
-      const rect = quickStatusAnchorRef.current.getBoundingClientRect();
-      const targetMilestone = project.milestones.find((m) => m.id === quickStatusMenu.milestoneId);
-      const visibleStatuses = targetMilestone
-        ? getVisibleMilestoneStatuses({
-            currentStatus: targetMilestone.status,
-            dueDate: targetMilestone.dueDate,
-            today,
-          })
-        : [];
-      const nextLayout = calculateDropdownLayout({
-        triggerRect: rect,
-        labels: visibleStatuses.map((status) => status.replace('_', ' ')),
-        fontSourceEl: quickStatusAnchorRef.current,
-      });
-      setQuickStatusMenu((current) =>
-        current
-          ? {
-              ...current,
-              top: nextLayout.top,
-              left: nextLayout.left,
-              width: nextLayout.width,
-              maxHeight: nextLayout.maxHeight,
-            }
-          : current,
-      );
-    };
-
-    document.addEventListener('mousedown', onDocMouseDown);
-    document.addEventListener('keydown', onDocKeyDown);
-    window.addEventListener('resize', onResize);
-    const onAnyScroll = (event: Event) => {
-      const target = event.target as Node | null;
-      if (target && quickStatusMenuRef.current?.contains(target)) return;
-      closeMenu();
-    };
-    window.addEventListener('scroll', onAnyScroll, true);
-
-    return () => {
-      document.removeEventListener('mousedown', onDocMouseDown);
-      document.removeEventListener('keydown', onDocKeyDown);
-      window.removeEventListener('resize', onResize);
-      window.removeEventListener('scroll', onAnyScroll, true);
-    };
-  }, [project.milestones, quickStatusMenu, today]);
+  const [openMilestoneId, setOpenMilestoneId] = useState<string | null>(null);
 
   return (
     <section className="rounded-3xl border border-border bg-white p-6 shadow-sm transition-all hover:shadow-md">
@@ -438,67 +322,21 @@ export function MilestonesTabSection({ project, milestones }: MilestonesTabSecti
                             </div>
 
                             <div className="flex w-full items-center justify-between gap-3 sm:w-auto sm:justify-start">
-                              <button
-                                type="button"
-                                aria-label="Change milestone status"
-                                title={
-                                  canOpenQuickStatus
-                                    ? 'Change milestone status'
-                                    : 'No alternative status available for this milestone.'
-                                }
-                                onClick={(event) => {
-                                  if (
-                                    milestones.quickStatusUpdatingId === milestone.id ||
-                                    !canOpenQuickStatus
-                                  ) {
-                                    return;
-                                  }
-                                  quickStatusAnchorRef.current = event.currentTarget;
-                                  const rect = event.currentTarget.getBoundingClientRect();
-                                  setQuickStatusMenu((current) =>
-                                    current?.milestoneId === milestone.id
-                                      ? null
-                                      : {
-                                          milestoneId: milestone.id,
-                                          ...calculateDropdownLayout({
-                                            triggerRect: rect,
-                                            labels: quickStatusOptions.map((status) =>
-                                              status.replace('_', ' '),
-                                            ),
-                                            fontSourceEl: event.currentTarget,
-                                          }),
-                                        },
-                                  );
-                                }}
+                              <MilestoneStatusDropdown
+                                value={milestone.status}
+                                visibleOptions={quickStatusOptions}
                                 disabled={
                                   milestones.quickStatusUpdatingId === milestone.id ||
                                   !canOpenQuickStatus
                                 }
-                                className={`relative inline-flex items-center overflow-hidden rounded-2xl bg-slate-100 transition-all ${canOpenQuickStatus ? 'cursor-pointer hover:ring-2 hover:ring-indigo-100' : 'cursor-not-allowed opacity-60'} ${milestones.quickStatusUpdatingId === milestone.id ? 'opacity-50' : ''}`}
-                              >
-                                <div className="flex items-center gap-2 px-3 py-1.5">
-                                  {getStatusIcon(milestone.status, 'h-3.5 w-3.5')}
-                                  <StatusBadge
-                                    tone={getMilestoneTone(milestone.status)}
-                                    className="border-none bg-transparent p-0 text-[10px] font-black uppercase tracking-wider"
-                                  >
-                                    {milestone.status.replace('_', ' ')}
-                                  </StatusBadge>
-                                  <svg
-                                    className="ml-1 h-3 w-3 text-slate-400"
-                                    viewBox="0 0 12 12"
-                                    fill="none"
-                                  >
-                                    <path
-                                      d="M3 4.5L6 7.5L9 4.5"
-                                      stroke="currentColor"
-                                      strokeWidth="1.5"
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                    />
-                                  </svg>
-                                </div>
-                              </button>
+                                isOpen={openMilestoneId === milestone.id}
+                                onOpenChange={(nextOpen) => {
+                                  setOpenMilestoneId(nextOpen ? milestone.id : null);
+                                }}
+                                onSelect={(nextStatus) => {
+                                  void milestones.submitQuickMilestoneStatus(milestone, nextStatus);
+                                }}
+                              />
 
                               <button
                                 type="button"
@@ -544,64 +382,6 @@ export function MilestonesTabSection({ project, milestones }: MilestonesTabSecti
           </p>
         </div>
       )}
-      {quickStatusMenu &&
-        createPortal(
-          <ul
-            ref={quickStatusMenuRef}
-            className="overflow-auto rounded-2xl border border-border bg-white shadow-lg"
-            style={{
-              position: 'absolute',
-              top: quickStatusMenu.top,
-              left: quickStatusMenu.left,
-              width: quickStatusMenu.width,
-              maxHeight: quickStatusMenu.maxHeight,
-              zIndex: 9999,
-            }}
-            role="listbox"
-          >
-            {(() => {
-              const targetMilestone = project.milestones.find(
-                (m) => m.id === quickStatusMenu.milestoneId,
-              );
-              if (!targetMilestone) return null;
-              const visibleStatuses = getVisibleMilestoneStatuses({
-                currentStatus: targetMilestone.status,
-                dueDate: targetMilestone.dueDate,
-                today,
-              });
-              return visibleStatuses.map((status) => {
-                const isSelected = targetMilestone.status === status;
-                return (
-                  <li key={status}>
-                    <button
-                      type="button"
-                      className={`flex w-full items-center justify-between py-2 px-4 text-left text-sm transition-colors ${
-                        isSelected
-                          ? 'bg-slate-50 font-semibold text-foreground'
-                          : 'font-medium text-foreground hover:bg-slate-50'
-                      }`}
-                      onMouseDown={(event) => event.preventDefault()}
-                      onClick={() => {
-                        setQuickStatusMenu(null);
-                        void milestones.submitQuickMilestoneStatus(targetMilestone, status);
-                      }}
-                    >
-                      <span className="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap pr-3">
-                        {status.replace('_', ' ')}
-                      </span>
-                      <span className="shrink-0">
-                        <span className={isSelected ? 'text-amber-600' : 'text-transparent'}>
-                          ✓
-                        </span>
-                      </span>
-                    </button>
-                  </li>
-                );
-              });
-            })()}
-          </ul>,
-          document.body,
-        )}
     </section>
   );
 }

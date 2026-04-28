@@ -5,16 +5,25 @@ import {
   type ReactElement,
   type ReactNode,
   type SelectHTMLAttributes,
+  type RefObject,
   isValidElement,
-  useEffect,
   useMemo,
   useRef,
-  useState,
 } from 'react';
 import { createPortal } from 'react-dom';
-import { calculateDropdownLayout } from '@/lib/dropdownSizing';
+import type { DropdownAlign } from '@/lib/dropdownSizing';
+import { DropdownSurface } from '@/components/ui/DropdownSurface';
+import { useAnchoredMenu } from '@/components/ui/useAnchoredMenu';
+import { cn } from '@/lib/cn';
 
-type SelectProps = SelectHTMLAttributes<HTMLSelectElement> & { children: ReactNode };
+type SelectProps = SelectHTMLAttributes<HTMLSelectElement> & {
+  children: ReactNode;
+  menuAlign?: DropdownAlign;
+  menuOffset?: number;
+  menuMatchTriggerWidth?: boolean;
+  menuAnchorRef?: RefObject<HTMLElement | null>;
+  triggerVariant?: 'default' | 'pill';
+};
 
 type OptionItem = {
   value: string;
@@ -36,11 +45,23 @@ function extractNodeText(node: ReactNode): string {
 }
 
 export function Select(props: SelectProps) {
-  const { children, className, disabled, onMouseDown, onKeyDown, ...rest } = props;
+  const {
+    children,
+    className,
+    disabled,
+    onMouseDown,
+    onKeyDown,
+    menuAlign,
+    menuOffset,
+    menuMatchTriggerWidth,
+    menuAnchorRef,
+    triggerVariant = 'default',
+    ...rest
+  } = props;
   const selectRef = useRef<HTMLSelectElement>(null);
-  const menuRef = useRef<HTMLUListElement>(null);
-  const [isOpen, setIsOpen] = useState(false);
-  const [menuPos, setMenuPos] = useState({ top: 0, left: 0, width: 0, maxHeight: 0 });
+  const anchorRef = (menuAnchorRef ?? (selectRef as unknown as RefObject<HTMLElement | null>)) as
+    | RefObject<HTMLElement | null>
+    | undefined;
 
   const options = useMemo<OptionItem[]>(() => {
     return Children.toArray(children)
@@ -58,21 +79,21 @@ export function Select(props: SelectProps) {
   }, [children]);
 
   const selectedValue = selectRef.current?.value ?? String(props.value ?? '');
+  const labels = useMemo(() => options.map((option) => option.label), [options]);
+
+  const { isOpen, open, close, menuRef, menuStyle } = useAnchoredMenu({
+    anchorRef: anchorRef ?? (selectRef as unknown as RefObject<HTMLElement | null>),
+    labels,
+    align: menuAlign ?? 'auto',
+    offset: menuOffset ?? 6,
+    matchTriggerWidth: menuMatchTriggerWidth ?? true,
+    getFontSourceEl: () => selectRef.current,
+  });
 
   const openMenu = () => {
-    if (disabled || !selectRef.current) return;
-    const rect = selectRef.current.getBoundingClientRect();
-    setMenuPos(
-      calculateDropdownLayout({
-        triggerRect: rect,
-        labels: options.map((option) => option.label),
-        fontSourceEl: selectRef.current,
-      }),
-    );
-    setIsOpen(true);
+    if (disabled) return;
+    open();
   };
-
-  const closeMenu = () => setIsOpen(false);
 
   const handleMouseDown = (event: ReactMouseEvent<HTMLSelectElement>) => {
     onMouseDown?.(event);
@@ -80,7 +101,7 @@ export function Select(props: SelectProps) {
     if (disabled) return;
     event.preventDefault();
     if (isOpen) {
-      closeMenu();
+      close();
       return;
     }
     openMenu();
@@ -92,7 +113,7 @@ export function Select(props: SelectProps) {
     if (disabled) return;
 
     if (event.key === 'Escape') {
-      closeMenu();
+      close();
       return;
     }
 
@@ -109,82 +130,53 @@ export function Select(props: SelectProps) {
     el.value = nextValue;
     const changeEvent = new Event('change', { bubbles: true });
     el.dispatchEvent(changeEvent);
-    closeMenu();
+    close();
   };
 
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const onDocMouseDown = (event: MouseEvent) => {
-      const target = event.target as Node;
-      const clickedTrigger = selectRef.current?.contains(target);
-      const clickedMenu = menuRef.current?.contains(target);
-      if (!clickedTrigger && !clickedMenu) {
-        closeMenu();
-      }
-    };
-
-    const onDocKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') closeMenu();
-    };
-
-    const onResize = () => {
-      if (!selectRef.current) return;
-      const rect = selectRef.current.getBoundingClientRect();
-      setMenuPos(
-        calculateDropdownLayout({
-          triggerRect: rect,
-          labels: options.map((option) => option.label),
-          fontSourceEl: selectRef.current,
-        }),
-      );
-    };
-
-    window.addEventListener('resize', onResize);
-    const onAnyScroll = (event: Event) => {
-      const target = event.target as Node | null;
-      if (target && menuRef.current?.contains(target)) return;
-      closeMenu();
-    };
-    window.addEventListener('scroll', onAnyScroll, true);
-    document.addEventListener('mousedown', onDocMouseDown);
-    document.addEventListener('keydown', onDocKeyDown);
-
-    return () => {
-      window.removeEventListener('resize', onResize);
-      window.removeEventListener('scroll', onAnyScroll, true);
-      document.removeEventListener('mousedown', onDocMouseDown);
-      document.removeEventListener('keydown', onDocKeyDown);
-    };
-  }, [isOpen, options]);
+  const selectControl = (
+    <select
+      {...rest}
+      ref={selectRef}
+      disabled={disabled}
+      className={cn(
+        triggerVariant === 'pill' &&
+          'h-12 w-full appearance-none rounded-2xl border border-slate-200 bg-slate-100 px-5 pr-12 text-base font-bold leading-none text-slate-900 shadow-sm transition-all hover:border-slate-300 hover:bg-slate-50 focus:border-slate-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:opacity-60',
+        className,
+      )}
+      onMouseDown={handleMouseDown}
+      onKeyDown={handleKeyDown}
+    >
+      {children}
+    </select>
+  );
 
   return (
     <>
-      <select
-        {...rest}
-        ref={selectRef}
-        disabled={disabled}
-        className={className}
-        onMouseDown={handleMouseDown}
-        onKeyDown={handleKeyDown}
-      >
-        {children}
-      </select>
-      {isOpen &&
-        createPortal(
-          <ul
-            ref={menuRef}
-            className="overflow-auto rounded-2xl border border-border bg-white shadow-lg"
-            style={{
-              position: 'absolute',
-              top: menuPos.top,
-              left: menuPos.left,
-              width: menuPos.width,
-              maxHeight: menuPos.maxHeight,
-              zIndex: 9999,
-            }}
-            role="listbox"
+      {triggerVariant === 'pill' ? (
+        <span className="relative block w-full">
+          {selectControl}
+          <svg
+            aria-hidden
+            className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-700"
+            viewBox="0 0 16 16"
+            fill="none"
           >
+            <path
+              d="M4 6L8 10L12 6"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </span>
+      ) : (
+        selectControl
+      )}
+      {isOpen &&
+        menuStyle &&
+        createPortal(
+          <DropdownSurface ref={menuRef} style={menuStyle} role="listbox">
             {options.map((option) => {
               const isSelected = option.value === selectedValue;
               return (
@@ -192,7 +184,7 @@ export function Select(props: SelectProps) {
                   <button
                     type="button"
                     disabled={option.disabled}
-                    className={`flex w-full items-center justify-between py-2 px-4 text-left text-sm font-medium transition-colors ${
+                    className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 ${
                       option.disabled
                         ? 'cursor-not-allowed text-muted-foreground opacity-50'
                         : 'cursor-pointer text-foreground hover:bg-slate-50'
@@ -212,7 +204,7 @@ export function Select(props: SelectProps) {
                 </li>
               );
             })}
-          </ul>,
+          </DropdownSurface>,
           document.body,
         )}
     </>
